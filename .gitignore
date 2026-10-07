@@ -1,0 +1,87 @@
+# ==============================================================================
+# PROTON CLINICAL COPILOT — COMPREHENSIVE GITIGNORE
+# ==============================================================================
+
+# 1. Environment & Secret Credentials (CRITICAL - NEVER COMMIT)
+.env
+.env.*
+*.env
+*.env.raw
+*.local
+*.pem
+*.key
+*.cert
+*.crt
+*.pfx
+*.p12
+
+# 2. Large Third-Party Upstream Repositories & Archives (DO NOT COMMIT)
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+medplum-main/
+tesseract-main/
+whisper-main/
+pgvector-master/
+
+# 3. Raw Recordings, Audio Dumps & Media Fixtures
+*.m4a
+*.mp3
+*.ogg
+*.flac
+test_consultation.m4a
+
+# 4. Dependencies & Package Manager Dumps
+node_modules/
+*/node_modules/
+*/*/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+
+# 5. Production Build Artifacts
+dist/
+*/dist/
+dist-ssr/
+build/
+*.tsbuildinfo
+
+# 6. Local Database, Cache & Tool State
+*.sqlite
+*.sqlite3
+*.db
+.cache/
+.vite/
+.turbo/
+
+# 7. Operating System & IDE Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# 8. Temporary Scratch & Patch Scripts
+patch_e2e_*.cjs
+apps/web/test-*.cjs
+apps/web/test-*.js
+apps/web/test_*.cjs
+apps/web/test*.js
+apps/web/run_*.cjs
+apps/web/tests/test_search.cjs
+apps/api/test_ai_*.cjs
+apps/api/test_models.cjs
+apps/api/update_*.cjs
+apps/api/apps/

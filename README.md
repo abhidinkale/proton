@@ -1,0 +1,178 @@
+# PROTON — Clinical AI Copilot
+
+> **Controlled Physician Validation Release**  
+> Ambient Intelligence • Structured Clinical Notes • Deterministic Safety Verification • FHIR R4 Persistence
+
+---
+
+> [!WARNING]
+> **SYNTHETIC BETA — NO REAL PATIENT DATA**  
+> This version of Proton is configured exclusively for controlled physician workflow validation using **100% synthetic patient cohorts** (e.g., Eleanor Vance and Arthur Pendelton). Do not input real patient data or Protected Health Information (PHI). Real-world PHI deployment requires enterprise HIPAA Business Associate Agreements (BAAs), tenant compartment boundaries, and production KMS encryption.
+
+---
+
+## Overview
+
+Proton is an AI-native clinical operating system and ambient copilot designed for practicing physicians. Rather than acting as another passive form-filling tool, Proton delivers:
+
+1. **Pre-Consultation Patient Intelligence:** Generates a 10-second situational brief before the doctor enters the exam room, computing deterministic temporal changes (e.g. HbA1c escalation 7.1% $\rightarrow$ 8.2%, medication titrations) directly from confirmed FHIR memory.
+2. **Ambient Dialogue Capture:** Transcribes clinical dialogue in real time (with optional zero-hardware sample simulation).
+3. **Structured Note Generation:** Drafts structured SOAP and General Consultation notes with clear provenance badges (`AI DRAFT — REVIEW REQUIRED` shifting to `DOCTOR EDITED` upon modification).
+4. **Deterministic Clinical Verification:** Strictly blocks invalid prescriptions (missing dose, frequency, duration) and flags duplicate orders or cross-reactive allergy conflicts (e.g., Penicillin vs Amoxicillin, NSAID classes).
+5. **Prescription Builder & PDF Export:** Physician-governed medication order composer with confirmation gating and formatted prescription PDF generation.
+6. **Post-Consultation Memory Gating:** Proposals to update permanent medical memory (e.g., new conditions, resolved problems) require explicit doctor approval before committing to FHIR.
+7. **Document Ingestion with Provenance:** Extracts clinical facts from uploaded medical records with fact-level approve/reject controls and source citations.
+8. **Doctor Command Center & Longitudinal Timeline:** Clinic attention queues, practice metric cards, and filterable timeline navigation.
+
+---
+
+## Architecture
+
+```
+                  ┌───────────────────────────────────────────┐
+                  │          Physician Web Browser            │
+                  │   (Laptop / Desktop / Clinic Terminal)    │
+                  └─────────────────────┬─────────────────────┘
+                                        │ HTTPS
+                                        ▼
+                  ┌───────────────────────────────────────────┐
+                  │           Proton Frontend (Web)           │
+                  │       (SPA: React 19 + Vite + Tailwind)   │
+                  └──────────────┬─────────────────────┬──────┘
+                                 │ HTTPS (FHIR SDK)    │ HTTPS (/api)
+                                 ▼                     ▼
+┌──────────────────────────────────────┐     ┌────────────────────────────────────────┐
+│        Medplum Backend (FHIR)        │     │            Proton API Server           │
+│         (PostgreSQL + OAuth2)        │     │         (Node.js 20+ Express API)      │
+│     Standard FHIR R4 Store & Auth    │     └───────────────────┬────────────────────┘
+└──────────────────────────────────────┘                         │ HTTPS (Server-Side)
+                                                                 ▼
+                                                     ┌────────────────────────┐
+                                                     │   AI Provider Gateway  │
+                                                     │  Gemini / Grok / Demo  │
+                                                     └────────────────────────┘
+```
+
+- **Frontend (`apps/web`):** React 19, TypeScript, Vite, Tailwind CSS, `@medplum/react`, Lucide Icons.
+- **Backend API (`apps/api`):** Node.js 20+, Express, Multer, Provider Gateway.
+- **FHIR / Auth:** Medplum OAuth2 PKCE authentication and atomic FHIR R4 batch transactions (`medplum.executeBatch`).
+
+---
+
+## Local Development Setup
+
+### Prerequisites
+- Node.js 20.x or higher
+- Docker (for local Medplum FHIR server)
+
+### 1. Clone the Repository
+```bash
+git clone <your-repo-url> proton
+cd proton
+```
+
+### 2. Start Medplum FHIR Server (Local Docker)
+```bash
+# If running Medplum locally via Docker:
+docker compose up -d
+```
+Medplum local admin will be available at `http://localhost:8103`. Default development admin: `admin@example.com` / `medplum_admin`.
+
+### 3. Install Dependencies
+```bash
+# Install Web Client dependencies
+cd apps/web && npm install
+
+# Install API dependencies
+cd ../api && npm install
+```
+
+### 4. Configure Environment Variables
+
+Create `apps/web/.env.local`:
+```env
+VITE_API_URL=http://localhost:3002
+VITE_MEDPLUM_BASE_URL=http://localhost:8103/
+VITE_MEDPLUM_CLIENT_ID=your-medplum-client-id
+```
+
+Create `apps/api/.env`:
+```env
+PORT=3002
+PROTON_AI_MODE=demo
+PROTON_AI_PROVIDER=demo
+CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost:5173
+# Optional: Set when testing live AI
+# GEMINI_API_KEY=your-gemini-key
+# XAI_API_KEY=your-grok-key
+```
+
+### 5. Run the Application
+In separate terminals:
+
+```bash
+# Terminal 1: Backend API
+cd apps/api
+node index.js
+
+# Terminal 2: Web Client
+cd apps/web
+npm run dev
+```
+
+Open `http://localhost:3001` in your browser.
+
+---
+
+## Automated Test Verification
+
+Proton includes automated end-to-end test suites powered by Puppeteer:
+
+```bash
+# Run Web TypeScript & Vite Production Build
+cd apps/web && npm run build
+
+# Run Core Clinical End-to-End Suite
+node apps/web/tests/e2e_suite.cjs
+
+# Run Clinical Brain & Temporal Trajectory Suite (15 Phases)
+node apps/web/tests/clinical_brain_e2e.cjs
+
+# Run Doctor Command Center Suite
+node apps/web/tests/command_center_e2e.cjs
+
+# Run Clinical Safety & Verification Suite
+node apps/web/tests/safety_e2e.cjs
+
+# Run Structured Prescription & PDF Export Suite
+node apps/web/tests/prescription_e2e.cjs
+```
+
+---
+
+## Deployment Structure
+
+| Service | Recommended Platform | Build Command | Output / Start |
+| :--- | :--- | :--- | :--- |
+| **Frontend Web** | Vercel or Render Static Site | `npm run build` (in `apps/web`) | `dist` |
+| **Backend API** | Render Web Service or Fly.io | `npm install` (in `apps/api`) | `node index.js` |
+| **FHIR / Auth** | Medplum Cloud (`api.medplum.com`) or Self-Hosted Docker | Managed PaaS | `http://localhost:8103` / Cloud |
+
+Detailed step-by-step deployment and clinician invitation procedures are documented in [`docs/PRIVATE_SYNTHETIC_BETA_DEPLOYMENT.md`](docs/PRIVATE_SYNTHETIC_BETA_DEPLOYMENT.md).
+
+---
+
+## Project Documentation Directory
+
+- [`docs/BETA_READINESS.md`](docs/BETA_READINESS.md) — Private beta readiness audit scorecard and gap analysis.
+- [`docs/PHYSICIAN_VALIDATION_PROTOCOL.md`](docs/PHYSICIAN_VALIDATION_PROTOCOL.md) — 14-section validation test protocol for practicing physicians.
+- [`docs/PHYSICIAN_VALIDATION_METRICS.md`](docs/PHYSICIAN_VALIDATION_METRICS.md) — Objective timings, editing rates, trust Likert scales, and observer scoring rubric.
+- [`docs/PHYSICIAN_VALIDATION_READINESS.md`](docs/PHYSICIAN_VALIDATION_READINESS.md) — Clinical safety and synthetic validation audit declaration.
+- [`docs/PRIVATE_SYNTHETIC_BETA_DEPLOYMENT.md`](docs/PRIVATE_SYNTHETIC_BETA_DEPLOYMENT.md) — Remote PaaS deployment guide and physician account setup.
+- [`docs/PRIVATE_SYNTHETIC_BETA_READINESS.md`](docs/PRIVATE_SYNTHETIC_BETA_READINESS.md) — Remote deployment readiness verdict and architecture report.
+
+---
+
+## License
+
+Proprietary — Internal Physician Evaluation and Controlled Beta Testing Only.
