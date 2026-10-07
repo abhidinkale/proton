@@ -97,7 +97,11 @@ export default function PatientIntelligenceSection({
                     ? 'bg-amber-500' 
                     : change.category === 'RESOLVED' 
                       ? 'bg-emerald-500' 
-                      : 'bg-brand-500';
+                      : change.category === 'PERSISTENT'
+                        ? 'bg-indigo-500'
+                        : change.category === 'UNRESOLVED'
+                          ? 'bg-orange-500'
+                          : 'bg-brand-500';
 
                 const borderAccent = isCritical
                   ? 'border-red-200 bg-red-50/30'
@@ -121,7 +125,11 @@ export default function PatientIntelligenceSection({
                         <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded uppercase ${
                           change.category === 'NEW' ? 'bg-blue-100 text-blue-800' :
                           change.category === 'CHANGED' ? 'bg-amber-100 text-amber-900' :
-                          change.category === 'RESOLVED' ? 'bg-emerald-100 text-emerald-900' : 'bg-slate-100 text-slate-800'
+                          change.category === 'RESOLVED' ? 'bg-emerald-100 text-emerald-900' :
+                          change.category === 'PERSISTENT' ? 'bg-indigo-100 text-indigo-900' :
+                          change.category === 'UNRESOLVED' ? 'bg-orange-100 text-orange-900' :
+                          change.category === 'POSSIBLE DISCREPANCY' ? 'bg-purple-100 text-purple-900' :
+                          'bg-slate-100 text-slate-800'
                         }`}>
                           {change.category}
                         </span>

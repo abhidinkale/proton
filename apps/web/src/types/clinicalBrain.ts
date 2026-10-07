@@ -1,4 +1,13 @@
-export type ChangeCategory = 'NEW' | 'CHANGED' | 'RESOLVED' | 'PENDING';
+export type ChangeCategory = 
+  | 'NEW' 
+  | 'CHANGED' 
+  | 'RESOLVED' 
+  | 'PENDING'
+  | 'PERSISTENT'
+  | 'UNRESOLVED'
+  | 'POSSIBLE DISCREPANCY';
+
+export type ClaimProvenanceLabel = 'Confirmed' | 'Reported' | 'AI-generated suggestion' | 'Needs review';
 
 export type EvidenceSourceType = 'encounter' | 'observation' | 'medication' | 'document' | 'condition' | 'allergy';
 
@@ -88,4 +97,15 @@ export interface MedicationDiscrepancy {
   patientReported: string;
   sourceEncounterDate?: string;
   evidence: ClinicalEvidence;
+}
+
+export interface PhysicianConsultationFeedback {
+  id: string;
+  patientId?: string;
+  rating: number; // 1 to 5
+  corrections: string[];
+  comment?: string;
+  timestamp: string;
+  doctor: string;
+  workflowDurationSeconds?: number;
 }

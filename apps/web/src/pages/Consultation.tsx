@@ -88,6 +88,14 @@ export default function Consultation() {
   const [formError, setFormError] = useState('');
   const [showPdfModal, setShowPdfModal] = useState(false);
   const [approvalInfo, setApprovalInfo] = useState<{ doctor: string; timestamp: string; count: number } | null>(null);
+  
+  // Draft Autosave & Feedback Loop States
+  const [draftRestored, setDraftRestored] = useState(false);
+  const startTimeRef = useRef<number>(Date.now());
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+  const [feedbackRating, setFeedbackRating] = useState<number>(0);
+  const [feedbackCorrections, setFeedbackCorrections] = useState<string[]>([]);
+  const [feedbackComment, setFeedbackComment] = useState('');
     
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -105,6 +113,54 @@ export default function Consultation() {
       medplum.searchResources('ClinicalImpression', { subject: `Patient/${patientId}` }).then(setImpressions).catch(console.error);
     }
   }, [medplum, patientId]);
+
+  // Restore active draft from session storage if available
+  useEffect(() => {
+    if (!patientId) return;
+    try {
+      const saved = sessionStorage.getItem(`proton_draft_consultation_${patientId}`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.status !== 'complete' && (parsed.transcript || parsed.note || (parsed.prescriptions && parsed.prescriptions.length > 0))) {
+          if (parsed.transcript) setTranscript(parsed.transcript);
+          if (parsed.note) setNote(parsed.note);
+          if (parsed.status && parsed.status !== 'complete') setStatus(parsed.status);
+          if (parsed.noteProvenance) setNoteProvenance(parsed.noteProvenance);
+          if (parsed.prescriptions) setPrescriptions(parsed.prescriptions);
+          if (parsed.aiSuggestions) setAiSuggestions(parsed.aiSuggestions);
+          if (parsed.medProvenanceMap) setMedProvenanceMap(parsed.medProvenanceMap);
+          if (parsed.template) setTemplate(parsed.template);
+          setDraftRestored(true);
+          auditService.record('draft_autosaved', 'Restored draft consultation from browser session', {
+            patientId
+          });
+        }
+      }
+    } catch {
+      // Ignore parse failure
+    }
+  }, [patientId]);
+
+  // Continuously autosave active consultation to protect against data loss
+  useEffect(() => {
+    if (!patientId || status === 'idle' || status === 'complete') return;
+    try {
+      const draft = {
+        transcript,
+        note,
+        status,
+        noteProvenance,
+        prescriptions,
+        aiSuggestions,
+        medProvenanceMap,
+        template,
+        timestamp: new Date().toISOString()
+      };
+      sessionStorage.setItem(`proton_draft_consultation_${patientId}`, JSON.stringify(draft));
+    } catch {
+      // Ignore quota error
+    }
+  }, [patientId, status, transcript, note, noteProvenance, prescriptions, aiSuggestions, medProvenanceMap, template]);
 
   const intelligence = useMemo(() => {
     return synthesizePatientIntelligence(
@@ -259,6 +315,61 @@ export default function Consultation() {
       setStatus('error');
       setErrorMessage(err.message || 'An error occurred during processing.');
     }
+  };
+
+  const handleDiscardDraft = () => {
+    if (!patientId) return;
+    sessionStorage.removeItem(`proton_draft_consultation_${patientId}`);
+    setTranscript('');
+    setNote('');
+    setStatus('idle');
+    setPrescriptions([]);
+    setAiSuggestions([]);
+    setMedProvenanceMap({});
+    setDraftRestored(false);
+  };
+
+  const handleRetryAI = async () => {
+    if (!transcript) {
+      setStatus('idle');
+      setErrorMessage('');
+      return;
+    }
+    try {
+      setStatus('generating');
+      setErrorMessage('');
+      const aiService = new RealAIService();
+      const patientContext = (patient ? `Patient: ${patient.name?.[0]?.given?.join(' ')} ${patient.name?.[0]?.family}, DOB: ${patient.birthDate}, Gender: ${patient.gender}\n` : 'Unknown Patient\n') +
+        `Active Conditions: ${conditions.map(c => c.code?.coding?.[0]?.display || 'Unknown').join(', ') || 'None'}\n` +
+        `Medications: ${meds.map(m => m.medicationCodeableConcept?.coding?.[0]?.display || 'Unknown').join(', ') || 'None'}\n` +
+        `Allergies: ${allergies.map(a => a.code?.coding?.[0]?.display || 'Unknown').join(', ') || 'None'}`;
+      
+      const jsonNote = await aiService.generateNote(transcript, patientContext, template);
+      setNote(formatNoteToText(jsonNote, template));
+      setStatus('review');
+    } catch (err: any) {
+      console.error(err);
+      setStatus('error');
+      setErrorMessage('AI note generation failed. You can edit the note directly or retry.');
+    }
+  };
+
+  const handleSubmitFeedback = () => {
+    if (feedbackRating === 0) return;
+    const duration = Math.round((Date.now() - startTimeRef.current) / 1000);
+    auditService.record('physician_feedback_submitted', `Physician rated consultation: ${feedbackRating}/5 stars`, {
+      patientId: patientId || undefined,
+      actor: 'Dr. Alex Morgan, MD',
+      details: {
+        rating: feedbackRating,
+        corrections: feedbackCorrections,
+        comment: feedbackComment || undefined,
+        noteEdited: noteProvenance === 'doctor_edited',
+        prescriptionsCount: prescriptions.length,
+        durationSeconds: duration
+      }
+    });
+    setFeedbackSubmitted(true);
   };
 
   // Memory proposal action handlers
@@ -704,6 +815,10 @@ export default function Consultation() {
         });
       }
 
+      if (patientId) {
+        sessionStorage.removeItem(`proton_draft_consultation_${patientId}`);
+      }
+      setDraftRestored(false);
       setStatus('complete');
     } catch (err: any) {
       console.error('Save failed:', err);
@@ -768,6 +883,66 @@ export default function Consultation() {
             )}
           </div>
         </header>
+
+        {/* Primary Action Guidance Banner */}
+        <div className="bg-slate-100/80 border-b border-slate-200 px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs shrink-0">
+          <div className="flex items-center gap-3">
+            <span className="font-bold text-slate-500 uppercase tracking-wider text-[10px]">
+              Current Stage:
+            </span>
+            <div className="flex items-center gap-2 font-semibold">
+              <span className={`px-2 py-0.5 rounded-full ${status === 'idle' ? 'bg-brand-600 text-white' : 'bg-slate-200 text-slate-700'}`}>
+                1. Capture
+              </span>
+              <span className="text-slate-400">&rarr;</span>
+              <span className={`px-2 py-0.5 rounded-full ${['recording', 'transcribing', 'generating'].includes(status) ? 'bg-brand-600 text-white animate-pulse' : 'bg-slate-200 text-slate-700'}`}>
+                2. AI Synthesis
+              </span>
+              <span className="text-slate-400">&rarr;</span>
+              <span className={`px-2 py-0.5 rounded-full ${status === 'review' ? 'bg-amber-500 text-white' : 'bg-slate-200 text-slate-700'}`}>
+                3. Doctor Review & Safety
+              </span>
+              <span className="text-slate-400">&rarr;</span>
+              <span className={`px-2 py-0.5 rounded-full ${status === 'complete' ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-700'}`}>
+                4. Approved
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {draftRestored && status !== 'complete' && (
+              <div className="flex items-center gap-2 bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-0.5 rounded-md text-[11px]">
+                <span>Draft restored from local session</span>
+                <button
+                  onClick={handleDiscardDraft}
+                  className="text-blue-900 underline font-semibold hover:text-red-600 cursor-pointer"
+                >
+                  Discard Draft
+                </button>
+              </div>
+            )}
+
+            {status === 'idle' && (
+              <span className="text-slate-600">
+                Primary Action: <strong className="text-brand-700">Start Recording or Load Sample Dialogue</strong>
+              </span>
+            )}
+            {status === 'recording' && (
+              <span className="text-red-600 font-semibold flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-red-500 animate-ping" /> Live audio active &mdash; Click "Stop & Generate Note" when done
+              </span>
+            )}
+            {status === 'review' && (
+              <span className="text-slate-700">
+                {!canApprove ? (
+                  <span className="text-amber-800 font-medium">Action: Review draft, acknowledge warnings & confirm review checkbox</span>
+                ) : (
+                  <span className="text-emerald-700 font-semibold">Ready: Click "Approve & Save to FHIR" above</span>
+                )}
+              </span>
+            )}
+          </div>
+        </div>
 
         {/* Workspace Grid */}
         <div className="flex-1 flex overflow-hidden">
@@ -879,17 +1054,30 @@ export default function Consultation() {
 
             {/* Error Message & Recovery Alert */}
             {status === 'error' && errorMessage && (
-              <div className="p-3.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center justify-between gap-3 shadow-2xs">
-                <div className="flex items-center gap-2">
-                  <AlertCircle size={16} className="text-red-600 shrink-0" />
-                  <span className="font-medium">{errorMessage}</span>
+              <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+                <div className="flex items-center gap-2.5">
+                  <AlertCircle size={18} className="text-red-600 shrink-0" />
+                  <div>
+                    <p className="font-bold text-red-900">Processing Interrupted</p>
+                    <p className="font-medium text-red-700">{errorMessage}</p>
+                  </div>
                 </div>
-                <button 
-                  onClick={() => { setStatus('idle'); setErrorMessage(''); }}
-                  className="px-2.5 py-1 bg-white hover:bg-red-100 text-red-800 border border-red-200 rounded text-xs font-semibold transition-colors cursor-pointer shrink-0"
-                >
-                  Dismiss / Retry
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  {transcript && (
+                    <button 
+                      onClick={handleRetryAI}
+                      className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer shadow-xs"
+                    >
+                      Retry AI Generation
+                    </button>
+                  )}
+                  <button 
+                    onClick={() => { setStatus('idle'); setErrorMessage(''); }}
+                    className="px-3 py-1.5 bg-white hover:bg-red-100 text-red-800 border border-red-300 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+                  >
+                    Reset to Ready
+                  </button>
+                </div>
               </div>
             )}
 
@@ -1145,7 +1333,13 @@ export default function Consultation() {
                               <span className="text-xs text-slate-500 font-medium">
                                 ({med.route || 'No route'})
                               </span>
-                              <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${
+                                medProvenanceMap[med.id] === 'ai_suggested' 
+                                  ? 'bg-amber-50 text-amber-800 border-amber-200' 
+                                  : medProvenanceMap[med.id] === 'doctor_edited' 
+                                    ? 'bg-blue-50 text-blue-800 border-blue-200' 
+                                    : 'bg-purple-50 text-purple-800 border-purple-200'
+                              }`}>
                                 {medProvenanceMap[med.id] === 'ai_suggested' ? 'AI suggestion' :
                                  medProvenanceMap[med.id] === 'doctor_edited' ? 'Edited by physician' : 'Added by physician'}
                               </span>
@@ -1354,6 +1548,124 @@ export default function Consultation() {
                     </div>
                   )}
                 </div>
+
+                {/* Post-Consultation Physician Feedback Widget (Phase 6) */}
+                {status === 'complete' && (
+                  <div className="mt-6 pt-5 border-t border-slate-200">
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 shadow-xs">
+                      <div className="flex items-center justify-between mb-3 border-b border-slate-200 pb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="h-7 w-7 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center">
+                            <Sparkles size={16} />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-sm text-slate-900">Physician Feedback Loop</h3>
+                            <p className="text-[11px] text-slate-500">How useful was Proton for this consultation?</p>
+                          </div>
+                        </div>
+                        {feedbackSubmitted && (
+                          <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full flex items-center gap-1">
+                            <Check size={13} /> Feedback Recorded
+                          </span>
+                        )}
+                      </div>
+
+                      {!feedbackSubmitted ? (
+                        <div className="space-y-4 text-xs">
+                          <div>
+                            <label className="font-semibold text-slate-700 block mb-1.5">
+                              Clinical Utility Rating (1 = Poor, 5 = Essential)
+                            </label>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {[1, 2, 3, 4, 5].map((score) => (
+                                <button
+                                  key={score}
+                                  type="button"
+                                  onClick={() => setFeedbackRating(score)}
+                                  className={`px-3.5 py-1.5 rounded-lg border font-semibold text-xs transition-colors cursor-pointer ${
+                                    feedbackRating === score
+                                      ? 'bg-brand-600 text-white border-brand-600 shadow-xs'
+                                      : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
+                                  }`}
+                                >
+                                  {score} {score === 1 ? '— Poor' : score === 2 ? '— Fair' : score === 3 ? '— Useful' : score === 4 ? '— Very Useful' : '— Essential'}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="font-semibold text-slate-700 block mb-1.5">
+                              What did you have to correct? (Select all that apply)
+                            </label>
+                            <div className="flex flex-wrap gap-2">
+                              {[
+                                'Note Phrasing',
+                                'Dosage Adjustment',
+                                'Added Missing Medicine',
+                                'Removed Suggested Medicine',
+                                'Diagnosis Refinement',
+                                'None — Accepted Directly'
+                              ].map((tag) => {
+                                const isSelected = feedbackCorrections.includes(tag);
+                                return (
+                                  <button
+                                    key={tag}
+                                    type="button"
+                                    onClick={() => {
+                                      setFeedbackCorrections(prev =>
+                                        isSelected ? prev.filter(t => t !== tag) : [...prev, tag]
+                                      );
+                                    }}
+                                    className={`px-2.5 py-1 rounded-md text-[11px] font-medium border transition-colors cursor-pointer ${
+                                      isSelected
+                                        ? 'bg-brand-50 border-brand-300 text-brand-800'
+                                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                                    }`}
+                                  >
+                                    {isSelected ? '✓ ' : '+ '}{tag}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="font-semibold text-slate-700 block mb-1">
+                              Physician Notes (Optional)
+                            </label>
+                            <input
+                              type="text"
+                              value={feedbackComment}
+                              onChange={(e) => setFeedbackComment(e.target.value)}
+                              placeholder="e.g., Note generated accurately; adjusted ibuprofen duration."
+                              className="w-full text-xs bg-white border border-slate-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                            />
+                          </div>
+
+                          <div className="flex justify-end pt-1">
+                            <button
+                              type="button"
+                              disabled={feedbackRating === 0}
+                              onClick={handleSubmitFeedback}
+                              className={`px-4 py-2 rounded-lg font-semibold text-xs transition-colors shadow-xs ${
+                                feedbackRating === 0
+                                  ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                                  : 'bg-brand-600 hover:bg-brand-700 text-white cursor-pointer'
+                              }`}
+                            >
+                              Submit Feedback
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800">
+                          Thank you. Your feedback has been recorded into the clinical verification audit trail.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
               </div>
             )}

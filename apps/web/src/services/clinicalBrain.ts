@@ -204,7 +204,8 @@ export function detectClinicalChanges(
   medRequests: MedicationRequest[],
   conditions: Condition[],
   impressions: ClinicalImpression[],
-  evidenceStore: Record<string, ClinicalEvidence>
+  evidenceStore: Record<string, ClinicalEvidence>,
+  allergies: AllergyIntolerance[] = []
 ): ClinicalChange[] {
   const changes: ClinicalChange[] = [];
 
@@ -443,6 +444,63 @@ export function detectClinicalChanges(
       });
     }
   });
+
+  // --- 5. PERSISTENT ALLERGIES & SAFETY ALERTS ---
+  allergies.forEach(all => {
+    const allergen = all.code?.text || all.code?.coding?.[0]?.display || 'Allergen';
+    const isSevere = allergen.toLowerCase().includes('penicillin') || allergen.toLowerCase().includes('anaphylaxis');
+    const ev = evidenceStore[`AllergyIntolerance/${all.id}`] || {
+      id: `AllergyIntolerance/${all.id}`,
+      sourceType: 'allergy',
+      sourceId: all.id || 'all',
+      resourceType: 'AllergyIntolerance',
+      date: formatDate(all.recordedDate),
+      title: `Allergy Alert: ${allergen}`,
+      excerpt: `Persistent clinical risk. Documented in confirmed FHIR allergy record.`,
+      provenance: 'FACT'
+    };
+    changes.push({
+      id: `change-allergy-pers-${all.id}`,
+      category: 'PERSISTENT',
+      title: `${allergen} allergy remains active`,
+      statement: `${allergen} allergy remains active clinical safety alert`,
+      detail: 'Documented persistent safety alert across longitudinal care history.',
+      evidence: ev,
+      severity: isSevere ? 'critical' : 'warning',
+      confidence: 0.99
+    });
+  });
+
+  // --- 6. UNRESOLVED CLINICAL CONCERNS ---
+  const hasElevatedA1c = observations.some(o => {
+    const v = extractNumericValue(o.valueQuantity ? `${o.valueQuantity.value}` : (o.valueString || ''));
+    return v !== null && v >= 8.0 && (o.code?.text || '').toLowerCase().includes('hba1c');
+  });
+  if (hasElevatedA1c && impressions.length > 0) {
+    const lastImp = impressions[impressions.length - 1];
+    const summaryLower = (lastImp.summary || '').toLowerCase();
+    if (!summaryLower.includes('glycemic control achieved') && !summaryLower.includes('hba1c normalized')) {
+      changes.push({
+        id: 'change-unresolved-glycemic',
+        category: 'UNRESOLVED',
+        title: 'Elevated HbA1c unresolved',
+        statement: 'Previously documented glycemic escalation has no recent follow-up',
+        detail: 'Ongoing therapeutic titration and interval HbA1c monitoring indicated.',
+        evidence: evidenceStore[`Observation/${observations[0]?.id}`] || {
+          id: 'unresolved-glycemic-ev',
+          sourceType: 'observation',
+          sourceId: observations[0]?.id || 'obs',
+          resourceType: 'Observation',
+          date: formatDate(new Date().toISOString()),
+          title: 'Glycemic Trajectory',
+          excerpt: 'Unresolved metabolic biomarker escalation requiring follow-up.',
+          provenance: 'FACT'
+        },
+        severity: 'warning',
+        confidence: 0.94
+      });
+    }
+  }
 
   // Prioritize critical and warning changes first
   return changes.sort((a, b) => {
@@ -819,7 +877,7 @@ export function synthesizePatientIntelligence(
     documents
   );
 
-  const changes = detectClinicalChanges(observations, medRequests, conditions, impressions, evidenceStore);
+  const changes = detectClinicalChanges(observations, medRequests, conditions, impressions, evidenceStore, allergies);
   const outstandingItems = detectOutstandingItems(impressions, observations, documents, evidenceStore);
   const clinicalStory = buildClinicalStory(patient, encounters, conditions, medRequests, observations, evidenceStore);
 

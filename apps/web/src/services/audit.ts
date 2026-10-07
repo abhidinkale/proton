@@ -14,7 +14,9 @@ export type AuditActionType =
   | 'memory_proposal_generated'
   | 'memory_proposal_approved'
   | 'memory_proposal_rejected'
-  | 'memory_proposal_edited';
+  | 'memory_proposal_edited'
+  | 'physician_feedback_submitted'
+  | 'draft_autosaved';
 
 export interface LocalAuditEvent {
   id: string;
