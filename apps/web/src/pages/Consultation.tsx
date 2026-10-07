@@ -15,7 +15,7 @@ import type {
 import { 
   ArrowLeft, Mic, FileText, LayoutList, Square, Check, Loader2, 
   AlertCircle, ShieldCheck, Sparkles, Pill, Plus, Trash2, Edit2, 
-  Printer, CheckCircle2, X, AlertTriangle, FlaskConical, AlertOctagon
+  Printer, CheckCircle2, X, AlertTriangle, FlaskConical, AlertOctagon, Activity
 } from 'lucide-react';
 import Layout from '../components/Layout';
 import { RealSpeechService } from '../services/speech';
@@ -27,12 +27,22 @@ import { auditService } from '../services/audit';
 import ClinicalVerificationPanel from '../components/ClinicalVerificationPanel';
 import PreConsultationBrief from '../components/PreConsultationBrief';
 import MemoryProposalPanel from '../components/MemoryProposalPanel';
+import EvidenceModal from '../components/EvidenceModal';
+import DuringConsultIntelligence from '../components/DuringConsultIntelligence';
 import { 
   synthesizePatientIntelligence, 
   detectMedicationDiscrepancies, 
-  generateMemoryProposals 
+  generateMemoryProposals,
+  matchClinicalContext,
+  detectConsultationChanges
 } from '../services/clinicalBrain';
-import type { MemoryProposal, MedicationDiscrepancy } from '../types/clinicalBrain';
+import type { 
+  MemoryProposal, 
+  MedicationDiscrepancy, 
+  ClinicalEvidence, 
+  RelevantContext, 
+  ConsultationChangesSummary 
+} from '../types/clinicalBrain';
 
 type ConsultState = 'idle' | 'recording' | 'transcribing' | 'generating' | 'review' | 'saving' | 'complete' | 'error';
 
@@ -97,6 +107,24 @@ export default function Consultation() {
   const [feedbackCorrections, setFeedbackCorrections] = useState<string[]>([]);
   const [feedbackComment, setFeedbackComment] = useState('');
     
+  // Doctor Intelligence Layer (Phases 3, 4, 7, 9)
+  const [selectedEvidence, setSelectedEvidence] = useState<ClinicalEvidence | null>(null);
+  const [isEvidenceModalOpen, setIsEvidenceModalOpen] = useState(false);
+  const [matchedContexts, setMatchedContexts] = useState<RelevantContext[]>([]);
+  const [dismissedContextIds, setDismissedContextIds] = useState<string[]>([]);
+  const [consultChanges, setConsultChanges] = useState<ConsultationChangesSummary | null>(null);
+
+  const handleOpenEvidence = (ev?: ClinicalEvidence) => {
+    if (!ev) return;
+    setSelectedEvidence(ev);
+    setIsEvidenceModalOpen(true);
+  };
+
+  const handleDismissContext = (id: string) => {
+    setDismissedContextIds(prev => [...prev, id]);
+    setMatchedContexts(prev => prev.filter(c => c.id !== id));
+  };
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
@@ -175,6 +203,29 @@ export default function Consultation() {
       documents
     );
   }, [patient, encounters, impressions, conditions, meds, medRequests, allergies, observations, documents]);
+
+  // Passive background matching of clinical context against longitudinal history (Phases 3, 4, 6)
+  useEffect(() => {
+    if (!intelligence) return;
+    const activeText = (transcript + ' ' + note).trim();
+    if (activeText.length < 8) {
+      setMatchedContexts([]);
+      return;
+    }
+    const timer = setTimeout(() => {
+      const matches = matchClinicalContext(
+        activeText,
+        intelligence,
+        conditions,
+        medRequests,
+        allergies,
+        observations,
+        impressions
+      );
+      setMatchedContexts(matches.filter(m => !dismissedContextIds.includes(m.id)));
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [transcript, note, intelligence, conditions, medRequests, allergies, observations, impressions, dismissedContextIds]);
 
   const startRecording = async () => {
     try {
@@ -299,6 +350,12 @@ export default function Consultation() {
         meds
       );
       setMemoryProposals(proposals);
+
+      // Clinical Brain: Detect post-consultation changes (Phase 7)
+      if (intelligence) {
+        const cChanges = detectConsultationChanges(intelligence, formattedNote, suggestions);
+        setConsultChanges(cChanges);
+      }
 
       setNoteProvenance('ai_draft');
       auditService.record('ai_draft_generated', 'Synthesized AI clinical note and prescription draft', {
@@ -815,6 +872,11 @@ export default function Consultation() {
         });
       }
 
+      if (intelligence) {
+        const finalChanges = detectConsultationChanges(intelligence, note, prescriptions);
+        setConsultChanges(finalChanges);
+      }
+
       if (patientId) {
         sessionStorage.removeItem(`proton_draft_consultation_${patientId}`);
       }
@@ -1024,6 +1086,15 @@ export default function Consultation() {
               intelligence={intelligence}
               patientName={patient ? `${patient.name?.[0]?.given?.join(' ')} ${patient.name?.[0]?.family}` : 'Patient'}
               onProceedToConsultation={startRecording}
+              onSelectEvidence={handleOpenEvidence}
+            />
+
+            {/* During-Consultation Clinical Context Stream (Phases 3, 4, 6) */}
+            <DuringConsultIntelligence
+              contexts={matchedContexts}
+              onDismissContext={handleDismissContext}
+              onSelectEvidence={handleOpenEvidence}
+              isRecording={status === 'recording'}
             />
 
             {/* Real-time Medication Discrepancy Alert */}
@@ -1100,7 +1171,7 @@ export default function Consultation() {
               </div>
               
               <div>
-                {transcript ? (
+                {transcript && status !== 'idle' ? (
                   <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 text-slate-700 text-sm leading-relaxed whitespace-pre-wrap font-mono max-h-48 overflow-y-auto">
                     {transcript}
                   </div>
@@ -1130,6 +1201,15 @@ export default function Consultation() {
                           >
                             <Sparkles size={16} className="text-brand-600" /> Use Sample Dialogue
                           </button>
+                        </div>
+                        <div className="mt-4 pt-3 border-t border-slate-100 max-w-md mx-auto w-full">
+                          <input
+                            type="text"
+                            placeholder="Or type consultation dialogue (e.g., patient mentions diabetes control)..."
+                            value={transcript}
+                            onChange={(e) => setTranscript(e.target.value)}
+                            className="w-full text-xs px-3 py-1.5 border border-slate-200 rounded-lg text-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-500 bg-white"
+                          />
                         </div>
                       </>
                     )}
@@ -1431,6 +1511,104 @@ export default function Consultation() {
                         >
                           Test: Memory Proposal
                         </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Post-Consultation Intelligence: Consultation Changes (Phase 7) */}
+                {consultChanges && (status === 'review' || status === 'complete') && (
+                  <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="h-7 w-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                          <Activity size={16} />
+                        </div>
+                        <div>
+                          <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                            Consultation Changes & Longitudinal Delta
+                          </h3>
+                          <p className="text-[11px] text-slate-500">
+                            Synthesized clinical trajectory changes from current encounter
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-[10px] uppercase font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                        Clinical Delta
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                      {/* NEW */}
+                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-1.5">
+                        <span className="font-bold text-[11px] text-emerald-700 uppercase tracking-wider block">
+                          NEW ({consultChanges.newItems.length})
+                        </span>
+                        {consultChanges.newItems.length > 0 ? (
+                          <ul className="space-y-1 text-slate-700">
+                            {consultChanges.newItems.map((item, idx) => (
+                              <li key={idx} className="truncate">
+                                &bull; <strong className="text-slate-800">{item.title}:</strong> {item.statement}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <span className="text-slate-400 italic">None newly recorded</span>
+                        )}
+                      </div>
+
+                      {/* CHANGED */}
+                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-1.5">
+                        <span className="font-bold text-[11px] text-brand-700 uppercase tracking-wider block">
+                          CHANGED ({consultChanges.changedItems.length})
+                        </span>
+                        {consultChanges.changedItems.length > 0 ? (
+                          <ul className="space-y-1 text-slate-700">
+                            {consultChanges.changedItems.map((item, idx) => (
+                              <li key={idx} className="truncate">
+                                &bull; <strong className="text-slate-800">{item.title}:</strong> {item.statement}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <span className="text-slate-400 italic">No dosage adjustments</span>
+                        )}
+                      </div>
+
+                      {/* RESOLVED */}
+                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-1.5">
+                        <span className="font-bold text-[11px] text-blue-700 uppercase tracking-wider block">
+                          RESOLVED ({consultChanges.resolvedItems.length})
+                        </span>
+                        {consultChanges.resolvedItems.length > 0 ? (
+                          <ul className="space-y-1 text-slate-700">
+                            {consultChanges.resolvedItems.map((item, idx) => (
+                              <li key={idx} className="truncate">
+                                &bull; <strong className="text-slate-800">{item.title}:</strong> {item.statement}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <span className="text-slate-400 italic">No conditions resolved</span>
+                        )}
+                      </div>
+
+                      {/* FOLLOW-UP */}
+                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-1.5">
+                        <span className="font-bold text-[11px] text-amber-700 uppercase tracking-wider block">
+                          FOLLOW-UP ({consultChanges.followUpItems.length})
+                        </span>
+                        {consultChanges.followUpItems.length > 0 ? (
+                          <ul className="space-y-1 text-slate-700">
+                            {consultChanges.followUpItems.map((item, idx) => (
+                              <li key={idx} className="truncate">
+                                &bull; <strong className="text-slate-800">{item.title}:</strong> {item.statement}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <span className="text-slate-400 italic">Routine schedule</span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1819,6 +1997,13 @@ export default function Consultation() {
           doctorName="Dr. Alex Morgan, MD"
           date={new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
           medications={prescriptions}
+        />
+
+        {/* Modal: Clinical Evidence & Provenance Preview (Phase 9) */}
+        <EvidenceModal
+          evidence={selectedEvidence}
+          isOpen={isEvidenceModalOpen}
+          onClose={() => setIsEvidenceModalOpen(false)}
         />
 
       </div>

@@ -69,6 +69,53 @@ export default function PatientIntelligenceSection({
           </div>
         </div>
 
+        {/* ================================================== */}
+        {/* WHAT MATTERS TODAY (HIGH-LEVEL CLINICAL BLOCK)    */}
+        {/* ================================================== */}
+        {intelligence.whatMattersToday && intelligence.whatMattersToday.length > 0 && (
+          <div className="p-6 bg-brand-50/40 border-b border-brand-100">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-bold text-brand-900 uppercase tracking-wider flex items-center gap-1.5">
+                <Sparkles size={14} className="text-brand-600" />
+                What Matters Today ({intelligence.whatMattersToday.length} key priorities)
+              </h3>
+              <span className="text-[11px] font-medium text-brand-700/80">
+                Ranked by clinical urgency &bull; Evidence-backed
+              </span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+              {intelligence.whatMattersToday.map((item) => (
+                <div key={item.id} className="bg-white border border-brand-200/80 rounded-xl p-3 shadow-2xs flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between gap-1 mb-1">
+                      <span className="font-bold text-xs text-slate-900 truncate">{item.title}</span>
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase bg-brand-100 text-brand-800">
+                        {item.provenance}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-700 leading-relaxed">
+                      {item.statement}
+                    </p>
+                  </div>
+                  <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px]">
+                    <span className="text-slate-400 truncate max-w-[120px]">
+                      {item.sourceDate ? `${item.sourceDate} &bull; ` : ''}{item.source}
+                    </span>
+                    {item.evidence && (
+                      <button
+                        onClick={() => handleOpenEvidence(item.evidence)}
+                        className="text-brand-600 hover:text-brand-800 font-semibold hover:underline cursor-pointer"
+                      >
+                        [View evidence]
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Change Detection Alert Cards */}
         <div className="p-6 bg-slate-50/50 border-b border-slate-200">
           <div className="flex items-center justify-between mb-3">
@@ -347,9 +394,14 @@ export default function PatientIntelligenceSection({
               Clinical Story & Longitudinal Narrative
             </h3>
           </div>
-          <span className="text-[11px] font-semibold text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded shadow-2xs">
-            Generated purely from approved FHIR history
-          </span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded">
+              AI-GENERATED CLINICAL SUMMARY
+            </span>
+            <span className="text-[11px] font-semibold text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded shadow-2xs">
+              Physician verification required &bull; Generated purely from approved FHIR history
+            </span>
+          </div>
         </div>
 
         <div className="p-6 space-y-4">

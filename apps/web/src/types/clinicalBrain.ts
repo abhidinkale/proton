@@ -74,6 +74,7 @@ export interface PatientIntelligence {
   outstandingItems: OutstandingItem[];
   clinicalStory: ClinicalStory;
   evidenceStore: Record<string, ClinicalEvidence>;
+  whatMattersToday: WhatMattersTodayItem[];
 }
 
 export type ProposalStatus = 'PROPOSED' | 'APPROVED' | 'REJECTED' | 'EDITED';
@@ -108,4 +109,62 @@ export interface PhysicianConsultationFeedback {
   timestamp: string;
   doctor: string;
   workflowDurationSeconds?: number;
+}
+
+export type FactClaimProvenance =
+  | 'CONFIRMED FACT'
+  | 'REPORTED BY PATIENT'
+  | 'AI-INFERRED'
+  | 'POSSIBLE DISCREPANCY'
+  | 'NEEDS PHYSICIAN REVIEW';
+
+export interface WhatMattersTodayItem {
+  id: string;
+  rank: number;
+  iconType: 'safety' | 'change' | 'unresolved' | 'discrepancy' | 'finding' | 'context';
+  title: string;
+  statement: string;
+  source: string;
+  sourceDate?: string;
+  provenance: FactClaimProvenance;
+  evidence: ClinicalEvidence;
+  severity: 'critical' | 'warning' | 'info';
+}
+
+export interface RelevantContext {
+  id: string;
+  title: string;
+  category: 'observation' | 'medication' | 'condition' | 'allergy' | 'encounter' | 'note';
+  relevance: number; // 0.0 to 1.0
+  statement: string;
+  source: string;
+  sourceDate?: string;
+  resourceType: string;
+  resourceId: string;
+  confidence: number;
+  requiresReview: boolean;
+  provenance: FactClaimProvenance;
+  evidence: ClinicalEvidence;
+}
+
+export interface ConsultationChangesSummary {
+  newItems: {
+    category: 'problem' | 'medication' | 'symptom';
+    title: string;
+    statement: string;
+  }[];
+  changedItems: {
+    category: 'dosage' | 'finding' | 'status';
+    title: string;
+    statement: string;
+  }[];
+  resolvedItems: {
+    title: string;
+    statement: string;
+  }[];
+  followUpItems: {
+    title: string;
+    statement: string;
+    timeframe?: string;
+  }[];
 }
