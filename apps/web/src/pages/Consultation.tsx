@@ -1156,6 +1156,18 @@ export default function Consultation() {
                     </button>
                   )}
                   <button 
+                    onClick={() => {
+                      if (!note) {
+                        setNote(template === 'SOAP' ? "SUBJECTIVE:\n\nOBJECTIVE:\n\nASSESSMENT:\n\nPLAN:\n" : "CHIEF COMPLAINT:\n\nHISTORY OF PRESENT ILLNESS:\n\nASSESSMENT:\n\nPLAN:\n");
+                      }
+                      setStatus('review');
+                      setErrorMessage('');
+                    }}
+                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer shadow-xs"
+                  >
+                    Continue Note Manually
+                  </button>
+                  <button 
                     onClick={() => { setStatus('idle'); setErrorMessage(''); }}
                     className="px-3 py-1.5 bg-white hover:bg-red-100 text-red-800 border border-red-300 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
                   >
@@ -1289,7 +1301,21 @@ export default function Consultation() {
                     <AlertCircle size={28} className="text-red-500 mx-auto mb-2" />
                     <h3 className="text-sm font-semibold text-slate-800">Processing Failed</h3>
                     <p className="text-red-600 text-xs mt-1">{errorMessage}</p>
-                    <button onClick={() => setStatus('idle')} className="mt-4 px-4 py-1.5 bg-white border border-slate-300 rounded text-xs font-medium">Try Again</button>
+                    <div className="flex items-center justify-center gap-2 mt-4">
+                      <button 
+                        onClick={() => {
+                          if (!note) {
+                            setNote(template === 'SOAP' ? "SUBJECTIVE:\n\nOBJECTIVE:\n\nASSESSMENT:\n\nPLAN:\n" : "CHIEF COMPLAINT:\n\nHISTORY OF PRESENT ILLNESS:\n\nASSESSMENT:\n\nPLAN:\n");
+                          }
+                          setStatus('review');
+                          setErrorMessage('');
+                        }}
+                        className="px-4 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded text-xs font-semibold cursor-pointer shadow-xs transition-colors"
+                      >
+                        Continue Note Manually
+                      </button>
+                      <button onClick={() => setStatus('idle')} className="px-4 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded text-xs font-medium cursor-pointer transition-colors">Try Again</button>
+                    </div>
                   </div>
                 ) : (
                   <textarea

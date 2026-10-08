@@ -64,7 +64,8 @@ class DemoProvider extends AIProvider {
           document_type: "Blood Test Report",
           facts: [
             { category: "lab", text: "HbA1c: 7.2%", confidence: 0.99, source_quote: "HbA1c result: 7.2%" },
-            { category: "diagnosis", text: "Type 2 diabetes", confidence: 0.95, source_quote: "Patient has history of T2DM" }
+            { category: "diagnosis", text: "Type 2 diabetes", confidence: 0.95, source_quote: "Patient has history of T2DM" },
+            { category: "allergy", text: "Patient unsure about penicillin allergy", confidence: 0.30, source_quote: "might have had a mild rash with penicillin" }
           ]
         };
 

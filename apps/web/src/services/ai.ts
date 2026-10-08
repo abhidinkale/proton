@@ -15,7 +15,8 @@ export class RealAIService implements ClinicalAIService {
     });
     
     if (!response.ok) {
-      throw new Error('Clinical AI note generation failed. Please verify connectivity or try again.');
+      const errPayload = await response.json().catch(() => ({}));
+      throw new Error(errPayload.error || 'AI service unavailable. Please retry or continue manually.');
     }
     
     const data = await response.json();

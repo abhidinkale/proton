@@ -15,7 +15,8 @@ export class RealSpeechService implements SpeechToTextService {
     });
     
     if (!response.ok) {
-      throw new Error('Transcription service is currently unavailable. Please verify connectivity or try again.');
+      const errPayload = await response.json().catch(() => ({}));
+      throw new Error(errPayload.error || 'AI transcription service unavailable. Please retry or continue manually.');
     }
     
     const data = await response.json();
