@@ -904,6 +904,19 @@ export default function Consultation() {
                 <Mic size={18} />
               </div>
               <div>
+                <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium mb-0.5">
+                  <Link to="/" className="hover:text-brand-600 transition-colors">Command Center</Link>
+                  <span>&rarr;</span>
+                  {patient && (
+                    <>
+                      <Link to={`/patients/${patient.id}`} className="hover:text-brand-600 transition-colors">
+                        {patient.name?.[0]?.given?.join(' ')} {patient.name?.[0]?.family}
+                      </Link>
+                      <span>&rarr;</span>
+                    </>
+                  )}
+                  <span className="text-slate-700 font-semibold">Consultation</span>
+                </div>
                 <h1 className="font-semibold text-slate-800 text-lg tracking-tight">Active Consultation</h1>
                 <p className="text-xs text-slate-400">Record, review note draft & compose prescriptions</p>
               </div>

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Activity, Users, LayoutDashboard, Settings, LogOut } from 'lucide-react';
+import { Activity, Users, LayoutDashboard, Settings, LogOut, FileText } from 'lucide-react';
 import { useMedplum } from '@medplum/react';
 
 export default function Layout({ children }: { children: ReactNode }) {
@@ -35,14 +35,17 @@ export default function Layout({ children }: { children: ReactNode }) {
           </div>
         </div>
         <nav className="flex-1 px-4 py-4 space-y-2">
-          <NavLink to="/" className={navItemClass}>
-            <LayoutDashboard size={20} /> Dashboard
+          <NavLink to="/" className={navItemClass} title="Doctor Command Center">
+            <LayoutDashboard size={20} /> Command Center
           </NavLink>
           <NavLink to="/patients" className={navItemClass}>
             <Users size={20} /> Patients
           </NavLink>
           <NavLink to="/consultations" className={navItemClass}>
             <Activity size={20} /> Consultations
+          </NavLink>
+          <NavLink to="/document-review" className={navItemClass}>
+            <FileText size={20} /> Documents
           </NavLink>
           <NavLink to="/settings" className={navItemClass}>
             <Settings size={20} /> Settings

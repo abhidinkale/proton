@@ -498,6 +498,14 @@ export default function PatientProfile() {
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs">
           <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
             <div>
+              <div className="flex items-center gap-1.5 text-xs text-slate-400 mb-2 font-medium">
+                <Link to="/" className="hover:text-brand-600 transition-colors">Command Center</Link>
+                <span>&rarr;</span>
+                <Link to="/patients" className="hover:text-brand-600 transition-colors">Patients</Link>
+                <span>&rarr;</span>
+                <span className="text-slate-700 font-semibold truncate max-w-[200px]">{displayName}</span>
+              </div>
+
               <Link to="/patients" className="inline-flex items-center text-xs font-semibold text-slate-500 hover:text-brand-600 mb-3 transition-colors">
                 <ArrowLeft size={14} className="mr-1" /> Back to Patient Directory
               </Link>
