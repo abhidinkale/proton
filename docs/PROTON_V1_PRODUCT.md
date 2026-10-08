@@ -123,3 +123,33 @@ Proton V1 is deployed exclusively as a **Controlled Synthetic Beta**:
 - **Top Bar Notice**: Persistent banner: `SYNTHETIC BETA — NO REAL PATIENT DATA &bull; Proton Validation Environment`.
 - **Zero Real PHI**: Real patient data, protected health information, and live production clinical use are strictly prohibited in this version.
 - **Audit Logging**: All physician actions (edits, approvals, rejections, acknowledgments) are immutably recorded via `auditService`.
+
+---
+
+## 5. Proton V1 Status
+
+> **Current Classification:** "Premium synthetic-data physician validation build."
+
+### Completed:
+- clinical copilot workflow
+- longitudinal patient intelligence
+- consultation transcription
+- AI note drafting
+- deterministic verification
+- physician approval
+- prescription generation
+- document extraction
+- provenance
+- review center
+- clinical timeline
+- command center
+- physician validation framework
+
+### Not yet ready:
+- real PHI
+- production clinical deployment
+- clinical efficacy claims
+- production authentication/authorization hardening
+- production security/privacy controls
+- formal regulatory/compliance assessment
+

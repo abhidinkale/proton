@@ -237,7 +237,7 @@ export default function DocumentReview() {
       <div className="h-[calc(100vh-80px)] flex flex-col bg-slate-50 rounded-xl overflow-hidden border border-slate-200">
         <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-4">
-            <Link to={`/patients/${patientId}`} className="text-slate-400 hover:text-slate-700 transition-colors">
+            <Link to={patientId ? `/patients/${patientId}` : "/"} className="text-slate-400 hover:text-slate-700 transition-colors">
               <ArrowLeft size={20} />
             </Link>
             <div className="flex items-center gap-2">
@@ -245,8 +245,13 @@ export default function DocumentReview() {
                 <FileImage size={18} />
               </div>
               <div>
-                <h1 className="font-semibold text-slate-800 text-lg tracking-tight">Ingest Historical Documents</h1>
-                <p className="text-xs text-slate-400">Extract, review and approve facts into permanent medical memory</p>
+                <div className="flex items-center gap-2">
+                  <h1 className="font-semibold text-slate-800 text-lg tracking-tight">Review Center &bull; Document Ingestion</h1>
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">
+                    Nothing gets confirmed without you
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400">Ingest Historical Documents &bull; Extract, review and approve facts into permanent medical memory</p>
               </div>
             </div>
           </div>
@@ -335,7 +340,7 @@ export default function DocumentReview() {
               <p className="text-slate-500 text-sm mt-1 mb-6">
                 Approved clinical facts have been linked to the patient profile with original source provenance.
               </p>
-              <Link to={`/patients/${patientId}`} className="bg-brand-600 hover:bg-brand-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors shadow-sm">
+              <Link to={patientId ? `/patients/${patientId}` : "/patients"} className="bg-brand-600 hover:bg-brand-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors shadow-sm">
                 Return to Profile
               </Link>
             </div>

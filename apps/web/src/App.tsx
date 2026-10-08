@@ -7,6 +7,7 @@ import Patients from './pages/Patients';
 import PatientProfile from './pages/PatientProfile';
 import Consultation from './pages/Consultation';
 import DocumentReview from './pages/DocumentReview';
+import Settings from './pages/Settings';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const profile = useMedplumProfile();
@@ -30,6 +31,7 @@ export default function App() {
       <Route path="/document-review" element={<ProtectedRoute><DocumentReview /></ProtectedRoute>} />
       <Route path="/documents/review" element={<ProtectedRoute><DocumentReview /></ProtectedRoute>} />
       <Route path="/review" element={<ProtectedRoute><DocumentReview /></ProtectedRoute>} />
+      <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

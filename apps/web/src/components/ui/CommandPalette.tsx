@@ -138,6 +138,18 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
           navigate('/document-review');
           onClose();
         }
+      },
+      {
+        id: 'act-settings',
+        category: 'NAVIGATION',
+        title: 'Settings & Clinical Policies',
+        subtitle: 'Physician identity, AI engine parameters & safety rules',
+        shortcut: 'G S',
+        icon: <LayoutDashboard size={16} className="text-slate-600" />,
+        onSelect: () => {
+          navigate('/settings');
+          onClose();
+        }
       }
     ];
 
