@@ -1,5 +1,6 @@
 const GeminiProvider = require('./gemini');
 const GrokProvider = require('./grok');
+const DeepSeekProvider = require('./deepseek');
 const DemoProvider = require('./demo');
 
 function getProvider() {
@@ -10,7 +11,12 @@ function getProvider() {
 
   const providerName = (process.env.PROTON_AI_PROVIDER || 'gemini').toLowerCase();
   
-  if (providerName === 'grok') {
+  if (providerName === 'deepseek') {
+    if (!process.env.DEEPSEEK_API_KEY) {
+      throw new Error("DEEPSEEK_API_KEY is not configured on server for DeepSeek provider.");
+    }
+    return new DeepSeekProvider(process.env.DEEPSEEK_API_KEY, process.env.DEEPSEEK_MODEL);
+  } else if (providerName === 'grok') {
     if (!process.env.XAI_API_KEY) {
       throw new Error("XAI_API_KEY is not configured on server for Grok provider.");
     }
@@ -37,6 +43,9 @@ function getProviderStatus() {
   if (mode === 'demo' || providerName === 'demo') {
     configured = true;
     model = 'demo-mock-model';
+  } else if (providerName === 'deepseek') {
+    configured = Boolean(process.env.DEEPSEEK_API_KEY);
+    model = process.env.DEEPSEEK_MODEL || 'deepseek-flash';
   } else if (providerName === 'gemini') {
     configured = Boolean(process.env.GEMINI_API_KEY);
     model = process.env.PROTON_AI_MODEL || 'gemini-3.5-flash';

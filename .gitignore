@@ -5,6 +5,7 @@
 # 1. Environment & Secret Credentials (CRITICAL - NEVER COMMIT)
 .env
 .env.*
+!.env.example
 *.env
 *.env.raw
 *.local
