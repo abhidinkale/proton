@@ -1,17 +1,34 @@
-import type { ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Activity, Users, LayoutDashboard, Settings, LogOut, FileText } from 'lucide-react';
+import { Activity, Users, LayoutDashboard, Settings, LogOut, FileText, Search, ShieldCheck } from 'lucide-react';
 import { useMedplum } from '@medplum/react';
+import CommandPalette from './ui/CommandPalette';
 
 export default function Layout({ children }: { children: ReactNode }) {
   const medplum = useMedplum();
   const navigate = useNavigate();
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
 
   const handleLogout = () => {
     medplum.signOut().then(() => {
       navigate('/login');
     });
   };
+
+  // Keyboard shortcut listener for ⌘K / Ctrl+K
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        const activeTag = document.activeElement?.tagName?.toLowerCase();
+        if (activeTag !== 'input' && activeTag !== 'textarea') {
+          e.preventDefault();
+          setIsCommandPaletteOpen(prev => !prev);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const navItemClass = ({ isActive }: { isActive: boolean }) =>
     `flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
@@ -34,7 +51,25 @@ export default function Layout({ children }: { children: ReactNode }) {
             </span>
           </div>
         </div>
-        <nav className="flex-1 px-4 py-4 space-y-2">
+
+        {/* Global Quick Search Button in Sidebar */}
+        <div className="px-4 pt-3 pb-1">
+          <button
+            onClick={() => setIsCommandPaletteOpen(true)}
+            className="w-full flex items-center justify-between px-3 py-2 bg-slate-50 hover:bg-slate-100/80 border border-slate-200 rounded-lg text-xs text-slate-500 font-medium transition-colors cursor-pointer group shadow-2xs"
+            title="Search patients or execute actions (⌘K)"
+          >
+            <span className="flex items-center gap-2">
+              <Search size={14} className="text-slate-400 group-hover:text-brand-600" />
+              <span>Command Palette</span>
+            </span>
+            <kbd className="text-[10px] font-mono bg-white border border-slate-200 text-slate-400 px-1.5 py-0.2 rounded shadow-2xs">
+              ⌘K
+            </kbd>
+          </button>
+        </div>
+
+        <nav className="flex-1 px-4 py-3 space-y-1.5">
           <NavLink to="/" className={navItemClass} title="Doctor Command Center">
             <LayoutDashboard size={20} /> Command Center
           </NavLink>
@@ -46,6 +81,9 @@ export default function Layout({ children }: { children: ReactNode }) {
           </NavLink>
           <NavLink to="/document-review" className={navItemClass}>
             <FileText size={20} /> Documents
+          </NavLink>
+          <NavLink to="/review" className={navItemClass} title="Physician Review Center">
+            <ShieldCheck size={20} /> Review Center
           </NavLink>
           <NavLink to="/settings" className={navItemClass}>
             <Settings size={20} /> Settings
@@ -71,14 +109,28 @@ export default function Layout({ children }: { children: ReactNode }) {
               Proton Validation Environment &bull; All patients in this environment are synthetic.
             </span>
           </div>
-          <span className="text-[11px] text-amber-800/80 font-medium hidden sm:inline">
-            Controlled Physician Evaluation
-          </span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsCommandPaletteOpen(true)}
+              className="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-amber-600/10 hover:bg-amber-600/20 text-amber-900 text-[11px] font-semibold border border-amber-300/60 transition-colors cursor-pointer"
+            >
+              <Search size={12} /> Search (⌘K)
+            </button>
+            <span className="text-[11px] text-amber-800/80 font-medium hidden sm:inline">
+              Controlled Physician Evaluation
+            </span>
+          </div>
         </div>
         <main className="flex-1 overflow-auto bg-slate-50">
           <div className="max-w-6xl mx-auto p-8">{children}</div>
         </main>
       </div>
+
+      {/* Global Command Palette Modal */}
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+      />
     </div>
   );
 }

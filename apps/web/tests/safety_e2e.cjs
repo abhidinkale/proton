@@ -41,10 +41,8 @@ const fs = require('fs');
     const testPassword = process.env.MEDPLUM_TEST_PASSWORD || Buffer.from('bWVkcGx1bV9hZG1pbg==', 'base64').toString();
     await page.type('input[type="email"]', testEmail);
     await page.type('input[type="password"]', testPassword);
-    await Promise.all([
-      page.click('button[type="submit"]'),
-      page.waitForNavigation({ waitUntil: 'domcontentloaded' })
-    ]);
+    await page.click('button[type="submit"]');
+    await page.waitForFunction(() => Array.from(document.querySelectorAll('a')).some(a => a.textContent.includes('Patients')), { timeout: 15000 });
     console.log("-> Login: PASS");
 
     // [2] Create Synthetic Patient

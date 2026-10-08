@@ -1,8 +1,8 @@
 {
-  "timestamp": "2026-10-08T20:36:36.077Z",
-  "provider": "demo",
-  "model": "demo-mock-model",
-  "isLive": false,
+  "timestamp": "2026-10-08T21:03:51.327Z",
+  "provider": "gemini",
+  "model": "gemini-3.5-flash",
+  "isLive": true,
   "transcription": {
     "totalCases": 5,
     "passed": 5,
@@ -11,11 +11,11 @@
   },
   "noteGeneration": {
     "totalCases": 10,
-    "passed": 1,
-    "failed": 9,
-    "factualAccuracyRate": 10,
-    "negativesPreserved": 1,
-    "negativesFailed": 28,
+    "passed": 0,
+    "failed": 10,
+    "factualAccuracyRate": 0,
+    "negativesPreserved": 0,
+    "negativesFailed": 0,
     "unsupportedClaims": 0
   },
   "hallucinationProbes": {
@@ -88,16 +88,16 @@
   "documentExtraction": {
     "totalDocs": 5,
     "groundTruthFacts": 19,
-    "extractedFacts": 15,
-    "correctFacts": 1,
-    "missingFacts": 18,
-    "unsupportedFacts": 15,
-    "sourceGroundingRate": "0.0"
+    "extractedFacts": 19,
+    "correctFacts": 19,
+    "missingFacts": 0,
+    "unsupportedFacts": 0,
+    "sourceGroundingRate": "100.0"
   },
   "confidenceCalibration": {
-    "highConfidenceCount": 10,
+    "highConfidenceCount": 19,
     "mediumConfidenceCount": 0,
-    "lowConfidenceCount": 5,
+    "lowConfidenceCount": 0,
     "lowConfidenceFlaggedProperly": true
   },
   "deterministicSafety": {
@@ -111,29 +111,12 @@
     "unapprovedWritesBlocked": 4
   },
   "latency": {
-    "noteLatencies": [
-      3002,
-      3001,
-      3002,
-      3000,
-      3001,
-      3001,
-      3001,
-      3001,
-      3001,
-      3001
-    ],
-    "docLatencies": [
-      2002,
-      2001,
-      2002,
-      2001,
-      2001
-    ],
-    "min": 2001,
-    "max": 3002,
-    "avg": 2668,
-    "median": 3001
+    "noteLatencies": [],
+    "docLatencies": [],
+    "min": 0,
+    "max": 0,
+    "avg": 0,
+    "median": 0
   },
   "costUsage": {
     "totalPromptTokens": 0,
@@ -143,22 +126,22 @@
   },
   "failureModes": {
     "testsRun": 5,
-    "passed": 3,
-    "failed": 2
+    "passed": 5,
+    "failed": 0
   },
   "physicianReviewSimulation": {
-    "correct": 1,
-    "minorEdit": 9,
+    "correct": 0,
+    "minorEdit": 0,
     "majorEdit": 0,
     "unsafe": 0,
     "missingInfo": 0
   },
-  "criticalErrors": 0,
+  "criticalErrors": 10,
   "goNoGo": {
-    "gateStatus": "GO (VALIDATED FOR CONTROLLED BETA)",
-    "criticalSafetyIssuesBypassed": 0,
+    "gateStatus": "NO-GO",
+    "criticalSafetyIssuesBypassed": 10,
     "unapprovedFHIRWritesBlocked": true,
-    "unsupportedFactsBlocked": false,
+    "unsupportedFactsBlocked": true,
     "zeroSilentFallbackVerified": true
   }
 }

@@ -29,6 +29,7 @@ export default function App() {
       <Route path="/consultations/*" element={<ProtectedRoute><Consultation /></ProtectedRoute>} />
       <Route path="/document-review" element={<ProtectedRoute><DocumentReview /></ProtectedRoute>} />
       <Route path="/documents/review" element={<ProtectedRoute><DocumentReview /></ProtectedRoute>} />
+      <Route path="/review" element={<ProtectedRoute><DocumentReview /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

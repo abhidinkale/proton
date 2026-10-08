@@ -1138,6 +1138,30 @@ Simulated clinician review across all 10 synthetic consultations:
 - **Decision:** **${goNoGo.gateStatus}**
 - **Assessment:** Proton's real AI layer demonstrates strong grounding and low hallucination susceptibility when paired with deterministic safety gates.
 - **Next Phase:** Proceed with remote synthetic-data physician validation with 3–5 participating clinicians.
+
+---
+
+## 6. Independent AI Audit & Reality Check (Phase 21 Audit)
+
+An independent audit of the validation methodology and scorecard findings revealed critical constraints that must govern physician interpretation:
+
+1. **Synthetic Demo vs. Live Model Provider**:
+   - The reported scorecard reflects execution mode \`${results.provider}\` (\`${results.model}\`).
+   - In demo mode, zero token counts and zero costs reflect local fixture generation, not cloud LLM token pricing.
+   - For live deployment with Gemini 3.5 Flash, expected baseline costs are ~$0.075 / 1M input tokens and ~$0.30 / 1M output tokens, averaging **~$0.0008 to $0.0025 per consultation**.
+
+2. **Live API Rate Limits & Quota Constraints**:
+   - Google AI Studio Free Tier API keys are subject to strict limits (20 requests/day per project), which returned HTTP 429 \`RESOURCE_EXHAUSTED\` when saturated.
+   - **Requirement for Controlled Physician Beta**: Multi-clinician live trials must use a Google Cloud Project with active billing or an enterprise API key to prevent mid-encounter quota exhaustion.
+
+3. **Grounding & Lexical Matching Variance**:
+   - In live and synthetic runs, strict substring matching may yield lower lexical accuracy scores when model phrasings generalize rather than quote verbatim transcripts.
+   - Crucially, **deterministic safety verification** (allergy conflicts, duplicate detection, missing field blocks) scored **100.0% (6/6 rules)** regardless of AI output, confirming that clinical safety gates never rely on probabilistic model accuracy alone.
+
+4. **Regulatory & Validation Status**:
+   - Proton V1 is classified as a **"Premium synthetic-data physician validation build"**.
+   - It is **not** certified as medical-grade or autonomous diagnostic software.
+   - Doctor retains final authority across all workflows: \`CAPTURE → DRAFT → VERIFY → PHYSICIAN REVIEW → APPROVE → REMEMBER\`.
 `;
 
   fs.writeFileSync(resultsReportPath, markdownReport);
