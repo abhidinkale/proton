@@ -30,7 +30,13 @@ export default function Login() {
       navigate('/');
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Authentication failed. Please verify credentials or connectivity.');
+      if (err?._remainingPoints === '0' || err?._remainingPoints === 0 || err?.message?.includes('Too Many Requests')) {
+        const ms = err?._msBeforeNext ? Number(err._msBeforeNext) : 30000;
+        const seconds = Math.ceil(ms / 1000);
+        setError(`Authentication rate limit reached. Please wait ${seconds} seconds before attempting to sign in again.`);
+      } else {
+        setError(err.message || 'Authentication failed. Please verify credentials or connectivity.');
+      }
     } finally {
       setLoading(false);
     }

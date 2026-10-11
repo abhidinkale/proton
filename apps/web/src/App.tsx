@@ -8,12 +8,14 @@ import PatientProfile from './pages/PatientProfile';
 import Consultation from './pages/Consultation';
 import DocumentReview from './pages/DocumentReview';
 import Settings from './pages/Settings';
+import { authService } from './services/auth';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const medplum = useMedplum();
   const profile = useMedplumProfile();
+  const user = authService.getCurrentUser();
   
-  if (medplum.isLoading()) {
+  if (medplum.isLoading() && !user) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center">
         <div className="flex items-center gap-3 text-slate-400 text-sm">
@@ -24,7 +26,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!profile) {
+  if (!profile && !user) {
     return <Navigate to="/login" replace />;
   }
   

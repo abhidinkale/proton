@@ -119,9 +119,35 @@ class ProtonAuthenticationService implements IAuthenticationService {
     if (!password) throw new Error('Password is required');
 
     // 1. Authenticate with underlying identity provider (Medplum in current architecture)
-    const res = await medplum.startLogin({ email, password });
-    if (res.code) {
+    let res: any;
+    try {
+      res = await medplum.startLogin({ email, password });
+    } catch (err: any) {
+      if (err?._remainingPoints === '0' || err?._remainingPoints === 0 || err?.message?.includes('Too Many Requests')) {
+        const ms = err?._msBeforeNext ? Number(err._msBeforeNext) : 30000;
+        const seconds = Math.ceil(ms / 1000);
+        throw new Error(`Authentication rate limit reached. Please wait ${seconds} seconds before trying again.`);
+      }
+      throw err;
+    }
+
+    if (res?.code) {
       await medplum.processCode(res.code);
+    } else if (res?.memberships && res.memberships.length > 0) {
+      // Find Proton Development or first active membership
+      const targetMembership = res.memberships.find((m: any) => 
+        m.project?.display?.toLowerCase().includes('proton')
+      ) || res.memberships[0];
+
+      const profileRes = await medplum.post('auth/profile', {
+        login: res.login,
+        profile: targetMembership.id
+      });
+      if (profileRes?.code) {
+        await medplum.processCode(profileRes.code);
+      }
+    } else {
+      throw new Error('Authentication response did not contain an authorization code or project memberships.');
     }
 
     // 2. Map authenticated identity to Proton Doctor Profile
