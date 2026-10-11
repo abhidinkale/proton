@@ -65,6 +65,7 @@ export default function Consultation() {
   const patientId = searchParams.get('patient');
   
   const [patient, setPatient] = useState<Patient | null>(null);
+  const [panelPatients, setPanelPatients] = useState<Patient[]>([]);
   const [conditions, setConditions] = useState<Condition[]>([]);
   const [meds, setMeds] = useState<MedicationStatement[]>([]);
   const [allergies, setAllergies] = useState<AllergyIntolerance[]>([]);
@@ -139,6 +140,10 @@ export default function Consultation() {
       medplum.searchResources('DocumentReference', { subject: `Patient/${patientId}` }).then(setDocuments).catch(console.error);
       medplum.searchResources('Encounter', { subject: `Patient/${patientId}` }).then(setEncounters).catch(console.error);
       medplum.searchResources('ClinicalImpression', { subject: `Patient/${patientId}` }).then(setImpressions).catch(console.error);
+    } else {
+      medplum.searchResources('Patient', { _count: 10, _sort: '-_lastUpdated' })
+        .then(setPanelPatients)
+        .catch(() => {});
     }
   }, [medplum, patientId]);
 
@@ -896,7 +901,7 @@ export default function Consultation() {
         {/* Header */}
         <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-4">
-            <Link to={`/patients/${patientId}`} className="text-slate-400 hover:text-slate-700 transition-colors">
+            <Link to={patientId ? `/patients/${patientId}` : "/patients"} className="text-slate-400 hover:text-slate-700 transition-colors">
               <ArrowLeft size={20} />
             </Link>
             <div className="flex items-center gap-2">
@@ -907,11 +912,16 @@ export default function Consultation() {
                 <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium mb-0.5">
                   <Link to="/" className="hover:text-brand-600 transition-colors">Command Center</Link>
                   <span>&rarr;</span>
-                  {patient && (
+                  {patient ? (
                     <>
                       <Link to={`/patients/${patient.id}`} className="hover:text-brand-600 transition-colors">
                         {patient.name?.[0]?.given?.join(' ')} {patient.name?.[0]?.family}
                       </Link>
+                      <span>&rarr;</span>
+                    </>
+                  ) : (
+                    <>
+                      <Link to="/patients" className="hover:text-brand-600 transition-colors">Patients</Link>
                       <span>&rarr;</span>
                     </>
                   )}
@@ -1032,7 +1042,31 @@ export default function Consultation() {
                   <p className="text-sm text-slate-500 mt-1 capitalize">{patient.birthDate} &bull; {patient.gender}</p>
                 </div>
               ) : (
-                <p className="text-sm text-slate-500 italic">No patient assigned</p>
+                <div>
+                  <p className="text-sm text-slate-500 italic mb-2">No patient assigned</p>
+                  {panelPatients.length > 0 ? (
+                    <select
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          window.location.href = `/consultation?patient=${e.target.value}`;
+                        }
+                      }}
+                      defaultValue=""
+                      className="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg p-2 font-medium text-slate-800"
+                    >
+                      <option value="" disabled>Select patient...</option>
+                      {panelPatients.map(p => (
+                        <option key={p.id} value={p.id}>
+                          {p.name?.[0]?.given?.join(' ')} {p.name?.[0]?.family}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <Link to="/patients" className="text-xs text-brand-600 hover:underline">
+                      Open Patient Directory &rarr;
+                    </Link>
+                  )}
+                </div>
               )}
             </div>
 

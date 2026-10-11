@@ -207,6 +207,13 @@ export default function Dashboard() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isConsultModalOpen, isSearchFocused, patientSearch]);
 
+  const eleanorPatient = useMemo(() => {
+    return patients.find(p => 
+      p.name?.[0]?.family?.toLowerCase().includes('vance') || 
+      p.name?.[0]?.given?.[0]?.toLowerCase().includes('eleanor')
+    );
+  }, [patients]);
+
   const getPatientName = useCallback((refOrId?: string): string => {
     if (!refOrId) return 'Demo Patient';
     const cleanId = refOrId.replace('Patient/', '');
@@ -893,6 +900,49 @@ export default function Dashboard() {
           <div className="flex items-center gap-1 text-slate-600">
             <span>Follow-ups:</span>
             <span className="text-purple-800 font-bold bg-purple-50 px-2 py-0.5 rounded border border-purple-200">{followUpItems.length}</span>
+          </div>
+        </div>
+
+        {/* SYNTHETIC BETA PHYSICIAN ONBOARDING (60-Second Guided Tour) */}
+        <div className="bg-gradient-to-r from-brand-900 via-brand-800 to-slate-900 text-white rounded-2xl p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 border border-brand-800/40">
+          <div className="flex items-start gap-3.5">
+            <div className="h-10 w-10 rounded-xl bg-white/10 text-brand-200 flex items-center justify-center shrink-0 border border-white/10 shadow-inner">
+              <Sparkles size={20} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-sm tracking-tight text-white">Explore Proton with a Synthetic Patient</h3>
+                <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-brand-500/30 text-brand-200 border border-brand-400/30">
+                  Physician Beta Tour
+                </span>
+              </div>
+              <p className="text-xs text-brand-100/80 mt-1 max-w-2xl leading-relaxed">
+                60-second walkthrough: Understand the patient with Clinical Brain &bull; Capture dialogue &bull; Synthesize AI note &bull; Review safety checks &bull; Sign-off explicitly &bull; Commit longitudinal memory to FHIR.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2.5 shrink-0">
+            {eleanorPatient ? (
+              <Link
+                to={`/patients/${eleanorPatient.id}`}
+                className="bg-white hover:bg-slate-100 text-brand-950 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm inline-flex items-center gap-1.5 cursor-pointer"
+              >
+                <span>Try Eleanor Vance Case</span>
+                <ArrowRight size={14} />
+              </Link>
+            ) : (
+              <button
+                onClick={async () => {
+                  const { createClinicalBrainDemoPatient } = await import('../services/demoPatient');
+                  const p = await createClinicalBrainDemoPatient(medplum);
+                  navigate(`/patients/${p.id}`);
+                }}
+                className="bg-white hover:bg-slate-100 text-brand-950 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm inline-flex items-center gap-1.5 cursor-pointer"
+              >
+                <span>Synthesize Eleanor Vance</span>
+                <ArrowRight size={14} />
+              </button>
+            )}
           </div>
         </div>
 

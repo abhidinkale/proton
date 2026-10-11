@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useMedplumProfile } from '@medplum/react';
+import { useMedplumProfile, useMedplum } from '@medplum/react';
 
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -10,8 +10,20 @@ import DocumentReview from './pages/DocumentReview';
 import Settings from './pages/Settings';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const medplum = useMedplum();
   const profile = useMedplumProfile();
   
+  if (medplum.isLoading()) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="flex items-center gap-3 text-slate-400 text-sm">
+          <div className="w-4 h-4 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+          <span>Verifying clinical credentials...</span>
+        </div>
+      </div>
+    );
+  }
+
   if (!profile) {
     return <Navigate to="/login" replace />;
   }

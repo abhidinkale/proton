@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useMedplum } from '@medplum/react';
 import { 
@@ -6,7 +6,7 @@ import {
   ShieldAlert, FileImage, CheckCircle2, Edit2 
 } from 'lucide-react';
 import Layout from '../components/Layout';
-import type { Bundle } from '@medplum/fhirtypes';
+import type { Bundle, Patient } from '@medplum/fhirtypes';
 import { verifyExtractedFact } from '../services/verification';
 import { auditService } from '../services/audit';
 import { API_BASE_URL } from '../config';
@@ -31,6 +31,22 @@ export default function DocumentReview() {
   const medplum = useMedplum();
   const [searchParams] = useSearchParams();
   const patientId = searchParams.get('patient');
+  
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [selectedPatientId, setSelectedPatientId] = useState<string>(patientId || '');
+
+  useEffect(() => {
+    medplum.searchResources('Patient', { _count: 20, _sort: '-_lastUpdated' })
+      .then((res) => {
+        setPatients(res);
+        if (!patientId && res.length > 0) {
+          setSelectedPatientId(res[0].id || '');
+        }
+      })
+      .catch(() => {});
+  }, [medplum, patientId]);
+
+  const effectivePatientId = patientId || selectedPatientId;
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -131,7 +147,7 @@ export default function DocumentReview() {
   };
 
   const handleApproveAndSave = async () => {
-    if (!patientId || status === 'saving') return;
+    if (!effectivePatientId || status === 'saving') return;
     setStatus('saving');
     
     try {
@@ -155,7 +171,7 @@ export default function DocumentReview() {
           resource: {
             resourceType: 'DocumentReference',
             status: 'current',
-            subject: { reference: `Patient/${patientId}` },
+            subject: { reference: `Patient/${effectivePatientId}` },
             description: ext.originalFileName || file.name,
             content: [{ attachment: { title: file.name, contentType: file.type } }]
           }
@@ -166,7 +182,7 @@ export default function DocumentReview() {
         
         for (const fact of approvedFacts) {
           const baseResource = {
-            subject: { reference: `Patient/${patientId}` }
+            subject: { reference: `Patient/${effectivePatientId}` }
           };
 
           if (fact.category === 'diagnosis' || fact.category === 'other') {
@@ -214,8 +230,8 @@ export default function DocumentReview() {
       await medplum.executeBatch(bundle);
       medplum.invalidateAll();
       
-      auditService.record('document_fact_approved', `Committed ${approvedCount} approved document facts to FHIR for Patient ${patientId}`, {
-        patientId: patientId || undefined,
+      auditService.record('document_fact_approved', `Committed ${approvedCount} approved document facts to FHIR for Patient ${effectivePatientId}`, {
+        patientId: effectivePatientId || undefined,
         details: { approvedCount }
       });
 
@@ -237,7 +253,7 @@ export default function DocumentReview() {
       <div className="h-[calc(100vh-80px)] flex flex-col bg-slate-50 rounded-xl overflow-hidden border border-slate-200">
         <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-4">
-            <Link to={patientId ? `/patients/${patientId}` : "/"} className="text-slate-400 hover:text-slate-700 transition-colors">
+            <Link to={effectivePatientId ? `/patients/${effectivePatientId}` : "/"} className="text-slate-400 hover:text-slate-700 transition-colors">
               <ArrowLeft size={20} />
             </Link>
             <div className="flex items-center gap-2">
@@ -255,7 +271,23 @@ export default function DocumentReview() {
               </div>
             </div>
           </div>
-          <div>
+          <div className="flex items-center gap-3">
+            {!patientId && patients.length > 0 && (
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-slate-500 font-medium">Target Patient:</span>
+                <select
+                  value={effectivePatientId}
+                  onChange={(e) => setSelectedPatientId(e.target.value)}
+                  className="bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                >
+                  {patients.map(p => (
+                    <option key={p.id} value={p.id}>
+                      {p.name?.[0]?.given?.join(' ')} {p.name?.[0]?.family}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             {status === 'review' && (
               <button 
                 onClick={handleApproveAndSave}
@@ -340,7 +372,7 @@ export default function DocumentReview() {
               <p className="text-slate-500 text-sm mt-1 mb-6">
                 Approved clinical facts have been linked to the patient profile with original source provenance.
               </p>
-              <Link to={patientId ? `/patients/${patientId}` : "/patients"} className="bg-brand-600 hover:bg-brand-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors shadow-sm">
+              <Link to={effectivePatientId ? `/patients/${effectivePatientId}` : "/patients"} className="bg-brand-600 hover:bg-brand-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors shadow-sm">
                 Return to Profile
               </Link>
             </div>

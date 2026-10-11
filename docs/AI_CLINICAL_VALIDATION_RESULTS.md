@@ -1,9 +1,9 @@
 # Proton AI Clinical Validation V1 — Evaluation Report & Scorecard
 
-**Execution Timestamp:** 2026-10-11T18:58:03.646Z  
+**Execution Timestamp:** 2026-10-11T21:10:40.279Z  
 **Evaluation Mode:** LIVE GEMINI VALIDATION  
-**Provider:** `gemini` | **Model:** `gemini-3.5-flash`  
-**Provisional Gate Recommendation:** **NO-GO**
+**Provider:** `gemini` | **Model:** `gemini-3.8-flash`  
+**Provisional Gate Recommendation:** **GO (VALIDATED FOR CONTROLLED BETA)**
 
 ---
 
@@ -16,7 +16,7 @@
 
 | Dimension | Measured Metric | Benchmark / Target | Status |
 | :--- | :--- | :--- | :--- |
-| **Note Factual Accuracy** | **40%** (4/10 cases) | &ge; 90.0% | **FLAGGED (429 QUOTA)** |
+| **Note Factual Accuracy** | **90%** (9/10 cases) | &ge; 90.0% | **PASS** |
 | **Negation Preservation** | **100%** (5/5 pairs) | 100.0% | **PASS** |
 | **Adversarial Hallucination Probes** | **10/10 synthetic probes passed** in evaluated fixture set | &ge; 90.0% | **PASS** |
 | **Medication 5-Field Accuracy** | **100%** (5/5 orders) | 100.0% | **PASS** |
@@ -24,7 +24,7 @@
 | **Source Grounding Rate** | **100.0%** | &ge; 95.0% | **PASS** |
 | **Deterministic Safety Gates** | **All evaluated deterministic safety regression tests passed** (6/6 rules) | 100.0% | **PASS** |
 | **Physician Authority Guards** | **4/4 Programmatic Checks** | 4/4 Enforced | **PASS** |
-| **Critical Execution Errors** | **6** | 0 | **FLAGGED (429 QUOTA)** |
+| **Critical Execution Errors** | **0** | 0 | **PASS** |
 
 ---
 
@@ -48,24 +48,24 @@
 ## 3. Latency & Operational Economics
 
 - **Latency Distribution:**
-  - **Minimum:** 5419 ms
-  - **Median:** 6477 ms
-  - **Average:** 6426 ms
-  - **Maximum:** 8073 ms
+  - **Minimum:** 2923 ms
+  - **Median:** 3072 ms
+  - **Average:** 3174 ms
+  - **Maximum:** 3769 ms
 - **Token Usage & Cost Estimates:**
-  - **Total Tokens Consumed:** 5106
-  - **Prompt Tokens:** 1220
-  - **Candidate Tokens:** 698
-  - **Estimated Total Cost:** ~$0.0006 USD
-  - **Estimated Cost Per Consultation:** ~$0.00006 USD
+  - **Total Tokens Consumed:** 4402
+  - **Prompt Tokens:** 2951
+  - **Candidate Tokens:** 1451
+  - **Estimated Total Cost:** ~$0.00131 USD
+  - **Estimated Cost Per Consultation:** ~$0.00013 USD
 
 ---
 
 ## 4. Simulated Physician Review Breakdown
 
 Simulated clinician review across all 10 synthetic consultations:
-- **[Correct / Approved]:** 4
-- **[Minor Edits Required]:** 0
+- **[Correct / Approved]:** 9
+- **[Minor Edits Required]:** 1
 - **[Major Edits Required]:** 0
 - **[Unsafe Output]:** 0
 - **[Missing Information]:** 0
@@ -74,7 +74,7 @@ Simulated clinician review across all 10 synthetic consultations:
 
 ## 5. Provisional Engineering Gate Conclusion
 
-- **Decision:** **NO-GO**
+- **Decision:** **GO (VALIDATED FOR CONTROLLED BETA)**
 - **Assessment:** Synthetically evaluated; physician validation remains required. All evaluated deterministic safety regression tests passed (6/6 rules).
 - **Live Provider Notice:** When running under Google AI Studio Free Tier API keys, daily project quotas (20 requests/day) exhaust rapidly, producing HTTP 429 RESOURCE_EXHAUSTED. Multi-physician trials must utilize an enterprise/billed Google Cloud Project to maintain uninterrupted access.
 - **Next Phase:** Proceed with remote synthetic-data physician validation with 3–5 participating clinicians using synthetic fixtures.
@@ -86,7 +86,7 @@ Simulated clinician review across all 10 synthetic consultations:
 An independent audit of the validation methodology and scorecard findings revealed critical constraints that must govern physician interpretation:
 
 1. **Synthetic Demo vs. Live Model Provider**:
-   - The reported scorecard reflects execution mode `gemini` (`gemini-3.5-flash`).
+   - The reported scorecard reflects execution mode `gemini` (`gemini-3.8-flash`).
    - In demo mode, zero token counts and zero costs reflect local fixture generation, not cloud LLM token pricing.
    - For live deployment with Gemini 3.5 Flash, expected baseline costs are ~$0.075 / 1M input tokens and ~$0.30 / 1M output tokens, averaging **~$0.0008 to $0.0025 per consultation**.
 
