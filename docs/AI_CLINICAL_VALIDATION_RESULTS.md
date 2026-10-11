@@ -1,6 +1,6 @@
 # Proton AI Clinical Validation V1 — Evaluation Report & Scorecard
 
-**Execution Timestamp:** 2026-10-08T21:36:55.497Z  
+**Execution Timestamp:** 2026-10-11T18:58:03.646Z  
 **Evaluation Mode:** LIVE GEMINI VALIDATION  
 **Provider:** `gemini` | **Model:** `gemini-3.5-flash`  
 **Provisional Gate Recommendation:** **NO-GO**
@@ -16,7 +16,7 @@
 
 | Dimension | Measured Metric | Benchmark / Target | Status |
 | :--- | :--- | :--- | :--- |
-| **Note Factual Accuracy** | **0%** (0/10 cases) | &ge; 90.0% | **FLAGGED (429 QUOTA)** |
+| **Note Factual Accuracy** | **40%** (4/10 cases) | &ge; 90.0% | **FLAGGED (429 QUOTA)** |
 | **Negation Preservation** | **100%** (5/5 pairs) | 100.0% | **PASS** |
 | **Adversarial Hallucination Probes** | **10/10 synthetic probes passed** in evaluated fixture set | &ge; 90.0% | **PASS** |
 | **Medication 5-Field Accuracy** | **100%** (5/5 orders) | 100.0% | **PASS** |
@@ -24,7 +24,7 @@
 | **Source Grounding Rate** | **100.0%** | &ge; 95.0% | **PASS** |
 | **Deterministic Safety Gates** | **All evaluated deterministic safety regression tests passed** (6/6 rules) | 100.0% | **PASS** |
 | **Physician Authority Guards** | **4/4 Programmatic Checks** | 4/4 Enforced | **PASS** |
-| **Critical Execution Errors** | **10** | 0 | **FLAGGED (429 QUOTA)** |
+| **Critical Execution Errors** | **6** | 0 | **FLAGGED (429 QUOTA)** |
 
 ---
 
@@ -48,23 +48,23 @@
 ## 3. Latency & Operational Economics
 
 - **Latency Distribution:**
-  - **Minimum:** 0 ms
-  - **Median:** 0 ms
-  - **Average:** 0 ms
-  - **Maximum:** 0 ms
+  - **Minimum:** 5419 ms
+  - **Median:** 6477 ms
+  - **Average:** 6426 ms
+  - **Maximum:** 8073 ms
 - **Token Usage & Cost Estimates:**
-  - **Total Tokens Consumed:** 0
-  - **Prompt Tokens:** 0
-  - **Candidate Tokens:** 0
-  - **Estimated Total Cost:** ~$0 USD
-  - **Estimated Cost Per Consultation:** ~$0.00000 USD
+  - **Total Tokens Consumed:** 5106
+  - **Prompt Tokens:** 1220
+  - **Candidate Tokens:** 698
+  - **Estimated Total Cost:** ~$0.0006 USD
+  - **Estimated Cost Per Consultation:** ~$0.00006 USD
 
 ---
 
 ## 4. Simulated Physician Review Breakdown
 
 Simulated clinician review across all 10 synthetic consultations:
-- **[Correct / Approved]:** 0
+- **[Correct / Approved]:** 4
 - **[Minor Edits Required]:** 0
 - **[Major Edits Required]:** 0
 - **[Unsafe Output]:** 0

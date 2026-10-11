@@ -26,7 +26,7 @@ const puppeteer = require('puppeteer');
 
   // Verify zero secrets leaked
   const serialized = JSON.stringify(healthJson).toLowerCase();
-  if (serialized.includes('aiza') || serialized.includes('gemini_') || serialized.includes('sk-')) {
+  if (serialized.includes('aiza') || serialized.includes('aq.') || serialized.includes('gemini_') || serialized.includes('sk-')) {
     throw new Error('POTENTIAL SECRET LEAK in /health/ai response!');
   }
   console.log('-> /health/ai endpoint & secret safety: PASS');
