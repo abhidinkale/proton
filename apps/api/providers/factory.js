@@ -48,7 +48,7 @@ function getProviderStatus() {
     model = process.env.DEEPSEEK_MODEL || 'deepseek-flash';
   } else if (providerName === 'gemini') {
     configured = Boolean(process.env.GEMINI_API_KEY);
-    model = process.env.PROTON_AI_MODEL || 'gemini-3.5-flash';
+    model = process.env.PROTON_AI_MODEL || 'gemini-3.8-flash';
   } else if (providerName === 'grok') {
     configured = Boolean(process.env.XAI_API_KEY);
     model = process.env.XAI_MODEL || 'grok-2-vision-1212';

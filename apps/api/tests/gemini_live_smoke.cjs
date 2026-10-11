@@ -23,7 +23,7 @@ async function runSmokeTest() {
   console.log('[Gemini Smoke Test] Live GEMINI_API_KEY detected. Initializing GeminiProvider...');
   const provider = new GeminiProvider(
     apiKey,
-    process.env.PROTON_AI_MODEL || 'gemini-3.5-flash'
+    process.env.PROTON_AI_MODEL || 'gemini-3.8-flash'
   );
 
   const modelName = provider.modelName;

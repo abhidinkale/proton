@@ -8,7 +8,7 @@ class GeminiProvider extends AIProvider {
       throw new Error("GEMINI_API_KEY is required for Gemini provider");
     }
     this.apiKey = apiKey.trim();
-    this.modelName = modelName || process.env.PROTON_AI_MODEL || 'gemini-3.5-flash';
+    this.modelName = modelName || process.env.PROTON_AI_MODEL || 'gemini-3.8-flash';
     const useVertex = process.env.GOOGLE_GENAI_USE_VERTEXAI === 'true';
     this.ai = new GoogleGenAI({
       apiKey: this.apiKey,
@@ -18,15 +18,20 @@ class GeminiProvider extends AIProvider {
 
   async _withRetry(fn, maxRetries = 2) {
     let attempt = 0;
+    let currentModel = this.modelName;
     while (attempt <= maxRetries) {
       try {
-        return await fn();
+        return await fn(currentModel);
       } catch (err) {
         attempt++;
         const msg = err?.message || '';
-        const isTransient = err?.status === 503 || err?.status === 429 || msg.includes('503') || msg.includes('UNAVAILABLE') || msg.includes('high demand');
+        const isQuota = err?.status === 429 || msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED');
+        const isTransient = isQuota || err?.status === 503 || msg.includes('503') || msg.includes('UNAVAILABLE') || msg.includes('high demand');
         if (!isTransient || attempt > maxRetries) {
           throw err;
+        }
+        if (isQuota && currentModel !== 'gemini-3.5-flash-lite') {
+          currentModel = 'gemini-3.5-flash-lite';
         }
         await new Promise(resolve => setTimeout(resolve, attempt * 1500));
       }
@@ -56,12 +61,13 @@ class GeminiProvider extends AIProvider {
 
     const prompt = "You are a professional medical scribe. Transcribe this patient-doctor clinical consultation accurately, completely, and verbatim. Output ONLY the raw transcript text. Do not add formatting, conversational preambles, or markdown blocks.";
 
-    const response = await this._withRetry(() =>
+    const response = await this._withRetry((model) =>
       this.ai.models.generateContent({
-        model: this.modelName,
+        model,
         contents: [audioPart, prompt],
         config: {
-          temperature: 0.1
+          temperature: 0.1,
+          thinkingConfig: { thinkingLevel: 'LOW' }
         }
       })
     );
@@ -100,16 +106,17 @@ ${transcript}`;
 
     const config = {
       responseMimeType: "application/json",
-      temperature: 0.1
+      temperature: 0.1,
+      thinkingConfig: { thinkingLevel: 'LOW' }
     };
 
     if (noteSchema) {
       config.responseSchema = noteSchema;
     }
 
-    const response = await this._withRetry(() =>
+    const response = await this._withRetry((model) =>
       this.ai.models.generateContent({
-        model: this.modelName,
+        model,
         contents: prompt,
         config
       })
@@ -146,16 +153,17 @@ Rules:
 
     const config = {
       responseMimeType: "application/json",
-      temperature: 0.1
+      temperature: 0.1,
+      thinkingConfig: { thinkingLevel: 'LOW' }
     };
 
     if (documentSchema) {
       config.responseSchema = documentSchema;
     }
 
-    const response = await this._withRetry(() =>
+    const response = await this._withRetry((model) =>
       this.ai.models.generateContent({
-        model: this.modelName,
+        model,
         contents: [filePart, prompt],
         config
       })
