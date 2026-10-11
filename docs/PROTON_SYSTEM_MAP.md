@@ -20,7 +20,10 @@ proton/
 │   │   │   ├── gemini_live_smoke.cjs
 │   │   │   └── verify_gemini_smoke.cjs
 │   │   ├── package.json
-│   │   └── server.js            # Express API Server (Port 3002)
+│   │   ├── app.js               # Express API App instance (Vercel & modular export)
+│   │   ├── index.js             # Local development server listener (Port 3002)
+│   │   ├── api/index.js         # Vercel serverless function entrypoint
+│   │   └── vercel.json          # Vercel serverless rewrite configuration
 │   └── web/                     # Physician Frontend Web App (React 19 + Vite)
 │       ├── src/
 │       │   ├── components/      # UI & Clinical Workspace Components
@@ -101,7 +104,9 @@ proton/
 
 | Module / File | Absolute Path | Role & Key Responsibilities |
 | :--- | :--- | :--- |
-| **Express Server** | `apps/api/server.js` | API server listening on port 3002; rate limiting, CORS configuration, request validation, file upload handling (multer). |
+| **Express App** | `apps/api/app.js` | Express app instance with rate limiting, CORS configuration, request validation, schemas, and routes. Exported for Vercel serverless function. |
+| **Local Server Entry** | `apps/api/index.js` | Local development entrypoint listening on port 3002 (`app.listen(port)`). |
+| **Vercel Serverless Function** | `apps/api/api/index.js` | Serverless entrypoint exporting Express app for Vercel API deployments. |
 | **Provider Factory** | `apps/api/providers/factory.js` | Dynamic provider factory selecting AI backend via `AI_PROVIDER` (`gemini`, `deepseek`, `demo`). |
 | **Base Provider** | `apps/api/providers/base.js` | Base contract defining `transcribe()`, `generateNote()`, `extractDocument()`, `healthCheck()`. |
 | **Gemini Provider** | `apps/api/providers/gemini.js` | **Default Active Provider**: Integrates `@google/genai` with `gemini-3.8-flash`. Structured JSON clinical note synthesis, document extraction, and simulated/real audio transcription. |

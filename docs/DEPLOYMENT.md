@@ -1,6 +1,6 @@
 # Proton Physician Web Beta — Deployment Architecture & Operations Guide
 
-This guide details the deployment architecture, configuration, infrastructure requirements, and operational procedures for hosting the **Proton Physician Web Beta**.
+This guide details the deployment architecture, configuration, infrastructure requirements, and operational procedures for hosting the **Proton Physician Web Beta** on **Vercel** and local environments.
 
 ---
 
@@ -15,9 +15,9 @@ This guide details the deployment architecture, configuration, infrastructure re
                          HTTPS (443)  |  (Zero API Keys in Browser)
                                       v
 +-----------------------------------------------------------------------------------+
-| FRONTEND HOST (Vercel / Static Edge CDN)                                          |
+| VERCEL FRONTEND SERVICE (apps/web)                                                |
 |                                                                                   |
-|  Proton Web App (React 19 + Vite + Tailwind + Mantine)                            |
+|  Proton Web App (React 19 + Vite + Tailwind CSS)                                  |
 |  - Landing Page & "How Proton Works" Walkthrough                                  |
 |  - Doctor Command Center (Deterministic Priorities)                               |
 |  - Patient Profile & "What Matters Today" Signal                                  |
@@ -26,12 +26,12 @@ This guide details the deployment architecture, configuration, infrastructure re
 |  - Review Center Inbox ("Nothing gets confirmed without you")                     |
 +---------------------+-------------------------------------------------------------+
                       |
-        HTTPS API     | CORS-restricted
+        HTTPS API     | CORS-restricted (or same-domain /api)
                       v
 +-----------------------------------------------------------------------------------+
-| BACKEND HOST (Render / Fly.io / AWS ECS)                                          |
+| VERCEL BACKEND SERVICE (apps/api - Serverless Function)                           |
 |                                                                                   |
-|  Proton Backend API (Node.js / Express 5)                                         |
+|  Proton Backend API (Node.js / Express 5 via apps/api/app.js)                     |
 |  - Safe Telemetry Logger (Strict Zero-PHI enforcement)                            |
 |  - Health Endpoints: /health, /health/ai                                          |
 |  - POST /api/transcribe (Audio streaming -> Provider)                             |
@@ -39,8 +39,8 @@ This guide details the deployment architecture, configuration, infrastructure re
 |  - POST /api/extract-documents (Multi-document clinical fact parsing)             |
 +----------+----------------------------------------------------+-------------------+
            |                                                    |
-           | Secret Server-to-Server                            | FHIR R4 API
-           | (GEMINI_API_KEY)                                   | (OAuth Bearer)
+           | Secret Server-to-Server                            | FHIR R4 API (HTTPS)
+           | (GEMINI_API_KEY)                                   | (Client-side Bearer)
            v                                                    v
 +--------------------------+                         +------------------------------+
 | AI PROVIDER              |                         | FHIR DATA STORE              |
@@ -53,161 +53,162 @@ This guide details the deployment architecture, configuration, infrastructure re
 
 ## 2. Environment Variables Specification
 
-### A. Frontend Environment Variables (`apps/web/.env`)
+### A. Local Development
 
-These variables are bundled by Vite at build time. **NEVER put AI API keys, Medplum client secrets, or administrative credentials here.**
+In local development, fallbacks are built-in so developers can run without complex configurations:
 
-| Variable | Required | Default / Example | Purpose |
-| :--- | :--- | :--- | :--- |
-| `VITE_API_URL` | Yes | `https://api.proton.example.com` | Base URL for Proton Backend API |
-| `VITE_MEDPLUM_BASE_URL` | Yes | `https://api.medplum.com/` | Base URL for Medplum FHIR server |
-| `VITE_MEDPLUM_CLIENT_ID` | Optional | `client-id-uuid` | Public Medplum Client ID (if using OAuth app) |
-| `VITE_AUTH_PROVIDER` | No | `medplum_synthetic` | Auth mode (`medplum_synthetic` or `supabase`) |
+```ini
+# apps/api/.env (Local Backend API)
+PORT=3002
+PROTON_AI_MODE=real
+PROTON_AI_PROVIDER=gemini
+GEMINI_API_KEY=AIzaSy...your_gemini_key...
+GEMINI_MODEL=gemini-3.8-flash
+CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost:5173
 
-### B. Backend Environment Variables (`apps/api/.env`)
+# apps/web/.env.local (Local Frontend Web App - Optional)
+# Defaults to http://localhost:3002 and http://localhost:8103/ if omitted:
+VITE_API_URL=http://localhost:3002
+VITE_MEDPLUM_BASE_URL=http://localhost:8103/
+```
 
-These variables are server-side only and must be kept strictly confidential.
+### B. Vercel Web Service (`apps/web`)
+
+Configure these in the Vercel Project Settings for **`apps/web`**:
 
 | Variable | Required | Production Value | Purpose |
-| :--- | :--- | :--- | :--- |
-| `PORT` | Yes | `3002` (or injected by platform) | Port for Express API server |
-| `PROTON_AI_MODE` | Yes | `real` | AI operating mode (`real` or `demo`) |
-| `PROTON_AI_PROVIDER` | Yes | `gemini` | Active AI provider (`gemini`) |
-| `GEMINI_API_KEY` | Yes (for real AI) | `AIzaSy...` | Private Google Gemini API key |
-| `PROTON_AI_MODEL` | No | `gemini-3.8-flash` | Primary Gemini model identifier |
-| `CORS_ALLOWED_ORIGINS` | Yes | `https://app.proton.example.com` | Comma-separated allowed frontend origins |
-| `MEDPLUM_BASE_URL` | Yes | `https://api.medplum.com` | Target Medplum FHIR endpoint |
+| :--- | :---: | :--- | :--- |
+| `VITE_API_URL` | **Yes** | `https://proton-api.vercel.app` (or `""` if using same-domain `/api` routing) | Endpoint URL of the deployed Proton API server. |
+| `VITE_MEDPLUM_BASE_URL` | **Yes** | `https://api.medplum.com/` (or your reachable HTTPS Medplum server) | Endpoint for Medplum FHIR operations. **`localhost:8103` will NOT work from Vercel.** |
+| `VITE_MEDPLUM_CLIENT_ID` | Optional | `your-client-id-uuid` | Public Medplum OAuth Client ID if authenticating against a customized Medplum app. |
+
+> [!CAUTION]
+> **NEVER put `GEMINI_API_KEY`, provider secrets, or database credentials into `VITE_*` variables.** `VITE_*` variables are compiled into static client JavaScript bundles sent to the browser.
+
+### C. Vercel API Service (`apps/api`)
+
+Configure these in the Vercel Project Settings for **`apps/api`**:
+
+| Variable | Required | Production Value | Purpose |
+| :--- | :---: | :--- | :--- |
+| `PROTON_AI_MODE` | **Yes** | `real` | Operating mode (`real` or `demo`). |
+| `PROTON_AI_PROVIDER` | **Yes** | `gemini` | Active AI provider (`gemini`, `deepseek`, or `demo`). |
+| `GEMINI_API_KEY` | **Yes** | `AIzaSy...` | Private Google Gemini API key (server-side secret). |
+| `GEMINI_MODEL` | Optional | `gemini-3.8-flash` | Gemini model identifier (defaults to `gemini-3.8-flash`). |
+| `CORS_ALLOWED_ORIGINS` | **Yes** | `https://proton-web.vercel.app` | Comma-separated list of allowed frontend origins (e.g. `https://proton-web.vercel.app,https://*-proton.vercel.app`). Wildcard `*` for all origins is strictly disallowed. |
 
 ---
 
-## 3. Frontend Deployment (Vercel)
+## 3. Vercel Monorepo Deployment Setup
 
-### Configuration (`apps/web/vercel.json`)
-The repository includes an optimized SPA rewrite configuration:
-```json
-{
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
-}
-```
+Vercel detects the Proton repository as a monorepo containing:
+- `apps/web`: Vite frontend
+- `apps/api`: Express backend
 
-### Vercel Project Setup Steps
-1. In Vercel, import the repository.
-2. Set **Root Directory** to `apps/web`.
-3. Set **Framework Preset** to `Vite`.
-4. Build settings:
-   - **Build Command**: `npm run build` (`tsc -b && vite build`)
-   - **Output Directory**: `dist`
-   - **Install Command**: `npm install`
-5. Configure Environment Variables:
-   - `VITE_API_URL`: URL of the deployed backend API (e.g. `https://proton-api.onrender.com`)
-   - `VITE_MEDPLUM_BASE_URL`: URL of the Medplum server (e.g. `https://api.medplum.com/` or hosted instance)
-6. Deploy.
+Deploy them as two coordinated Vercel projects:
+
+### Service 1: Web Frontend (`proton-web`)
+1. In Vercel, click **Add New Project** and import the `proton` repository.
+2. Under **Root Directory**, click Edit and select **`apps/web`**.
+3. **Framework Preset**: Vite (automatically detected).
+4. **Build Settings**:
+   - Build Command: `npm run build` (runs `tsc -b && vite build`)
+   - Output Directory: `dist`
+   - Install Command: `npm install`
+5. **Rewrites Configuration**: `apps/web/vercel.json` contains:
+   ```json
+   {
+     "rewrites": [
+       { "source": "/(.*)", "destination": "/index.html" }
+     ]
+   }
+   ```
+   This ensures client-side React Router navigation (e.g., refreshing on `/patients/:id` or `/consultation`) resolves properly without 404 errors.
+6. **Environment Variables**: Add `VITE_API_URL` and `VITE_MEDPLUM_BASE_URL`.
+7. Click **Deploy**.
+
+### Service 2: Backend API (`proton-api`)
+1. In Vercel, click **Add New Project** and import the same `proton` repository a second time.
+2. Under **Root Directory**, click Edit and select **`apps/api`**.
+3. **Framework Preset**: Other.
+4. **Build Settings**:
+   - Build Command: leave empty
+   - Output Directory: leave empty
+   - Install Command: `npm install`
+5. **Serverless Architecture**:
+   - `apps/api/app.js`: Clean Express application export (`module.exports = app`).
+   - `apps/api/api/index.js`: Vercel serverless function entrypoint forwarding to `../app`.
+   - `apps/api/vercel.json`: Rewrites all incoming paths to `/api/index.js`:
+     ```json
+     {
+       "version": 2,
+       "rewrites": [
+         { "source": "/(.*)", "destination": "/api/index.js" }
+       ]
+     }
+     ```
+6. **Environment Variables**: Add `PROTON_AI_MODE`, `PROTON_AI_PROVIDER`, `GEMINI_API_KEY`, `GEMINI_MODEL`, and `CORS_ALLOWED_ORIGINS`.
+7. Click **Deploy**.
 
 ---
 
-## 4. Backend Deployment (Render / Fly.io / Container)
+## 4. Medplum / FHIR Production Requirements
 
-### Render Setup Steps
-1. Create a **Web Service** on Render connected to the repository.
-2. Set **Root Directory** to `apps/api`.
-3. Set **Environment** to `Node`.
-4. Build & Start commands:
-   - **Build Command**: `npm install`
-   - **Start Command**: `npm start` (`node index.js`)
-5. Configure Environment Variables:
-   - `PORT`: `10000` (or leave default)
-   - `PROTON_AI_MODE`: `real`
-   - `PROTON_AI_PROVIDER`: `gemini`
-   - `GEMINI_API_KEY`: *(Securely injected from Google AI Studio / Google Cloud)*
-   - `PROTON_AI_MODEL`: `gemini-3.8-flash`
-   - `CORS_ALLOWED_ORIGINS`: `https://app.proton.example.com`
-   - `MEDPLUM_BASE_URL`: `https://api.medplum.com`
-6. Health Check Path: `/health`.
+> [!IMPORTANT]
+> **`http://localhost:8103` cannot be reached by browsers visiting a Vercel-hosted web application.**
 
----
-
-## 5. Medplum / FHIR Infrastructure
-
-Proton uses FHIR R4 for clinical memory persistence.
+For a cloud Vercel deployment, you must point `VITE_MEDPLUM_BASE_URL` to a publicly reachable Medplum instance over HTTPS:
 
 ### Option A: Medplum Cloud (Recommended for Beta)
-- Register a clinical workspace project on [Medplum](https://app.medplum.com).
-- Create a dedicated Practitioner account for the evaluating physician.
-- Configure `VITE_MEDPLUM_BASE_URL=https://api.medplum.com/`.
+1. Register for an account on [Medplum Cloud](https://app.medplum.com).
+2. Create a project and seed a test practitioner account.
+3. In Vercel Web settings:
+   - `VITE_MEDPLUM_BASE_URL=https://api.medplum.com/`
 
-### Option B: Self-Hosted Medplum (OrbStack / Docker / Kubernetes)
-- Spin up Medplum server with PostgreSQL 16 + pgvector.
-- Ensure SSL termination is enabled via reverse proxy (Caddy / Nginx / Cloudflare).
-- Set CORS in Medplum configuration to allow requests from the Proton frontend origin.
+### Option B: Self-Hosted Medplum with HTTPS
+1. Host Medplum on a cloud VM or Kubernetes cluster (Render, Fly.io, AWS, DigitalOcean).
+2. Configure TLS/HTTPS and set Medplum's `allowedOrigins` to permit your Vercel frontend URL.
+3. In Vercel Web settings:
+   - `VITE_MEDPLUM_BASE_URL=https://fhir.yourdomain.com/`
 
----
-
-## 6. Health & Operational Endpoints
-
-Proton exposes safe, non-sensitive health check endpoints:
-
-### `GET /health`
-Validates basic server uptime and operating mode.
-```json
-{
-  "status": "ok",
-  "mode": "real",
-  "timestamp": "2026-10-12T02:28:51.485Z"
-}
-```
-
-### `GET /health/ai`
-Exposes AI pipeline readiness without leaking credentials or API keys.
-```json
-{
-  "status": "ok",
-  "mode": "real",
-  "provider": "gemini",
-  "model": "gemini-3.8-flash",
-  "configured": true,
-  "timestamp": "2026-10-12T02:28:51.494Z"
-}
-```
+*Note: The Proton API (`apps/api`) does not directly connect to Medplum; all FHIR transactions are securely executed directly from the authenticated physician's browser using short-lived Medplum session tokens.*
 
 ---
 
-## 7. Local Development Guide
+## 5. Local Development (Preserved & Unbroken)
 
-To run the entire Proton physician workspace locally:
+Local development remains 100% operational on standard local ports:
 
 ```bash
-# 1. Start Medplum FHIR service (Port 8103)
-# (via Docker / OrbStack or Medplum Cloud account)
+# 1. Medplum Server (Port 8103)
+docker run -p 8103:8103 ghcr.io/medplum/medplum-server:latest
 
-# 2. Start Proton Backend API (Port 3002)
+# 2. Proton API Server (Port 3002)
 cd apps/api
 npm install
 npm start
+# -> Listens on http://localhost:3002 via apps/api/index.js
 
-# 3. Start Proton Web Application (Port 3001)
+# 3. Proton Web App (Port 3001)
 cd ../web
 npm install
-npm run dev -- --port 3001
+npm run dev
+# -> Listens on http://localhost:3001
 ```
-
-Access in browser:
-`http://localhost:3001`
 
 ---
 
-## 8. Pre-Deployment Verification Checklist
+## 6. Pre-Deployment Verification Checklist
 
-Before promoting any build to public physician beta access:
+Before promoting any build to physician beta access:
 
-- [x] Run comprehensive 10-area web beta verification test suite (`node apps/web/tests/web_beta_verification.cjs`).
-- [x] Run AI clinical validation scorecard (`node apps/api/tests/clinical_ai_validation.cjs`).
-- [x] Run live Gemini smoke test (`node apps/api/tests/gemini_live_smoke.cjs`).
-- [x] Run Command Center 2.0 operational suite (`node apps/web/tests/command_center_v2_e2e.cjs`).
-- [x] Run physician validation checklist (`node apps/web/tests/physician_validation_checklist.cjs`).
-- [x] Verify zero API keys or secrets in frontend bundle (`apps/web/dist`).
-- [x] Verify `.gitignore` excludes all `.env` files.
-- [x] Verify persistent "SYNTHETIC BETA — NO REAL PATIENT DATA" banner is present across all views.
-- [x] Verify deterministic safety checks block unverified medication orders.
-- [x] Verify physician confirmation checkbox is required before saving prescriptions.
+- [x] Production build succeeds cleanly (`npm run build --prefix apps/web` in ~350ms).
+- [x] Express app exports cleanly without listening when imported as a module (`apps/api/app.js`).
+- [x] Local listener works unchanged on port 3002 (`apps/api/index.js`).
+- [x] 10-area web beta verification test suite passes (`NODE_PATH=apps/web/node_modules node apps/web/tests/web_beta_verification.cjs`).
+- [x] 11-point physician validation checklist passes (`NODE_PATH=apps/web/node_modules node apps/web/tests/physician_validation_checklist.cjs`).
+- [x] API health endpoints report live status: `GET /health` and `GET /health/ai`.
+- [x] Zero API keys or secrets detected in compiled frontend assets (`apps/web/dist`).
+- [x] `.gitignore` excludes all `.env` and `.env.local` files.
+- [x] Persistent `SYNTHETIC BETA — NO REAL PATIENT DATA` regulatory banner is active.
+- [x] Strict deterministic safety gates prevent unverified prescription orders.

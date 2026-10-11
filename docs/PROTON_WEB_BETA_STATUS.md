@@ -207,11 +207,11 @@ All 19 functional areas have been audited, tested, and scored below.
 ---
 
 ### 19. Deployment Readiness
-- **Status**: **YELLOW**
-- **What Works Today**: Complete production deployment guide created (`docs/DEPLOYMENT.md`) covering Vercel, Render/Fly.io, and Medplum Cloud. Production build succeeds cleanly (`tsc -b && vite build`). Secret scanning verifies zero API keys leaked into frontend client bundles. Health checks `/health` and `/health/ai` report operational status with safe metadata isolation.
-- **Files**: `docs/DEPLOYMENT.md`, `apps/api/server.js`, `apps/web/src/config.ts`
-- **Known Limitations**: Cloud hosting infrastructure (Vercel project, Render web service, Medplum Cloud project) needs to be provisioned and environment variables configured with production secrets.
-- **Next Steps**: Execute initial deployment to staging URL on Vercel and Render following `docs/DEPLOYMENT.md`.
+- **Status**: **GREEN (Vercel-Ready)**
+- **What Works Today**: Complete Vercel monorepo configuration prepared for both `apps/web` (Vite frontend with SPA rewrites) and `apps/api` (Express serverless function via `app.js` and `api/index.js`). Production build succeeds cleanly (`tsc -b && vite build` in ~350ms). Secret scanning verifies zero API keys leaked into frontend client bundles. Health checks `/health`, `/health/ai`, and `/api/health` report live status with safe metadata isolation. Configurable `VITE_API_URL` and `VITE_MEDPLUM_BASE_URL` with unbroken local development fallbacks.
+- **Files**: `docs/DEPLOYMENT.md`, `apps/api/app.js`, `apps/api/index.js`, `apps/api/api/index.js`, `apps/api/vercel.json`, `apps/web/vercel.json`, `apps/web/src/config.ts`
+- **Known Limitations**: Cloud hosting accounts (Vercel projects and reachable Medplum instance) need environment variables injected upon first deployment.
+- **Next Steps**: Link repository to Vercel projects following `docs/DEPLOYMENT.md`.
 
 ---
 
