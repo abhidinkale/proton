@@ -76,14 +76,28 @@ app.get(['/health', '/api/health'], (req, res) => {
 });
 
 // Phase 15: Developer / Admin AI Status endpoint
-app.get(['/health/ai', '/api/health/ai'], (req, res) => {
+app.get(['/health/ai', '/api/health/ai'], async (req, res) => {
   const status = getProviderStatus();
+  let reachable = status.configured;
+
+  if (status.provider === 'medgemma') {
+    try {
+      const provider = getProvider();
+      if (typeof provider.isReachable === 'function') {
+        reachable = await provider.isReachable(1000);
+      }
+    } catch {
+      reachable = false;
+    }
+  }
+
   res.json({
     status: 'ok',
     mode: status.mode,
     provider: status.provider,
     model: status.model,
     configured: status.configured,
+    reachable,
     timestamp: new Date().toISOString()
   });
 });
@@ -259,6 +273,9 @@ app.post('/api/transcribe', upload.single('audio'), async (req, res) => {
     if (error.name === 'TimeoutError') {
       return res.status(504).json({ error: 'AI transcription service timed out. Please retry or continue manually.' });
     }
+    if (error.message?.includes('MedGemma audio transcription is not supported')) {
+      return res.status(501).json({ error: error.message, provider: 'medgemma' });
+    }
     const status = error.status === 429 ? 429 : 502;
     res.status(status).json({ error: 'AI transcription service unavailable. Please retry or continue manually.' });
   }
@@ -310,6 +327,9 @@ app.post('/api/generate-note', async (req, res) => {
     if (error.name === 'TimeoutError') {
       return res.status(504).json({ error: 'AI note generation service timed out. Please retry or continue manually.' });
     }
+    if (error.code === 'MEDGEMMA_UNAVAILABLE' || error.message?.includes('MedGemma local inference server is unavailable')) {
+      return res.status(503).json({ error: error.message, provider: 'medgemma', code: 'MEDGEMMA_UNAVAILABLE' });
+    }
     const status = error.status === 429 ? 429 : 502;
     res.status(status).json({ error: 'AI note generation service unavailable. Please retry or continue manually.' });
   }
@@ -357,6 +377,9 @@ app.post('/api/extract-documents', upload.array('documents', 5), async (req, res
   } catch (error) {
     if (error.name === 'TimeoutError') {
       return res.status(504).json({ error: 'Document extraction service timed out. Please retry or continue manually.' });
+    }
+    if (error.code === 'MEDGEMMA_UNAVAILABLE' || error.message?.includes('MedGemma local inference server is unavailable')) {
+      return res.status(503).json({ error: error.message, provider: 'medgemma', code: 'MEDGEMMA_UNAVAILABLE' });
     }
     const status = error.status === 429 ? 429 : 502;
     res.status(status).json({ error: 'Document extraction service unavailable. Please retry or continue manually.' });

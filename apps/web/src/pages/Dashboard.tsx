@@ -126,7 +126,7 @@ export default function Dashboard() {
     return !localStorage.getItem('proton_onboarding_complete');
   });
 
-  const [dashboardMode, setDashboardMode] = useState<'cockpit' | 'dynamics'>('cockpit');
+  const [dashboardMode, setDashboardMode] = useState<'cockpit' | 'dynamics'>('dynamics');
 
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);
@@ -979,7 +979,8 @@ export default function Dashboard() {
           <div className="animate-in fade-in duration-300">
             <TreatmentDynamicsView
               patientId={eleanorPatient?.id || 'demo-eleanor-vance'}
-              patientName={eleanorPatient ? getPatientName(eleanorPatient.id) : 'Eleanor Vance'}
+              patientName={eleanorPatient ? getPatientName(eleanorPatient.id) : 'Tiffany Woodward'}
+              onClose={() => setDashboardMode('cockpit')}
             />
           </div>
         ) : (

@@ -1,7 +1,41 @@
+import { useState, useEffect } from 'react';
 import { ShieldCheck, Cpu, User, Keyboard, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import Layout from '../components/Layout';
+import { API_BASE_URL } from '../config';
+
+interface AIHealthStatus {
+  provider: string;
+  mode: string;
+  model: string;
+  configured: boolean;
+  reachable?: boolean;
+}
 
 export default function Settings() {
+  const [aiStatus, setAiStatus] = useState<AIHealthStatus | null>(null);
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/health/ai`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data) setAiStatus(data);
+      })
+      .catch(() => {});
+  }, []);
+
+  const providerDisplay = aiStatus?.provider === 'medgemma'
+    ? 'MedGemma Local'
+    : aiStatus?.provider === 'deepseek'
+    ? 'DeepSeek (Beta)'
+    : aiStatus?.provider === 'grok'
+    ? 'xAI Grok'
+    : aiStatus?.provider === 'gemini'
+    ? 'Gemini (Cloud)'
+    : 'Demo Fixtures';
+
+  const modelDisplay = aiStatus?.model || 'google/medgemma-1.5-4b-it';
+  const isMedGemma = aiStatus?.provider === 'medgemma';
+
   return (
     <Layout>
       <div className="max-w-3xl mx-auto space-y-6 proton-animate-in">
@@ -38,29 +72,53 @@ export default function Settings() {
 
         {/* Section 2: AI Copilot Engine Status */}
         <div className="proton-card p-6 space-y-4">
-          <div className="flex items-center gap-2.5 pb-3 border-b border-[var(--color-border-subtle)]">
-            <div className="h-8 w-8 bg-violet-50 text-violet-700 rounded-lg flex items-center justify-center">
-              <Cpu size={16} />
+          <div className="flex items-center justify-between pb-3 border-b border-[var(--color-border-subtle)]">
+            <div className="flex items-center gap-2.5">
+              <div className="h-8 w-8 bg-violet-50 text-violet-700 rounded-lg flex items-center justify-center">
+                <Cpu size={16} />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-[var(--color-text-primary)]">AI Clinical Engine & Provider</h2>
+                <p className="text-[11px] text-[var(--color-text-tertiary)]">Provider: {providerDisplay}</p>
+              </div>
             </div>
-            <h2 className="text-sm font-bold text-[var(--color-text-primary)]">AI Clinical Engine & Provider</h2>
+            {isMedGemma && (
+              <span className="proton-micro-label px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded">
+                Local AI • MedGemma 1.5 4B
+              </span>
+            )}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="p-4 bg-violet-50/50 rounded-xl border border-violet-200/60">
               <span className="proton-micro-label text-violet-600">Active Model</span>
-              <span className="text-violet-900 font-bold text-sm mt-1 block">Gemini 3.5 Flash</span>
-              <span className="text-violet-600 text-[11px] mt-0.5 block">Google Gen AI SDK v2</span>
+              <span className="text-violet-900 font-bold text-sm mt-1 block truncate" title={modelDisplay}>
+                {modelDisplay}
+              </span>
+              <span className="text-violet-600 text-[11px] mt-0.5 block">
+                {isMedGemma ? 'Local vLLM Inference' : 'Google Gen AI SDK v2'}
+              </span>
             </div>
             <div className="p-4 bg-[var(--color-surface-raised)] rounded-xl border border-[var(--color-border-subtle)]">
-              <span className="proton-micro-label text-[var(--color-text-tertiary)]">Sampling Temperature</span>
-              <span className="text-[var(--color-text-primary)] font-mono font-bold text-sm mt-1 block">0.0 (Deterministic)</span>
-              <span className="text-[var(--color-text-tertiary)] text-[11px] mt-0.5 block">Maximized grounding</span>
+              <span className="proton-micro-label text-[var(--color-text-tertiary)]">Environment Mode</span>
+              <span className="text-[var(--color-text-primary)] font-bold text-sm mt-1 block">
+                {aiStatus?.mode ? aiStatus.mode.toUpperCase() : 'LOCAL'}
+              </span>
+              <span className="text-[var(--color-text-tertiary)] text-[11px] mt-0.5 block">
+                {isMedGemma ? (aiStatus?.reachable ? '● Local Server Online' : '○ Local Server Offline') : 'Connected'}
+              </span>
             </div>
             <div className="p-4 bg-[var(--color-surface-raised)] rounded-xl border border-[var(--color-border-subtle)]">
-              <span className="proton-micro-label text-[var(--color-text-tertiary)]">Fallback Mode</span>
-              <span className="text-[var(--color-text-primary)] font-bold text-sm mt-1 block">Demo Fixtures</span>
-              <span className="text-[var(--color-text-tertiary)] text-[11px] mt-0.5 block">Deterministic backup</span>
+              <span className="proton-micro-label text-[var(--color-text-tertiary)]">Clinical Safety Boundary</span>
+              <span className="text-[var(--color-text-primary)] font-bold text-sm mt-1 block">Physician Review Required</span>
+              <span className="text-[var(--color-text-tertiary)] text-[11px] mt-0.5 block">Zero autonomous FHIR writes</span>
             </div>
           </div>
+          {isMedGemma && (
+            <div className="p-3 bg-amber-50 rounded-lg border border-amber-200 text-[11px] text-amber-800 flex items-center gap-2">
+              <AlertTriangle size={14} className="text-amber-600 shrink-0" />
+              <span>Development Notice: MedGemma is running as a local experimental medical model. Technical evaluation only &bull; Not clinically validated.</span>
+            </div>
+          )}
         </div>
 
         {/* Section 3: Safety Gating Rules */}

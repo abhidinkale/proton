@@ -1,17 +1,24 @@
 const GeminiProvider = require('./gemini');
 const GrokProvider = require('./grok');
 const DeepSeekProvider = require('./deepseek');
+const MedGemmaProvider = require('./medgemma');
 const DemoProvider = require('./demo');
 
 function getProvider() {
-  const mode = (process.env.PROTON_AI_MODE || 'demo').toLowerCase();
+  const explicitProvider = (process.env.PROTON_AI_PROVIDER || '').toLowerCase();
+  const defaultMode = explicitProvider === 'medgemma' ? 'local' : 'demo';
+  const mode = (process.env.PROTON_AI_MODE || defaultMode).toLowerCase();
   if (mode === 'demo') {
     return new DemoProvider();
   }
 
   const providerName = (process.env.PROTON_AI_PROVIDER || 'gemini').toLowerCase();
   
-  if (providerName === 'deepseek') {
+  if (providerName === 'medgemma') {
+    const baseUrl = process.env.MEDGEMMA_BASE_URL || 'http://localhost:8000/v1';
+    const model = process.env.MEDGEMMA_MODEL || 'google/medgemma-1.5-4b-it';
+    return new MedGemmaProvider(baseUrl, model);
+  } else if (providerName === 'deepseek') {
     if (!process.env.DEEPSEEK_API_KEY) {
       throw new Error("DEEPSEEK_API_KEY is not configured on server for DeepSeek provider.");
     }
@@ -35,7 +42,9 @@ function getProvider() {
 }
 
 function getProviderStatus() {
-  const mode = (process.env.PROTON_AI_MODE || 'demo').toLowerCase();
+  const explicitProvider = (process.env.PROTON_AI_PROVIDER || '').toLowerCase();
+  const defaultMode = explicitProvider === 'medgemma' ? 'local' : 'demo';
+  const mode = (process.env.PROTON_AI_MODE || defaultMode).toLowerCase();
   const providerName = (process.env.PROTON_AI_PROVIDER || (mode === 'demo' ? 'demo' : 'gemini')).toLowerCase();
   
   let configured = false;
@@ -44,6 +53,9 @@ function getProviderStatus() {
   if (mode === 'demo' || providerName === 'demo') {
     configured = true;
     model = 'demo-mock-model';
+  } else if (providerName === 'medgemma') {
+    configured = true;
+    model = process.env.MEDGEMMA_MODEL || 'google/medgemma-1.5-4b-it';
   } else if (providerName === 'deepseek') {
     configured = Boolean(process.env.DEEPSEEK_API_KEY);
     model = process.env.DEEPSEEK_MODEL || 'deepseek-flash';
@@ -56,7 +68,7 @@ function getProviderStatus() {
   }
 
   return {
-    mode,
+    mode: (mode === 'demo' && providerName === 'demo') ? 'demo' : (providerName === 'medgemma' ? (process.env.PROTON_AI_MODE || 'local') : mode),
     provider: providerName,
     model,
     configured

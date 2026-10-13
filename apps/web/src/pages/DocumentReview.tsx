@@ -34,6 +34,16 @@ export default function DocumentReview() {
   
   const [patients, setPatients] = useState<Patient[]>([]);
   const [selectedPatientId, setSelectedPatientId] = useState<string>(patientId || '');
+  const [aiProvider, setAiProvider] = useState<string>('');
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/health/ai`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.provider) setAiProvider(data.provider);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     medplum.searchResources('Patient', { _count: 20, _sort: '-_lastUpdated' })
@@ -93,7 +103,10 @@ export default function DocumentReview() {
         body: formData
       });
       
-      if (!response.ok) throw new Error('Document extraction failed. Please check that files are valid PDFs or images and try again.');
+      if (!response.ok) {
+        const errPayload = await response.json().catch(() => ({}));
+        throw new Error(errPayload.error || 'Document extraction failed. Please check that files are valid PDFs or images and try again.');
+      }
       
       const data = await response.json();
       
@@ -266,6 +279,11 @@ export default function DocumentReview() {
                   <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">
                     Nothing gets confirmed without you
                   </span>
+                  {aiProvider === 'medgemma' && (
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                      AI Provider: MedGemma Local (Dev)
+                    </span>
+                  )}
                 </div>
                 <p className="text-xs text-slate-400">Ingest Historical Documents &bull; Extract, review and approve facts into permanent medical memory</p>
               </div>
