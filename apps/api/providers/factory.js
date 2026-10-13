@@ -16,7 +16,7 @@ function getProvider() {
   
   if (providerName === 'medgemma') {
     const baseUrl = process.env.MEDGEMMA_BASE_URL || 'http://localhost:8000/v1';
-    const model = process.env.MEDGEMMA_MODEL || 'google/medgemma-1.5-4b-it';
+    const model = process.env.MEDGEMMA_MODEL || 'mlx-community/medgemma-1.5-4b-it-4bit';
     return new MedGemmaProvider(baseUrl, model);
   } else if (providerName === 'deepseek') {
     if (!process.env.DEEPSEEK_API_KEY) {
@@ -55,7 +55,7 @@ function getProviderStatus() {
     model = 'demo-mock-model';
   } else if (providerName === 'medgemma') {
     configured = true;
-    model = process.env.MEDGEMMA_MODEL || 'google/medgemma-1.5-4b-it';
+    model = process.env.MEDGEMMA_MODEL || 'mlx-community/medgemma-1.5-4b-it-4bit';
   } else if (providerName === 'deepseek') {
     configured = Boolean(process.env.DEEPSEEK_API_KEY);
     model = process.env.DEEPSEEK_MODEL || 'deepseek-flash';

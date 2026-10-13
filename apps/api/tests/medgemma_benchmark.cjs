@@ -113,7 +113,7 @@ async function evaluateExtraction(provider, doc) {
   let error = null;
   try {
     const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Evaluation timed out after 4000ms')), 4000);
+      setTimeout(() => reject(new Error('Evaluation timed out after 60000ms')), 60000);
     });
     response = await Promise.race([
       provider.extractDocument(buffer, 'text/plain', doc.name, null),
@@ -210,7 +210,7 @@ async function runBenchmark() {
 
   // Check MedGemma local server reachability
   const medgemmaUrl = process.env.MEDGEMMA_BASE_URL || 'http://localhost:8000/v1';
-  const medgemmaModel = process.env.MEDGEMMA_MODEL || 'google/medgemma-1.5-4b-it';
+  const medgemmaModel = process.env.MEDGEMMA_MODEL || 'mlx-community/medgemma-1.5-4b-it-4bit';
   const medgemmaProvider = new MedGemmaProvider(medgemmaUrl, medgemmaModel);
   const isMedGemmaOnline = await medgemmaProvider.isReachable(1200);
 

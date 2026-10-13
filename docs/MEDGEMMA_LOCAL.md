@@ -1,15 +1,16 @@
-# Proton — MedGemma 1.5 4B Local AI Provider Guide
+# Proton — MedGemma 1.5 4B Local AI Provider Guide (MLX-VLM on Apple Silicon)
 
 > **Status:** Local Development & Synthetic Physician Evaluation Build  
-> **Target Model:** `google/medgemma-1.5-4b-it` (Google MedGemma 1.5 4B Instruction-Tuned)  
-> **Serving Engine:** Local OpenAI-compatible server (vLLM recommended)  
+> **Server Runtime:** MLX-VLM 0.7.6 (Apple Silicon Metal / Unified Memory)  
+> **Model:** `mlx-community/medgemma-1.5-4b-it-4bit` (4-bit quantized MedGemma 1.5 4B)  
+> **Base URL:** `http://localhost:8000/v1`  
 > **Notice:** *Not clinically validated, certified medical device, production-ready, or PHI-ready. For local development and controlled synthetic physician evaluation only.*
 
 ---
 
 ## 1. Overview & Architecture
 
-Proton integrates **MedGemma 1.5 4B** (`google/medgemma-1.5-4b-it`) as a **local development AI provider**. MedGemma serves as a medical specialist model for draft clinical note generation and multimodal medical document understanding.
+Proton integrates **MedGemma 1.5 4B** (`mlx-community/medgemma-1.5-4b-it-4bit`) as a **local development AI provider** on Apple Silicon (M4/M3/M2/M1). MedGemma acts as a local vision-language medical foundation model for preliminary clinical note drafting and multimodal document fact extraction.
 
 ```
 ┌────────────────────────────────────────────────────────┐
@@ -21,96 +22,57 @@ Proton integrates **MedGemma 1.5 4B** (`google/medgemma-1.5-4b-it`) as a **local
 ┌────────────────────────────────────────────────────────┐
 │                      PROTON API                        │
 │             AI Provider Factory (getProvider)          │
-│   ├── Gemini (Cloud)                                   │
-│   ├── Demo (Offline Fixtures)                          │
-│   └── MedGemma (Local Development Provider)            │
+│   ├── Gemini (Cloud Reference Provider)                │
+│   ├── Demo (Deterministic Offline Fixtures)            │
+│   └── MedGemma (Local Apple Silicon Specialist)        │
 └──────────────────────────┬─────────────────────────────┘
-                           │  HTTP / OpenAI-Compatible (/v1)
+                           │  HTTP OpenAI-Compatible (/v1)
                            ▼
 ┌────────────────────────────────────────────────────────┐
-│             LOCAL INFERENCE SERVER (vLLM)              │
-│                 http://localhost:8000/v1               │
+│                LOCAL MLX-VLM SERVER                    │
+│              http://localhost:8000/v1                  │
+│             Apple Silicon M4 Metal GPU                 │
 └──────────────────────────┬─────────────────────────────┘
                            │
                            ▼
 ┌────────────────────────────────────────────────────────┐
-│             google/medgemma-1.5-4b-it                  │
-│       4B Vision-Language Medical Foundation Model      │
+│       mlx-community/medgemma-1.5-4b-it-4bit            │
+│       4-Bit Quantized Vision-Language Foundation Model │
 └────────────────────────────────────────────────────────┘
 ```
 
 ### Safety & Clinical Boundary Rules
 1. **The Attending Physician Remains the Final Authority:** MedGemma outputs are preliminary draft proposals only.
-2. **Zero Autonomous FHIR Writes:** The model never writes directly to Medplum FHIR or persistent storage.
+2. **Zero Autonomous FHIR Writes:** The model never writes directly to Medplum FHIR or persistent clinical storage.
 3. **Mandatory Deterministic Safety Gates:** All AI outputs undergo deterministic clinical verification (allergy conflicts, medication therapy rules, 5-field prescription checks) and explicit physician sign-off.
 4. **Synthetic Beta Only:** Zero real patient or protected health information (PHI) may be entered into this environment.
 
 ---
 
-## 2. Prerequisites
+## 2. Environment & Prerequisites
 
-To run MedGemma 1.5 4B locally, you need:
-
-- **Operating System:** Linux (Ubuntu 20.04+ recommended) or macOS (Apple Silicon M1/M2/M3/M4)
-- **Python:** Python 3.10 or 3.11
-- **Inference Engine:** `vllm` (recommended for Linux/CUDA) or `ollama` / `transformers`
-- **Hugging Face Account:** MedGemma is a gated Google model requiring community terms acceptance.
-- **Hardware:**
-  - **NVIDIA GPU (CUDA):** >= 10-12 GB VRAM for bfloat16, or >= 6 GB VRAM for 4-bit/8-bit quantized.
-  - **Apple Silicon:** M-series Mac with >= 16 GB unified memory.
-  - **CPU-only:** Supported for testing and functional development (slower generation speed).
+- **Hardware:** Apple Silicon Mac (M4, M3, M2, or M1 with unified memory)
+- **Memory Footprint:** ~3.2 GB peak memory for the 4-bit model
+- **Python Environment:** Python 3.12 (e.g. via virtualenv or conda)
+- **MLX-VLM Version:** 0.7.6+
 
 ---
 
-## 3. How to Download & Access the Model
+## 3. How to Start the Local MedGemma Server
 
-MedGemma 1.5 4B is distributed via Hugging Face:
-[https://huggingface.co/google/medgemma-1.5-4b-it](https://huggingface.co/google/medgemma-1.5-4b-it)
+In your Python 3.12 environment:
 
-### Step 1: Accept the License Agreement
-1. Visit `https://huggingface.co/google/medgemma-1.5-4b-it` in your browser.
-2. Log in with your Hugging Face account and accept the MedGemma research & development terms.
-
-### Step 2: Authenticate via Hugging Face CLI
-In your local terminal:
 ```bash
-pip install huggingface_hub
-huggingface-cli login
-```
-Enter your Hugging Face user access token when prompted.
+# 1. Ensure mlx-vlm is installed
+pip install "mlx-vlm>=0.7.6"
 
----
-
-## 4. How to Start the Local Inference Server
-
-We recommend **vLLM** because it natively exposes high-throughput OpenAI-compatible endpoints (`/v1/chat/completions` and `/v1/models`) supporting vision-language inputs.
-
-### Option A: Standard vLLM Server (Linux / NVIDIA CUDA)
-```bash
-# 1. Install vLLM
-pip install vllm
-
-# 2. Launch the inference server on port 8000
-vllm serve google/medgemma-1.5-4b-it \
-  --port 8000 \
-  --dtype bfloat16 \
-  --gpu-memory-utilization 0.85 \
-  --max-model-len 4096
-```
-
-### Option B: Apple Silicon (Mac MPS) / Alternative Local Serving
-On Apple Silicon or machines using Ollama or llama.cpp:
-```bash
-# If using Ollama (with GGUF / converted weights):
-ollama run medgemma:4b
-
-# If using Hugging Face Transformers local test server:
-python -m vllm.entrypoints.openai.api_server \
-  --model google/medgemma-1.5-4b-it \
+# 2. Launch the MLX-VLM OpenAI-compatible server on port 8000
+python -m mlx_vlm.server \
+  --model mlx-community/medgemma-1.5-4b-it-4bit \
   --port 8000
 ```
 
-The server is ready when you see:
+The server is ready when the log shows:
 ```
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
@@ -118,80 +80,103 @@ INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
 
 ---
 
-## 5. Expected Localhost Endpoint
+## 4. Proton Environment Variables
 
-Once running, the inference server exposes standard OpenAI-compatible endpoints:
-
-| Endpoint | Method | Purpose |
-| :--- | :--- | :--- |
-| `http://localhost:8000/v1/models` | `GET` | Health check and loaded model verification |
-| `http://localhost:8000/v1/chat/completions` | `POST` | Text & multimodal image generation |
-
----
-
-## 6. Proton Environment Variables
-
-Configure Proton API to route to your local MedGemma server:
+Configure Proton API to route to your local MLX-VLM server.
 
 In `apps/api/.env`:
+
 ```env
-# AI Provider Configuration
+# AI Provider Selection
 PROTON_AI_PROVIDER=medgemma
 PROTON_AI_MODE=local
 
-# Local MedGemma Inference Server
+# Local MLX-VLM Inference Server
 MEDGEMMA_BASE_URL=http://localhost:8000/v1
-MEDGEMMA_MODEL=google/medgemma-1.5-4b-it
+MEDGEMMA_MODEL=mlx-community/medgemma-1.5-4b-it-4bit
 
-# Optional Request Timeout (milliseconds)
-MEDGEMMA_TIMEOUT_MS=30000
+# Maximum tokens and timeout
+MEDGEMMA_MAX_TOKENS=1024
+MEDGEMMA_TIMEOUT_MS=60000
 ```
 
-> **Security Note:** Never commit Hugging Face access tokens, API keys, or model weights to source control.
+> **Security Note:** Real API keys or cloud credentials are NOT required for the local MedGemma provider. Never commit secrets to source control.
 
 ---
 
-## 7. How to Switch Between Providers
+## 5. How to Verify the Local Server
 
-Proton's provider factory dynamically routes requests without requiring application restarts:
-
-### Switch to MedGemma (Local Development)
+### 1. Verify Models Endpoint (`/v1/models`)
 ```bash
-PROTON_AI_PROVIDER=medgemma
-PROTON_AI_MODE=local
-```
-
-### Switch to Gemini (Cloud Reference Provider)
-```bash
-PROTON_AI_PROVIDER=gemini
-PROTON_AI_MODE=real
-GEMINI_API_KEY=your_gemini_api_key
-```
-
-### Switch to Demo Fixtures (Zero Dependencies)
-```bash
-PROTON_AI_PROVIDER=demo
-PROTON_AI_MODE=demo
-```
-
-Proton strictly enforces **Zero Silent Fallback**: if MedGemma is selected but the local server is offline, Proton returns an explicit `503 MEDGEMMA_UNAVAILABLE` error rather than secretly forwarding requests to Gemini.
-
----
-
-## 8. How to Test the Connection
-
-### 1. Test Local Server Directly
-```bash
-curl http://localhost:8000/v1/models
+curl -s http://localhost:8000/v1/models
 ```
 Expected response:
 ```json
-{"object":"list","data":[{"id":"google/medgemma-1.5-4b-it","object":"model"}]}
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "mlx-community/medgemma-1.5-4b-it-4bit",
+      "object": "model",
+      "loaded": true
+    }
+  ]
+}
 ```
 
-### 2. Test Proton AI Health Endpoint
+### 2. Verify Text Chat Completion (`/v1/chat/completions`)
 ```bash
-curl http://localhost:3002/health/ai
+curl -s http://localhost:8000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "mlx-community/medgemma-1.5-4b-it-4bit",
+    "messages": [
+      {"role": "user", "content": "Respond with valid JSON only: {\"status\": \"ok\"}"}
+    ],
+    "temperature": 0.1,
+    "max_tokens": 100
+  }'
+```
+
+### 3. Verify Multimodal Image Completion
+```bash
+curl -s http://localhost:8000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "mlx-community/medgemma-1.5-4b-it-4bit",
+    "messages": [
+      {
+        "role": "user",
+        "content": [
+          {"type": "text", "text": "Describe this image."},
+          {"type": "image_url", "image_url": {"url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="}}
+        ]
+      }
+    ],
+    "temperature": 0.1,
+    "max_tokens": 100
+  }'
+```
+
+---
+
+## 6. How to Start Proton
+
+### Step 1: Start Proton API Backend
+In `apps/api`:
+```bash
+# Starts Proton API server on port 3002
+node index.js
+```
+Console output will confirm:
+```
+Proton Backend API running on port 3002
+AI Pipeline: mode=local, provider=medgemma, model=mlx-community/medgemma-1.5-4b-it-4bit, configured=true
+```
+
+### Step 2: Verify Proton AI Health Status
+```bash
+curl -s http://localhost:3002/health/ai
 ```
 Expected response:
 ```json
@@ -199,55 +184,74 @@ Expected response:
   "status": "ok",
   "mode": "local",
   "provider": "medgemma",
-  "model": "google/medgemma-1.5-4b-it",
+  "model": "mlx-community/medgemma-1.5-4b-it-4bit",
   "configured": true,
   "reachable": true
 }
 ```
 
-### 3. Run the Automated Provider Test Suite
+### Step 3: Start Proton Web Frontend
+In `apps/web`:
+```bash
+npm run dev
+```
+Open `http://localhost:5173` (or `http://localhost:3000`).
+In **Settings** or **Document Review**, the UI displays:
+`AI Provider: MedGemma Local (Dev)` and `Local AI • MedGemma 1.5 4B`.
+
+---
+
+## 7. How to Switch Between Providers
+
+Proton's provider factory dynamically routes requests without architectural changes:
+
+- **Switch to Local MedGemma:**
+  ```bash
+  PROTON_AI_PROVIDER=medgemma
+  PROTON_AI_MODE=local
+  ```
+- **Switch to Gemini (Cloud Reference):**
+  ```bash
+  PROTON_AI_PROVIDER=gemini
+  PROTON_AI_MODE=real
+  ```
+- **Switch to Demo Fixtures (Deterministic Mock):**
+  ```bash
+  PROTON_AI_PROVIDER=demo
+  PROTON_AI_MODE=demo
+  ```
+
+**Zero Silent Fallback:** If MedGemma is configured but the local server on port 8000 is not running, Proton returns an explicit `503 MEDGEMMA_UNAVAILABLE` error to provide clear feedback.
+
+---
+
+## 8. Automated Testing
+
+Run the automated MedGemma test suite:
 ```bash
 node apps/api/tests/medgemma_provider_test.cjs
 ```
-This runs 9 automated unit tests verifying initialization, reachability, vLLM payload encoding, structured JSON schema extraction, and boundary handling.
-
-### 4. Run the Technical Benchmark
-```bash
-node apps/api/tests/medgemma_benchmark.cjs
-```
-
----
-
-## 9. Troubleshooting
-
-### Problem: `503 MEDGEMMA_UNAVAILABLE`
-- **Cause:** Proton API cannot connect to `http://localhost:8000/v1`.
-- **Fix:** Verify your vLLM server is running. Check with `curl http://localhost:8000/v1/models`. Verify port matches `MEDGEMMA_BASE_URL`.
-
-### Problem: Port 8000 Already in Use
-- **Cause:** Another process is listening on port 8000.
-- **Fix:** Launch vLLM on another port (e.g. `--port 8008`) and update `MEDGEMMA_BASE_URL=http://localhost:8008/v1` in `apps/api/.env`.
-
-### Problem: CUDA Out of Memory (OOM)
-- **Cause:** GPU has insufficient free VRAM for 4B parameters at `bfloat16`.
-- **Fix:**
-  1. Add `--gpu-memory-utilization 0.75`
-  2. Reduce context length: `--max-model-len 2048`
-  3. Use 4-bit or 8-bit quantized weights if supported by your runtime.
-
-### Problem: Audio Transcription Refused
-- **Cause:** Audio file uploaded to `/api/transcribe`.
-- **Design:** MedGemma 1.5 4B is a vision-language foundation model, not a speech-to-text model. Audio consultations require Whisper or multimodal Gemini.
+Verifies 10 automated test cases:
+1. Provider initialization & defaults
+2. Health status metadata clean & secret-free
+3. Unreachable server handling (explicit 503 `MEDGEMMA_UNAVAILABLE`)
+4. Successful local request handling against OpenAI-compatible server
+5. Structured output handling, thinking token stripping (`<unused94>thought...<unused95>`) and markdown fence stripping
+6. Provider factory routing
+7. Zero silent fallback to Gemini or DeepSeek
+8. Malformed responses and HTTP 500 handling
+9. Audio transcription safety refusal (informative direction to Whisper/Gemini)
+10. Live local MLX-VLM server verification
 
 ---
 
-## 10. Hardware Limitations & Specifications
+## 9. Troubleshooting & Compatibility
 
-| Hardware Profile | Model Format | VRAM / RAM | Typical Latency | Supported Workloads |
-| :--- | :--- | :--- | :--- | :--- |
-| **High GPU (NVIDIA RTX 4090 / A10G / A100)** | `bfloat16` unquantized | 12GB - 24GB VRAM | Fast (< 1.5s) | Document extraction, image understanding, clinical notes |
-| **Mid GPU (RTX 3060 / 4060 8GB-12GB)** | `bfloat16` or `float16` | 8GB - 12GB VRAM | Moderate (1.5s - 3s) | Document extraction, note generation |
-| **Apple Silicon (M1/M2/M3 Max 32GB+)** | Metal / MPS | Unified Memory | Moderate (2s - 4s) | Local development & testing |
-| **CPU Only (x86_64 / ARM)** | Quantized / float32 | >= 16GB System RAM | Slow (> 8s) | Development verification only |
+### Thinking Tokens in Output
+MedGemma uses reasoning tokens (`<unused94>thought...<unused95>`). The Proton `MedGemmaProvider` automatically strips these tokens before JSON parsing, preserving clean structured output.
 
-*Note: All memory requirements are derived directly from the 4-billion parameter architecture and standard KV-cache allocations.*
+### `response_format` Loop Prevention
+In MLX-VLM 0.7.6, unconstrained `response_format: {"type": "json_object"}` can cause sampler looping (`{"": ...}`). The Proton MedGemma provider instructs the model directly via prompt schema constraints and parses the resulting JSON, ensuring rapid token generation without loops.
+
+### Audio Transcription
+MedGemma 1.5 4B is a vision-language medical model without native audio processing. The consultation audio workflow requires Whisper or multimodal Gemini.

@@ -1,83 +1,64 @@
 @import "tailwindcss";
 
 @theme {
-  /* ── Proton Brand Palette ── */
-  --color-brand-50: #f0f4ff;
-  --color-brand-100: #dbe4ff;
-  --color-brand-200: #bac8ff;
-  --color-brand-300: #91a7ff;
-  --color-brand-400: #748ffc;
-  --color-brand-500: #5c7cfa;
-  --color-brand-600: #4c6ef5;
-  --color-brand-700: #4263eb;
-  --color-brand-800: #3b5bdb;
-  --color-brand-900: #364fc7;
-  --color-brand-950: #1e2a5e;
+  /* ── Refined Clinical Palette ── */
+  --color-brand-50: #eff6ff;
+  --color-brand-100: #dbeafe;
+  --color-brand-200: #bfdbfe;
+  --color-brand-300: #93c5fd;
+  --color-brand-400: #60a5fa;
+  --color-brand-500: #3b82f6;
+  --color-brand-600: #2563eb;
+  --color-brand-700: #1d4ed8;
+  --color-brand-800: #1e40af;
+  --color-brand-900: #1e3a8a;
+  --color-brand-950: #172554;
 
-  /* ── Typography ── */
-  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-display: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', ui-monospace, monospace;
+  /* ── Typography (Refined Modern Sans-Serif) ── */
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
 
-  /* ── Proton-specific semantic colors ── */
+  /* ── Clinical Environment (Warm Neutral & White Surfaces) ── */
   --color-surface: #ffffff;
-  --color-surface-raised: #f8f9fc;
-  --color-surface-sunken: #f1f3f9;
-  --color-surface-overlay: rgba(15, 23, 42, 0.6);
+  --color-surface-raised: #fbfbfa;
+  --color-surface-sunken: #f4f4f5;
+  --color-surface-overlay: rgba(24, 24, 27, 0.4);
 
-  --color-border-default: #e2e5ef;
-  --color-border-subtle: #eef0f6;
-  --color-border-strong: #c8cdd9;
+  --color-border-default: #e4e4e7;
+  --color-border-subtle: #f4f4f5;
+  --color-border-strong: #d4d4d8;
 
-  --color-text-primary: #0f172a;
-  --color-text-secondary: #475569;
-  --color-text-tertiary: #94a3b8;
+  --color-text-primary: #18181b;
+  --color-text-secondary: #71717a;
+  --color-text-tertiary: #a1a1aa;
   --color-text-inverse: #ffffff;
 
-  /* ── Clinical Semantic ── */
-  --color-clinical-safe: #059669;
-  --color-clinical-safe-bg: #ecfdf5;
+  /* ── Semantic Colors (Restrained Clinical) ── */
+  --color-clinical-safe: #16a34a;
+  --color-clinical-safe-bg: #f0fdf4;
   --color-clinical-warning: #d97706;
   --color-clinical-warning-bg: #fffbeb;
   --color-clinical-danger: #dc2626;
   --color-clinical-danger-bg: #fef2f2;
-  --color-clinical-ai: #7c3aed;
-  --color-clinical-ai-bg: #f5f3ff;
+  --color-clinical-info: #2563eb;
+  --color-clinical-info-bg: #eff6ff;
 
-  /* ── Spacing Scale ── */
-  --spacing-page: 2rem;
-  --spacing-section: 1.5rem;
-  --spacing-card: 1.25rem;
-
-  /* ── Shadows ── */
-  --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.03);
-  --shadow-card-hover: 0 4px 12px 0 rgba(0, 0, 0, 0.06), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
-  --shadow-modal: 0 20px 60px -12px rgba(0, 0, 0, 0.15), 0 8px 20px -8px rgba(0, 0, 0, 0.1);
-  --shadow-glow: 0 0 0 3px rgba(76, 110, 245, 0.12);
-
-  /* ── Border Radius ── */
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
-  --radius-2xl: 1.25rem;
+  /* ── Border Radius (Restrained, Editorial) ── */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
 
   /* ── Transitions ── */
-  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-in-out-expo: cubic-bezier(0.87, 0, 0.13, 1);
-  --ease-butter: cubic-bezier(0.19, 1, 0.22, 1);
-
-  /* ── Google MedGemma & Porcelain Clinical Theme (Image 4) ── */
-  --color-porcelain-canvas: #edf0ea;
-  --color-porcelain-pill-bg: #e1e7de;
-  --color-porcelain-dark: #1b211d;
-  --color-porcelain-lime: #e4f552;
+  --ease-butter: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* ── Base Styles ── */
-body {
-  background-color: #f8f9fc;
-  color: #0f172a;
+/* ── Base Styles (Quiet Clinical Workspace) ── */
+html, body {
+  background-color: #fafaf9;
+  color: #18181b;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -85,18 +66,17 @@ body {
 
 /* ── Selection ── */
 ::selection {
-  background-color: var(--color-brand-100);
-  color: var(--color-brand-900);
+  background-color: #dbeafe;
+  color: #1e3a8a;
 }
 
 /* ── Focus Ring System ── */
 *:focus-visible {
-  outline: 2px solid var(--color-brand-500);
-  outline-offset: 2px;
-  border-radius: var(--radius-sm);
+  outline: 2px solid #2563eb;
+  outline-offset: 1px;
 }
 
-/* ── Scrollbar ── */
+/* ── Clean Scrollbars ── */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -107,591 +87,243 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: rgba(148, 163, 184, 0.3);
+  background-color: rgba(161, 161, 170, 0.3);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(148, 163, 184, 0.5);
+  background-color: rgba(161, 161, 170, 0.5);
 }
 
-/* ── Premium Animations ── */
-@keyframes proton-fade-in {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+/* ── Typography Classes ── */
+.clinical-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #18181b;
+  line-height: 1.25;
 }
 
-@keyframes proton-slide-up {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+.clinical-subtitle {
+  font-size: 0.875rem;
+  color: #71717a;
+  line-height: 1.4;
 }
 
-@keyframes proton-scale-in {
-  from { opacity: 0; transform: scale(0.97); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-@keyframes proton-shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
-@keyframes proton-pulse-ring {
-  0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.3); }
-  70% { box-shadow: 0 0 0 6px rgba(220, 38, 38, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
-}
-
-@keyframes proton-slide-in-right {
-  from { opacity: 0; transform: translateX(16px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-@keyframes proton-gradient-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-}
-
-.proton-animate-in {
-  animation: proton-fade-in 0.35s var(--ease-out-expo) both;
-}
-
-.proton-animate-slide-up {
-  animation: proton-slide-up 0.4s var(--ease-out-expo) both;
-}
-
-.proton-animate-scale-in {
-  animation: proton-scale-in 0.25s var(--ease-out-expo) both;
-}
-
-.proton-animate-slide-right {
-  animation: proton-slide-in-right 0.3s var(--ease-out-expo) both;
-}
-
-/* ── Staggered Children ── */
-.proton-stagger > * {
-  animation: proton-fade-in 0.35s var(--ease-out-expo) both;
-}
-.proton-stagger > *:nth-child(1) { animation-delay: 0ms; }
-.proton-stagger > *:nth-child(2) { animation-delay: 50ms; }
-.proton-stagger > *:nth-child(3) { animation-delay: 100ms; }
-.proton-stagger > *:nth-child(4) { animation-delay: 150ms; }
-.proton-stagger > *:nth-child(5) { animation-delay: 200ms; }
-.proton-stagger > *:nth-child(6) { animation-delay: 250ms; }
-.proton-stagger > *:nth-child(7) { animation-delay: 300ms; }
-.proton-stagger > *:nth-child(8) { animation-delay: 350ms; }
-
-/* ── Shimmer Loading ── */
-.proton-shimmer {
-  background: linear-gradient(90deg, #f1f3f9 25%, #e8ebf3 50%, #f1f3f9 75%);
-  background-size: 200% 100%;
-  animation: proton-shimmer 1.5s ease-in-out infinite;
-}
-
-/* ── Glass Effect ── */
-.proton-glass {
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-/* ── Proton Card ── */
-.proton-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-default);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-card);
-  transition: box-shadow 0.2s ease, border-color 0.2s ease;
-}
-
-.proton-card:hover {
-  box-shadow: var(--shadow-card-hover);
-}
-
-.proton-card-interactive {
-  cursor: pointer;
-}
-
-.proton-card-interactive:hover {
-  border-color: var(--color-border-strong);
-}
-
-/* ── AI Content Indicator ── */
-.proton-ai-border {
-  border-left: 2px solid var(--color-clinical-ai);
-}
-
-.proton-ai-bg {
-  background-color: var(--color-clinical-ai-bg);
-}
-
-/* ── Clinical Status Indicators ── */
-.proton-status-safe { color: var(--color-clinical-safe); }
-.proton-status-warning { color: var(--color-clinical-warning); }
-.proton-status-danger { color: var(--color-clinical-danger); }
-
-/* ── Recording Pulse ── */
-.proton-recording-pulse {
-  animation: proton-pulse-ring 2s infinite;
-}
-
-/* ── Micro Label ── */
-.proton-micro-label {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
+.clinical-section-header {
+  font-size: 0.8125rem;
+  font-weight: 600;
   text-transform: uppercase;
-  line-height: 1;
+  letter-spacing: 0.04em;
+  color: #71717a;
 }
 
-/* ── Proton Button Base ── */
-.proton-btn {
+.clinical-value-large {
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #18181b;
+}
+
+/* ── Surface & Border Helpers ── */
+.clinical-surface {
+  background-color: #ffffff;
+  border: 1px solid #e4e4e7;
+}
+
+.clinical-divider {
+  border-top: 1px solid #e4e4e7;
+}
+
+.clinical-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.clinical-table th {
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #71717a;
+  padding: 0.625rem 0.875rem;
+  border-bottom: 1px solid #e4e4e7;
+  background-color: #fafaf9;
+}
+
+.clinical-table td {
+  font-size: 0.8125rem;
+  color: #18181b;
+  padding: 0.75rem 0.875rem;
+  border-bottom: 1px solid #f4f4f5;
+  vertical-align: middle;
+}
+
+.clinical-table tr:hover td {
+  background-color: #fbfbfa;
+}
+
+/* ── Button Hierarchy (Clean & Restrained) ── */
+.clinical-btn-primary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  font-weight: 600;
+  gap: 0.375rem;
+  background-color: #2563eb;
+  color: #ffffff;
   font-size: 0.8125rem;
-  line-height: 1;
-  border-radius: var(--radius-lg);
-  padding: 0.625rem 1.125rem;
-  transition: all 0.15s ease;
+  font-weight: 500;
+  padding: 0.5rem 0.875rem;
+  border-radius: 0.375rem;
+  transition: background-color 0.15s ease;
   cursor: pointer;
   white-space: nowrap;
 }
 
-.proton-btn:disabled {
+.clinical-btn-primary:hover {
+  background-color: #1d4ed8;
+}
+
+.clinical-btn-primary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.proton-btn-primary {
-  background-color: var(--color-brand-700);
-  color: white;
-  border: 1px solid var(--color-brand-700);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+.clinical-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  background-color: #ffffff;
+  color: #18181b;
+  border: 1px solid #e4e4e7;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  padding: 0.5rem 0.875rem;
+  border-radius: 0.375rem;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+  cursor: pointer;
+  white-space: nowrap;
 }
 
-.proton-btn-primary:hover:not(:disabled) {
-  background-color: var(--color-brand-800);
-  border-color: var(--color-brand-800);
-  box-shadow: 0 2px 8px rgba(66, 99, 235, 0.2);
+.clinical-btn-secondary:hover {
+  background-color: #f4f4f5;
+  border-color: #d4d4d8;
+}
+
+.clinical-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  background-color: transparent;
+  color: #71717a;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  padding: 0.375rem 0.625rem;
+  border-radius: 0.375rem;
+  transition: color 0.15s ease, background-color 0.15s ease;
+  cursor: pointer;
+}
+
+.clinical-btn-ghost:hover {
+  color: #18181b;
+  background-color: #f4f4f5;
+}
+
+/* ── Backward Compatibility with Existing Proton Classes ── */
+.proton-card {
+  background-color: #ffffff;
+  border: 1px solid #e4e4e7;
+  border-radius: 0.5rem;
+}
+
+.proton-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  padding: 0.5rem 0.875rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.proton-btn-primary {
+  background-color: #2563eb;
+  color: #ffffff;
+}
+
+.proton-btn-primary:hover {
+  background-color: #1d4ed8;
 }
 
 .proton-btn-secondary {
-  background-color: var(--color-surface);
-  color: var(--color-text-primary);
-  border: 1px solid var(--color-border-default);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  background-color: #ffffff;
+  color: #18181b;
+  border: 1px solid #e4e4e7;
 }
 
-.proton-btn-secondary:hover:not(:disabled) {
-  background-color: var(--color-surface-raised);
-  border-color: var(--color-border-strong);
+.proton-btn-secondary:hover {
+  background-color: #f4f4f5;
 }
 
 .proton-btn-ghost {
-  background: transparent;
-  color: var(--color-text-secondary);
-  border: 1px solid transparent;
+  background-color: transparent;
+  color: #71717a;
 }
 
-.proton-btn-ghost:hover:not(:disabled) {
-  background-color: var(--color-surface-sunken);
-  color: var(--color-text-primary);
+.proton-btn-ghost:hover {
+  color: #18181b;
+  background-color: #f4f4f5;
 }
 
-.proton-btn-danger {
-  background-color: #dc2626;
-  color: white;
-  border: 1px solid #dc2626;
-}
-
-.proton-btn-danger:hover:not(:disabled) {
-  background-color: #b91c1c;
-}
-
-/* ── Input Base ── */
 .proton-input {
   width: 100%;
-  padding: 0.5625rem 0.875rem;
+  padding: 0.5rem 0.75rem;
   font-size: 0.8125rem;
-  line-height: 1.5;
-  color: var(--color-text-primary);
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border-default);
-  border-radius: var(--radius-lg);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.proton-input::placeholder {
-  color: var(--color-text-tertiary);
+  color: #18181b;
+  background-color: #ffffff;
+  border: 1px solid #e4e4e7;
+  border-radius: 0.375rem;
+  transition: border-color 0.15s ease;
 }
 
 .proton-input:focus {
   outline: none;
-  border-color: var(--color-brand-500);
-  box-shadow: var(--shadow-glow);
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px #2563eb;
 }
 
-/* ── Badge Base ── */
 .proton-badge {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  padding: 0.125rem 0.5rem;
-  font-size: 0.6875rem;
-  font-weight: 600;
-  border-radius: 9999px;
-  line-height: 1.4;
-  white-space: nowrap;
-}
-
-/* ── Kbd ── */
-.proton-kbd {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 500;
   padding: 0.125rem 0.375rem;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-default);
-  border-radius: var(--radius-sm);
-  color: var(--color-text-tertiary);
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
-  line-height: 1.4;
-}
-
-/* ── Divider ── */
-.proton-divider {
-  border: none;
-  border-top: 1px solid var(--color-border-subtle);
-  margin: 0;
-}
-
-/* ── Grid patterns for hero ── */
-.proton-grid-pattern {
-  background-image: 
-    linear-gradient(rgba(76, 110, 245, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(76, 110, 245, 0.03) 1px, transparent 1px);
-  background-size: 48px 48px;
-}
-
-.proton-dot-pattern {
-  background-image: radial-gradient(circle, rgba(76, 110, 245, 0.08) 1px, transparent 1px);
-  background-size: 24px 24px;
-}
-
-/* ── Print Styles ── */
-@media print {
-  .proton-no-print {
-    display: none !important;
-  }
-}
-
-/* ══════════════════════════════════════════════════════════
-   PROTON // LUXURY BLACK & WHITE MONOCHROME DESIGN SYSTEM
-   Ultra-posh editorial aesthetic with film-grain ('blackgrain')
-   background, obsidian frosted glass, and pure bone-white typography.
-   ══════════════════════════════════════════════════════════ */
-
-/* ── 1. Black Film-Grain ('blackgrain') Background Utilities ── */
-.bg-blackgrain {
-  background-color: #080808;
-  background-image: 
-    radial-gradient(ellipse 90% 65% at 50% -10%, rgba(255, 255, 255, 0.045) 0%, transparent 65%),
-    radial-gradient(ellipse 85% 75% at 50% 110%, rgba(255, 255, 255, 0.02) 0%, transparent 70%),
-    url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='blackgrainFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.065 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23blackgrainFilter)'/%3E%3C/svg%3E");
-}
-
-.bg-blackgrain-fixed {
-  background-color: #080808;
-  background-image: 
-    radial-gradient(ellipse 90% 65% at 50% -10%, rgba(255, 255, 255, 0.045) 0%, transparent 65%),
-    radial-gradient(ellipse 85% 75% at 50% 110%, rgba(255, 255, 255, 0.02) 0%, transparent 70%),
-    url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='blackgrainFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.065 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23blackgrainFilter)'/%3E%3C/svg%3E");
-  background-attachment: fixed;
-}
-
-.bg-blackgrain-dense {
-  background-color: #050505;
-  background-image: 
-    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.04) 0%, transparent 60%),
-    url("data:image/svg+xml,%3Csvg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='denseGrain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23denseGrain)'/%3E%3C/svg%3E");
-}
-
-.blackgrain-overlay {
-  position: relative;
-}
-.blackgrain-overlay::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='grainOver'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23grainOver)'/%3E%3C/svg%3E");
-  opacity: 0.9;
-  z-index: 1;
-}
-
-/* ── 2. Luxury Frosted Obsidian Glass & Borders ── */
-.luxury-glass {
-  background: rgba(10, 10, 14, 0.82);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-}
-
-.luxury-glass-card {
-  background: rgba(12, 12, 16, 0.78);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 1.25rem;
-  box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
-}
-
-.luxury-glass-card:hover {
-  border-color: rgba(255, 255, 255, 0.22);
-  box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-}
-
-.luxury-border {
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.luxury-border-strong {
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.luxury-border-subtle {
-  border: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.luxury-glow {
-  box-shadow: 0 0 35px -5px rgba(255, 255, 255, 0.15);
-}
-
-.luxury-divider {
-  border: none;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  margin: 0;
-}
-
-/* ── 3. Tactile Black & White Pill Buttons ── */
-.luxury-pill-white {
-  background-color: #ffffff;
-  color: #050505;
-  font-weight: 600;
-  font-size: 0.8125rem;
-  letter-spacing: -0.01em;
-  padding: 0.625rem 1.375rem;
-  border-radius: 9999px;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 4px 20px -2px rgba(255, 255, 255, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.6);
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.luxury-pill-white:hover {
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 0.25rem;
   background-color: #f4f4f5;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 28px 0 rgba(255, 255, 255, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.85);
+  color: #71717a;
 }
 
-.luxury-pill-white:active {
-  transform: translateY(0);
+.proton-divider {
+  border-top: 1px solid #e4e4e7;
 }
 
-.luxury-pill-ghost {
-  background: rgba(255, 255, 255, 0.04);
-  color: #f4f4f5;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  font-weight: 500;
-  font-size: 0.8125rem;
-  padding: 0.625rem 1.375rem;
-  border-radius: 9999px;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.luxury-pill-ghost:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.4);
-  color: #ffffff;
-  transform: translateY(-1px);
-}
-
-.luxury-pill-ghost:active {
-  transform: translateY(0);
-}
-
-/* ── 4. Luxury Monospace Micro-Typography ── */
-.luxury-tag {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: #a1a1aa;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-}
-
-/* ── 5. Backward Compatible Overrides (Strictly Monochrome) ── */
-.proton-hud-grid {
-  background-color: #080808;
-  background-image: 
-    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.04) 0%, transparent 60%),
-    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 100% 100%, 64px 64px, 64px 64px;
-  background-position: 0 0, -1px -1px, -1px -1px;
-}
-
-.proton-lumen-card {
-  background: rgba(12, 12, 16, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  border-radius: 1.25rem;
-}
-
-.proton-lumen-card:hover {
-  border-color: rgba(255, 255, 255, 0.25);
-  box-shadow: 0 14px 50px -10px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-}
-
-.proton-hud-tag {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #d4d4d8;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-}
-
-.proton-hud-bracket {
-  position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(12, 12, 15, 0.7);
-  backdrop-filter: blur(8px);
-}
-
-.proton-hud-bracket::before,
-.proton-hud-bracket::after {
-  content: "";
-  position: absolute;
-  width: 6px;
-  height: 6px;
-  border-color: #ffffff;
-  pointer-events: none;
-}
-
-.proton-hud-bracket::before {
-  top: -1px;
-  left: -1px;
-  border-top: 2px solid #ffffff;
-  border-left: 2px solid #ffffff;
-}
-
-.proton-hud-bracket::after {
-  bottom: -1px;
-  right: -1px;
-  border-bottom: 2px solid #ffffff;
-  border-right: 2px solid #ffffff;
-}
-
-.proton-pill-cyan {
-  background: #ffffff;
-  color: #050505;
+.proton-micro-label {
+  font-size: 0.75rem;
   font-weight: 600;
-  font-size: 0.8125rem;
-  letter-spacing: -0.01em;
-  padding: 0.625rem 1.375rem;
-  border-radius: 9999px;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 4px 20px -2px rgba(255, 255, 255, 0.2);
-  cursor: pointer;
+  color: #71717a;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
-.proton-pill-cyan:hover {
+.proton-shimmer {
   background: #f4f4f5;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 28px 0 rgba(255, 255, 255, 0.35);
 }
 
-.proton-pill-dark {
-  background: rgba(255, 255, 255, 0.05);
-  color: #f8fafc;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  backdrop-filter: blur(12px);
-  font-weight: 500;
-  font-size: 0.8125rem;
-  padding: 0.625rem 1.375rem;
-  border-radius: 9999px;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: all 0.2s ease;
-  cursor: pointer;
+.proton-animate-in {
+  animation: none;
 }
-
-.proton-pill-dark:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.35);
-  color: #ffffff;
-}
-
-/* ── 6. Scoped Luxury Monochrome Application Frame ── */
-.luxury-theme {
-  color-scheme: dark;
-}
-
-.luxury-theme .proton-card {
-  background: rgba(14, 14, 18, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #f4f4f5;
-  backdrop-filter: blur(16px);
-  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.7);
-}
-
-.luxury-theme .proton-card:hover {
-  border-color: rgba(255, 255, 255, 0.2);
-}
-
-.luxury-theme .proton-input {
-  background-color: rgba(18, 18, 22, 0.85);
-  border-color: rgba(255, 255, 255, 0.14);
-  color: #ffffff;
-}
-
-.luxury-theme .proton-input:focus {
-  border-color: rgba(255, 255, 255, 0.45);
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
-}
-
-@keyframes proton-particle-float {
-  0%, 100% { transform: translateY(0) scale(1); opacity: 0.7; }
-  50% { transform: translateY(-8px) scale(1.05); opacity: 1; }
-}
-
-.proton-particle-pulse {
-  animation: proton-particle-float 4s ease-in-out infinite;
-}
-

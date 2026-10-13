@@ -1,9 +1,56 @@
 const { AIProvider } = require('./ai');
 
+function normalizeCategory(cat) {
+  if (!cat || typeof cat !== 'string') return 'other';
+  const lower = cat.toLowerCase().trim();
+  if (lower.includes('med')) return 'medication';
+  if (lower.includes('diag') || lower.includes('condition') || lower.includes('problem')) return 'diagnosis';
+  if (lower.includes('lab') || lower.includes('test') || lower.includes('result')) return 'lab';
+  if (lower.includes('proc') || lower.includes('surger') || lower.includes('operat')) return 'procedure';
+  if (lower.includes('allerg')) return 'allergy';
+  return 'other';
+}
+
+function ensureString(val) {
+  if (typeof val === 'string') return val;
+  if (typeof val === 'object' && val !== null) {
+    return Object.entries(val)
+      .map(([k, v]) => `${k.replace(/_/g, ' ')}: ${typeof v === 'object' ? JSON.stringify(v) : v}`)
+      .join('\n');
+  }
+  return String(val || 'None');
+}
+
+function extractJsonFromContent(content) {
+  if (typeof content !== 'string') return '';
+  let text = content.trim();
+
+  // Strip special tokens / thinking tags like <unused94>thought...<unused95> or <thought>...</thought>
+  text = text.replace(/<unused94>thought[\s\S]*?<unused95>/gi, '');
+  text = text.replace(/<unused\d+>[\s\S]*?<unused\d+>/gi, '');
+  text = text.replace(/<thought>[\s\S]*?<\/thought>/gi, '');
+  text = text.trim();
+
+  // If there are markdown json fences, extract the fenced content
+  const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  if (fenceMatch) {
+    text = fenceMatch[1].trim();
+  } else {
+    // If no clean fence, find outermost JSON object { ... }
+    const firstBrace = text.indexOf('{');
+    const lastBrace = text.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      text = text.slice(firstBrace, lastBrace + 1).trim();
+    }
+  }
+
+  return text;
+}
+
 /**
  * MedGemma 1.5 4B Local AI Provider
- * Connects to local OpenAI-compatible inference server (e.g., vLLM)
- * hosting google/medgemma-1.5-4b-it.
+ * Connects to local OpenAI-compatible MLX-VLM server on Apple Silicon
+ * hosting mlx-community/medgemma-1.5-4b-it-4bit at http://localhost:8000/v1.
  *
  * Designed for local development and synthetic evaluation.
  * NEVER writes directly to FHIR. All outputs are preliminary proposals
@@ -13,12 +60,12 @@ class MedGemmaProvider extends AIProvider {
   constructor(baseUrl, modelName) {
     super();
     this.baseUrl = (baseUrl || process.env.MEDGEMMA_BASE_URL || 'http://localhost:8000/v1').replace(/\/+$/, '');
-    this.modelName = modelName || process.env.MEDGEMMA_MODEL || 'google/medgemma-1.5-4b-it';
-    this.timeoutMs = parseInt(process.env.MEDGEMMA_TIMEOUT_MS || '30000', 10);
+    this.modelName = modelName || process.env.MEDGEMMA_MODEL || 'mlx-community/medgemma-1.5-4b-it-4bit';
+    this.timeoutMs = parseInt(process.env.MEDGEMMA_TIMEOUT_MS || '60000', 10);
   }
 
   /**
-   * Fast connectivity check against the local inference server.
+   * Fast connectivity check against the local MLX-VLM inference server.
    * Pings /models endpoint with a short timeout.
    */
   async isReachable(timeoutMs = 1500) {
@@ -77,14 +124,14 @@ class MedGemmaProvider extends AIProvider {
 - "plan": string
 - "followUp": string`;
 
-    const prompt = `You are MedGemma, a specialized clinical AI assistant.
+    const prompt = `You are MedGemma, a specialized clinical AI assistant running locally.
 Given the consultation transcript and patient background, generate a structured clinical note formatted for a ${templateName}.
 
 CLINICAL CONSTRAINTS:
 1. You generate preliminary drafts ONLY. The attending physician remains the final authority and must review, edit, and sign off.
 2. Do NOT fabricate, assume, or extrapolate clinical facts not mentioned in the transcript or context.
 3. If information for a section is missing from dialogue, write "Not mentioned" or "None".
-4. You must respond ONLY with a valid JSON object matching the schema below. No markdown backticks, no conversational preambles.
+4. You must respond ONLY with a valid JSON object matching the schema below. No conversational preambles, output valid JSON only.
 
 SCHEMA REQUIREMENTS:
 ${schemaInstructions}
@@ -97,21 +144,49 @@ ${transcript}`;
 
     const messages = [
       {
-        role: "system",
-        content: "You are an expert clinical AI assistant. You generate structured clinical note drafts strictly adhering to JSON formatting rules. Respond only with valid JSON."
-      },
-      {
         role: "user",
         content: prompt
       }
     ];
 
-    return await this._callMedGemma(messages, true);
+    const result = await this._callMedGemma(messages, true);
+
+    // Ensure parsed note satisfies required clinical fields
+    try {
+      const parsed = JSON.parse(result.text);
+      if (templateName === 'SOAP') {
+        const cleanedSOAP = {
+          subjective: ensureString(parsed.subjective),
+          objective: ensureString(parsed.objective),
+          assessment: ensureString(parsed.assessment),
+          plan: ensureString(parsed.plan)
+        };
+        result.text = JSON.stringify(cleanedSOAP);
+      } else {
+        const cleanedGeneral = {
+          chiefComplaint: ensureString(parsed.chiefComplaint),
+          historyOfPresentIllness: ensureString(parsed.historyOfPresentIllness),
+          relevantHistory: ensureString(parsed.relevantHistory),
+          medications: Array.isArray(parsed.medications) ? parsed.medications : [],
+          allergies: Array.isArray(parsed.allergies) ? parsed.allergies : [],
+          examinationFindings: ensureString(parsed.examinationFindings),
+          investigations: Array.isArray(parsed.investigations) ? parsed.investigations : [],
+          assessment: ensureString(parsed.assessment),
+          plan: ensureString(parsed.plan),
+          followUp: ensureString(parsed.followUp)
+        };
+        result.text = JSON.stringify(cleanedGeneral);
+      }
+    } catch {
+      // If parsing failed, result.text remains as extracted so downstream validator provides clean error
+    }
+
+    return result;
   }
 
   /**
    * Multimodal medical document fact extraction.
-   * Passes native image payload to MedGemma vision encoder when an image is provided.
+   * Uses MLX-VLM's OpenAI-compatible image_url format for image inputs.
    */
   async extractDocument(fileBuffer, mimeType, filename, documentSchema) {
     if (!fileBuffer || !(fileBuffer instanceof Buffer) || fileBuffer.length === 0) {
@@ -139,15 +214,12 @@ CLINICAL SAFETY RULES:
       "source_quote": "exact verbatim quote from document"
     }
   ]
-}`;
+}
+
+Respond ONLY with valid JSON.`;
 
     const isImage = mimeType && (mimeType.startsWith('image/') || /\.(png|jpe?g|webp)$/i.test(filename || ''));
-    const messages = [
-      {
-        role: "system",
-        content: "You are an expert clinical document analysis AI assistant. You respond ONLY with valid JSON."
-      }
-    ];
+    const messages = [];
 
     if (isImage) {
       const base64Data = fileBuffer.toString('base64');
@@ -167,24 +239,44 @@ CLINICAL SAFETY RULES:
       });
     }
 
-    return await this._callMedGemma(messages, true);
+    const result = await this._callMedGemma(messages, true);
+
+    // Normalize categories and format for Proton downstream verification and FHIR staging
+    try {
+      const parsed = JSON.parse(result.text);
+      const rawFacts = Array.isArray(parsed.facts) ? parsed.facts : [];
+      const normalizedFacts = rawFacts.map(f => ({
+        category: normalizeCategory(f.category),
+        text: typeof f.text === 'string' ? f.text : String(f.text || ''),
+        confidence: typeof f.confidence === 'number' ? Math.min(1.0, Math.max(0.0, f.confidence)) : 0.90,
+        source_quote: typeof f.source_quote === 'string' ? f.source_quote : String(f.source_quote || f.quote || f.text || '')
+      }));
+
+      const normalizedResult = {
+        document_date: parsed.document_date || 'Recent',
+        document_type: parsed.document_type || 'Clinical Document',
+        facts: normalizedFacts
+      };
+      result.text = JSON.stringify(normalizedResult);
+    } catch {
+      // If parsing failed, result.text remains as extracted
+    }
+
+    return result;
   }
 
   /**
-   * Internal HTTP caller for local OpenAI-compatible inference server.
-   * Handles timeouts, network unreachability, JSON validation, and error sanitization.
+   * Internal HTTP caller for local OpenAI-compatible MLX-VLM inference server.
+   * Handles timeouts, network unreachability, thinking token stripping, and error sanitization.
    */
   async _callMedGemma(messages, requireJson = true) {
     const payload = {
       model: this.modelName,
       messages,
       temperature: 0.1,
+      max_tokens: parseInt(process.env.MEDGEMMA_MAX_TOKENS || '1024', 10),
       stream: false
     };
-
-    if (requireJson) {
-      payload.response_format = { type: "json_object" };
-    }
 
     let res;
     const controller = new AbortController();
@@ -210,7 +302,7 @@ CLINICAL SAFETY RULES:
 
       const err = new Error(
         `MedGemma local inference server is unavailable at ${this.baseUrl} (${networkErr.message}). ` +
-        `Please ensure the local MedGemma server (e.g. vLLM serving ${this.modelName}) is running.`
+        `Please ensure the local MedGemma server (MLX-VLM serving ${this.modelName}) is running.`
       );
       err.status = 503;
       err.code = 'MEDGEMMA_UNAVAILABLE';
@@ -242,11 +334,7 @@ CLINICAL SAFETY RULES:
     let textContent = data.choices?.[0]?.message?.content || '';
 
     if (requireJson && typeof textContent === 'string') {
-      textContent = textContent
-        .replace(/^```json\s*/i, '')
-        .replace(/^```\s*/i, '')
-        .replace(/\s*```$/i, '')
-        .trim();
+      textContent = extractJsonFromContent(textContent);
     }
 
     const usage = data.usage || {};

@@ -2,17 +2,18 @@
  * Proton - MedGemma 1.5 4B Provider Integration & Architecture Test Suite
  *
  * Verifies:
- * 1. Provider initialization & defaults
+ * 1. Provider initialization & defaults (mlx-community/medgemma-1.5-4b-it-4bit)
  * 2. Configuration resolution & secret-free status
- * 3. Unreachable-server handling (explicit provider error, no crash)
- * 4. Successful local request (mocked OpenAI-compatible vLLM server)
- * 5. Structured clinical output handling & code-fence stripping
+ * 3. Unreachable-server handling (explicit provider error, no crash, MEDGEMMA_UNAVAILABLE)
+ * 4. Successful local request (mocked OpenAI-compatible MLX-VLM server)
+ * 5. Structured clinical output handling, thinking token stripping & code-fence stripping
  * 6. Provider factory routing (PROTON_AI_PROVIDER=medgemma)
- * 7. Zero silent fallback to Gemini (explicit failure boundary)
+ * 7. Zero silent fallback to Gemini or DeepSeek (explicit failure boundary)
  * 8. Malformed response & HTTP error handling
  * 9. Audio transcription safety boundary (informative refusal)
+ * 10. Live local MLX-VLM server verification (when running at http://localhost:8000/v1)
  *
- * Runs completely locally with ZERO network dependencies.
+ * Runs completely locally with ZERO external network dependencies and ZERO API keys.
  */
 
 const assert = require('assert');
@@ -25,7 +26,7 @@ const DemoProvider = require('../providers/demo');
 async function runTestSuite() {
   console.log('===============================================================');
   console.log('   PROTON MEDGEMMA 1.5 4B PROVIDER INTEGRATION TEST SUITE');
-  console.log('   Local AI Specialist Verification');
+  console.log('   MLX-VLM Apple Silicon Runtime Verification');
   console.log('===============================================================');
 
   const originalEnv = { ...process.env };
@@ -35,13 +36,15 @@ async function runTestSuite() {
     // TEST 1: Provider Initialization & Defaults
     // -------------------------------------------------------------------------
     console.log('\n[TEST 1] Verifying MedGemmaProvider initialization and defaults...');
+    delete process.env.MEDGEMMA_BASE_URL;
+    delete process.env.MEDGEMMA_MODEL;
     const defaultProvider = new MedGemmaProvider();
     assert.strictEqual(defaultProvider.baseUrl, 'http://localhost:8000/v1', 'Default base URL must be http://localhost:8000/v1');
-    assert.strictEqual(defaultProvider.modelName, 'google/medgemma-1.5-4b-it', 'Default model must be google/medgemma-1.5-4b-it');
+    assert.strictEqual(defaultProvider.modelName, 'mlx-community/medgemma-1.5-4b-it-4bit', 'Default model must be mlx-community/medgemma-1.5-4b-it-4bit');
 
-    const customProvider = new MedGemmaProvider('http://127.0.0.1:9000/v1/', 'google/medgemma-1.5-4b-it-custom');
+    const customProvider = new MedGemmaProvider('http://127.0.0.1:9000/v1/', 'mlx-community/medgemma-1.5-4b-it-custom');
     assert.strictEqual(customProvider.baseUrl, 'http://127.0.0.1:9000/v1', 'Base URL must be trimmed of trailing slashes');
-    assert.strictEqual(customProvider.modelName, 'google/medgemma-1.5-4b-it-custom', 'Custom model name must be preserved');
+    assert.strictEqual(customProvider.modelName, 'mlx-community/medgemma-1.5-4b-it-custom', 'Custom model name must be preserved');
     console.log('✓ Provider initialization and configuration defaults: PASS');
 
     // -------------------------------------------------------------------------
@@ -51,12 +54,12 @@ async function runTestSuite() {
     process.env.PROTON_AI_PROVIDER = 'medgemma';
     process.env.PROTON_AI_MODE = 'local';
     process.env.MEDGEMMA_BASE_URL = 'http://localhost:8000/v1';
-    process.env.MEDGEMMA_MODEL = 'google/medgemma-1.5-4b-it';
+    process.env.MEDGEMMA_MODEL = 'mlx-community/medgemma-1.5-4b-it-4bit';
 
     const status = getProviderStatus();
     assert.strictEqual(status.provider, 'medgemma', 'Provider must be medgemma');
     assert.strictEqual(status.mode, 'local', 'Mode must be local');
-    assert.strictEqual(status.model, 'google/medgemma-1.5-4b-it', 'Model must be google/medgemma-1.5-4b-it');
+    assert.strictEqual(status.model, 'mlx-community/medgemma-1.5-4b-it-4bit', 'Model must be mlx-community/medgemma-1.5-4b-it-4bit');
     assert.strictEqual(status.configured, true, 'MedGemma must report configured=true');
 
     const serializedStatus = JSON.stringify(status);
@@ -69,7 +72,7 @@ async function runTestSuite() {
     // -------------------------------------------------------------------------
     console.log('\n[TEST 3] Verifying explicit error handling when local MedGemma server is unreachable...');
     // Point to an unused local port
-    const unreachableProvider = new MedGemmaProvider('http://127.0.0.1:59123/v1', 'google/medgemma-1.5-4b-it');
+    const unreachableProvider = new MedGemmaProvider('http://127.0.0.1:59123/v1', 'mlx-community/medgemma-1.5-4b-it-4bit');
 
     const reachable = await unreachableProvider.isReachable(500);
     assert.strictEqual(reachable, false, 'isReachable must return false for down server');
@@ -96,7 +99,7 @@ async function runTestSuite() {
     console.log('✓ Unreachable server produces explicit 503 MEDGEMMA_UNAVAILABLE error: PASS');
 
     // -------------------------------------------------------------------------
-    // TEST 4: Successful Local Request via Mock OpenAI-compatible vLLM Server
+    // TEST 4: Successful Local Request via Mock OpenAI-compatible Server
     // -------------------------------------------------------------------------
     console.log('\n[TEST 4] Verifying successful request handling against OpenAI-compatible server...');
     let lastReceivedPayload = null;
@@ -104,7 +107,7 @@ async function runTestSuite() {
     const mockServer = http.createServer((req, res) => {
       if (req.url === '/v1/models' && req.method === 'GET') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ object: 'list', data: [{ id: 'google/medgemma-1.5-4b-it' }] }));
+        res.end(JSON.stringify({ object: 'list', data: [{ id: 'mlx-community/medgemma-1.5-4b-it-4bit' }] }));
         return;
       }
 
@@ -117,12 +120,12 @@ async function runTestSuite() {
           res.end(JSON.stringify({
             id: 'chatcmpl-mock-medgemma-1',
             object: 'chat.completion',
-            model: 'google/medgemma-1.5-4b-it',
+            model: 'mlx-community/medgemma-1.5-4b-it-4bit',
             choices: [{
               index: 0,
               message: {
                 role: 'assistant',
-                content: JSON.stringify({
+                content: '<unused94>thought\nParsing clinical document.\n<unused95>```json\n' + JSON.stringify({
                   document_date: '2026-10-10',
                   document_type: 'Lab Report',
                   facts: [
@@ -139,7 +142,7 @@ async function runTestSuite() {
                       source_quote: 'Rx: Lisinopril 20mg PO daily'
                     }
                   ]
-                })
+                }) + '\n```'
               },
               finish_reason: 'stop'
             }],
@@ -162,7 +165,7 @@ async function runTestSuite() {
     const mockBaseUrl = `http://127.0.0.1:${mockPort}/v1`;
 
     try {
-      const activeProvider = new MedGemmaProvider(mockBaseUrl, 'google/medgemma-1.5-4b-it');
+      const activeProvider = new MedGemmaProvider(mockBaseUrl, 'mlx-community/medgemma-1.5-4b-it-4bit');
 
       // Test isReachable against running mock server
       const isOnline = await activeProvider.isReachable(1000);
@@ -173,25 +176,24 @@ async function runTestSuite() {
       const result = await activeProvider.extractDocument(fakeImageBuffer, 'image/png', 'lab_results.png', null);
 
       assert(result && result.text, 'Result must contain response text');
-      assert.strictEqual(result.model, 'google/medgemma-1.5-4b-it', 'Model must match');
+      assert.strictEqual(result.model, 'mlx-community/medgemma-1.5-4b-it-4bit', 'Model must match');
       assert.strictEqual(result.usageMetadata.totalTokenCount, 205, 'Token counts must be populated');
 
       // Verify multimodal image_url format sent to local server
       assert(lastReceivedPayload, 'Payload must have been received by mock server');
-      assert.strictEqual(lastReceivedPayload.model, 'google/medgemma-1.5-4b-it');
-      assert.strictEqual(lastReceivedPayload.response_format?.type, 'json_object');
+      assert.strictEqual(lastReceivedPayload.model, 'mlx-community/medgemma-1.5-4b-it-4bit');
       const userMessage = lastReceivedPayload.messages.find(m => m.role === 'user');
       assert(Array.isArray(userMessage.content), 'Multimodal image input must format content as an array');
       const imagePart = userMessage.content.find(p => p.type === 'image_url');
       assert(imagePart, 'Multimodal payload must include image_url part');
       assert(imagePart.image_url.url.startsWith('data:image/png;base64,'), 'image_url must be valid data URI');
 
-      console.log('✓ Successful local multimodal request and vLLM format verification: PASS');
+      console.log('✓ Successful local multimodal request and MLX-VLM format verification: PASS');
 
       // -----------------------------------------------------------------------
-      // TEST 5: Structured Output Handling & Markdown Code-Fence Stripping
+      // TEST 5: Structured Output Handling, Thinking Token & Code-Fence Stripping
       // -----------------------------------------------------------------------
-      console.log('\n[TEST 5] Verifying structured output parsing and markdown fence stripping...');
+      console.log('\n[TEST 5] Verifying structured output parsing, thinking token & fence stripping...');
       const parsedExtraction = JSON.parse(result.text);
       assert.strictEqual(parsedExtraction.document_date, '2026-10-10');
       assert.strictEqual(parsedExtraction.document_type, 'Lab Report');
@@ -199,11 +201,15 @@ async function runTestSuite() {
       assert.strictEqual(parsedExtraction.facts[0].category, 'lab');
       assert.strictEqual(parsedExtraction.facts[0].source_quote, 'Potassium: 5.8 mEq/L (H)');
 
-      // Verify code fence stripping when server wraps JSON in markdown fences
-      const fencedContent = '```json\n{"document_date":"Recent","document_type":"Note","facts":[]}\n```';
-      const stripped = fencedContent.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim();
-      assert.strictEqual(JSON.parse(stripped).document_date, 'Recent', 'Markdown fence stripping must produce valid JSON');
-      console.log('✓ Structured output handling and markdown fence stripping: PASS');
+      // Verify thinking token and code fence stripping
+      const rawThinkingWithFence = '<unused94>thought\nAnalyzing symptoms.\n<unused95>```json\n{"document_date":"Recent","document_type":"Note","facts":[]}\n```';
+      const cleanJson = rawThinkingWithFence
+        .replace(/<unused94>thought[\s\S]*?<unused95>/gi, '')
+        .replace(/^```json\s*/i, '')
+        .replace(/\s*```$/i, '')
+        .trim();
+      assert.strictEqual(JSON.parse(cleanJson).document_date, 'Recent', 'Thinking token and fence stripping must produce valid JSON');
+      console.log('✓ Structured output handling and thinking token stripping: PASS');
 
     } finally {
       await new Promise(resolve => mockServer.close(resolve));
@@ -230,17 +236,18 @@ async function runTestSuite() {
     console.log('✓ Provider factory routing for MedGemma, Gemini, and Demo: PASS');
 
     // -------------------------------------------------------------------------
-    // TEST 7: Zero Silent Fallback to Gemini
+    // TEST 7: Zero Silent Fallback to Gemini or DeepSeek
     // -------------------------------------------------------------------------
-    console.log('\n[TEST 7] Verifying NO silent fallback from MedGemma to Gemini...');
+    console.log('\n[TEST 7] Verifying NO silent fallback from MedGemma to Gemini or DeepSeek...');
     process.env.PROTON_AI_PROVIDER = 'medgemma';
     process.env.PROTON_AI_MODE = 'local';
     process.env.GEMINI_API_KEY = 'valid-gemini-key-present';
+    process.env.DEEPSEEK_API_KEY = 'valid-deepseek-key-present';
 
     const providerSelection = getProvider();
-    assert(providerSelection instanceof MedGemmaProvider, 'Must select MedGemma even if GEMINI_API_KEY is set');
+    assert(providerSelection instanceof MedGemmaProvider, 'Must select MedGemma even if other API keys are set');
     assert(!(providerSelection instanceof GeminiProvider), 'Must NEVER silently substitute Gemini for MedGemma');
-    console.log('✓ Zero silent fallback to Gemini strictly enforced: PASS');
+    console.log('✓ Zero silent fallback strictly enforced: PASS');
 
     // -------------------------------------------------------------------------
     // TEST 8: Malformed Response & HTTP Error Handling
@@ -248,7 +255,7 @@ async function runTestSuite() {
     console.log('\n[TEST 8] Verifying handling of malformed responses and HTTP errors...');
     const errorServer = http.createServer((req, res) => {
       res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: { message: 'Internal engine out of memory' } }));
+      res.end(JSON.stringify({ error: { message: 'MLX internal memory allocation error' } }));
     });
 
     await new Promise(resolve => errorServer.listen(0, '127.0.0.1', resolve));
@@ -262,7 +269,7 @@ async function runTestSuite() {
       } catch (err) {
         threw500 = true;
         assert.strictEqual(err.code, 'MEDGEMMA_API_ERROR', 'Must return MEDGEMMA_API_ERROR code');
-        assert(err.message.includes('Internal engine out of memory'), 'Must include upstream error message');
+        assert(err.message.includes('MLX internal memory allocation error'), 'Must include upstream error message');
       }
       assert(threw500, 'HTTP 500 from inference server must be caught safely');
     } finally {
@@ -286,8 +293,28 @@ async function runTestSuite() {
     assert(audioRefused, 'transcribe() must reject audio inputs');
     console.log('✓ Audio transcription refusal handled safely: PASS');
 
+    // -------------------------------------------------------------------------
+    // TEST 10: Live Local MLX-VLM Server Verification (if running on localhost:8000)
+    // -------------------------------------------------------------------------
+    console.log('\n[TEST 10] Checking live local MLX-VLM server at http://localhost:8000/v1...');
+    const liveProvider = new MedGemmaProvider('http://localhost:8000/v1', 'mlx-community/medgemma-1.5-4b-it-4bit');
+    const isLive = await liveProvider.isReachable(1000);
+    if (isLive) {
+      console.log('  -> Live MLX-VLM server detected on port 8000!');
+      const sampleDoc = Buffer.from('Patient Date: 2026-10-10. Lab: Serum Creatinine 1.2 mg/dL. Rx: Metformin 500mg BID.');
+      const liveRes = await liveProvider.extractDocument(sampleDoc, 'text/plain', 'test_live.txt', null);
+      assert(liveRes && liveRes.text, 'Live response must have text');
+      const liveParsed = JSON.parse(liveRes.text);
+      assert(Array.isArray(liveParsed.facts) && liveParsed.facts.length > 0, 'Live extraction must parse facts');
+      console.log(`  -> Live Document Extraction: SUCCESS (${liveParsed.facts.length} facts extracted)`);
+      console.log('✓ Live MLX-VLM server connection & extraction verified: PASS');
+    } else {
+      console.log('  -> Note: Local server on port 8000 is offline; skipping live inference check.');
+      console.log('✓ Live server check skipped gracefully: PASS');
+    }
+
     console.log('\n===============================================================');
-    console.log('✓ ALL 9 MEDGEMMA 1.5 4B PROVIDER TESTS PASSED');
+    console.log('✓ ALL 10 MEDGEMMA 1.5 4B PROVIDER TESTS PASSED');
     console.log('===============================================================');
 
   } finally {

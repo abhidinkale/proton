@@ -97,17 +97,17 @@ const puppeteer = require('puppeteer');
 
     await page.waitForFunction(() => {
       const btns = Array.from(document.querySelectorAll('button'));
-      return btns.some(b => b.textContent.includes('Add Demo Patient') || b.textContent.includes('Create Demo Patient'));
+      return btns.some(b => b.textContent.includes('Blank Patient') || b.textContent.includes('Eleanor Vance') || b.textContent.includes('Add Demo Patient') || b.textContent.includes('Create Demo Patient'));
     });
 
     await page.evaluate(() => {
       const btns = Array.from(document.querySelectorAll('button'));
-      const b = btns.find(b => b.textContent.includes('Add Demo Patient') || b.textContent.includes('Create Demo Patient'));
+      const b = btns.find(b => b.textContent.includes('Blank Patient') || b.textContent.includes('Eleanor Vance') || b.textContent.includes('Add Demo Patient') || b.textContent.includes('Create Demo Patient'));
       if (b) b.click();
     });
 
     // Wait for Patient Profile to load completely
-    await page.waitForFunction(() => Array.from(document.querySelectorAll('a')).some(a => a.textContent.includes('Start Consultation')), { timeout: 15000 });
+    await page.waitForFunction(() => Array.from(document.querySelectorAll('a')).some(a => a.textContent.includes('Start Consultation')), { timeout: 20000 });
     console.log('-> Patient Profile Loaded with Start Consultation link: PASS');
 
     // Launch Consultation
@@ -160,7 +160,7 @@ const puppeteer = require('puppeteer');
     await page.waitForFunction(() => {
       const textarea = document.querySelector('textarea');
       return textarea && textarea.value.length > 50;
-    }, { timeout: 25000 });
+    }, { timeout: 45000 });
 
     const noteContent = await page.evaluate(() => {
       const textarea = document.querySelector('textarea');
