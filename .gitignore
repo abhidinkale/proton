@@ -25,6 +25,13 @@ medplum-main/
 tesseract-main/
 whisper-main/
 pgvector-master/
+models/
+medgemma/
+huggingface/
+*.safetensors
+*.bin
+*.gguf
+*.pt
 
 # 3. Raw Recordings, Audio Dumps & Media Fixtures
 *.m4a
