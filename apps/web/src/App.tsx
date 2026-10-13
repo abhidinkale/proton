@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useMedplumProfile, useMedplum } from '@medplum/react';
 import { Activity } from 'lucide-react';
@@ -19,8 +19,18 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const medplum = useMedplum();
   const profile = useMedplumProfile();
   const user = authService.getCurrentUser();
+  const [timedOut, setTimedOut] = useState(false);
+
+  useEffect(() => {
+    // If medplum stays in loading state for more than 2.5 seconds (e.g. unreachable local Medplum on Vercel),
+    // stop blocking and redirect unauthenticated users to login or let session auth take over
+    const timer = setTimeout(() => {
+      setTimedOut(true);
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, []);
   
-  if (medplum.isLoading() && !user) {
+  if (medplum.isLoading() && !user && !timedOut) {
     return (
       <div className="min-h-screen bg-[var(--color-surface-raised)] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4 proton-animate-in">
