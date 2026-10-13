@@ -1,5 +1,7 @@
+import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useMedplumProfile, useMedplum } from '@medplum/react';
+import { Activity } from 'lucide-react';
 
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -10,6 +12,9 @@ import DocumentReview from './pages/DocumentReview';
 import Settings from './pages/Settings';
 import { authService } from './services/auth';
 
+// Lazy-load the landing page since it's only for unauthenticated visitors
+const LandingPage = lazy(() => import('./pages/LandingPage'));
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const medplum = useMedplum();
   const profile = useMedplumProfile();
@@ -17,10 +22,15 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   
   if (medplum.isLoading() && !user) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-        <div className="flex items-center gap-3 text-slate-400 text-sm">
-          <div className="w-4 h-4 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
-          <span>Verifying clinical credentials...</span>
+      <div className="min-h-screen bg-[var(--color-surface-raised)] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4 proton-animate-in">
+          <div className="h-12 w-12 bg-brand-700 text-white rounded-xl flex items-center justify-center">
+            <Activity size={24} className="animate-pulse" />
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-medium text-[var(--color-text-primary)]">Verifying clinical credentials</p>
+            <p className="text-xs text-[var(--color-text-tertiary)] mt-1">Preparing your physician workspace...</p>
+          </div>
         </div>
       </div>
     );
@@ -36,6 +46,18 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <Routes>
+      <Route path="/welcome" element={
+        <Suspense fallback={
+          <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+            <div className="h-10 w-10 bg-brand-700 text-white rounded-xl flex items-center justify-center animate-pulse">
+              <Activity size={22} />
+            </div>
+          </div>
+        }>
+          <LandingPage />
+        </Suspense>
+      } />
+      <Route path="/landing" element={<Navigate to="/welcome" replace />} />
       <Route path="/login" element={<Login />} />
       <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/patients" element={<ProtectedRoute><Patients /></ProtectedRoute>} />

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useMedplum } from '@medplum/react';
 import type { Patient } from '@medplum/fhirtypes';
-import { Search, UserPlus, Sparkles } from 'lucide-react';
+import { Search, UserPlus, Sparkles, Users, ChevronRight } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 
@@ -72,99 +72,142 @@ export default function Patients() {
     }
   };
 
+  const calculateAge = (birthDate?: string): string => {
+    if (!birthDate) return '';
+    const dob = new Date(birthDate);
+    const diff = Date.now() - dob.getTime();
+    const ageDate = new Date(diff);
+    return `${Math.abs(ageDate.getUTCFullYear() - 1970)}y`;
+  };
+
   return (
     <Layout>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Patients</h1>
-          <p className="text-slate-500 mt-1">Manage your clinical patient panel & longitudinal intelligence</p>
-        </div>
-        <div className="flex items-center gap-3 flex-wrap">
-          <button 
-            onClick={handleCreateClinicalBrainPatient}
-            disabled={creating}
-            className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm disabled:opacity-50 text-sm cursor-pointer"
-          >
-            <Sparkles size={16} /> {creating ? 'Synthesizing...' : 'Create Clinical Brain Demo Patient'}
-          </button>
-          <button 
-            onClick={handleCreateConflictingHistoryPatient}
-            disabled={creating}
-            className="flex items-center gap-2 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 px-4 py-2 rounded-lg font-medium transition-colors shadow-sm disabled:opacity-50 text-sm cursor-pointer"
-          >
-            <Sparkles size={16} /> {creating ? 'Synthesizing...' : 'Add Conflicting History Case'}
-          </button>
-          <button 
-            onClick={handleCreateDemoPatient}
-            disabled={creating}
-            className="flex items-center gap-2 bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-lg font-medium hover:bg-slate-50 transition-colors shadow-sm disabled:opacity-50 text-sm cursor-pointer"
-          >
-            <UserPlus size={16} /> {creating ? 'Creating...' : 'Add Demo Patient'}
-          </button>
-        </div>
-      </div>
+      <div className="space-y-6 proton-animate-in">
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[calc(100vh-200px)]">
-        <div className="p-4 border-b border-slate-100 flex items-center gap-3">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            <input 
-              type="text" 
-              placeholder="Search patients by name..." 
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
-            />
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">Patients</h1>
+            <p className="text-sm text-[var(--color-text-tertiary)] mt-1">
+              {patients.length} patient{patients.length !== 1 ? 's' : ''} in your clinical panel
+            </p>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button 
+              onClick={handleCreateClinicalBrainPatient}
+              disabled={creating}
+              className="proton-btn proton-btn-primary text-xs"
+            >
+              <Sparkles size={14} /> {creating ? 'Synthesizing...' : 'Eleanor Vance (Clinical Brain)'}
+            </button>
+            <button 
+              onClick={handleCreateConflictingHistoryPatient}
+              disabled={creating}
+              className="proton-btn text-xs bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100"
+            >
+              <Sparkles size={14} /> {creating ? 'Synthesizing...' : 'Arthur Pendelton (Conflicts)'}
+            </button>
+            <button 
+              onClick={handleCreateDemoPatient}
+              disabled={creating}
+              className="proton-btn proton-btn-secondary text-xs"
+            >
+              <UserPlus size={14} /> {creating ? 'Creating...' : 'Blank Patient'}
+            </button>
           </div>
         </div>
 
-        <div className="flex-1 overflow-auto">
-          {loading ? (
-            <div className="flex justify-center items-center h-full text-slate-400">Loading patients...</div>
-          ) : patients.length === 0 ? (
-            <div className="flex flex-col justify-center items-center h-full text-slate-400">
-              <UserPlus size={48} className="mb-4 text-slate-300" />
-              <p className="text-lg font-medium text-slate-600">No patients yet</p>
-              <p className="text-sm mb-6">Create a demo patient to test the consultation flow.</p>
-              <button 
-                onClick={handleCreateDemoPatient}
-                disabled={creating}
-                className="bg-brand-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-brand-700 transition-colors"
-              >
-                Create Demo Patient
-              </button>
+        {/* Patient List Card */}
+        <div className="proton-card overflow-hidden flex flex-col" style={{ height: 'calc(100vh - 220px)' }}>
+          {/* Search Bar */}
+          <div className="p-4 border-b border-[var(--color-border-subtle)] flex items-center gap-3">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]" size={16} />
+              <input 
+                type="text" 
+                placeholder="Search patients by name..." 
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="proton-input pl-9"
+              />
             </div>
-          ) : (
-            <table className="w-full text-left">
-              <thead className="bg-slate-50/50 sticky top-0 border-b border-slate-100">
-                <tr>
-                  <th className="px-6 py-4 font-semibold text-slate-600 text-sm">Name</th>
-                  <th className="px-6 py-4 font-semibold text-slate-600 text-sm">Date of Birth</th>
-                  <th className="px-6 py-4 font-semibold text-slate-600 text-sm">Gender</th>
-                  <th className="px-6 py-4 font-semibold text-slate-600 text-sm">Last Updated</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {patients.map((p) => {
-                  const name = p.name?.[0];
-                  const displayName = name ? `${name.given?.join(' ') || ''} ${name.family || ''}`.trim() : 'Unknown';
-                  const date = p.meta?.lastUpdated ? new Date(p.meta.lastUpdated).toLocaleDateString() : '-';
-                  return (
-                    <tr key={p.id} className="hover:bg-slate-50/50 transition-colors group">
-                      <td className="px-6 py-4">
-                        <Link to={`/patients/${p.id}`} className="font-medium text-brand-600 hover:text-brand-700">
-                          {displayName || 'Unnamed Patient'}
-                        </Link>
-                      </td>
-                      <td className="px-6 py-4 text-slate-600">{p.birthDate || '-'}</td>
-                      <td className="px-6 py-4 text-slate-600 capitalize">{p.gender || '-'}</td>
-                      <td className="px-6 py-4 text-slate-500 text-sm">{date}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
+            <span className="text-xs text-[var(--color-text-tertiary)] hidden sm:inline">
+              {patients.length} result{patients.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+
+          {/* Table Content */}
+          <div className="flex-1 overflow-auto">
+            {loading ? (
+              <div className="flex flex-col justify-center items-center h-full gap-3 proton-animate-in">
+                <div className="h-10 w-10 bg-brand-50 text-brand-600 rounded-xl flex items-center justify-center">
+                  <Users size={20} className="animate-pulse" />
+                </div>
+                <p className="text-sm font-medium text-[var(--color-text-secondary)]">Loading patient panel...</p>
+                <p className="text-xs text-[var(--color-text-tertiary)]">Querying clinical records</p>
+              </div>
+            ) : patients.length === 0 ? (
+              <div className="flex flex-col justify-center items-center h-full gap-4 proton-animate-in">
+                <div className="h-14 w-14 bg-[var(--color-surface-sunken)] rounded-2xl flex items-center justify-center">
+                  <Users size={28} className="text-[var(--color-text-tertiary)]" />
+                </div>
+                <div className="text-center">
+                  <p className="text-base font-semibold text-[var(--color-text-primary)]">Your patient workspace is ready</p>
+                  <p className="text-sm text-[var(--color-text-tertiary)] mt-1">Create a synthetic patient to begin evaluating Proton.</p>
+                </div>
+                <button 
+                  onClick={handleCreateClinicalBrainPatient}
+                  disabled={creating}
+                  className="proton-btn proton-btn-primary"
+                >
+                  <Sparkles size={14} /> Create Eleanor Vance
+                </button>
+              </div>
+            ) : (
+              <table className="w-full text-left">
+                <thead className="bg-[var(--color-surface-raised)] sticky top-0 border-b border-[var(--color-border-subtle)]">
+                  <tr>
+                    <th className="px-6 py-3 proton-micro-label text-[var(--color-text-tertiary)]">Patient</th>
+                    <th className="px-6 py-3 proton-micro-label text-[var(--color-text-tertiary)]">Age</th>
+                    <th className="px-6 py-3 proton-micro-label text-[var(--color-text-tertiary)]">Gender</th>
+                    <th className="px-6 py-3 proton-micro-label text-[var(--color-text-tertiary)]">Date of Birth</th>
+                    <th className="px-6 py-3 proton-micro-label text-[var(--color-text-tertiary)]">Last Updated</th>
+                    <th className="px-6 py-3"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--color-border-subtle)]">
+                  {patients.map((p) => {
+                    const name = p.name?.[0];
+                    const displayName = name ? `${name.given?.join(' ') || ''} ${name.family || ''}`.trim() : 'Unknown';
+                    const initials = displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+                    const date = p.meta?.lastUpdated ? new Date(p.meta.lastUpdated).toLocaleDateString() : '—';
+                    const age = calculateAge(p.birthDate);
+                    return (
+                      <tr key={p.id} className="hover:bg-[var(--color-surface-raised)] transition-colors group cursor-pointer" onClick={() => navigate(`/patients/${p.id}`)}>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="h-9 w-9 rounded-full bg-brand-50 border border-brand-100 flex items-center justify-center text-brand-700 text-xs font-bold shrink-0">
+                              {initials}
+                            </div>
+                            <Link to={`/patients/${p.id}`} className="font-semibold text-[var(--color-text-primary)] text-sm hover:text-brand-700 transition-colors" onClick={e => e.stopPropagation()}>
+                              {displayName || 'Unnamed Patient'}
+                            </Link>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-[var(--color-text-secondary)]">{age || '—'}</td>
+                        <td className="px-6 py-4 text-sm text-[var(--color-text-secondary)] capitalize">{p.gender || '—'}</td>
+                        <td className="px-6 py-4 text-sm text-[var(--color-text-secondary)] font-mono">{p.birthDate || '—'}</td>
+                        <td className="px-6 py-4 text-xs text-[var(--color-text-tertiary)]">{date}</td>
+                        <td className="px-6 py-4">
+                          <ChevronRight size={16} className="text-[var(--color-text-tertiary)] opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
       </div>
     </Layout>

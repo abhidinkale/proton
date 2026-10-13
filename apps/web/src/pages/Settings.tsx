@@ -1,135 +1,125 @@
-import { ShieldCheck, Cpu, User, Keyboard, AlertTriangle } from 'lucide-react';
+import { ShieldCheck, Cpu, User, Keyboard, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import Layout from '../components/Layout';
 
 export default function Settings() {
   return (
     <Layout>
-      <div className="max-w-4xl mx-auto space-y-8 py-2">
+      <div className="max-w-3xl mx-auto space-y-6 proton-animate-in">
+
         {/* Header */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-brand-600 mb-1">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            Proton Clinical OS &bull; Configuration & Safety Controls
-          </div>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">
-            Settings & Clinical Policies
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
+        <div>
+          <h1 className="text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">Settings & Clinical Policies</h1>
+          <p className="text-sm text-[var(--color-text-tertiary)] mt-1">
             Physician operating preferences, AI copilot parameters, and deterministic safety enforcement.
           </p>
         </div>
 
         {/* Section 1: Physician Identity */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
-          <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
-            <User size={18} className="text-brand-600" />
-            <h2 className="text-base font-bold text-slate-900">Physician Identity & Authority</h2>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-              <span className="text-slate-400 block font-semibold uppercase tracking-wider text-[10px]">Treating Clinician</span>
-              <span className="text-slate-900 font-bold text-sm mt-0.5 block">Dr. Alex Morgan, MD</span>
-              <span className="text-slate-500 text-[11px] mt-0.5 block">Internal & Ambulatory Medicine</span>
+        <div className="proton-card p-6 space-y-4">
+          <div className="flex items-center gap-2.5 pb-3 border-b border-[var(--color-border-subtle)]">
+            <div className="h-8 w-8 bg-brand-50 text-brand-700 rounded-lg flex items-center justify-center">
+              <User size={16} />
             </div>
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-              <span className="text-slate-400 block font-semibold uppercase tracking-wider text-[10px]">Clinical Role</span>
-              <span className="text-emerald-700 font-bold text-sm mt-0.5 block">Attending Physician (Final Authority)</span>
-              <span className="text-slate-500 text-[11px] mt-0.5 block">Exclusive authority to sign notes & orders</span>
+            <h2 className="text-sm font-bold text-[var(--color-text-primary)]">Physician Identity & Authority</h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="p-4 bg-[var(--color-surface-raised)] rounded-xl border border-[var(--color-border-subtle)]">
+              <span className="proton-micro-label text-[var(--color-text-tertiary)] block">Treating Clinician</span>
+              <span className="text-[var(--color-text-primary)] font-bold text-sm mt-1 block">Dr. Alex Morgan, MD</span>
+              <span className="text-[var(--color-text-tertiary)] text-[11px] mt-0.5 block">Internal & Ambulatory Medicine</span>
+            </div>
+            <div className="p-4 bg-[var(--color-surface-raised)] rounded-xl border border-[var(--color-border-subtle)]">
+              <span className="proton-micro-label text-[var(--color-text-tertiary)] block">Clinical Role</span>
+              <span className="text-emerald-700 font-bold text-sm mt-1 block">Attending Physician (Final Authority)</span>
+              <span className="text-[var(--color-text-tertiary)] text-[11px] mt-0.5 block">Exclusive authority to sign notes & orders</span>
             </div>
           </div>
         </div>
 
         {/* Section 2: AI Copilot Engine Status */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
-          <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
-            <Cpu size={18} className="text-purple-600" />
-            <h2 className="text-base font-bold text-slate-900">AI Clinical Engine & Provider</h2>
+        <div className="proton-card p-6 space-y-4">
+          <div className="flex items-center gap-2.5 pb-3 border-b border-[var(--color-border-subtle)]">
+            <div className="h-8 w-8 bg-violet-50 text-violet-700 rounded-lg flex items-center justify-center">
+              <Cpu size={16} />
+            </div>
+            <h2 className="text-sm font-bold text-[var(--color-text-primary)]">AI Clinical Engine & Provider</h2>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-            <div className="p-3 bg-purple-50/50 rounded-xl border border-purple-200">
-              <span className="text-purple-900 font-semibold uppercase tracking-wider text-[10px]">Active Model</span>
-              <span className="text-purple-950 font-bold text-sm mt-0.5 block">Gemini 3.5 Flash</span>
-              <span className="text-purple-800 text-[11px] mt-0.5 block">Google Gen AI SDK v2</span>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="p-4 bg-violet-50/50 rounded-xl border border-violet-200/60">
+              <span className="proton-micro-label text-violet-600">Active Model</span>
+              <span className="text-violet-900 font-bold text-sm mt-1 block">Gemini 3.5 Flash</span>
+              <span className="text-violet-600 text-[11px] mt-0.5 block">Google Gen AI SDK v2</span>
             </div>
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-              <span className="text-slate-400 font-semibold uppercase tracking-wider text-[10px]">Sampling Temperature</span>
-              <span className="text-slate-900 font-mono font-bold text-sm mt-0.5 block">0.0 (Deterministic)</span>
-              <span className="text-slate-500 text-[11px] mt-0.5 block">Maximized grounding & zero creativity</span>
+            <div className="p-4 bg-[var(--color-surface-raised)] rounded-xl border border-[var(--color-border-subtle)]">
+              <span className="proton-micro-label text-[var(--color-text-tertiary)]">Sampling Temperature</span>
+              <span className="text-[var(--color-text-primary)] font-mono font-bold text-sm mt-1 block">0.0 (Deterministic)</span>
+              <span className="text-[var(--color-text-tertiary)] text-[11px] mt-0.5 block">Maximized grounding</span>
             </div>
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-              <span className="text-slate-400 font-semibold uppercase tracking-wider text-[10px]">Fallback Mode</span>
-              <span className="text-slate-900 font-bold text-sm mt-0.5 block">Demo Fixtures</span>
-              <span className="text-slate-500 text-[11px] mt-0.5 block">Deterministic mock backup</span>
+            <div className="p-4 bg-[var(--color-surface-raised)] rounded-xl border border-[var(--color-border-subtle)]">
+              <span className="proton-micro-label text-[var(--color-text-tertiary)]">Fallback Mode</span>
+              <span className="text-[var(--color-text-primary)] font-bold text-sm mt-1 block">Demo Fixtures</span>
+              <span className="text-[var(--color-text-tertiary)] text-[11px] mt-0.5 block">Deterministic backup</span>
             </div>
           </div>
         </div>
 
         {/* Section 3: Safety Gating Rules */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
-          <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
-            <ShieldCheck size={18} className="text-emerald-600" />
-            <h2 className="text-base font-bold text-slate-900">Deterministic Safety Enforcement</h2>
+        <div className="proton-card p-6 space-y-4">
+          <div className="flex items-center gap-2.5 pb-3 border-b border-[var(--color-border-subtle)]">
+            <div className="h-8 w-8 bg-emerald-50 text-emerald-700 rounded-lg flex items-center justify-center">
+              <ShieldCheck size={16} />
+            </div>
+            <h2 className="text-sm font-bold text-[var(--color-text-primary)]">Deterministic Safety Enforcement</h2>
           </div>
-          <div className="divide-y divide-slate-100 text-xs">
-            <div className="py-2.5 flex items-center justify-between">
-              <div>
-                <p className="font-semibold text-slate-900">Zero Silent FHIR Writes</p>
-                <p className="text-slate-500 text-[11px]">No clinical data is written without explicit physician sign-off.</p>
+          <div className="space-y-0">
+            {[
+              { title: 'Zero Silent FHIR Writes', desc: 'No clinical data is written without explicit physician sign-off.' },
+              { title: 'Mandatory 5-Field Prescription Validation', desc: 'Blocks approval if Drug, Strength, Dose, Route, or Duration is omitted.' },
+              { title: 'Allergy & Contraindication Cross-Referencing', desc: 'Detects penicillin/NSAID conflicts against documented clinical history.' },
+              { title: 'Review Center Fact Isolation', desc: 'Extracted facts from documents remain in staging until approved.' },
+            ].map((item, i) => (
+              <div key={i} className="py-3 flex items-center justify-between gap-4 border-b border-[var(--color-border-subtle)] last:border-0">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 size={16} className="text-emerald-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-[var(--color-text-primary)]">{item.title}</p>
+                    <p className="text-xs text-[var(--color-text-tertiary)] mt-0.5">{item.desc}</p>
+                  </div>
+                </div>
+                <span className="proton-micro-label px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded border border-emerald-200 shrink-0">Enforced</span>
               </div>
-              <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold text-[10px] uppercase">Enforced</span>
-            </div>
-            <div className="py-2.5 flex items-center justify-between">
-              <div>
-                <p className="font-semibold text-slate-900">Mandatory 5-Field Prescription Validation</p>
-                <p className="text-slate-500 text-[11px]">Blocks approval if Drug, Strength, Dose, Route, or Duration is omitted.</p>
-              </div>
-              <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold text-[10px] uppercase">Enforced</span>
-            </div>
-            <div className="py-2.5 flex items-center justify-between">
-              <div>
-                <p className="font-semibold text-slate-900">Allergy & Contraindication Cross-Referencing</p>
-                <p className="text-slate-500 text-[11px]">Detects penicillin/NSAID conflicts against documented clinical history.</p>
-              </div>
-              <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold text-[10px] uppercase">Enforced</span>
-            </div>
-            <div className="py-2.5 flex items-center justify-between">
-              <div>
-                <p className="font-semibold text-slate-900">Review Center Fact Isolation</p>
-                <p className="text-slate-500 text-[11px]">Extracted facts from documents remain in staging until approved.</p>
-              </div>
-              <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold text-[10px] uppercase">Enforced</span>
-            </div>
+            ))}
           </div>
         </div>
 
         {/* Section 4: Keyboard Shortcuts */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
-          <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
-            <Keyboard size={18} className="text-slate-600" />
-            <h2 className="text-base font-bold text-slate-900">Keyboard Shortcuts Reference</h2>
+        <div className="proton-card p-6 space-y-4">
+          <div className="flex items-center gap-2.5 pb-3 border-b border-[var(--color-border-subtle)]">
+            <div className="h-8 w-8 bg-[var(--color-surface-sunken)] text-[var(--color-text-secondary)] rounded-lg flex items-center justify-center">
+              <Keyboard size={16} />
+            </div>
+            <h2 className="text-sm font-bold text-[var(--color-text-primary)]">Keyboard Shortcuts</h2>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
-              <span className="text-slate-700 font-medium">Command Palette</span>
-              <kbd className="px-2 py-1 bg-white border border-slate-300 rounded font-mono text-[11px] shadow-2xs font-semibold">⌘K / Ctrl+K</kbd>
-            </div>
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
-              <span className="text-slate-700 font-medium">Focus Patient Search</span>
-              <kbd className="px-2 py-1 bg-white border border-slate-300 rounded font-mono text-[11px] shadow-2xs font-semibold">/</kbd>
-            </div>
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
-              <span className="text-slate-700 font-medium">Dismiss Modal / Search</span>
-              <kbd className="px-2 py-1 bg-white border border-slate-300 rounded font-mono text-[11px] shadow-2xs font-semibold">ESC</kbd>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {[
+              { label: 'Command Palette', key: '⌘K' },
+              { label: 'Focus Search', key: '/' },
+              { label: 'Dismiss', key: 'ESC' },
+            ].map((item, i) => (
+              <div key={i} className="p-3 bg-[var(--color-surface-raised)] rounded-xl border border-[var(--color-border-subtle)] flex items-center justify-between">
+                <span className="text-xs font-medium text-[var(--color-text-secondary)]">{item.label}</span>
+                <span className="proton-kbd">{item.key}</span>
+              </div>
+            ))}
           </div>
         </div>
 
         {/* Section 5: Synthetic Beta Disclaimer */}
-        <div className="bg-amber-50/70 border border-amber-200 rounded-2xl p-5 flex items-start gap-3.5 text-xs text-amber-900">
+        <div className="bg-amber-50/70 border border-amber-200/60 rounded-xl p-5 flex items-start gap-3">
           <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
           <div>
-            <h4 className="font-bold text-amber-950">Synthetic Beta Environment Notice</h4>
-            <p className="mt-1 leading-relaxed text-amber-900/90">
+            <h4 className="font-bold text-amber-900 text-sm">Synthetic Beta Environment</h4>
+            <p className="mt-1 text-xs leading-relaxed text-amber-800">
               Proton V1 is deployed exclusively for controlled physician evaluation using synthetic clinical data.
               Real protected health information (PHI) must never be entered into this environment.
             </p>

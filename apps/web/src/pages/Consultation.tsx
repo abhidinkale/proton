@@ -976,19 +976,19 @@ export default function Consultation() {
               Current Stage:
             </span>
             <div className="flex items-center gap-2 font-semibold">
-              <span className={`px-2 py-0.5 rounded-full ${status === 'idle' ? 'bg-brand-600 text-white' : 'bg-slate-200 text-slate-700'}`}>
+              <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wider uppercase ${status === 'idle' ? 'bg-brand-700 text-white shadow-2xs' : 'bg-slate-200/80 text-slate-600'}`}>
                 1. Capture
               </span>
-              <span className="text-slate-400">&rarr;</span>
-              <span className={`px-2 py-0.5 rounded-full ${['recording', 'transcribing', 'generating'].includes(status) ? 'bg-brand-600 text-white animate-pulse' : 'bg-slate-200 text-slate-700'}`}>
+              <span className="text-slate-300 font-bold">&rarr;</span>
+              <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wider uppercase ${['recording', 'transcribing', 'generating'].includes(status) ? 'bg-brand-700 text-white animate-pulse' : 'bg-slate-200/80 text-slate-600'}`}>
                 2. AI Synthesis
               </span>
-              <span className="text-slate-400">&rarr;</span>
-              <span className={`px-2 py-0.5 rounded-full ${status === 'review' ? 'bg-amber-500 text-white' : 'bg-slate-200 text-slate-700'}`}>
-                3. Doctor Review & Safety
+              <span className="text-slate-300 font-bold">&rarr;</span>
+              <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wider uppercase ${status === 'review' ? 'bg-amber-600 text-white shadow-2xs' : 'bg-slate-200/80 text-slate-600'}`}>
+                3. Physician Review & Safety
               </span>
-              <span className="text-slate-400">&rarr;</span>
-              <span className={`px-2 py-0.5 rounded-full ${status === 'complete' ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-700'}`}>
+              <span className="text-slate-300 font-bold">&rarr;</span>
+              <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wider uppercase ${status === 'complete' ? 'bg-emerald-600 text-white shadow-2xs' : 'bg-slate-200/80 text-slate-600'}`}>
                 4. Approved
               </span>
             </div>

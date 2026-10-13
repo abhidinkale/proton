@@ -8,7 +8,7 @@ import type {
   MedicationRequest, 
   Observation, 
   DocumentReference, 
-  AllergyIntolerance,
+  AllergyIntolerance, 
   Condition 
 } from '@medplum/fhirtypes';
 import { 
@@ -24,16 +24,17 @@ import {
   FlaskConical, 
   Mic, 
   Search, 
-  X,
-  Stethoscope,
-  ChevronRight,
-  Sparkles,
-  RotateCcw,
-  CalendarClock,
-  ShieldAlert,
-  Plus
+  X, 
+  Stethoscope, 
+  ChevronRight, 
+  Sparkles, 
+  RotateCcw, 
+  CalendarClock, 
+  ShieldAlert, 
+  Plus 
 } from 'lucide-react';
 import Layout from '../components/Layout';
+import OnboardingFlow from '../components/OnboardingFlow';
 
 interface AttentionItem {
   id: string;
@@ -117,6 +118,11 @@ export default function Dashboard() {
   const [isConsultModalOpen, setIsConsultModalOpen] = useState(false);
   const [consultModalSearch, setConsultModalSearch] = useState('');
 
+  // Onboarding Flow State
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    return !localStorage.getItem('proton_onboarding_complete');
+  });
+
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -129,7 +135,7 @@ export default function Dashboard() {
         mrRes, 
         obsRes, 
         docRes, 
-        allRes,
+        allRes, 
         condRes
       ] = await Promise.allSettled([
         medplum.searchResources('Patient', { _count: 50, _sort: '-_lastUpdated' }),
@@ -627,10 +633,76 @@ export default function Dashboard() {
   if (loading) {
     return (
       <Layout>
-        <div className="flex flex-col items-center justify-center h-72 text-slate-400 space-y-4">
-          <Stethoscope size={36} className="animate-pulse text-brand-600" />
-          <p className="text-sm font-medium text-slate-700">Loading Doctor Command Center...</p>
-          <span className="text-xs text-slate-400">Synthesizing clinical workspace & priorities</span>
+        <div className="space-y-8 animate-in fade-in duration-300">
+          {/* Skeleton Header */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-2">
+            <div className="space-y-2.5">
+              <div className="h-4 w-44 rounded-md proton-shimmer" />
+              <div className="h-9 w-72 rounded-xl proton-shimmer" />
+              <div className="h-4 w-96 rounded-md proton-shimmer" />
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-72 rounded-xl proton-shimmer" />
+              <div className="h-10 w-40 rounded-xl proton-shimmer" />
+            </div>
+          </div>
+
+          {/* Preparing workspace indicator card */}
+          <div className="proton-card p-6 flex items-center justify-between border-dashed border-brand-200 bg-brand-50/30">
+            <div className="flex items-center gap-4">
+              <div className="h-11 w-11 rounded-xl bg-brand-100 flex items-center justify-center text-brand-600 animate-pulse">
+                <Stethoscope size={22} />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-[var(--color-text-primary)]">
+                  Preparing your clinical workspace...
+                </p>
+                <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">
+                  Synthesizing today's priorities
+                </p>
+              </div>
+            </div>
+            <div className="hidden sm:flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-brand-600 animate-ping" />
+              <span className="text-xs font-semibold text-brand-700">Connecting FHIR R4 Engine</span>
+            </div>
+          </div>
+
+          {/* Skeleton Metric Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="proton-card p-5 space-y-3">
+                <div className="flex justify-between items-center">
+                  <div className="h-3 w-20 rounded proton-shimmer" />
+                  <div className="h-4 w-4 rounded-full proton-shimmer" />
+                </div>
+                <div className="h-8 w-16 rounded-md proton-shimmer" />
+                <div className="h-3 w-28 rounded proton-shimmer" />
+              </div>
+            ))}
+          </div>
+
+          {/* Skeleton Attention Queue */}
+          <div className="proton-card overflow-hidden">
+            <div className="px-6 py-4 border-b border-[var(--color-border-subtle)] flex justify-between items-center">
+              <div className="h-4 w-44 rounded proton-shimmer" />
+              <div className="h-3 w-32 rounded proton-shimmer" />
+            </div>
+            <div className="p-6 space-y-4">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3 w-full">
+                    <div className="h-9 w-9 rounded-xl proton-shimmer shrink-0" />
+                    <div className="space-y-1.5 w-3/4">
+                      <div className="h-4 w-1/3 rounded proton-shimmer" />
+                      <div className="h-3 w-2/3 rounded proton-shimmer" />
+                    </div>
+                  </div>
+                  <div className="h-8 w-24 rounded-lg proton-shimmer shrink-0" />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </Layout>
     );
@@ -648,7 +720,7 @@ export default function Dashboard() {
 
   return (
     <Layout>
-      <div className="space-y-8">
+      <div className="space-y-8 animate-in fade-in duration-200">
 
         {/* ERROR / SAFE FALLBACK BANNER (Phase 15) */}
         {error && (
@@ -659,7 +731,7 @@ export default function Dashboard() {
             </div>
             <button
               onClick={fetchDashboardData}
-              className="px-3 py-1 bg-white border border-red-300 text-red-700 hover:bg-red-50 rounded-md font-semibold transition-colors cursor-pointer"
+              className="proton-btn proton-btn-secondary text-xs text-red-700 hover:bg-red-50"
             >
               Retry
             </button>
@@ -669,242 +741,179 @@ export default function Dashboard() {
         {/* ============================================================== */}
         {/* PHASE 2 — HEADER: TODAY'S CLINICAL WORKSPACE                   */}
         {/* ============================================================== */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            
-            {/* Title & Identity */}
-            <div>
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-brand-600 mb-1">
-                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                Doctor Command Center • Proton Clinical OS
-              </div>
-              <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">
-                Good morning, Doctor
-              </h1>
-              <div className="text-slate-500 text-sm mt-1 flex items-center gap-2 flex-wrap">
-                <span className="font-semibold text-slate-800">Today's Clinical Workspace</span>
-                <span>•</span>
-                <span className="text-slate-500">Here's what needs your attention.</span>
-                <span>•</span>
-                <span className="text-slate-400 flex items-center gap-1">
-                  <Calendar size={13} /> {todayStr}
-                </span>
-                <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded text-[11px] font-medium border border-emerald-200">
-                  AI Engine Active
-                </span>
-              </div>
-              {/* Doctor identity string for E2E backwards compatibility */}
-              <div className="text-[11px] text-slate-400 mt-0.5 font-medium">
-                Physician Operating Workspace &bull; Dr. Alex Morgan
-              </div>
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 pt-1">
+          
+          {/* Title & Identity */}
+          <div>
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-brand-700 mb-1.5">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              Doctor Command Center • Proton Clinical OS
             </div>
+            <h1 className="text-3xl font-bold text-[var(--color-text-primary)] tracking-tight">
+              Good morning, Doctor
+            </h1>
+            <div className="text-[var(--color-text-secondary)] text-sm mt-1.5 flex items-center gap-2 flex-wrap">
+              <span className="font-semibold text-[var(--color-text-primary)]">Today's Clinical Workspace</span>
+              <span className="text-[var(--color-text-tertiary)]">•</span>
+              <span className="text-[var(--color-text-secondary)]">Here's what needs your attention.</span>
+              <span className="text-[var(--color-text-tertiary)]">•</span>
+              <span className="text-[var(--color-text-tertiary)] flex items-center gap-1">
+                <Calendar size={13} /> {todayStr}
+              </span>
+              <span className="proton-badge bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                AI Engine Active
+              </span>
+            </div>
+            {/* Doctor identity string for E2E backwards compatibility */}
+            <div className="text-[11px] text-[var(--color-text-tertiary)] mt-1 font-medium">
+              Physician Operating Workspace &bull; Dr. Alex Morgan
+            </div>
+          </div>
 
-            {/* Prominent Action & Search Controls (Phase 3 & Phase 5) */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
-              
-              {/* Patient Search Input Container */}
-              <div className="relative min-w-[280px] sm:min-w-[320px]">
-                <div className="relative flex items-center">
-                  <Search size={16} className="absolute left-3.5 text-slate-400 pointer-events-none" />
-                  <input
-                    ref={searchInputRef}
-                    type="text"
-                    value={patientSearch}
-                    onChange={(e) => {
-                      setPatientSearch(e.target.value);
-                      setIsSearchFocused(true);
-                      setHighlightedSearchIndex(0);
+          {/* Prominent Action & Search Controls (Phase 3 & Phase 5) */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+            
+            {/* Patient Search Input Container */}
+            <div className="relative min-w-[280px] sm:min-w-[320px]">
+              <div className="relative flex items-center">
+                <Search size={16} className="absolute left-3.5 text-[var(--color-text-tertiary)] pointer-events-none" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={patientSearch}
+                  onChange={(e) => {
+                    setPatientSearch(e.target.value);
+                    setIsSearchFocused(true);
+                    setHighlightedSearchIndex(0);
+                  }}
+                  onFocus={() => setIsSearchFocused(true)}
+                  onKeyDown={handleSearchKeyDown}
+                  placeholder="Search patients..."
+                  className="proton-input pl-9 pr-12 text-sm shadow-2xs font-medium"
+                />
+                {patientSearch ? (
+                  <button
+                    onClick={() => {
+                      setPatientSearch('');
+                      setIsSearchFocused(false);
                     }}
-                    onFocus={() => setIsSearchFocused(true)}
-                    onKeyDown={handleSearchKeyDown}
-                    placeholder="Search patients..."
-                    className="w-full pl-9 pr-12 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white focus:border-brand-500 transition-all shadow-2xs font-medium"
-                  />
-                  {patientSearch ? (
-                    <button
-                      onClick={() => {
-                        setPatientSearch('');
-                        setIsSearchFocused(false);
-                      }}
-                      className="absolute right-3 text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer"
-                    >
-                      <X size={14} />
-                    </button>
-                  ) : (
-                    <div className="absolute right-2.5 flex items-center gap-1 pointer-events-none">
-                      <kbd className="text-[10px] bg-white border border-slate-300 px-1.5 py-0.5 rounded font-mono text-slate-500 shadow-2xs">
-                        /
-                      </kbd>
-                    </div>
-                  )}
-                </div>
-
-                {/* Floating Patient Search Results Dropdown (Phase 4) */}
-                {isSearchFocused && patientSearch.trim().length > 0 && (
-                  <div className="absolute left-0 right-0 top-full mt-2 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden divide-y divide-slate-100 max-h-96 overflow-y-auto animate-in fade-in zoom-in-95 duration-100">
-                    <div className="px-3.5 py-2 bg-slate-50 text-[11px] font-semibold text-slate-500 uppercase tracking-wider flex items-center justify-between">
-                      <span>Search Results ({searchResults.length})</span>
-                      <span className="text-[10px] text-slate-400 font-normal">
-                        Press &uarr;&darr; to navigate, &crarr; to open
-                      </span>
-                    </div>
-
-                    {searchResults.length === 0 ? (
-                      <div className="p-6 text-center text-slate-500 text-xs">
-                        No patients match your search.
-                      </div>
-                    ) : (
-                      searchResults.map((p, idx) => {
-                        const name = getPatientName(p.id);
-                        const age = calculateAge(p.birthDate);
-                        const gender = p.gender || 'Unknown';
-                        const visitInfo = getLastVisitInfo(p.id || '');
-                        const problemCount = getPatientConditionCount(p.id || '');
-                        const allergyAlert = getPatientAllergyAlert(p.id || '');
-                        const isHighlighted = idx === highlightedSearchIndex;
-
-                        return (
-                          <div
-                            key={p.id}
-                            onMouseEnter={() => setHighlightedSearchIndex(idx)}
-                            onClick={() => {
-                              navigate(`/patients/${p.id}`);
-                              setPatientSearch('');
-                              setIsSearchFocused(false);
-                            }}
-                            className={`p-3.5 flex items-center justify-between gap-3 cursor-pointer transition-colors ${
-                              isHighlighted ? 'bg-brand-50/70' : 'hover:bg-slate-50'
-                            }`}
-                          >
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="font-bold text-slate-900 text-sm">
-                                  {name}
-                                </span>
-                                {allergyAlert && (
-                                  <span className="text-[10px] font-bold text-amber-800 bg-amber-100 border border-amber-200 px-1.5 py-0.2 rounded flex items-center gap-1">
-                                    &Delta; Allergy alert
-                                  </span>
-                                )}
-                              </div>
-                              <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-2 flex-wrap">
-                                <span>{age}</span>
-                                <span>&bull;</span>
-                                <span className="capitalize">{gender}</span>
-                                <span>&bull;</span>
-                                <span>{visitInfo.text}</span>
-                                <span>&bull;</span>
-                                <span>{problemCount} active problem{problemCount === 1 ? '' : 's'}</span>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-2 shrink-0">
-                              <Link
-                                to={`/patients/${p.id}`}
-                                onClick={(e) => e.stopPropagation()}
-                                className="px-2.5 py-1 bg-white border border-slate-300 hover:border-brand-500 text-slate-700 hover:text-brand-600 rounded-lg text-xs font-semibold shadow-2xs transition-colors"
-                              >
-                                Open Patient
-                              </Link>
-                              <Link
-                                to={`/consultation?patient=${p.id}`}
-                                onClick={(e) => e.stopPropagation()}
-                                className="p-1.5 bg-brand-600 text-white hover:bg-brand-700 rounded-lg shadow-2xs transition-colors"
-                                title="Start Consultation"
-                              >
-                                <Mic size={14} />
-                              </Link>
-                            </div>
-                          </div>
-                        );
-                      })
-                    )}
+                    className="absolute right-3 text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] p-0.5 rounded cursor-pointer transition-colors"
+                  >
+                    <X size={14} />
+                  </button>
+                ) : (
+                  <div className="absolute right-2.5 flex items-center gap-1 pointer-events-none">
+                    <kbd className="proton-kbd">
+                      /
+                    </kbd>
                   </div>
                 )}
               </div>
 
-              {/* Start Consultation Primary Button (Phase 5) */}
-              <button
-                onClick={() => {
-                  setConsultModalSearch('');
-                  setIsConsultModalOpen(true);
-                }}
-                className="bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 shadow-xs transition-colors cursor-pointer shrink-0"
-              >
-                <Plus size={16} /> Start Consultation
-              </button>
+              {/* Floating Patient Search Results Dropdown (Phase 4) */}
+              {isSearchFocused && patientSearch.trim().length > 0 && (
+                <div className="absolute left-0 right-0 top-full mt-2 bg-[var(--color-surface)] border border-[var(--color-border-default)] rounded-xl shadow-xl z-50 overflow-hidden divide-y divide-[var(--color-border-subtle)] max-h-96 overflow-y-auto proton-animate-scale-in">
+                  <div className="px-3.5 py-2 bg-[var(--color-surface-raised)] text-[11px] font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider flex items-center justify-between">
+                    <span>Search Results ({searchResults.length})</span>
+                    <span className="text-[10px] text-[var(--color-text-tertiary)] font-normal">
+                      Press &uarr;&darr; to navigate, &crarr; to open
+                    </span>
+                  </div>
+
+                  {searchResults.length === 0 ? (
+                    <div className="p-6 text-center text-[var(--color-text-tertiary)] text-xs">
+                      No patients match your search.
+                    </div>
+                  ) : (
+                    searchResults.map((p, idx) => {
+                      const name = getPatientName(p.id);
+                      const age = calculateAge(p.birthDate);
+                      const gender = p.gender || 'Unknown';
+                      const visitInfo = getLastVisitInfo(p.id || '');
+                      const problemCount = getPatientConditionCount(p.id || '');
+                      const allergyAlert = getPatientAllergyAlert(p.id || '');
+                      const isHighlighted = idx === highlightedSearchIndex;
+
+                      return (
+                        <div
+                          key={p.id}
+                          onMouseEnter={() => setHighlightedSearchIndex(idx)}
+                          onClick={() => {
+                            navigate(`/patients/${p.id}`);
+                            setPatientSearch('');
+                            setIsSearchFocused(false);
+                          }}
+                          className={`p-3.5 flex items-center justify-between gap-3 cursor-pointer transition-colors ${
+                            isHighlighted ? 'bg-brand-50/70' : 'hover:bg-[var(--color-surface-raised)]'
+                          }`}
+                        >
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-[var(--color-text-primary)] text-sm">
+                                {name}
+                              </span>
+                              {allergyAlert && (
+                                <span className="text-[10px] font-bold text-amber-800 bg-amber-100 border border-amber-200 px-1.5 py-0.2 rounded flex items-center gap-1">
+                                  &Delta; Allergy alert
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-xs text-[var(--color-text-secondary)] mt-0.5 flex items-center gap-2 flex-wrap">
+                              <span>{age}</span>
+                              <span>&bull;</span>
+                              <span className="capitalize">{gender}</span>
+                              <span>&bull;</span>
+                              <span>{visitInfo.text}</span>
+                              <span>&bull;</span>
+                              <span>{problemCount} active problem{problemCount === 1 ? '' : 's'}</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            <Link
+                              to={`/patients/${p.id}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="px-2.5 py-1 bg-[var(--color-surface)] border border-[var(--color-border-default)] hover:border-brand-500 text-[var(--color-text-secondary)] hover:text-brand-600 rounded-lg text-xs font-semibold shadow-2xs transition-colors"
+                            >
+                              Open Patient
+                            </Link>
+                            <Link
+                              to={`/consultation?patient=${p.id}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="p-1.5 bg-brand-600 text-white hover:bg-brand-700 rounded-lg shadow-2xs transition-colors"
+                              title="Start Consultation"
+                            >
+                              <Mic size={14} />
+                            </Link>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              )}
             </div>
 
+            {/* Start Consultation Primary Button (Phase 5) */}
+            <button
+              onClick={() => {
+                setConsultModalSearch('');
+                setIsConsultModalOpen(true);
+              }}
+              className="proton-btn proton-btn-primary shadow-xs cursor-pointer shrink-0"
+            >
+              <Plus size={16} /> Start Consultation
+            </button>
           </div>
+
         </div>
 
         {/* ============================================================== */}
-        {/* PHASE 10 — TODAY'S METRICS & SUMMARY                           */}
+        {/* SYNTHETIC BETA PHYSICIAN ONBOARDING (Tour Banner)              */}
+        {/* Placed right after header, before metrics                      */}
         {/* ============================================================== */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Patient Panel</span>
-              <Users size={16} className="text-brand-600" />
-            </div>
-            <div className="text-2xl font-bold text-slate-900">{patients.length}</div>
-            <div className="text-xs text-slate-500 mt-1">Total active patient profiles</div>
-          </div>
-
-          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Consultations</span>
-              <Stethoscope size={16} className="text-brand-600" />
-            </div>
-            <div className="text-2xl font-bold text-slate-900">{encounters.length}</div>
-            <div className="text-xs text-slate-500 mt-1">Completed: {completedConsults} &bull; Draft: {inProgressDrafts}</div>
-          </div>
-
-          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Prescriptions</span>
-              <Pill size={16} className="text-brand-600" />
-            </div>
-            <div className="text-2xl font-bold text-slate-900">{medRequests.length}</div>
-            <div className="text-xs text-slate-500 mt-1">Approved MedicationRequests</div>
-          </div>
-
-          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Clinical Attention</span>
-              <AlertTriangle size={16} className="text-amber-600" />
-            </div>
-            <div className="text-2xl font-bold text-slate-900">{attentionItems.length}</div>
-            <div className="text-xs text-slate-500 mt-1">Items requiring clinical review</div>
-          </div>
-        </div>
-
-        {/* Operational Workflow Counters Row */}
-        <div className="bg-slate-100/70 border border-slate-200/80 rounded-xl px-5 py-3 flex flex-wrap items-center justify-between gap-4 text-xs">
-          <div className="flex items-center gap-1 font-semibold text-slate-700">
-            <span>Today's Consultations:</span>
-            <span className="text-slate-900 font-bold bg-white px-2 py-0.5 rounded border border-slate-200">{encounters.length}</span>
-          </div>
-          <div className="flex items-center gap-1 text-slate-600">
-            <span>Completed:</span>
-            <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">{completedConsults}</span>
-          </div>
-          <div className="flex items-center gap-1 text-slate-600">
-            <span>Awaiting Approval:</span>
-            <span className="text-amber-800 font-bold bg-amber-50 px-2 py-0.5 rounded border border-amber-200">{inProgressDrafts}</span>
-          </div>
-          <div className="flex items-center gap-1 text-slate-600">
-            <span>Documents to Review:</span>
-            <span className="text-blue-800 font-bold bg-blue-50 px-2 py-0.5 rounded border border-blue-200">{documents.length}</span>
-          </div>
-          <div className="flex items-center gap-1 text-slate-600">
-            <span>Follow-ups:</span>
-            <span className="text-purple-800 font-bold bg-purple-50 px-2 py-0.5 rounded border border-purple-200">{followUpItems.length}</span>
-          </div>
-        </div>
-
-        {/* SYNTHETIC BETA PHYSICIAN ONBOARDING (60-Second Guided Tour) */}
-        <div className="bg-gradient-to-r from-brand-900 via-brand-800 to-slate-900 text-white rounded-2xl p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 border border-brand-800/40">
+        <div className="bg-gradient-to-r from-brand-800 via-brand-900 to-brand-950 text-white rounded-2xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 border border-brand-800/40">
           <div className="flex items-start gap-3.5">
             <div className="h-10 w-10 rounded-xl bg-white/10 text-brand-200 flex items-center justify-center shrink-0 border border-white/10 shadow-inner">
               <Sparkles size={20} />
@@ -947,43 +956,102 @@ export default function Dashboard() {
         </div>
 
         {/* ============================================================== */}
+        {/* PHASE 10 — TODAY'S METRICS & SUMMARY                           */}
+        {/* Operational counters row folded into 4 refined metric cards    */}
+        {/* ============================================================== */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="proton-card p-5">
+            <div className="flex items-center justify-between mb-2">
+              <span className="proton-micro-label text-[var(--color-text-tertiary)]">Patient Panel</span>
+              <Users size={16} className="text-brand-600" />
+            </div>
+            <div className="text-3xl font-bold text-[var(--color-text-primary)] tracking-tight">{patients.length}</div>
+            <div className="text-xs text-[var(--color-text-secondary)] mt-1.5 flex items-center justify-between">
+              <span>Active patient profiles</span>
+              <span className="font-semibold text-brand-700 bg-brand-50 px-1.5 py-0.5 rounded text-[10px]">FHIR R4</span>
+            </div>
+          </div>
+
+          <div className="proton-card p-5">
+            <div className="flex items-center justify-between mb-2">
+              <span className="proton-micro-label text-[var(--color-text-tertiary)]">Consultations</span>
+              <Stethoscope size={16} className="text-brand-600" />
+            </div>
+            <div className="text-3xl font-bold text-[var(--color-text-primary)] tracking-tight">{encounters.length}</div>
+            <div className="text-xs text-[var(--color-text-secondary)] mt-1.5 flex items-center gap-1.5 flex-wrap">
+              <span className="text-emerald-700 font-semibold">{completedConsults} completed</span>
+              <span className="text-[var(--color-text-tertiary)]">•</span>
+              <span className="text-amber-800 font-semibold">{inProgressDrafts} drafts</span>
+            </div>
+          </div>
+
+          <div className="proton-card p-5">
+            <div className="flex items-center justify-between mb-2">
+              <span className="proton-micro-label text-[var(--color-text-tertiary)]">Prescriptions & Records</span>
+              <Pill size={16} className="text-brand-600" />
+            </div>
+            <div className="text-3xl font-bold text-[var(--color-text-primary)] tracking-tight">{medRequests.length}</div>
+            <div className="text-xs text-[var(--color-text-secondary)] mt-1.5 flex items-center gap-1.5 flex-wrap">
+              <span>Approved MedicationRequests</span>
+              <span className="text-[var(--color-text-tertiary)]">•</span>
+              <span className="text-blue-700 font-semibold">{documents.length} docs</span>
+            </div>
+          </div>
+
+          <div className="proton-card p-5">
+            <div className="flex items-center justify-between mb-2">
+              <span className="proton-micro-label text-[var(--color-text-tertiary)]">Clinical Attention</span>
+              <AlertTriangle size={16} className="text-amber-600" />
+            </div>
+            <div className="text-3xl font-bold text-[var(--color-text-primary)] tracking-tight">{attentionItems.length}</div>
+            <div className="text-xs text-[var(--color-text-secondary)] mt-1.5 flex items-center gap-1.5 flex-wrap">
+              <span>Prioritized items</span>
+              <span className="text-[var(--color-text-tertiary)]">•</span>
+              <span className="text-purple-700 font-semibold">{followUpItems.length} follow-ups</span>
+            </div>
+          </div>
+        </div>
+
+        {/* ============================================================== */}
         {/* PHASE 2 — NEEDS YOUR ATTENTION (Highest Priority Section)       */}
         {/* ============================================================== */}
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
-          <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <AlertTriangle size={18} className="text-amber-600" />
+        <div className="proton-card overflow-hidden">
+          <div className="px-6 py-4 border-b border-[var(--color-border-subtle)] flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="p-1.5 rounded-lg bg-amber-50 text-amber-700">
+                <AlertTriangle size={17} />
+              </div>
               <div>
-                <h2 className="font-semibold text-slate-900 text-base">
+                <h2 className="font-bold text-[var(--color-text-primary)] text-base tracking-tight">
                   Needs Your Attention
                 </h2>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-[11px] text-[var(--color-text-secondary)]">
                   Clinical & Workflow Attention Center &bull; Ranked deterministically by priority
                 </p>
               </div>
             </div>
-            <span className="text-xs font-medium text-slate-500 hidden sm:inline">
+            <span className="proton-badge bg-[var(--color-surface-raised)] text-[var(--color-text-secondary)] border border-[var(--color-border-subtle)] hidden sm:inline-flex">
               Deterministic &bull; No autonomous decisions
             </span>
           </div>
 
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-[var(--color-border-subtle)] proton-stagger">
             {attentionItems.length === 0 ? (
-              <div className="p-8 text-center text-slate-500 flex flex-col items-center justify-center gap-2">
+              <div className="p-10 text-center text-[var(--color-text-secondary)] flex flex-col items-center justify-center gap-2">
                 <CheckCircle2 size={32} className="text-emerald-500" />
-                <p className="font-medium text-slate-800">You're all caught up.</p>
-                <p className="text-xs text-slate-400">No items require clinical attention.</p>
+                <p className="font-semibold text-[var(--color-text-primary)]">You're all caught up.</p>
+                <p className="text-xs text-[var(--color-text-tertiary)]">No items require clinical attention.</p>
               </div>
             ) : (
               attentionItems.slice(0, 6).map(item => (
-                <div key={item.id} className="p-4 md:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/70 transition-colors">
-                  <div className="flex items-start gap-3.5">
-                    <div className={`mt-0.5 p-2 rounded-lg shrink-0 ${
-                      item.category === 'SAFETY' ? 'bg-red-50 text-red-600' :
-                      item.category === 'UNFINISHED' ? 'bg-amber-100 text-amber-800' :
-                      item.category === 'DOCUMENT' ? 'bg-blue-50 text-blue-600' :
-                      item.category === 'IMPORTANT_CHANGE' ? 'bg-purple-50 text-purple-700' :
-                      'bg-slate-100 text-slate-700'
+                <div key={item.id} className="p-4 md:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-[var(--color-surface-raised)]/70 transition-colors">
+                  <div className="flex items-start gap-3.5 min-w-0">
+                    <div className={`mt-0.5 p-2 rounded-xl shrink-0 ${
+                      item.category === 'SAFETY' ? 'bg-red-50 text-red-600 border border-red-100' :
+                      item.category === 'UNFINISHED' ? 'bg-amber-50 text-amber-800 border border-amber-100' :
+                      item.category === 'DOCUMENT' ? 'bg-blue-50 text-blue-600 border border-blue-100' :
+                      item.category === 'IMPORTANT_CHANGE' ? 'bg-purple-50 text-purple-700 border border-purple-100' :
+                      'bg-[var(--color-surface-sunken)] text-[var(--color-text-secondary)] border border-[var(--color-border-subtle)]'
                     }`}>
                       {item.category === 'SAFETY' ? <AlertCircle size={16} /> :
                        item.category === 'UNFINISHED' ? <Sparkles size={16} /> :
@@ -992,34 +1060,34 @@ export default function Dashboard() {
                        <CalendarClock size={16} />}
                     </div>
 
-                    <div>
+                    <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <Link 
                           to={`/patients/${item.patientId}`}
-                          className="font-bold text-slate-900 text-sm hover:text-brand-600 transition-colors"
+                          className="font-bold text-[var(--color-text-primary)] text-sm hover:text-brand-600 transition-colors"
                         >
                           {item.patientName}
                         </Link>
-                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
-                          item.category === 'SAFETY' ? 'bg-red-100 text-red-800 border border-red-200' :
-                          item.category === 'UNFINISHED' ? 'bg-amber-100 text-amber-900 border border-amber-200' :
-                          item.category === 'DOCUMENT' ? 'bg-blue-100 text-blue-900 border border-blue-200' :
-                          item.category === 'IMPORTANT_CHANGE' ? 'bg-purple-100 text-purple-900 border border-purple-200' :
-                          'bg-slate-100 text-slate-800'
+                        <span className={`proton-badge ${
+                          item.category === 'SAFETY' ? 'bg-red-50 text-red-800 border border-red-200' :
+                          item.category === 'UNFINISHED' ? 'bg-amber-50 text-amber-900 border border-amber-200' :
+                          item.category === 'DOCUMENT' ? 'bg-blue-50 text-blue-900 border border-blue-200' :
+                          item.category === 'IMPORTANT_CHANGE' ? 'bg-purple-50 text-purple-900 border border-purple-200' :
+                          'bg-[var(--color-surface-sunken)] text-[var(--color-text-secondary)]'
                         }`}>
                           {item.category.replace('_', ' ')}
                         </span>
-                        <span className="text-xs text-slate-400">{item.timestamp}</span>
+                        <span className="text-xs text-[var(--color-text-tertiary)]">{item.timestamp}</span>
                       </div>
-                      <p className="text-xs font-semibold text-slate-900 mt-0.5">{item.title}</p>
-                      <p className="text-xs text-slate-500 mt-0.5">{item.subtitle}</p>
+                      <p className="text-xs font-semibold text-[var(--color-text-primary)] mt-1">{item.title}</p>
+                      <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">{item.subtitle}</p>
                     </div>
                   </div>
 
                   <div className="shrink-0 pl-11 sm:pl-0">
                     <Link
                       to={item.actionUrl}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 hover:border-brand-500 hover:text-brand-600 text-slate-700 rounded-lg text-xs font-semibold shadow-2xs transition-colors"
+                      className="proton-btn proton-btn-secondary text-xs"
                     >
                       {item.actionLabel} <ArrowRight size={13} />
                     </Link>
@@ -1034,49 +1102,51 @@ export default function Dashboard() {
         {/* PHASE 6 & PHASE 7 — TWO COLUMN OPERATING QUEUE                  */}
         {/* (Continue Where You Left Off + Follow-Up & Unresolved)          */}
         {/* ============================================================== */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           
           {/* CONTINUE WHERE YOU LEFT OFF (Phase 6) */}
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden flex flex-col">
-            <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-2">
-                <RotateCcw size={18} className="text-brand-600" />
+          <div className="proton-card overflow-hidden flex flex-col">
+            <div className="px-6 py-4 border-b border-[var(--color-border-subtle)] flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 rounded-lg bg-brand-50 text-brand-600">
+                  <RotateCcw size={16} />
+                </div>
                 <div>
-                  <h2 className="font-semibold text-slate-900 text-base">Continue Where You Left Off</h2>
-                  <p className="text-[11px] text-slate-500">Unfinished consultation drafts & in-progress reviews</p>
+                  <h2 className="font-bold text-[var(--color-text-primary)] text-base tracking-tight">Continue Where You Left Off</h2>
+                  <p className="text-[11px] text-[var(--color-text-secondary)]">Unfinished consultation drafts & in-progress reviews</p>
                 </div>
               </div>
-              <span className="text-[11px] text-brand-700 bg-brand-50 border border-brand-200 px-2 py-0.5 rounded font-medium">
+              <span className="proton-badge bg-brand-50 text-brand-700 border border-brand-200">
                 Active State
               </span>
             </div>
 
-            <div className="divide-y divide-slate-100 flex-1">
+            <div className="divide-y divide-[var(--color-border-subtle)] flex-1">
               {continueItems.length === 0 ? (
-                <div className="p-8 text-center text-slate-500 flex flex-col items-center justify-center gap-2">
+                <div className="p-8 text-center text-[var(--color-text-secondary)] flex flex-col items-center justify-center gap-2">
                   <CheckCircle2 size={28} className="text-emerald-500" />
-                  <p className="font-semibold text-slate-800 text-sm">You're all caught up.</p>
-                  <p className="text-xs text-slate-400">No drafts or unfinished workflows pending.</p>
+                  <p className="font-semibold text-[var(--color-text-primary)] text-sm">You're all caught up.</p>
+                  <p className="text-xs text-[var(--color-text-tertiary)]">No drafts or unfinished workflows pending.</p>
                 </div>
               ) : (
                 continueItems.map(item => (
-                  <div key={item.id} className="p-4 flex items-center justify-between gap-3 hover:bg-slate-50/70 transition-colors">
+                  <div key={item.id} className="p-4 flex items-center justify-between gap-3 hover:bg-[var(--color-surface-raised)]/70 transition-colors">
                     <div>
                       <div className="flex items-center gap-2">
-                        <Link to={`/patients/${item.patientId}`} className="font-bold text-slate-900 text-sm hover:text-brand-600">
+                        <Link to={`/patients/${item.patientId}`} className="font-bold text-[var(--color-text-primary)] text-sm hover:text-brand-600 transition-colors">
                           {item.patientName}
                         </Link>
-                        <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-1.5 py-0.2 rounded uppercase">
+                        <span className="proton-badge bg-[var(--color-surface-sunken)] text-[var(--color-text-secondary)] uppercase">
                           {item.type}
                         </span>
                       </div>
-                      <p className="text-xs text-slate-700 font-medium mt-0.5">{item.title}</p>
-                      <p className="text-xs text-slate-500">{item.description}</p>
+                      <p className="text-xs text-[var(--color-text-primary)] font-semibold mt-0.5">{item.title}</p>
+                      <p className="text-xs text-[var(--color-text-secondary)]">{item.description}</p>
                     </div>
 
                     <Link
                       to={item.actionUrl}
-                      className="shrink-0 px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-xs font-semibold shadow-2xs transition-colors inline-flex items-center gap-1"
+                      className="proton-btn proton-btn-primary text-xs shrink-0"
                     >
                       {item.actionLabel} <ArrowRight size={12} />
                     </Link>
@@ -1087,46 +1157,48 @@ export default function Dashboard() {
           </div>
 
           {/* FOLLOW-UP & UNRESOLVED (Phase 7) */}
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden flex flex-col">
-            <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-2">
-                <CalendarClock size={18} className="text-purple-600" />
+          <div className="proton-card overflow-hidden flex flex-col">
+            <div className="px-6 py-4 border-b border-[var(--color-border-subtle)] flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 rounded-lg bg-purple-50 text-purple-600">
+                  <CalendarClock size={16} />
+                </div>
                 <div>
-                  <h2 className="font-semibold text-slate-900 text-base">Follow-up & Unresolved</h2>
-                  <p className="text-[11px] text-slate-500">Documented interval monitoring & clinical follow-ups</p>
+                  <h2 className="font-bold text-[var(--color-text-primary)] text-base tracking-tight">Follow-up & Unresolved</h2>
+                  <p className="text-[11px] text-[var(--color-text-secondary)]">Documented interval monitoring & clinical follow-ups</p>
                 </div>
               </div>
-              <span className="text-[11px] text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded font-medium">
+              <span className="proton-badge bg-purple-50 text-purple-700 border border-purple-200">
                 Documented Facts
               </span>
             </div>
 
-            <div className="divide-y divide-slate-100 flex-1">
+            <div className="divide-y divide-[var(--color-border-subtle)] flex-1">
               {followUpItems.length === 0 ? (
-                <div className="p-8 text-center text-slate-500 flex flex-col items-center justify-center gap-2">
+                <div className="p-8 text-center text-[var(--color-text-secondary)] flex flex-col items-center justify-center gap-2">
                   <CheckCircle2 size={28} className="text-emerald-500" />
-                  <p className="font-semibold text-slate-800 text-sm">No outstanding follow-ups.</p>
-                  <p className="text-xs text-slate-400">All clinical follow-ups have been resolved.</p>
+                  <p className="font-semibold text-[var(--color-text-primary)] text-sm">No outstanding follow-ups.</p>
+                  <p className="text-xs text-[var(--color-text-tertiary)]">All clinical follow-ups have been resolved.</p>
                 </div>
               ) : (
                 followUpItems.map(item => (
-                  <div key={item.id} className="p-4 flex items-center justify-between gap-3 hover:bg-slate-50/70 transition-colors">
+                  <div key={item.id} className="p-4 flex items-center justify-between gap-3 hover:bg-[var(--color-surface-raised)]/70 transition-colors">
                     <div>
                       <div className="flex items-center gap-2">
-                        <Link to={`/patients/${item.patientId}`} className="font-bold text-slate-900 text-sm hover:text-brand-600">
+                        <Link to={`/patients/${item.patientId}`} className="font-bold text-[var(--color-text-primary)] text-sm hover:text-brand-600 transition-colors">
                           {item.patientName}
                         </Link>
-                        <span className="text-[10px] text-slate-400">{item.date}</span>
-                        <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded font-medium">
+                        <span className="text-[10px] text-[var(--color-text-tertiary)]">{item.date}</span>
+                        <span className="proton-badge bg-[var(--color-surface-sunken)] text-[var(--color-text-secondary)]">
                           {item.source}
                         </span>
                       </div>
-                      <p className="text-xs text-slate-800 font-medium mt-0.5">{item.issue}</p>
+                      <p className="text-xs text-[var(--color-text-primary)] font-medium mt-0.5">{item.issue}</p>
                     </div>
 
                     <Link
                       to={item.actionUrl}
-                      className="shrink-0 px-3 py-1.5 bg-white border border-slate-300 hover:border-brand-500 hover:text-brand-600 text-slate-700 rounded-lg text-xs font-semibold shadow-2xs transition-colors"
+                      className="proton-btn proton-btn-secondary text-xs shrink-0"
                     >
                       Open Patient
                     </Link>
@@ -1141,65 +1213,67 @@ export default function Dashboard() {
         {/* ============================================================== */}
         {/* PHASE 8 — DOCUMENTS TO REVIEW QUEUE                             */}
         {/* ============================================================== */}
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
-          <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FileText size={18} className="text-amber-600" />
+        <div className="proton-card overflow-hidden">
+          <div className="px-6 py-4 border-b border-[var(--color-border-subtle)] flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="p-1.5 rounded-lg bg-amber-50 text-amber-700">
+                <FileText size={17} />
+              </div>
               <div>
-                <h2 className="font-semibold text-slate-900 text-base">Documents to Review</h2>
-                <p className="text-[11px] text-slate-500">
+                <h2 className="font-bold text-[var(--color-text-primary)] text-base tracking-tight">Documents to Review</h2>
+                <p className="text-[11px] text-[var(--color-text-secondary)]">
                   Uploaded clinical records & lab extracts awaiting physician review
                 </p>
               </div>
             </div>
             <Link
               to="/document-review"
-              className="text-xs font-semibold text-brand-600 hover:text-brand-700 flex items-center gap-1"
+              className="text-xs font-semibold text-brand-700 hover:text-brand-800 flex items-center gap-1 transition-colors"
             >
               Document Intake <ArrowRight size={13} />
             </Link>
           </div>
 
-          <div className="bg-amber-50/60 border-b border-amber-200/60 px-6 py-2 text-[11px] text-amber-900 flex items-center gap-2 font-medium">
+          <div className="bg-amber-50/70 border-b border-amber-200/60 px-6 py-2.5 text-[11px] text-amber-900 flex items-center gap-2 font-medium">
             <ShieldAlert size={14} className="text-amber-700 shrink-0" />
             <span>AI-extracted document facts must NOT become confirmed clinical memory until physician approval.</span>
           </div>
 
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-[var(--color-border-subtle)]">
             {documentQueue.length === 0 ? (
-              <div className="p-8 text-center text-slate-500 flex flex-col items-center justify-center gap-2">
+              <div className="p-10 text-center text-[var(--color-text-secondary)] flex flex-col items-center justify-center gap-2">
                 <CheckCircle2 size={32} className="text-emerald-500" />
-                <p className="font-medium text-slate-800">No documents need your attention.</p>
-                <p className="text-xs text-slate-400">All uploaded records have been reviewed and persisted.</p>
+                <p className="font-semibold text-[var(--color-text-primary)]">No documents need your attention.</p>
+                <p className="text-xs text-[var(--color-text-tertiary)]">All uploaded records have been reviewed and persisted.</p>
               </div>
             ) : (
               documentQueue.map(item => (
-                <div key={item.id} className="p-4 md:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/70 transition-colors">
-                  <div className="flex items-start gap-3.5">
-                    <div className="mt-0.5 p-2 bg-amber-50 text-amber-700 rounded-lg shrink-0">
+                <div key={item.id} className="p-4 md:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-[var(--color-surface-raised)]/70 transition-colors">
+                  <div className="flex items-start gap-3.5 min-w-0">
+                    <div className="mt-0.5 p-2 bg-amber-50 text-amber-700 rounded-xl border border-amber-100 shrink-0">
                       <FileText size={16} />
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <Link to={`/patients/${item.patientId}`} className="font-bold text-slate-900 text-sm hover:text-brand-600">
+                        <Link to={`/patients/${item.patientId}`} className="font-bold text-[var(--color-text-primary)] text-sm hover:text-brand-600 transition-colors">
                           {item.patientName}
                         </Link>
-                        <span className="text-xs text-slate-400">{item.date}</span>
-                        <span className="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded">
+                        <span className="text-xs text-[var(--color-text-tertiary)]">{item.date}</span>
+                        <span className="proton-badge bg-blue-50 text-blue-700 border border-blue-200">
                           {item.confidence}
                         </span>
-                        <span className="text-[10px] font-semibold text-amber-800 bg-amber-100 px-2 py-0.5 rounded">
+                        <span className="proton-badge bg-amber-100 text-amber-900 border border-amber-200">
                           {item.status}
                         </span>
                       </div>
-                      <p className="text-xs font-semibold text-slate-800 mt-1">{item.documentType}</p>
+                      <p className="text-xs font-semibold text-[var(--color-text-primary)] mt-1">{item.documentType}</p>
                     </div>
                   </div>
 
                   <div className="shrink-0 pl-11 sm:pl-0">
                     <Link
                       to={item.actionUrl}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-xs font-semibold shadow-2xs transition-colors"
+                      className="proton-btn proton-btn-primary text-xs"
                     >
                       Review <ArrowRight size={13} />
                     </Link>
@@ -1213,23 +1287,25 @@ export default function Dashboard() {
         {/* ============================================================== */}
         {/* PHASE 9 — RECENT PATIENTS PANEL + RECENT ACTIVITY FEED          */}
         {/* ============================================================== */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
           {/* RECENT PATIENTS PANEL (2 Cols on Desktop) */}
-          <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
-            <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Users size={18} className="text-brand-600" />
-                <h2 className="font-semibold text-slate-900 text-base">Recent Patients Panel</h2>
+          <div className="lg:col-span-2 proton-card overflow-hidden">
+            <div className="px-6 py-4 border-b border-[var(--color-border-subtle)] flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 rounded-lg bg-brand-50 text-brand-600">
+                  <Users size={17} />
+                </div>
+                <h2 className="font-bold text-[var(--color-text-primary)] text-base tracking-tight">Recent Patients Panel</h2>
               </div>
-              <Link to="/patients" className="text-xs font-semibold text-brand-600 hover:text-brand-700 flex items-center gap-1">
+              <Link to="/patients" className="text-xs font-semibold text-brand-700 hover:text-brand-800 flex items-center gap-1 transition-colors">
                 View All <ArrowRight size={13} />
               </Link>
             </div>
 
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-[var(--color-border-subtle)]">
               {recentPatients.length === 0 ? (
-                <div className="p-8 text-center text-slate-400 text-sm">
+                <div className="p-8 text-center text-[var(--color-text-tertiary)] text-sm">
                   Patients will appear here after consultations.
                 </div>
               ) : (
@@ -1244,16 +1320,16 @@ export default function Dashboard() {
                   const allergyAlert = getPatientAllergyAlert(patient.id || '');
 
                   return (
-                    <div key={patient.id} className="p-4 md:p-5 flex items-center justify-between gap-4 hover:bg-slate-50/60 transition-colors">
+                    <div key={patient.id} className="p-4 md:p-5 flex items-center justify-between gap-4 hover:bg-[var(--color-surface-raised)]/70 transition-colors">
                       <div className="flex items-center gap-3.5 min-w-0">
-                        <div className="h-10 w-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-700 text-sm shrink-0">
+                        <div className="h-10 w-10 rounded-full bg-brand-50 border border-brand-200 flex items-center justify-center font-bold text-brand-800 text-sm shrink-0">
                           {fullName.slice(0, 2).toUpperCase()}
                         </div>
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <Link 
                               to={`/patients/${patient.id}`}
-                              className="font-semibold text-slate-900 text-sm hover:text-brand-600 truncate block transition-colors"
+                              className="font-bold text-[var(--color-text-primary)] text-sm hover:text-brand-600 truncate block transition-colors"
                             >
                               {fullName}
                             </Link>
@@ -1263,7 +1339,7 @@ export default function Dashboard() {
                               </span>
                             )}
                           </div>
-                          <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5 flex-wrap">
+                          <div className="flex items-center gap-2 text-xs text-[var(--color-text-secondary)] mt-0.5 flex-wrap">
                             <span>{age}</span>
                             <span>&bull;</span>
                             <span className="capitalize">{gender}</span>
@@ -1274,12 +1350,12 @@ export default function Dashboard() {
                           {/* Clinical Condition & Prescription Badges */}
                           <div className="flex items-center gap-1.5 mt-2 flex-wrap">
                             {patConds.slice(0, 2).map((c, i) => (
-                              <span key={i} className="text-[10px] font-medium bg-slate-100 text-slate-700 px-2 py-0.5 rounded">
+                              <span key={i} className="proton-badge bg-[var(--color-surface-sunken)] text-[var(--color-text-secondary)]">
                                 {c.code?.text || c.code?.coding?.[0]?.display || 'Condition'}
                               </span>
                             ))}
                             {patMeds.length > 0 && (
-                              <span className="text-[10px] font-medium bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded flex items-center gap-1">
+                              <span className="proton-badge bg-purple-50 text-purple-700 border border-purple-200">
                                 <Pill size={10} /> {patMeds.length} Rx
                               </span>
                             )}
@@ -1297,7 +1373,7 @@ export default function Dashboard() {
                         </Link>
                         <Link
                           to={`/patients/${patient.id}`}
-                          className="px-3 py-1.5 bg-white border border-slate-300 hover:border-slate-400 text-slate-700 rounded-lg text-xs font-semibold shadow-2xs transition-colors"
+                          className="proton-btn proton-btn-secondary text-xs"
                         >
                           Open Patient
                         </Link>
@@ -1310,37 +1386,39 @@ export default function Dashboard() {
           </div>
 
           {/* RECENT ACTIVITY FEED (1 Col on Desktop) */}
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden flex flex-col">
-            <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-2">
-                <Clock size={18} className="text-slate-600" />
-                <h2 className="font-semibold text-slate-900 text-base">Recent Activity</h2>
+          <div className="proton-card overflow-hidden flex flex-col">
+            <div className="px-6 py-4 border-b border-[var(--color-border-subtle)] flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 rounded-lg bg-[var(--color-surface-sunken)] text-[var(--color-text-secondary)]">
+                  <Clock size={16} />
+                </div>
+                <h2 className="font-bold text-[var(--color-text-primary)] text-base tracking-tight">Recent Activity</h2>
               </div>
-              <span className="text-xs text-slate-500 font-medium">Practice feed</span>
+              <span className="text-xs text-[var(--color-text-tertiary)] font-medium">Practice feed</span>
             </div>
 
-            <div className="divide-y divide-slate-100 overflow-y-auto flex-1 max-h-[480px]">
+            <div className="divide-y divide-[var(--color-border-subtle)] overflow-y-auto flex-1 max-h-[480px]">
               {recentActivities.length === 0 ? (
-                <div className="p-8 text-center text-slate-400 text-sm">No activity recorded yet.</div>
+                <div className="p-8 text-center text-[var(--color-text-tertiary)] text-sm">No activity recorded yet.</div>
               ) : (
                 recentActivities.map(act => (
                   <Link
                     key={`${act.type}-${act.id}`}
                     to={`/patients/${act.patientId}`}
-                    className="p-4 block hover:bg-slate-50/80 transition-colors"
+                    className="p-4 block hover:bg-[var(--color-surface-raised)]/80 transition-colors"
                   >
                     <div className="flex items-center justify-between gap-2 mb-1">
-                      <span className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+                      <span className="text-xs font-semibold text-[var(--color-text-primary)] flex items-center gap-1.5">
                         {act.type === 'consultation' ? <Stethoscope size={13} className="text-brand-600" /> :
                          act.type === 'prescription' ? <Pill size={13} className="text-purple-600" /> :
                          act.type === 'lab' ? <FlaskConical size={13} className="text-emerald-600" /> :
                          <FileText size={13} className="text-amber-600" />}
                         {act.title}
                       </span>
-                      <span className="text-[11px] text-slate-400">{act.date.toLocaleDateString()}</span>
+                      <span className="text-[11px] text-[var(--color-text-tertiary)]">{act.date.toLocaleDateString()}</span>
                     </div>
-                    <div className="text-xs font-medium text-brand-600 truncate">{act.patientName}</div>
-                    <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{act.description}</p>
+                    <div className="text-xs font-medium text-brand-700 truncate">{act.patientName}</div>
+                    <p className="text-xs text-[var(--color-text-secondary)] mt-0.5 line-clamp-1">{act.description}</p>
                   </Link>
                 ))
               )}
@@ -1353,16 +1431,16 @@ export default function Dashboard() {
         {/* MODAL: START CONSULTATION PATIENT SELECTOR                      */}
         {/* ============================================================== */}
         {isConsultModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
-            <div className="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-lg w-full overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-              <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-surface-overlay)] backdrop-blur-xs p-4 animate-in fade-in duration-150">
+            <div className="proton-card max-w-lg w-full overflow-hidden proton-animate-scale-in shadow-2xl">
+              <div className="bg-[var(--color-surface-raised)] px-6 py-4 border-b border-[var(--color-border-subtle)] flex items-center justify-between">
                 <div>
-                  <h3 className="font-bold text-slate-900 text-lg">Start New Consultation</h3>
-                  <p className="text-xs text-slate-500 mt-0.5">Select a patient from your panel to launch the consultation copilot.</p>
+                  <h3 className="font-bold text-[var(--color-text-primary)] text-lg tracking-tight">Start New Consultation</h3>
+                  <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">Select a patient from your panel to launch the consultation copilot.</p>
                 </div>
                 <button 
                   onClick={() => setIsConsultModalOpen(false)}
-                  className="text-slate-400 hover:text-slate-700 p-1 rounded-lg transition-colors cursor-pointer"
+                  className="text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] p-1 rounded-lg transition-colors cursor-pointer"
                 >
                   <X size={18} />
                 </button>
@@ -1370,20 +1448,20 @@ export default function Dashboard() {
 
               <div className="p-6">
                 <div className="relative mb-4">
-                  <Search size={16} className="absolute left-3.5 top-3 text-slate-400" />
+                  <Search size={16} className="absolute left-3.5 top-3 text-[var(--color-text-tertiary)] pointer-events-none" />
                   <input
                     type="text"
                     value={consultModalSearch}
                     onChange={(e) => setConsultModalSearch(e.target.value)}
                     placeholder="Search by patient name..."
-                    className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all"
+                    className="proton-input pl-10 pr-4"
                     autoFocus
                   />
                 </div>
 
-                <div className="max-h-64 overflow-y-auto divide-y divide-slate-100 border border-slate-100 rounded-lg">
+                <div className="max-h-64 overflow-y-auto divide-y divide-[var(--color-border-subtle)] border border-[var(--color-border-default)] rounded-xl">
                   {filteredModalPatients.length === 0 ? (
-                    <div className="p-6 text-center text-slate-400 text-sm">
+                    <div className="p-6 text-center text-[var(--color-text-tertiary)] text-sm">
                       No patients match your search.
                     </div>
                   ) : (
@@ -1396,13 +1474,13 @@ export default function Dashboard() {
                             setIsConsultModalOpen(false);
                             navigate(`/consultation?patient=${p.id}`);
                           }}
-                          className="p-3.5 flex items-center justify-between hover:bg-brand-50 cursor-pointer transition-colors"
+                          className="p-3.5 flex items-center justify-between hover:bg-brand-50/80 cursor-pointer transition-colors"
                         >
                           <div>
-                            <div className="font-semibold text-slate-900 text-sm">{name}</div>
-                            <div className="text-xs text-slate-500">DOB: {p.birthDate || 'Unknown'} &bull; {p.gender || 'Unknown'}</div>
+                            <div className="font-semibold text-[var(--color-text-primary)] text-sm">{name}</div>
+                            <div className="text-xs text-[var(--color-text-secondary)]">DOB: {p.birthDate || 'Unknown'} &bull; {p.gender || 'Unknown'}</div>
                           </div>
-                          <span className="text-xs font-semibold text-brand-600 flex items-center gap-1">
+                          <span className="text-xs font-semibold text-brand-700 flex items-center gap-1">
                             Select <ChevronRight size={14} />
                           </span>
                         </div>
@@ -1412,16 +1490,32 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              <div className="bg-slate-50 px-6 py-3 border-t border-slate-200 flex justify-end">
+              <div className="bg-[var(--color-surface-raised)] px-6 py-3 border-t border-[var(--color-border-subtle)] flex justify-end">
                 <button
                   onClick={() => setIsConsultModalOpen(false)}
-                  className="px-4 py-2 border border-slate-300 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+                  className="proton-btn proton-btn-secondary text-xs cursor-pointer"
                 >
                   Cancel
                 </button>
               </div>
             </div>
           </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* ONBOARDING FLOW MODAL                                          */}
+        {/* ============================================================== */}
+        {showOnboarding && (
+          <OnboardingFlow
+            onComplete={() => {
+              localStorage.setItem('proton_onboarding_complete', 'true');
+              setShowOnboarding(false);
+            }}
+            onSkip={() => {
+              localStorage.setItem('proton_onboarding_complete', 'true');
+              setShowOnboarding(false);
+            }}
+          />
         )}
 
       </div>
