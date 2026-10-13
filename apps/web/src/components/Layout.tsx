@@ -91,7 +91,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
 
         {/* Navigation */}
-        <nav className={`flex-1 ${sidebarCollapsed ? 'px-2' : 'px-3'} py-3 space-y-0.5`}>
+        <nav className={`flex-1 ${sidebarCollapsed ? 'px-2' : 'px-3'} py-3 space-y-1`}>
           {navItems.map((item) => {
             const active = isActive(item.to, item.end);
             return (
@@ -100,13 +100,13 @@ export default function Layout({ children }: { children: ReactNode }) {
                 to={item.to}
                 end={item.end}
                 title={item.label}
-                className={`flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'gap-2.5 px-3'} py-2.5 rounded-lg text-[13px] font-medium transition-all duration-150 ${
+                className={`flex items-center ${sidebarCollapsed ? 'justify-center px-2' : 'gap-3 px-3.5'} py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-200 ${
                   active
-                    ? 'bg-brand-50 text-brand-700 border border-brand-100'
-                    : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-text-primary)] border border-transparent'
+                    ? 'bg-brand-600 text-white shadow-sm shadow-brand-600/30'
+                    : 'text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-sunken)] hover:text-[var(--color-text-primary)]'
                 }`}
               >
-                <item.icon size={18} strokeWidth={active ? 2 : 1.75} />
+                <item.icon size={17} strokeWidth={active ? 2.5 : 2} className={active ? 'text-white' : 'text-slate-400'} />
                 {!sidebarCollapsed && item.label}
               </NavLink>
             );

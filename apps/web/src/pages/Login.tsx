@@ -56,7 +56,7 @@ export default function Login() {
   };
 
   const workflowSteps = [
-    { num: '01', step: 'CAPTURE', title: 'Clinical Dialogue Capture', text: 'Live microphone recording or guided dialogue. Audio streams securely to the backend transcription service with zero client API keys.', icon: Mic },
+    { num: '01', step: 'CAPTURE', title: 'Clinical Dialogue Capture', text: 'Live microphone recording or guided dialogue. Audio streams securely to backend with zero client API keys.', icon: Mic },
     { num: '02', step: 'DRAFT', title: 'Structured Note Synthesis', text: 'AI organizes dialogue into SOAP or General Consultation schemas under strict deterministic clinical prompts.', icon: FileText },
     { num: '03', step: 'VERIFY', title: 'Deterministic Safety Checks', text: 'Algorithmic rules check required sections, dosage patterns, potential allergy cross-reactivity, and duplicate orders.', icon: ShieldCheck },
     { num: '04', step: 'REVIEW', title: 'Physician Review & Editing', text: 'The physician reviews every suggestion. Every item is labeled — AI DRAFT, AI EXTRACTED, or PHYSICIAN EDITED.', icon: Brain },
@@ -65,120 +65,126 @@ export default function Login() {
   ];
 
   return (
-    <div className="min-h-screen bg-[var(--color-surface-raised)] flex flex-col selection:bg-brand-100 selection:text-brand-900">
+    <div className="min-h-screen bg-[#05070f] text-slate-100 flex flex-col font-sans selection:bg-cyan-500/30 selection:text-cyan-200 antialiased overflow-x-hidden proton-hud-grid">
       
-      {/* ── Synthetic Beta Banner ── */}
-      <div className="bg-amber-50 border-b border-amber-200/60 px-4 py-1.5 text-center text-[11px] text-amber-800 font-medium">
-        <span className="proton-micro-label bg-amber-600 text-white px-1.5 py-0.5 rounded mr-2">
-          SYNTHETIC BETA
+      {/* ── Top Telemetry Banner ── */}
+      <div className="bg-cyan-950/40 border-b border-cyan-500/20 px-4 py-1.5 text-center text-[11px] font-mono text-cyan-300">
+        <span className="px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 mr-2">
+          CONTROLLED_EVALUATION
         </span>
-        Controlled synthetic-data physician evaluation environment · No real patient data permitted
+        SYNTHETIC BETA ENVIRONMENT &bull; ZERO REAL PHI PERMITTED &bull; PHYSICIAN GOVERNANCE ACTIVE
       </div>
 
       {/* ── Header ── */}
-      <header className="max-w-6xl w-full mx-auto px-6 py-5 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="h-9 w-9 bg-brand-700 text-white rounded-lg flex items-center justify-center">
-            <Activity size={20} strokeWidth={2.5} />
+      <header className="max-w-7xl w-full mx-auto px-6 py-5 flex items-center justify-between">
+        <div 
+          onClick={() => navigate('/welcome')}
+          className="flex items-center gap-3 cursor-pointer select-none group"
+        >
+          <div className="h-8 w-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center group-hover:border-cyan-400 transition-colors shadow-[0_0_15px_rgba(56,189,248,0.2)]">
+            <Activity size={17} className="stroke-[2.5]" />
           </div>
-          <div className="flex items-center gap-2.5">
-            <span className="font-bold text-xl tracking-tight text-[var(--color-text-primary)]">PROTON</span>
-            <span className="proton-micro-label px-1.5 py-0.5 rounded bg-[var(--color-surface-sunken)] text-[var(--color-text-tertiary)] border border-[var(--color-border-default)]">
-              Physician Beta
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-lg tracking-wider text-white">PROTON</span>
+            <span className="text-[10px] font-mono text-cyan-400/80 px-1.5 py-0.5 rounded bg-cyan-950/40 border border-cyan-500/20">
+              [CLINICAL_OS]
             </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <button
             onClick={() => navigate('/welcome')}
-            className="hidden sm:flex items-center gap-1.5 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] text-sm font-medium px-3 py-2 rounded-lg hover:bg-[var(--color-surface-sunken)] transition-colors cursor-pointer"
+            className="hidden sm:flex items-center gap-1.5 text-slate-400 hover:text-white text-xs font-mono px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors cursor-pointer"
           >
-            Product
+            &lt; RETURN TO OVERVIEW
           </button>
           <button
             onClick={() => setShowHowItWorks(true)}
-            className="flex items-center gap-1.5 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] text-sm font-medium px-3 py-2 rounded-lg hover:bg-[var(--color-surface-sunken)] transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 text-slate-300 hover:text-cyan-400 text-xs font-mono px-3 py-1.5 rounded-full bg-white/5 border border-white/10 hover:border-cyan-500/30 transition-all cursor-pointer"
           >
-            <HelpCircle size={15} /> How It Works
+            <HelpCircle size={14} /> HOW IT WORKS
           </button>
         </div>
       </header>
 
       {/* ── Main Content ── */}
-      <main className="flex-1 max-w-6xl w-full mx-auto px-6 py-6 flex flex-col lg:flex-row items-center gap-16 justify-center">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-8 flex flex-col lg:flex-row items-center gap-14 justify-center">
         
-        {/* ── Left: Product Value ── */}
+        {/* ── Left: Product Presentation (HUD Inspiration) ── */}
         <div className="flex-1 max-w-xl proton-animate-in">
-          <div className="proton-badge bg-brand-50 text-brand-700 border border-brand-200/60 mb-5 py-1 px-3">
-            <Sparkles size={13} /> AI Clinical Copilot for Physicians
+          <div className="proton-hud-tag mb-4 px-2.5 py-1 rounded bg-cyan-950/40 border border-cyan-500/20 text-cyan-300">
+            <Sparkles size={12} /> CLINICAL OS FOR PRACTICING PHYSICIANS
           </div>
           
-          <h1 className="text-3xl sm:text-4xl lg:text-[2.75rem] font-bold text-[var(--color-text-primary)] tracking-tight leading-[1.1]">
-            Your patient's story.
-            <br />
-            <span className="text-brand-700">Understood before you walk in.</span>
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight leading-[1.12]">
+            Your patient&apos;s story.<br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-teal-200 to-indigo-300">
+              Understood before you walk in.
+            </span>
           </h1>
           
-          <p className="mt-5 text-[15px] text-[var(--color-text-secondary)] leading-relaxed max-w-lg">
-            An AI-native clinical copilot that augments physicians with intelligent documentation, 
-            longitudinal patient memory, and actionable clinical insight — with the physician 
-            remaining the final authority at every stage.
+          <p className="mt-5 text-sm sm:text-base text-slate-300 leading-relaxed font-normal max-w-lg">
+            Proton provides ambient clinical documentation, deterministic safety verification, and longitudinal patient intelligence — keeping the physician as the absolute authority at every stage.
           </p>
 
-          {/* Capabilities */}
-          <div className="mt-8 space-y-3 proton-stagger">
+          {/* Technical Pillars */}
+          <div className="mt-8 space-y-3 font-sans">
             {[
-              { title: 'AI-assisted clinical documentation', desc: 'Ambient consultation capture structured into SOAP or General Consultation formats.' },
-              { title: 'Longitudinal patient memory', desc: 'Past visits, lab trends, and medical records synthesized into a unified chronological story.' },
-              { title: 'Intelligent document understanding', desc: 'Clinical facts, medications, and labs extracted from uploaded reports with source quotes.' },
-              { title: 'Physician-controlled workflows', desc: 'Zero autonomous prescribing. Nothing is saved without your explicit sign-off.' },
-              { title: 'Source-grounded clinical context', desc: 'Every AI suggestion displays transparent provenance, evidence, and confidence rating.' }
+              { title: 'Ambient Clinical Documentation', desc: 'Consultation dialogue structured into SOAP schemas with transparent provenance.' },
+              { title: 'Longitudinal FHIR Memory', desc: 'Past visits, lab drift trajectories, and prescriptions synthesized into continuous context.' },
+              { title: 'Deterministic Safety Checks', desc: 'Hard-coded algorithms block cross-reactive allergy conflicts and invalid medication parameters.' },
+              { title: 'Strict Physician Governance', desc: 'Zero autonomous prescribing. Every order requires explicit doctor sign-off.' }
             ].map((item, idx) => (
-              <div key={idx} className="flex items-start gap-3 group">
-                <div className="h-5 w-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-emerald-200 transition-colors">
-                  <CheckCircle2 size={12} strokeWidth={2.5} />
+              <div key={idx} className="flex items-start gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5 hover:border-cyan-500/20 transition-all">
+                <div className="h-5 w-5 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0 mt-0.5">
+                  <CheckCircle2 size={12} className="stroke-[2.5]" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-semibold text-[var(--color-text-primary)]">{item.title}</h4>
-                  <p className="text-[12px] text-[var(--color-text-tertiary)] mt-0.5 leading-relaxed">{item.desc}</p>
+                  <h4 className="text-xs sm:text-sm font-semibold text-white">{item.title}</h4>
+                  <p className="text-[12px] text-slate-400 mt-0.5 leading-relaxed">{item.desc}</p>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Scope Notice */}
-          <div className="mt-8 p-4 bg-[var(--color-surface-sunken)] border border-[var(--color-border-default)] rounded-xl text-xs text-[var(--color-text-secondary)] flex items-start gap-3">
-            <Shield size={16} className="text-[var(--color-text-tertiary)] shrink-0 mt-0.5" />
+          {/* Synthetic Boundary Box */}
+          <div className="mt-8 p-3.5 rounded-xl bg-black/40 border border-cyan-500/20 text-xs font-mono text-slate-400 flex items-start gap-3">
+            <Shield size={16} className="text-cyan-400 shrink-0 mt-0.5" />
             <div>
-              <span className="font-semibold text-[var(--color-text-primary)]">Controlled Synthetic Beta:</span>{' '}
-              Proton is currently deployed for evaluation with synthetic test patients. Real clinical data or autonomous diagnostic decisions are strictly excluded.
+              <span className="text-cyan-300 font-bold">SYNTHETIC EVALUATION HARNESS:</span>{' '}
+              Preloaded with realistic multi-encounter patient trajectories (Eleanor Vance, Arthur Pendelton) for physician evaluation.
             </div>
           </div>
         </div>
 
-        {/* ── Right: Login Card ── */}
-        <div className="w-full max-w-[400px] shrink-0 proton-animate-in" style={{ animationDelay: '100ms' }}>
-          <div className="proton-card p-8 sm:p-9">
-            <div className="text-center mb-7">
-              <h2 className="text-xl font-bold text-[var(--color-text-primary)] tracking-tight">
-                Enter Physician Workspace
-              </h2>
-              <p className="text-xs text-[var(--color-text-tertiary)] mt-1.5">
-                Access your clinical command center & patient panel
-              </p>
+        {/* ── Right: Elevated HUD Login Card (Images 1 & 2 Inspiration) ── */}
+        <div className="w-full max-w-[420px] shrink-0 proton-animate-in" style={{ animationDelay: '100ms' }}>
+          <div className="proton-lumen-card p-8 sm:p-9 relative">
+            
+            {/* Top Card HUD Tag */}
+            <div className="flex items-center justify-between pb-4 mb-6 border-b border-white/10">
+              <div>
+                <span className="text-[10px] font-mono text-cyan-400 font-bold">[PORTAL // AUTH]</span>
+                <h2 className="text-lg font-bold text-white tracking-tight mt-0.5">
+                  Physician Sign-In
+                </h2>
+              </div>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-500/30">
+                ACTIVE
+              </span>
             </div>
 
             {error && (
-              <div className="mb-6 bg-red-50 border-l-3 border-red-500 p-3 rounded-lg text-xs text-red-700 flex items-start gap-2 proton-animate-in">
-                <AlertTriangle size={14} className="text-red-500 shrink-0 mt-0.5" />
+              <div className="mb-6 bg-rose-950/60 border border-rose-500/50 p-3 rounded-xl text-xs text-rose-200 flex items-start gap-2.5">
+                <AlertTriangle size={15} className="text-rose-400 shrink-0 mt-0.5" />
                 <span>{error}</span>
               </div>
             )}
 
-            <form className="space-y-4" onSubmit={handleLogin}>
+            <form className="space-y-4 font-sans" onSubmit={handleLogin}>
               <div>
-                <label className="block proton-micro-label text-[var(--color-text-secondary)] mb-1.5 pl-0.5">
+                <label className="block text-[11px] font-mono uppercase tracking-wider text-slate-400 mb-1.5 pl-0.5">
                   Physician Email
                 </label>
                 <input
@@ -186,13 +192,13 @@ export default function Login() {
                   required
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  placeholder="doctor@example.com"
-                  className="proton-input"
+                  placeholder="doctor@proton.local"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-black/50 border border-white/10 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all font-sans"
                 />
               </div>
 
               <div>
-                <label className="block proton-micro-label text-[var(--color-text-secondary)] mb-1.5 pl-0.5">
+                <label className="block text-[11px] font-mono uppercase tracking-wider text-slate-400 mb-1.5 pl-0.5">
                   Password
                 </label>
                 <input
@@ -201,7 +207,7 @@ export default function Login() {
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="proton-input"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-black/50 border border-white/10 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all font-sans"
                 />
               </div>
 
@@ -209,16 +215,16 @@ export default function Login() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="proton-btn proton-btn-primary w-full py-3"
+                  className="proton-pill-cyan w-full py-3 justify-center text-sm font-semibold cursor-pointer"
                 >
                   {loading ? (
                     <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Authenticating...
+                      <div className="w-4 h-4 border-2 border-black/40 border-t-black rounded-full animate-spin" />
+                      <span>Authenticating Credentials...</span>
                     </>
                   ) : (
                     <>
-                      Enter Physician Workspace
+                      <span>Enter Physician Workspace</span>
                       <ArrowRight size={15} />
                     </>
                   )}
@@ -226,82 +232,85 @@ export default function Login() {
               </div>
             </form>
 
-            {/* Quick Fill */}
-            <div className="mt-7 pt-6 border-t border-[var(--color-border-subtle)] text-center">
-              <p className="text-xs text-[var(--color-text-tertiary)] mb-3">Evaluating Proton for the first time?</p>
+            {/* Quick Fill One-Click Access */}
+            <div className="mt-7 pt-6 border-t border-white/10 text-center">
+              <p className="text-xs text-slate-400 mb-3 font-sans">Evaluating Proton for the first time?</p>
               <button
                 type="button"
                 onClick={handleQuickFillSyntheticDoctor}
-                className="proton-btn proton-btn-secondary w-full text-xs py-2.5"
+                className="w-full py-2.5 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-cyan-300 flex items-center justify-between transition-all cursor-pointer group"
               >
-                <Sparkles size={13} className="text-brand-600" />
-                Use Synthetic Evaluation Account
-                <ChevronRight size={13} />
+                <div className="flex items-center gap-2">
+                  <Sparkles size={13} className="text-cyan-400" />
+                  <span>Use Synthetic Evaluation Account</span>
+                </div>
+                <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform text-slate-400" />
               </button>
             </div>
+
           </div>
         </div>
       </main>
 
       {/* ── Footer ── */}
-      <footer className="max-w-6xl w-full mx-auto px-6 py-5 text-center text-[11px] text-[var(--color-text-tertiary)] border-t border-[var(--color-border-subtle)]">
-        <p>Proton Physician Beta · Controlled Synthetic Evaluation Environment · Designed for practicing physicians</p>
+      <footer className="max-w-7xl w-full mx-auto px-6 py-5 text-center text-[11px] font-mono text-slate-500 border-t border-white/5">
+        <p>PROTON CLINICAL OS &bull; SYNTHETIC EVALUATION ENVIRONMENT &bull; FHIR R4 BACKED</p>
       </footer>
 
       {/* ── How Proton Works Modal ── */}
       {showHowItWorks && (
-        <div className="fixed inset-0 z-50 bg-[var(--color-surface-overlay)] backdrop-blur-sm flex items-center justify-center p-4 proton-animate-in" style={{ animationDuration: '200ms' }}>
-          <div className="bg-[var(--color-surface)] rounded-2xl max-w-2xl w-full p-7 shadow-[var(--shadow-modal)] border border-[var(--color-border-default)] proton-animate-scale-in max-h-[85vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-5 border-b border-[var(--color-border-subtle)]">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 proton-animate-in">
+          <div className="bg-[#080d1a] rounded-3xl max-w-2xl w-full p-7 border border-cyan-500/30 shadow-2xl max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-4 border-b border-white/10">
               <div className="flex items-center gap-3">
-                <div className="h-9 w-9 bg-brand-50 text-brand-700 rounded-lg flex items-center justify-center">
-                  <Activity size={18} />
+                <div className="h-8 w-8 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 rounded-lg flex items-center justify-center">
+                  <Activity size={17} />
                 </div>
                 <div>
-                  <h3 className="font-bold text-[var(--color-text-primary)] text-base">How Proton Works</h3>
-                  <p className="text-xs text-[var(--color-text-tertiary)]">The 6-stage clinical documentation & memory lifecycle</p>
+                  <div className="text-[10px] font-mono text-cyan-400">[ARCHITECTURE_BRIEF]</div>
+                  <h3 className="text-base font-bold text-white">How Proton Works</h3>
                 </div>
               </div>
               <button
                 onClick={() => setShowHowItWorks(false)}
-                className="text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] p-2 rounded-lg hover:bg-[var(--color-surface-raised)] cursor-pointer transition-colors"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <div className="py-6 space-y-3 proton-stagger">
-              {workflowSteps.map((item, i) => (
-                <div key={i} className="flex items-start gap-4 p-4 rounded-xl bg-[var(--color-surface-raised)] border border-[var(--color-border-subtle)] hover:border-[var(--color-border-default)] transition-colors">
-                  <div className="flex flex-col items-center gap-1 shrink-0">
-                    <span className="proton-micro-label text-brand-700 bg-brand-50 px-2 py-1 rounded-md border border-brand-100">
-                      {item.num}
-                    </span>
-                    <item.icon size={16} className="text-brand-600 mt-1" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="proton-micro-label text-brand-700">{item.step}</span>
-                      <span className="text-xs font-semibold text-[var(--color-text-primary)]">{item.title}</span>
+            <div className="mt-6 space-y-4">
+              {workflowSteps.map((s, idx) => {
+                const Icon = s.icon;
+                return (
+                  <div key={idx} className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-start gap-3.5">
+                    <div className="h-7 w-7 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center shrink-0 mt-0.5">
+                      <Icon size={14} />
                     </div>
-                    <p className="text-xs text-[var(--color-text-secondary)] leading-relaxed">{item.text}</p>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-mono text-cyan-400 font-bold">{s.num} // {s.step}</span>
+                        <h4 className="text-xs font-semibold text-white">{s.title}</h4>
+                      </div>
+                      <p className="text-xs text-slate-400 mt-1 leading-relaxed">{s.text}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
-            <div className="pt-5 border-t border-[var(--color-border-subtle)] flex items-center justify-between">
-              <span className="text-xs text-[var(--color-text-tertiary)]">Physician is the final authority at every stage</span>
+            <div className="mt-6 pt-4 border-t border-white/10 flex justify-end">
               <button
                 onClick={() => setShowHowItWorks(false)}
-                className="proton-btn proton-btn-primary text-xs"
+                className="proton-pill-cyan text-xs py-2 px-5 cursor-pointer"
               >
-                Got It
+                Close Brief
               </button>
             </div>
           </div>
         </div>
       )}
+
     </div>
   );
 }

@@ -976,53 +976,100 @@ export default function Dashboard() {
         {/* PHASE 10 — TODAY'S METRICS & SUMMARY                           */}
         {/* Operational counters row folded into 4 refined metric cards    */}
         {/* ============================================================== */}
+        {/* ============================================================== */}
+        {/* PHASE 10 — TODAY'S METRICS & SUMMARY                           */}
+        {/* Inspired by Dropify & MYDNA (Images 3 & 4)                     */}
+        {/* ============================================================== */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="proton-card p-5">
+          
+          {/* Card 1: Patient Panel */}
+          <div className="proton-card p-5 hover:border-brand-300 transition-all">
             <div className="flex items-center justify-between mb-2">
               <span className="proton-micro-label text-[var(--color-text-tertiary)]">Patient Panel</span>
-              <Users size={16} className="text-brand-600" />
+              <div className="h-7 w-7 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center">
+                <Users size={15} />
+              </div>
             </div>
-            <div className="text-3xl font-bold text-[var(--color-text-primary)] tracking-tight">{patients.length}</div>
-            <div className="text-xs text-[var(--color-text-secondary)] mt-1.5 flex items-center justify-between">
-              <span>Active patient profiles</span>
-              <span className="font-semibold text-brand-700 bg-brand-50 px-1.5 py-0.5 rounded text-[10px]">FHIR R4</span>
+            <div className="flex items-baseline justify-between mt-1">
+              <div className="text-3xl font-bold text-[var(--color-text-primary)] tracking-tight">{patients.length}</div>
+              {/* Mini vertical bar graph (Image 4 inspiration) */}
+              <div className="flex items-end gap-1 h-6 shrink-0 opacity-80">
+                <div className="w-1.5 bg-brand-200 rounded-xs h-3" />
+                <div className="w-1.5 bg-brand-300 rounded-xs h-4.5" />
+                <div className="w-1.5 bg-brand-400 rounded-xs h-3.5" />
+                <div className="w-1.5 bg-brand-600 rounded-xs h-6" />
+              </div>
+            </div>
+            <div className="text-xs text-[var(--color-text-secondary)] mt-2 flex items-center justify-between">
+              <span>Active clinical records</span>
+              <span className="font-semibold text-brand-700 bg-brand-50 border border-brand-100 px-1.5 py-0.5 rounded text-[10px]">FHIR R4</span>
             </div>
           </div>
 
-          <div className="proton-card p-5">
+          {/* Card 2: Consultations */}
+          <div className="proton-card p-5 hover:border-emerald-300 transition-all">
             <div className="flex items-center justify-between mb-2">
               <span className="proton-micro-label text-[var(--color-text-tertiary)]">Consultations</span>
-              <Stethoscope size={16} className="text-brand-600" />
+              <div className="h-7 w-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                <Stethoscope size={15} />
+              </div>
             </div>
-            <div className="text-3xl font-bold text-[var(--color-text-primary)] tracking-tight">{encounters.length}</div>
-            <div className="text-xs text-[var(--color-text-secondary)] mt-1.5 flex items-center gap-1.5 flex-wrap">
+            <div className="flex items-baseline justify-between mt-1">
+              <div className="text-3xl font-bold text-[var(--color-text-primary)] tracking-tight">{encounters.length}</div>
+              {/* Mini wave sparkline (Image 3 MYDNA inspiration) */}
+              <svg className="w-16 h-6 shrink-0 text-emerald-500 overflow-visible" viewBox="0 0 60 20" fill="none">
+                <path d="M0 14 Q 15 2, 30 12 T 60 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                <circle cx="60" cy="4" r="2.5" fill="currentColor" />
+              </svg>
+            </div>
+            <div className="text-xs text-[var(--color-text-secondary)] mt-2 flex items-center gap-1.5 flex-wrap">
               <span className="text-emerald-700 font-semibold">{completedConsults} completed</span>
               <span className="text-[var(--color-text-tertiary)]">•</span>
               <span className="text-amber-800 font-semibold">{inProgressDrafts} drafts</span>
             </div>
           </div>
 
-          <div className="proton-card p-5">
+          {/* Card 3: Prescriptions & Records */}
+          <div className="proton-card p-5 hover:border-blue-300 transition-all">
             <div className="flex items-center justify-between mb-2">
               <span className="proton-micro-label text-[var(--color-text-tertiary)]">Prescriptions & Records</span>
-              <Pill size={16} className="text-brand-600" />
+              <div className="h-7 w-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                <Pill size={15} />
+              </div>
             </div>
-            <div className="text-3xl font-bold text-[var(--color-text-primary)] tracking-tight">{medRequests.length}</div>
-            <div className="text-xs text-[var(--color-text-secondary)] mt-1.5 flex items-center gap-1.5 flex-wrap">
+            <div className="flex items-baseline justify-between mt-1">
+              <div className="text-3xl font-bold text-[var(--color-text-primary)] tracking-tight">{medRequests.length}</div>
+              {/* Mini step graph */}
+              <svg className="w-16 h-6 shrink-0 text-blue-500 overflow-visible" viewBox="0 0 60 20" fill="none">
+                <path d="M0 16 H 20 V 10 H 40 V 4 H 60" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                <circle cx="60" cy="4" r="2.5" fill="currentColor" />
+              </svg>
+            </div>
+            <div className="text-xs text-[var(--color-text-secondary)] mt-2 flex items-center gap-1.5 flex-wrap">
               <span>Approved MedicationRequests</span>
               <span className="text-[var(--color-text-tertiary)]">•</span>
               <span className="text-blue-700 font-semibold">{documents.length} docs</span>
             </div>
           </div>
 
-          <div className="proton-card p-5">
+          {/* Card 4: Clinical Attention */}
+          <div className="proton-card p-5 hover:border-amber-300 transition-all">
             <div className="flex items-center justify-between mb-2">
               <span className="proton-micro-label text-[var(--color-text-tertiary)]">Clinical Attention</span>
-              <AlertTriangle size={16} className="text-amber-600" />
+              <div className="h-7 w-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+                <AlertTriangle size={15} />
+              </div>
             </div>
-            <div className="text-3xl font-bold text-[var(--color-text-primary)] tracking-tight">{attentionItems.length}</div>
-            <div className="text-xs text-[var(--color-text-secondary)] mt-1.5 flex items-center gap-1.5 flex-wrap">
-              <span>Prioritized items</span>
+            <div className="flex items-baseline justify-between mt-1">
+              <div className="text-3xl font-bold text-[var(--color-text-primary)] tracking-tight">{attentionItems.length}</div>
+              {/* Mini attention heartbeat pulse */}
+              <svg className="w-16 h-6 shrink-0 text-amber-500 overflow-visible" viewBox="0 0 60 20" fill="none">
+                <path d="M0 10 H 15 L 22 2 L 30 18 L 38 7 L 44 10 H 60" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <circle cx="22" cy="2" r="2.5" fill="currentColor" />
+              </svg>
+            </div>
+            <div className="text-xs text-[var(--color-text-secondary)] mt-2 flex items-center gap-1.5 flex-wrap">
+              <span className="font-semibold text-amber-800">Prioritized triage</span>
               <span className="text-[var(--color-text-tertiary)]">•</span>
               <span className="text-purple-700 font-semibold">{followUpItems.length} follow-ups</span>
             </div>
