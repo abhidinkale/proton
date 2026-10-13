@@ -31,10 +31,13 @@ import {
   RotateCcw, 
   CalendarClock, 
   ShieldAlert, 
-  Plus 
+  Plus,
+  LayoutDashboard,
+  Activity
 } from 'lucide-react';
 import Layout from '../components/Layout';
 import OnboardingFlow from '../components/OnboardingFlow';
+import TreatmentDynamicsView from '../components/TreatmentDynamicsView';
 
 interface AttentionItem {
   id: string;
@@ -122,6 +125,8 @@ export default function Dashboard() {
   const [showOnboarding, setShowOnboarding] = useState(() => {
     return !localStorage.getItem('proton_onboarding_complete');
   });
+
+  const [dashboardMode, setDashboardMode] = useState<'cockpit' | 'dynamics'>('cockpit');
 
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);
@@ -927,6 +932,59 @@ export default function Dashboard() {
         </div>
 
         {/* ============================================================== */}
+        {/* VIEW MODE SWITCHER: CLINICAL COCKPIT vs TREATMENT DYNAMICS     */}
+        {/* Inspired by Google MedGemma / Med-PaLM Clinical UX             */}
+        {/* ============================================================== */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[var(--color-surface-raised)] border border-[var(--color-border-subtle)] p-2 rounded-2xl shadow-xs">
+          <div className="flex items-center gap-1.5 p-1 bg-[var(--color-surface-sunken)] rounded-xl border border-[var(--color-border-subtle)] w-fit">
+            <button
+              onClick={() => setDashboardMode('cockpit')}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 ease-[var(--ease-butter)] cursor-pointer ${
+                dashboardMode === 'cockpit'
+                  ? 'bg-white text-[var(--color-text-primary)] shadow-xs border border-black/5 font-bold'
+                  : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
+              }`}
+            >
+              <LayoutDashboard size={14} className={dashboardMode === 'cockpit' ? 'text-brand-600' : ''} />
+              <span>Command Cockpit</span>
+            </button>
+
+            <button
+              onClick={() => setDashboardMode('dynamics')}
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 ease-[var(--ease-butter)] cursor-pointer ${
+                dashboardMode === 'dynamics'
+                  ? 'bg-[#1b211d] text-[#e4f552] shadow-xs font-bold'
+                  : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
+              }`}
+            >
+              <Activity size={14} className={dashboardMode === 'dynamics' ? 'text-[#e4f552]' : ''} />
+              <span>Treatment Dynamics</span>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full uppercase tracking-wider font-bold ${
+                dashboardMode === 'dynamics' 
+                  ? 'bg-[#e4f552]/20 text-[#e4f552]' 
+                  : 'bg-brand-100 text-brand-700'
+              }`}>
+                MedGemma
+              </span>
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2 text-xs text-[var(--color-text-tertiary)] px-2">
+            <Sparkles size={13} className="text-brand-600" />
+            <span className="hidden md:inline">Continuous trajectory modeling &bull; Google MedGemma alignment</span>
+          </div>
+        </div>
+
+        {dashboardMode === 'dynamics' ? (
+          <div className="animate-in fade-in duration-300">
+            <TreatmentDynamicsView
+              patientId={eleanorPatient?.id || 'demo-eleanor-vance'}
+              patientName={eleanorPatient ? getPatientName(eleanorPatient.id) : 'Eleanor Vance'}
+            />
+          </div>
+        ) : (
+          <>
+        {/* ============================================================== */}
         {/* SYNTHETIC BETA PHYSICIAN ONBOARDING (Tour Banner)              */}
         {/* Placed right after header, before metrics                      */}
         {/* ============================================================== */}
@@ -1490,6 +1548,8 @@ export default function Dashboard() {
           </div>
 
         </div>
+          </>
+        )}
 
         {/* ============================================================== */}
         {/* MODAL: START CONSULTATION PATIENT SELECTOR                      */}

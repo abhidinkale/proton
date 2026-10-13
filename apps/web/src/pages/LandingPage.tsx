@@ -9,8 +9,9 @@ export default function LandingPage() {
   const navigate = useNavigate();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [selectedLoopStage, setSelectedLoopStage] = useState(1);
+  const mouseRef = useRef({ x: 0.5, y: 0.5 });
 
-  // Generative Halftone Bioluminescent Bloom (Matching uploaded page.62 design)
+  // Interactive dynamic particle atmosphere surrounding the human touch artwork
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -19,132 +20,63 @@ export default function LandingPage() {
 
     let animId: number;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    let width = canvas.offsetWidth;
-    let height = canvas.offsetHeight;
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
+    let width = (canvas.width = canvas.offsetWidth * dpr);
+    let height = (canvas.height = canvas.offsetHeight * dpr);
 
     const handleResize = () => {
       if (!canvas) return;
-      width = canvas.offsetWidth;
-      height = canvas.offsetHeight;
-      canvas.width = width * dpr;
-      canvas.height = height * dpr;
+      width = canvas.width = canvas.offsetWidth * dpr;
+      height = canvas.height = canvas.offsetHeight * dpr;
     };
     window.addEventListener('resize', handleResize);
+
+    const handleMouseMove = (e: MouseEvent) => {
+      mouseRef.current = {
+        x: e.clientX / window.innerWidth,
+        y: e.clientY / window.innerHeight
+      };
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+
+    // Ambient floating point particles
+    const particleCount = 75;
+    const particles = Array.from({ length: particleCount }, () => ({
+      x: Math.random(),
+      y: Math.random(),
+      vx: (Math.random() - 0.5) * 0.0003,
+      vy: -0.0002 - Math.random() * 0.0004,
+      size: Math.random() * 1.8 + 0.6,
+      alpha: Math.random() * 0.7 + 0.2,
+      twinkle: Math.random() * Math.PI * 2
+    }));
 
     let time = 0;
 
     const render = () => {
-      time += 0.015;
-      ctx.save();
-      ctx.scale(dpr, dpr);
+      time += 0.02;
       ctx.clearRect(0, 0, width, height);
 
-      const originX = width / 2;
-      const originY = height * 0.50;
+      // Mouse parallax shift
+      const mx = (mouseRef.current.x - 0.5) * 25 * dpr;
+      const my = (mouseRef.current.y - 0.5) * 20 * dpr;
 
-      // Soft ambient radial glow
-      const radial = ctx.createRadialGradient(originX, originY, 15, originX, originY, Math.min(width, height) * 0.46);
-      radial.addColorStop(0, 'rgba(56, 189, 248, 0.38)');
-      radial.addColorStop(0.32, 'rgba(45, 212, 191, 0.18)');
-      radial.addColorStop(0.68, 'rgba(14, 165, 233, 0.04)');
-      radial.addColorStop(1, 'rgba(5, 7, 10, 0)');
-      ctx.fillStyle = radial;
-      ctx.fillRect(0, 0, width, height);
+      // Render drifting clinical point particles
+      for (const p of particles) {
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.y < 0) p.y = 1;
+        if (p.x < 0) p.x = 1;
+        if (p.x > 1) p.x = 0;
 
-      // Organic floral petals with subtle breathing wave
-      const breathe = Math.sin(time) * 4;
-      const petals = [
-        // Upright back petal (slightly tilted right)
-        { p0: [originX, originY], p1: [originX + 70 + breathe, originY - 140], p2: [originX + 110, originY - 260], maxW: 90 },
-        // Upper left flared petal
-        { p0: [originX, originY], p1: [originX - 120 - breathe, originY - 110], p2: [originX - 280, originY - 160], maxW: 105 },
-        // Upper right flared petal
-        { p0: [originX, originY], p1: [originX + 180 + breathe, originY - 110], p2: [originX + 340, originY - 130], maxW: 115 },
-        // Far left sweeping petal
-        { p0: [originX - 30, originY + 10], p1: [originX - 220 - breathe * 0.5, originY + 10], p2: [originX - 360, originY + 20], maxW: 110 },
-        // Lower right sweeping petal
-        { p0: [originX + 20, originY + 15], p1: [originX + 240 + breathe * 0.5, originY + 50], p2: [originX + 380, originY + 60], maxW: 115 },
-        // Lower center petal
-        { p0: [originX, originY], p1: [originX - 10, originY + 110 + breathe], p2: [originX + 40, originY + 170], maxW: 80 }
-      ];
+        const posX = p.x * width + mx;
+        const posY = p.y * height + my;
+        const currentAlpha = p.alpha * (0.6 + 0.4 * Math.sin(time + p.twinkle));
 
-      function getDistanceToPetal(px: number, py: number, p0: number[], p1: number[], p2: number[], maxW: number) {
-        let minDist = 9999;
-        let bestT = 0;
-        const steps = 24;
-        for (let i = 0; i <= steps; i++) {
-          const t = i / steps;
-          const mt = 1 - t;
-          const bx = mt * mt * p0[0] + 2 * mt * t * p1[0] + t * t * p2[0];
-          const by = mt * mt * p0[1] + 2 * mt * t * p1[1] + t * t * p2[1];
-          const d = Math.hypot(px - bx, py - by);
-          if (d < minDist) {
-            minDist = d;
-            bestT = t;
-          }
-        }
-        const currentW = Math.sin(Math.pow(bestT, 0.7) * Math.PI) * maxW;
-        if (minDist <= currentW) {
-          const normDist = minDist / currentW;
-          return (1 - normDist * normDist) * Math.sin(bestT * Math.PI);
-        }
-        return 0;
+        ctx.beginPath();
+        ctx.arc(posX, posY, p.size * dpr, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(220, 240, 255, ${currentAlpha})`;
+        ctx.fill();
       }
-
-      // Halftone dot rasterization
-      const step = 5.2;
-      const startX = originX - 440;
-      const endX = originX + 440;
-      const startY = originY - 290;
-      const endY = originY + 220;
-
-      for (let x = startX; x <= endX; x += step) {
-        for (let y = startY; y <= endY; y += step) {
-          let maxIntensity = 0;
-
-          for (const p of petals) {
-            const intensity = getDistanceToPetal(x, y, p.p0, p.p1, p.p2, p.maxW);
-            if (intensity > maxIntensity) {
-              maxIntensity = intensity;
-            }
-          }
-
-          const distCenter = Math.hypot(x - originX, y - originY);
-          let centerGlow = 0;
-          if (distCenter < 55) {
-            centerGlow = (1 - distCenter / 55) * 0.95;
-          }
-
-          const totalIntensity = Math.min(1, Math.max(maxIntensity, centerGlow));
-
-          if (totalIntensity > 0.06) {
-            const dotRadius = Math.max(0.6, totalIntensity * 2.5);
-            ctx.beginPath();
-            ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
-
-            if (totalIntensity > 0.82) {
-              ctx.fillStyle = '#ffffff';
-            } else if (totalIntensity > 0.52) {
-              ctx.fillStyle = '#7dd3fc';
-            } else if (totalIntensity > 0.25) {
-              ctx.fillStyle = '#38bdf8';
-            } else {
-              ctx.fillStyle = 'rgba(56, 189, 248, 0.42)';
-            }
-            ctx.fill();
-          }
-        }
-      }
-
-      // Mirror reflection below
-      ctx.save();
-      ctx.filter = 'blur(16px)';
-      ctx.globalAlpha = 0.24;
-      ctx.drawImage(canvas, 0, 0, width, height, 0, height * 0.46, width, height * 0.38);
-      ctx.restore();
-      ctx.restore();
 
       animId = requestAnimationFrame(render);
     };
@@ -153,6 +85,7 @@ export default function LandingPage() {
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('mousemove', handleMouseMove);
       cancelAnimationFrame(animId);
     };
   }, []);
@@ -163,10 +96,10 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#05070a] text-slate-100 font-sans selection:bg-cyan-500/30 selection:text-cyan-200 antialiased overflow-x-hidden">
+    <div className="min-h-screen bg-[#030407] text-slate-100 font-sans selection:bg-cyan-500/30 selection:text-cyan-200 antialiased overflow-x-hidden">
 
       {/* ── 1. MINIMAL TOP BAR ─────────────────────────────────────────── */}
-      <header className="fixed top-0 left-0 right-0 z-50 px-6 sm:px-10 py-6 flex items-center justify-between">
+      <header className="fixed top-0 left-0 right-0 z-50 px-6 sm:px-12 py-6 flex items-center justify-between backdrop-blur-md bg-[#030407]/60 border-b border-white/[0.04]">
         {/* Brand */}
         <div 
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
@@ -175,7 +108,12 @@ export default function LandingPage() {
           <div className="h-7 w-7 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center group-hover:border-cyan-400 transition-colors shadow-[0_0_12px_rgba(56,189,248,0.25)]">
             <Activity size={15} className="stroke-[2.5]" />
           </div>
-          <span className="font-bold text-base tracking-wider text-white">PROTON</span>
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-base tracking-wider text-white">PROTON</span>
+            <span className="text-[10px] font-mono text-cyan-400/80 px-1.5 py-0.5 rounded bg-cyan-950/40 border border-cyan-500/20">
+              [MED_AI]
+            </span>
+          </div>
         </div>
 
         {/* Minimal Actions */}
@@ -185,7 +123,7 @@ export default function LandingPage() {
           </span>
           <button
             onClick={() => navigate('/login')}
-            className="proton-pill-cyan text-xs py-2 px-4.5 cursor-pointer"
+            className="proton-pill-cyan text-xs py-2 px-5 cursor-pointer shadow-[0_0_20px_rgba(56,189,248,0.35)] hover:shadow-[0_0_25px_rgba(56,189,248,0.55)] transition-all"
           >
             <span>Enter Workspace</span>
             <ArrowRight size={13} className="stroke-[2.5]" />
@@ -193,25 +131,42 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* ── 2. HERO: EXACT PAGE.62 COMPOSITION ─────────────────────────── */}
-      <section className="relative min-h-screen flex flex-col justify-between pt-16 pb-12 sm:pb-16 px-6 sm:px-12 lg:px-16 overflow-hidden">
+      {/* ── 2. HERO: ARTISTIC HUMAN CONNECTION ARTWORK ──────────────────── */}
+      {/* Inspired by user uploaded image: Point-cloud doctor & patient meeting */}
+      <section className="relative min-h-screen flex flex-col justify-between pt-24 pb-12 sm:pb-16 px-6 sm:px-12 lg:px-16 overflow-hidden">
         
-        {/* Top/Center: Luminous Halftone Flower Bloom */}
-        <div className="flex-1 relative w-full flex items-center justify-center min-h-[50vh] sm:min-h-[58vh]">
-          <canvas
-            ref={canvasRef}
-            className="w-full h-full max-w-5xl block"
-          />
+        {/* Center Artwork Container with Vignette Fade & Particle Canvas Overlay */}
+        <div className="flex-1 relative w-full flex items-center justify-center min-h-[48vh] sm:min-h-[58vh]">
+          
+          {/* Main Artwork with Soft Vignette Mask */}
+          <div className="relative w-full max-w-4xl aspect-[16/9] flex items-center justify-center">
+            <img
+              src="/assets/hero-human-touch.png"
+              alt="Physician and Patient Connection in Point-Cloud Data"
+              className="w-full h-full object-contain pointer-events-none select-none transition-transform duration-700 ease-[var(--ease-butter)] hover:scale-[1.01]"
+              style={{
+                maskImage: 'radial-gradient(ellipse at center, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 90%)',
+                WebkitMaskImage: 'radial-gradient(ellipse at center, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 90%)'
+              }}
+            />
+
+            {/* Interactive Floating Particle Atmosphere Canvas */}
+            <canvas
+              ref={canvasRef}
+              className="absolute inset-0 w-full h-full pointer-events-none"
+            />
+          </div>
+
         </div>
 
-        {/* Bottom Lower Third: Split Editorial Content (Matching page.62) */}
-        <div className="w-full max-w-7xl mx-auto pt-6 border-t border-white/[0.06] relative z-10">
+        {/* Bottom Lower Third: Split Editorial Content (page.62 composition) */}
+        <div className="w-full max-w-7xl mx-auto pt-6 border-t border-white/[0.08] relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-end">
             
             {/* Left Column: Micro Tag + Bold Question Headline */}
             <div className="lg:col-span-7">
-              <div className="text-xs font-mono text-slate-400 mb-3 tracking-wider">
-                proton.01
+              <div className="text-xs font-mono text-cyan-400 mb-2.5 tracking-wider uppercase">
+                proton.01 // clinical intelligence
               </div>
               <h1 className="text-3xl sm:text-4xl lg:text-[2.75rem] font-bold text-white tracking-tight leading-[1.12]">
                 Ready to understand your patient before you walk in?
@@ -246,15 +201,14 @@ export default function LandingPage() {
 
       </section>
 
-      {/* ── 3. MINIMAL ESSENTIAL CLINICAL INFORMATION ──────────────────── */}
-      {/* (Only the strictly necessary pillars requested by user) */}
+      {/* ── 3. ESSENTIAL CLINICAL INFORMATION (Google MedGemma Precision) ── */}
 
       {/* PILLAR 1: The 7-Stage Proton Loop */}
-      <section id="core-intelligence" className="py-24 border-t border-white/5 bg-[#06080e] relative">
+      <section id="core-intelligence" className="py-24 border-t border-white/5 bg-[#05070c] relative">
         <div className="max-w-6xl mx-auto px-6 sm:px-12">
           
           <div className="mb-12">
-            <span className="text-[11px] font-mono text-cyan-400">[THE_CLINICAL_LOOP]</span>
+            <span className="text-[11px] font-mono text-cyan-400 uppercase tracking-wider">[THE_CLINICAL_LOOP]</span>
             <h2 className="text-2xl sm:text-3xl font-bold text-white mt-1">
               Seven stages. Physician authority at every step.
             </h2>
@@ -292,7 +246,7 @@ export default function LandingPage() {
           {/* Active Stage Highlight Card */}
           <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="max-w-xl">
-              <span className="text-[10px] font-mono text-cyan-400">ACTIVE STAGE EXPLANATION</span>
+              <span className="text-[10px] font-mono text-cyan-400">STAGE EXPLANATION</span>
               <h3 className="text-lg font-bold text-white mt-1">
                 {selectedLoopStage === 1 && 'Capture: Ambient exam room dialogue streamed without client API keys'}
                 {selectedLoopStage === 2 && 'Understand: Clinical entity extraction mapped to SNOMED and RxNorm'}
@@ -315,12 +269,12 @@ export default function LandingPage() {
       </section>
 
       {/* PILLAR 2: What Matters Today (Pre-Consultation Brief) */}
-      <section className="py-24 border-t border-white/5 bg-[#05070a]">
+      <section className="py-24 border-t border-white/5 bg-[#030407]">
         <div className="max-w-6xl mx-auto px-6 sm:px-12">
           
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
             <div>
-              <span className="text-[11px] font-mono text-teal-400">[PRE_CONSULTATION_BRIEF]</span>
+              <span className="text-[11px] font-mono text-teal-400 uppercase tracking-wider">[PRE_CONSULTATION_BRIEF]</span>
               <h2 className="text-2xl sm:text-3xl font-bold text-white mt-1">
                 What Matters Today
               </h2>
@@ -390,9 +344,9 @@ export default function LandingPage() {
       </section>
 
       {/* PILLAR 3: Clinical Governance */}
-      <section className="py-24 border-t border-white/5 bg-[#06080e] text-center">
+      <section className="py-24 border-t border-white/5 bg-[#05070c] text-center">
         <div className="max-w-3xl mx-auto px-6">
-          <span className="text-[11px] font-mono text-slate-400">[GOVERNANCE]</span>
+          <span className="text-[11px] font-mono text-slate-400 uppercase tracking-wider">[GOVERNANCE]</span>
           <h2 className="text-2xl sm:text-3xl font-bold text-white mt-2 leading-tight">
             AI should reduce cognitive load.<br />
             <span className="text-cyan-400">Never replace clinical judgment.</span>
@@ -425,7 +379,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── 4. CLEAN FOOTER ────────────────────────────────────────────── */}
-      <footer className="border-t border-white/5 bg-[#030508] py-8 px-6 text-center text-xs font-mono text-slate-500">
+      <footer className="border-t border-white/5 bg-[#020305] py-8 px-6 text-center text-xs font-mono text-slate-500">
         <p>PROTON CLINICAL OS &bull; SYNTHETIC BETA EVALUATION &bull; NO REAL PHI</p>
       </footer>
 
