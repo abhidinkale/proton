@@ -1,4 +1,4 @@
-import { X, ShieldCheck, Database, Calendar, ExternalLink, Sparkles, UserCheck } from 'lucide-react';
+import { X, ShieldCheck, Database, Calendar, ExternalLink, FileText, UserCheck } from 'lucide-react';
 import type { ClinicalEvidence } from '../types/clinicalBrain';
 
 interface EvidenceModalProps {
@@ -34,7 +34,7 @@ export default function EvidenceModal({
       default:
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-violet-50 text-violet-800 border border-violet-200">
-            <Sparkles size={12} className="text-violet-600" /> AI Synthesized &bull; Review Required
+            <FileText size={12} className="text-violet-600" /> AI-generated &bull; Review Required
           </span>
         );
     }

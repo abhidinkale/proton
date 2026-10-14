@@ -8,7 +8,7 @@ class GeminiProvider extends AIProvider {
       throw new Error("GEMINI_API_KEY is required for Gemini provider");
     }
     this.apiKey = apiKey.trim();
-    this.modelName = modelName || process.env.PROTON_AI_MODEL || 'gemini-3.8-flash';
+    this.modelName = modelName || process.env.PROTON_AI_MODEL || 'gemini-3.5-flash-lite';
     const useVertex = process.env.GOOGLE_GENAI_USE_VERTEXAI === 'true';
     this.ai = new GoogleGenAI({
       apiKey: this.apiKey,
@@ -30,10 +30,14 @@ class GeminiProvider extends AIProvider {
         if (!isTransient || attempt > maxRetries) {
           throw err;
         }
-        if (isQuota && currentModel !== 'gemini-3.5-flash-lite') {
+        if (currentModel === 'gemini-3.5-flash-lite') {
+          currentModel = 'gemini-3.1-flash-lite';
+        } else if (currentModel === 'gemini-3.8-flash') {
           currentModel = 'gemini-3.5-flash-lite';
+        } else {
+          currentModel = 'gemini-flash-latest';
         }
-        await new Promise(resolve => setTimeout(resolve, attempt * 1500));
+        await new Promise(resolve => setTimeout(resolve, attempt * 1200));
       }
     }
   }
@@ -79,6 +83,28 @@ class GeminiProvider extends AIProvider {
 
     return {
       text,
+      usageMetadata: response.usageMetadata || null,
+      model: this.modelName
+    };
+  }
+
+  async chat(messages) {
+    const prompt = messages
+      .map(({ role, content }) => `${role === 'system' ? 'System' : role === 'assistant' ? 'Assistant' : 'Clinician'}: ${content}`)
+      .join('\n\n');
+    const response = await this._withRetry((model) =>
+      this.ai.models.generateContent({
+        model,
+        contents: prompt,
+        config: {
+          temperature: 0.2,
+          thinkingConfig: { thinkingLevel: 'LOW' }
+        }
+      })
+    );
+
+    return {
+      text: response.text ? response.text.trim() : '',
       usageMetadata: response.usageMetadata || null,
       model: this.modelName
     };
@@ -172,6 +198,38 @@ Rules:
     const text = response.text ? response.text.trim() : '{}';
     return {
       text,
+      usageMetadata: response.usageMetadata || null,
+      model: this.modelName
+    };
+  }
+
+  async chat(messages) {
+    const systemMsg = messages.find(m => m.role === 'system');
+    const conversation = messages.filter(m => m.role !== 'system');
+    
+    const contents = conversation.map(m => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content }]
+    }));
+
+    const config = {
+      temperature: 0.2,
+      thinkingConfig: { thinkingLevel: 'LOW' }
+    };
+    if (systemMsg) {
+      config.systemInstruction = systemMsg.content;
+    }
+
+    const response = await this._withRetry((model) =>
+      this.ai.models.generateContent({
+        model,
+        contents,
+        config
+      })
+    );
+
+    return {
+      text: response.text ? response.text.trim() : '',
       usageMetadata: response.usageMetadata || null,
       model: this.modelName
     };

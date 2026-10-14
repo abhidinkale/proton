@@ -15,6 +15,10 @@ class DeepSeekProvider extends AIProvider {
     throw new Error('DeepSeek audio transcription not supported natively. Audio consultation workflow requires Whisper or multimodal audio provider.');
   }
 
+  async chat(messages) {
+    return this._callDeepSeek(messages, false);
+  }
+
   async generateNote(transcript, patientContext, noteSchema, template) {
     if (!transcript || typeof transcript !== 'string' || transcript.trim().length === 0) {
       throw new Error("Consultation transcript is required to generate a clinical note.");

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { 
-  Sparkles, 
   AlertCircle, 
   Clock, 
   ExternalLink, 
@@ -40,12 +39,12 @@ export default function PatientIntelligenceSection({
       {/* ================================================== */}
       {/* 1. PATIENT INTELLIGENCE BRIEF                      */}
       {/* ================================================== */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
+      <div className="proton-patient-intelligence bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
         {/* Top Header */}
         <div className="bg-gradient-to-r from-brand-900 via-brand-800 to-slate-900 text-white px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <div className="h-8 w-8 rounded-lg bg-white/10 text-brand-200 flex items-center justify-center border border-white/10">
-              <Sparkles size={17} />
+              <BookOpen size={17} />
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -53,7 +52,7 @@ export default function PatientIntelligenceSection({
                   PATIENT INTELLIGENCE
                 </h2>
                 <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-brand-700/60 text-brand-100 border border-brand-500/30">
-                  Clinical Brain
+                  Patient context
                 </span>
               </div>
               <p className="text-xs text-brand-200/90 mt-0.5">
@@ -76,7 +75,7 @@ export default function PatientIntelligenceSection({
           <div className="p-6 bg-brand-50/40 border-b border-brand-100">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xs font-bold text-brand-900 uppercase tracking-wider flex items-center gap-1.5">
-                <Sparkles size={14} className="text-brand-600" />
+                <BookOpen size={14} className="text-brand-600" />
                 What Matters Today ({intelligence.whatMattersToday.length} key priorities)
               </h3>
               <span className="text-[11px] font-medium text-brand-700/80">

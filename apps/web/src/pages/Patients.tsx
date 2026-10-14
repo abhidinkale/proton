@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useMedplum } from '@medplum/react';
 import type { Patient } from '@medplum/fhirtypes';
-import { Search, UserPlus, Sparkles, Users, ChevronRight } from 'lucide-react';
+import { Search, UserPlus, FileText, Users, ChevronRight, LoaderCircle } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 
@@ -12,6 +12,9 @@ export default function Patients() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [creating, setCreating] = useState(false);
+  const [loadError, setLoadError] = useState('');
+  const [createError, setCreateError] = useState('');
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -24,13 +27,17 @@ export default function Patients() {
       })
       .catch((err) => {
         console.error(err);
-        if (active) setLoading(false);
+        if (active) {
+          setLoadError('Patient records could not be loaded. Check the connection and try again.');
+          setLoading(false);
+        }
       });
     return () => { active = false; };
-  }, [medplum, search]);
+  }, [medplum, search, loadAttempt]);
 
   const handleCreateDemoPatient = async () => {
     setCreating(true);
+    setCreateError('');
     try {
       const newPatient = await medplum.createResource<Patient>({
         resourceType: 'Patient',
@@ -41,6 +48,7 @@ export default function Patients() {
       navigate(`/patients/${newPatient.id}`);
     } catch (err) {
       console.error('Failed to create demo patient:', err);
+      setCreateError('Could not create the patient. Please check the service connection and try again.');
     } finally {
       setCreating(false);
     }
@@ -48,12 +56,14 @@ export default function Patients() {
 
   const handleCreateClinicalBrainPatient = async () => {
     setCreating(true);
+    setCreateError('');
     try {
       const { createClinicalBrainDemoPatient } = await import('../services/demoPatient');
       const newPatient = await createClinicalBrainDemoPatient(medplum);
       navigate(`/patients/${newPatient.id}`);
     } catch (err) {
-      console.error('Failed to create Clinical Brain demo patient:', err);
+      console.error('Failed to create sample patient:', err);
+      setCreateError('Could not create the sample patient. Please check the service connection and try again.');
     } finally {
       setCreating(false);
     }
@@ -61,12 +71,14 @@ export default function Patients() {
 
   const handleCreateConflictingHistoryPatient = async () => {
     setCreating(true);
+    setCreateError('');
     try {
       const { createConflictingHistoryDemoPatient } = await import('../services/demoPatient');
       const newPatient = await createConflictingHistoryDemoPatient(medplum);
       navigate(`/patients/${newPatient.id}`);
     } catch (err) {
       console.error('Failed to create Conflicting History demo patient:', err);
+      setCreateError('Could not create the sample patient. Please check the service connection and try again.');
     } finally {
       setCreating(false);
     }
@@ -82,30 +94,30 @@ export default function Patients() {
 
   return (
     <Layout>
-      <div className="space-y-6 proton-animate-in">
+      <div className="proton-patients-page space-y-6 proton-animate-in">
 
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div className="proton-patients-header flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">Patients</h1>
             <p className="text-sm text-[var(--color-text-tertiary)] mt-1">
               {patients.length} patient{patients.length !== 1 ? 's' : ''} in your clinical panel
             </p>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="proton-patient-actions flex items-center gap-2 flex-wrap">
             <button 
               onClick={handleCreateClinicalBrainPatient}
               disabled={creating}
               className="proton-btn proton-btn-primary text-xs"
             >
-              <Sparkles size={14} /> {creating ? 'Synthesizing...' : 'Eleanor Vance (Clinical Brain)'}
+              <FileText size={14} /> {creating ? 'Creating...' : 'Sample patient: Eleanor Vance'}
             </button>
             <button 
               onClick={handleCreateConflictingHistoryPatient}
               disabled={creating}
               className="proton-btn text-xs bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100"
             >
-              <Sparkles size={14} /> {creating ? 'Synthesizing...' : 'Arthur Pendelton (Conflicts)'}
+              <FileText size={14} /> {creating ? 'Creating...' : 'Sample patient: Arthur Pendelton'}
             </button>
             <button 
               onClick={handleCreateDemoPatient}
@@ -115,19 +127,26 @@ export default function Patients() {
               <UserPlus size={14} /> {creating ? 'Creating...' : 'Blank Patient'}
             </button>
           </div>
+          {createError && (
+            <p className="w-full text-sm text-[var(--color-clinical-danger)]" role="alert">{createError}</p>
+          )}
         </div>
 
         {/* Patient List Card */}
-        <div className="proton-card overflow-hidden flex flex-col" style={{ height: 'calc(100vh - 220px)' }}>
+        <div className="proton-patient-directory proton-card overflow-hidden flex flex-col">
           {/* Search Bar */}
-          <div className="p-4 border-b border-[var(--color-border-subtle)] flex items-center gap-3">
-            <div className="relative flex-1 max-w-md">
+          <div className="proton-patient-searchbar p-4 border-b border-[var(--color-border-subtle)] flex items-center gap-3">
+            <div className="proton-patient-searchbox relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]" size={16} />
               <input 
                 type="text" 
                 placeholder="Search patients by name..." 
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(event) => {
+                  setLoading(true);
+                  setLoadError('');
+                  setSearch(event.target.value);
+                }}
                 className="proton-input pl-9"
               />
             </div>
@@ -139,15 +158,36 @@ export default function Patients() {
           {/* Table Content */}
           <div className="flex-1 overflow-auto">
             {loading ? (
-              <div className="flex flex-col justify-center items-center h-full gap-3 proton-animate-in">
-                <div className="h-10 w-10 bg-brand-50 text-brand-600 rounded-xl flex items-center justify-center">
-                  <Users size={20} className="animate-pulse" />
+              <div className="space-y-3 p-5" role="status" aria-label="Loading patient records">
+                <div className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
+                  <LoaderCircle size={16} className="animate-spin" />
+                  Loading patient records
                 </div>
-                <p className="text-sm font-medium text-[var(--color-text-secondary)]">Loading patient panel...</p>
-                <p className="text-xs text-[var(--color-text-tertiary)]">Querying clinical records</p>
+                {[0, 1, 2, 3].map(row => (
+                  <div key={row} className="grid grid-cols-3 gap-4 border-b border-[var(--color-border-subtle)] py-3" aria-hidden="true">
+                    <span className="h-3 rounded bg-[var(--color-surface-sunken)]" />
+                    <span className="h-3 rounded bg-[var(--color-surface-sunken)]" />
+                    <span className="h-3 rounded bg-[var(--color-surface-sunken)]" />
+                  </div>
+                ))}
+              </div>
+            ) : loadError ? (
+              <div className="flex flex-wrap items-center gap-3 p-5 text-sm text-[var(--color-clinical-danger)]" role="alert">
+                <span>{loadError}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLoading(true);
+                    setLoadError('');
+                    setLoadAttempt(attempt => attempt + 1);
+                  }}
+                  className="rounded-md border border-[var(--color-border-strong)] px-3 py-1.5 font-medium text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-surface-sunken)]"
+                >
+                  Retry
+                </button>
               </div>
             ) : patients.length === 0 ? (
-              <div className="flex flex-col justify-center items-center h-full gap-4 proton-animate-in">
+              <div className="proton-patient-empty flex flex-col justify-center items-center h-full gap-4 proton-animate-in">
                 <div className="h-14 w-14 bg-[var(--color-surface-sunken)] rounded-2xl flex items-center justify-center">
                   <Users size={28} className="text-[var(--color-text-tertiary)]" />
                 </div>
@@ -160,11 +200,11 @@ export default function Patients() {
                   disabled={creating}
                   className="proton-btn proton-btn-primary"
                 >
-                  <Sparkles size={14} /> Create Eleanor Vance
+                  <FileText size={14} /> Create sample patient
                 </button>
               </div>
             ) : (
-              <table className="w-full text-left">
+              <table className="proton-patient-table w-full text-left">
                 <thead className="bg-[var(--color-surface-raised)] sticky top-0 border-b border-[var(--color-border-subtle)]">
                   <tr>
                     <th className="px-6 py-3 proton-micro-label text-[var(--color-text-tertiary)]">Patient</th>

@@ -6,8 +6,6 @@ import {
   FileText,
   Mic,
   ShieldCheck,
-  Brain,
-  Sparkles,
   CheckCircle2,
   AlertTriangle,
   ArrowRight,
@@ -19,8 +17,7 @@ import {
   Pill,
   TrendingUp,
   ShieldAlert,
-  Stethoscope,
-  Sparkle
+  Stethoscope
 } from 'lucide-react';
 
 interface OnboardingFlowProps {
@@ -92,11 +89,11 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingFlowPro
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentStep, goToNext, goToPrev, handleSkip]);
 
-  const isDarkMode = currentStep === 1;
+  const isDarkMode = false;
 
   return (
     <div 
-      className={`fixed inset-0 z-50 flex flex-col overflow-y-auto transition-colors duration-500 backdrop-blur-md ${
+      className={`proton-onboarding fixed inset-0 z-50 flex flex-col overflow-y-auto transition-colors duration-500 ${
         isDarkMode 
           ? 'bg-slate-950 text-slate-100 proton-grid-pattern' 
           : 'bg-slate-50/95 text-slate-900'
@@ -113,10 +110,10 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingFlowPro
             : 'bg-white/90 border-slate-200/80 shadow-xs'
         }`}
       >
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
           {/* Logo & Clinical Badge */}
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-brand-600 to-indigo-600 text-white flex items-center justify-center shadow-md shadow-brand-500/20">
+            <div className="h-9 w-9 rounded-lg bg-slate-100 text-slate-900 flex items-center justify-center">
               <Activity size={20} strokeWidth={2.5} />
             </div>
             <div>
@@ -124,18 +121,19 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingFlowPro
                 <span className={`font-bold tracking-tight text-base ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
                   PROTON
                 </span>
-                <span className="proton-micro-label px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 border border-amber-500/20">
-                  Physician Tour
+                <span className="proton-micro-label px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
+                  <span className="hidden sm:inline">Workspace guide</span>
+                  <span className="sm:hidden">Guide</span>
                 </span>
               </div>
               <p className={`text-[11px] font-medium hidden sm:block ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                AI-Native Clinical Copilot
+                Physician-led clinical support
               </p>
             </div>
           </div>
 
           {/* Stepper with connecting lines */}
-          <div className="flex flex-col items-center">
+          <div className="order-last flex w-full flex-col items-center sm:order-none sm:w-auto">
             <span className={`text-[11px] font-semibold uppercase tracking-wider mb-1.5 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
               Step {currentStep} of {TOTAL_STEPS}
             </span>
@@ -266,20 +264,15 @@ function StepOneWelcome({ onNext, onSkip }: { onNext: () => void; onSkip: () => 
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
       {/* Left Column */}
       <div className="lg:col-span-5 space-y-6">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-400 text-xs font-semibold">
-          <Sparkles size={13} className="text-brand-400" />
-          <span>Next-Generation Clinical Workflow</span>
-        </div>
-
         <div className="space-y-2">
-          <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-brand-500 via-brand-600 to-indigo-600 text-white flex items-center justify-center shadow-xl shadow-brand-500/25 mb-4">
+          <div className="h-12 w-12 rounded-xl bg-slate-100 text-slate-900 flex items-center justify-center mb-4">
             <Activity size={36} strokeWidth={2.5} />
           </div>
-          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight">
+          <h1 className="text-4xl sm:text-5xl font-semibold tracking-tight text-white leading-tight">
             Welcome to Proton
           </h1>
           <p className="text-xl sm:text-2xl font-medium text-brand-300">
-            Your clinical copilot.
+            Clearer context for care.
           </p>
         </div>
 
@@ -287,26 +280,14 @@ function StepOneWelcome({ onNext, onSkip }: { onNext: () => void; onSkip: () => 
           Proton helps you understand patient context, document consultations, review clinical information, and build a longitudinal patient story.
         </p>
 
-        {/* Feature highlight pills */}
-        <div className="space-y-2.5 pt-2">
-          <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-            <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 shrink-0 mt-0.5">
-              <ShieldCheck size={16} />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-slate-100">Physician-in-the-loop safety</p>
-              <p className="text-xs text-slate-400">Zero unsupervised AI writes to EHR. You review, verify, and approve every order.</p>
-            </div>
+        <div className="space-y-3 border-l border-slate-200 pl-4">
+          <div>
+              <p className="text-sm font-semibold text-slate-900">Physician review</p>
+              <p className="text-xs text-slate-400">Every note and order requires your review before it is saved.</p>
           </div>
-
-          <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-            <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400 shrink-0 mt-0.5">
-              <Brain size={16} />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-slate-100">Longitudinal clinical memory</p>
+          <div>
+              <p className="text-sm font-semibold text-slate-900">Patient history</p>
               <p className="text-xs text-slate-400">Approved findings build the ongoing patient story across future appointments.</p>
-            </div>
           </div>
         </div>
 
@@ -314,7 +295,7 @@ function StepOneWelcome({ onNext, onSkip }: { onNext: () => void; onSkip: () => 
         <div className="flex items-center gap-4 pt-4">
           <button
             onClick={onNext}
-            className="proton-btn proton-btn-primary px-6 py-3.5 text-sm rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-brand-600/30 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
+            className="proton-btn proton-btn-primary px-6 py-3.5 text-sm rounded-lg font-semibold flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
           >
             <span>Show me around</span>
             <ArrowRight size={16} />
@@ -329,90 +310,32 @@ function StepOneWelcome({ onNext, onSkip }: { onNext: () => void; onSkip: () => 
         </div>
       </div>
 
-      {/* Right Visual Mockup Column */}
+      {/* Sample patient record */}
       <div className="lg:col-span-7">
-        <div className="relative rounded-2xl p-1 bg-gradient-to-br from-brand-500/30 via-slate-800 to-indigo-500/20 shadow-2xl">
-          <div className="bg-slate-900 rounded-[14px] p-6 text-slate-200 space-y-5 border border-slate-800/80">
-            {/* Header telemetry */}
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <div className="flex items-center gap-2.5">
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-                </span>
-                <span className="text-xs font-bold tracking-wide uppercase text-slate-300">
-                  Proton Clinical Command Cockpit
-                </span>
-              </div>
-              <span className="text-[11px] font-mono text-slate-400 bg-slate-800 px-2 py-0.5 rounded">
-                FHIR R4 Connected
-              </span>
+        <div className="rounded-xl border border-slate-200 bg-white">
+          <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-5 py-4">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Sample patient</p>
+              <h2 className="mt-1 text-lg font-semibold tracking-tight text-slate-900">Eleanor Vance</h2>
             </div>
-
-            {/* Quick Preview Modules */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="bg-slate-800/60 border border-slate-700/60 rounded-xl p-3.5 space-y-1">
-                <div className="flex items-center justify-between text-slate-400">
-                  <Users size={16} />
-                  <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">Ready</span>
-                </div>
-                <p className="text-xs font-semibold text-slate-200">Patient Intelligence</p>
-                <p className="text-[11px] text-slate-400">Pre-visit briefings in 30 seconds</p>
-              </div>
-
-              <div className="bg-slate-800/60 border border-slate-700/60 rounded-xl p-3.5 space-y-1">
-                <div className="flex items-center justify-between text-slate-400">
-                  <Mic size={16} />
-                  <span className="text-[10px] font-semibold text-brand-400 bg-brand-500/10 px-1.5 py-0.5 rounded">Ambient</span>
-                </div>
-                <p className="text-xs font-semibold text-slate-200">Consultation Scribe</p>
-                <p className="text-[11px] text-slate-400">Instant multi-speaker SOAP drafts</p>
-              </div>
-
-              <div className="bg-slate-800/60 border border-slate-700/60 rounded-xl p-3.5 space-y-1">
-                <div className="flex items-center justify-between text-slate-400">
-                  <ShieldCheck size={16} />
-                  <span className="text-[10px] font-semibold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">Gated</span>
-                </div>
-                <p className="text-xs font-semibold text-slate-200">Safety & Verification</p>
-                <p className="text-[11px] text-slate-400">Deterministic allergy & drug checks</p>
-              </div>
+            <span className="shrink-0 rounded-md border border-slate-200 px-2 py-1 text-[10px] font-medium text-slate-600">
+              Synthetic record
+            </span>
+          </div>
+          <div className="grid grid-cols-1 divide-y divide-slate-200 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+            <div className="p-5">
+              <p className="text-xs font-medium text-slate-500">Conditions</p>
+              <p className="mt-2 text-sm font-medium text-slate-900">Type 2 diabetes</p>
+              <p className="mt-1 text-sm text-slate-600">Essential hypertension</p>
             </div>
-
-            {/* Spotlight Card: Eleanor Vance */}
-            <div className="bg-gradient-to-r from-brand-950/60 via-slate-850 to-indigo-950/60 border border-brand-500/30 rounded-xl p-4 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="h-11 w-11 rounded-full bg-brand-600/30 border border-brand-400/40 text-brand-300 flex items-center justify-center font-bold text-sm shrink-0">
-                  EV
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-bold text-white">Eleanor Vance, 42y Female</p>
-                    <span className="text-[10px] font-semibold uppercase px-1.5 py-0.2 rounded bg-brand-500/20 text-brand-300">
-                      Demo Case
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    Type 2 Diabetes &bull; Essential Hypertension &bull; Penicillin Anaphylaxis Alert
-                  </p>
-                </div>
-              </div>
-              <div className="hidden sm:flex flex-col items-end shrink-0">
-                <span className="text-xs font-bold text-emerald-400 flex items-center gap-1">
-                  <CheckCircle2 size={13} /> 3 Signals Prepped
-                </span>
-                <span className="text-[10px] text-slate-400">Ready for clinic</span>
-              </div>
+            <div className="p-5">
+              <p className="text-xs font-medium text-slate-500">Allergy</p>
+              <p className="mt-2 text-sm font-medium text-slate-900">Penicillin</p>
+              <p className="mt-1 text-sm text-slate-600">Review before prescribing</p>
             </div>
-
-            {/* Micro quote banner */}
-            <div className="bg-slate-950/60 rounded-xl p-3.5 border border-slate-800 flex items-center justify-between text-xs text-slate-400">
-              <span className="flex items-center gap-2">
-                <Sparkle size={14} className="text-violet-400" />
-                Designed specifically for physician speed, cognitive ease, and diagnostic safety.
-              </span>
-              <span className="text-[11px] font-mono text-slate-500">v1.0-beta</span>
-            </div>
+          </div>
+          <div className="border-t border-slate-200 px-5 py-3 text-xs text-slate-600">
+            Notes and orders are saved only after physician review.
           </div>
         </div>
       </div>
@@ -617,12 +540,12 @@ function StepThreePatientIntelligence({ onNext, onPrev }: { onNext: () => void; 
       <div className="lg:col-span-5 space-y-5">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 border border-brand-200 text-brand-800 text-xs font-semibold">
           <Users size={13} className="text-brand-600" />
-          <span>Step 3 &bull; Pre-Consultation Synthesis</span>
+          <span>Step 3 &bull; Patient summary</span>
         </div>
 
         <div>
           <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
-            Patient Intelligence
+            Patient summary
           </h2>
           <p className="text-base sm:text-lg font-medium text-slate-600 mt-2">
             Before you see the patient, Proton summarizes what matters.
@@ -630,7 +553,7 @@ function StepThreePatientIntelligence({ onNext, onPrev }: { onNext: () => void; 
         </div>
 
         <p className="text-slate-600 text-sm leading-relaxed">
-          No more scanning 40 pages of past encounters or deciphering outside lab PDFs right before entering the exam room. Proton synthesizes what has changed, flags allergies, and visualizes the longitudinal timeline in an instant 30-second briefing.
+          Review recent changes, allergy alerts, and the patient's history in one concise view.
         </p>
 
         {/* Highlight bullets */}
@@ -697,7 +620,7 @@ function StepThreePatientIntelligence({ onNext, onPrev }: { onNext: () => void; 
               </div>
             </div>
             <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-brand-50 text-brand-700 border border-brand-200 flex items-center gap-1">
-              <Sparkles size={11} /> Briefing Ready
+              <CheckCircle2 size={11} /> Briefing Ready
             </span>
           </div>
 
@@ -705,10 +628,10 @@ function StepThreePatientIntelligence({ onNext, onPrev }: { onNext: () => void; 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
-                <Sparkles size={13} className="text-brand-600" />
+                <FileText size={13} className="text-brand-600" />
                 What Matters Today
               </span>
-              <span className="text-[10px] text-slate-500">Synthesized 2m ago</span>
+              <span className="text-[10px] text-slate-500">Updated 2m ago</span>
             </div>
 
             {/* Allergies Item */}
@@ -800,7 +723,7 @@ function StepFourConsultation({ onNext, onPrev }: { onNext: () => void; onPrev: 
             The physician remains in control at every stage.
           </span>
           <p className="text-brand-800 leading-relaxed">
-            AI listens and drafts in real time, but never writes to the chart autonomously. You edit, refine, or approve with one click.
+            Proton uses AI to prepare an editable draft. It never writes directly to the chart; you review and approve it.
           </p>
         </div>
 
@@ -817,7 +740,7 @@ function StepFourConsultation({ onNext, onPrev }: { onNext: () => void; onPrev: 
               <span className="text-[10px] text-slate-500">Speaker separated</span>
             </div>
             <div className="p-2.5 rounded-xl bg-white border border-brand-200 bg-brand-50/30">
-              <span className="font-bold text-brand-700 block">3. AI Draft</span>
+              <span className="font-bold text-brand-700 block">3. Clinical draft</span>
               <span className="text-[10px] text-brand-600">Structured SOAP</span>
             </div>
           </div>
@@ -828,7 +751,7 @@ function StepFourConsultation({ onNext, onPrev }: { onNext: () => void; onPrev: 
           <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Provenance Badges</span>
           <div className="flex flex-wrap gap-2">
             <span className="proton-badge bg-violet-50 text-violet-800 border border-violet-200">
-              <Sparkles size={11} className="text-violet-600" /> AI DRAFT
+              <FileText size={11} className="text-violet-600" /> AI-GENERATED DRAFT
             </span>
             <span className="proton-badge bg-sky-50 text-sky-800 border border-sky-200">
               PHYSICIAN EDITED
@@ -862,33 +785,18 @@ function StepFourConsultation({ onNext, onPrev }: { onNext: () => void; onPrev: 
       {/* Right Visual Mockup Column */}
       <div className="lg:col-span-7">
         <div className="proton-card p-5 sm:p-6 bg-white border border-slate-200 shadow-md space-y-4">
-          {/* Active Recording Waveform Header */}
-          <div className="flex items-center justify-between p-3 rounded-xl bg-slate-900 text-white">
-            <div className="flex items-center gap-2.5">
-              <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-              </span>
-              <div>
-                <span className="text-xs font-bold uppercase tracking-wider">Active Ambient Scribe</span>
-                <p className="text-[10px] text-slate-400">Dr. Vance &bull; Eleanor Vance (14:22)</p>
-              </div>
+          <div className="flex items-center justify-between gap-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <div>
+              <span className="text-xs font-semibold text-slate-900">Sample consultation transcript</span>
+              <p className="mt-0.5 text-[10px] text-slate-600">Synthetic example for review</p>
             </div>
-            {/* Visualizer bars */}
-            <div className="flex items-center gap-1 h-5">
-              <span className="w-1 bg-brand-400 h-2 rounded-full animate-pulse"></span>
-              <span className="w-1 bg-brand-400 h-4 rounded-full animate-pulse" style={{ animationDelay: '100ms' }}></span>
-              <span className="w-1 bg-brand-400 h-5 rounded-full animate-pulse" style={{ animationDelay: '200ms' }}></span>
-              <span className="w-1 bg-brand-400 h-3 rounded-full animate-pulse" style={{ animationDelay: '300ms' }}></span>
-              <span className="w-1 bg-brand-400 h-4 rounded-full animate-pulse" style={{ animationDelay: '150ms' }}></span>
-            </div>
+            <FileText size={16} className="shrink-0 text-slate-500" />
           </div>
 
           {/* Transcript Snippet */}
           <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-2">
             <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 uppercase">
-              <span>Live Speaker Stream</span>
-              <span className="text-emerald-700">99.4% Confidence</span>
+              <span>Conversation</span>
             </div>
             <div className="space-y-1.5 text-slate-700">
               <p>
@@ -907,10 +815,10 @@ function StepFourConsultation({ onNext, onPrev }: { onNext: () => void; onPrev: 
           <div className="p-3.5 rounded-xl bg-white border border-slate-200 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-900 uppercase tracking-wide">
-                Synthesized Clinical Note
+                Clinical note draft
               </span>
               <span className="proton-badge bg-violet-50 text-violet-800 border border-violet-200">
-                <Sparkles size={11} className="text-violet-600" /> AI DRAFT
+                <FileText size={11} className="text-violet-600" /> AI-GENERATED DRAFT
               </span>
             </div>
 
@@ -918,7 +826,7 @@ function StepFourConsultation({ onNext, onPrev }: { onNext: () => void; onPrev: 
             <div className="text-xs space-y-1 border-l-2 border-violet-400 pl-2.5">
               <div className="flex items-center gap-2">
                 <span className="font-bold text-slate-900">Assessment:</span>
-                <span className="text-[10px] px-1.5 py-0.2 rounded bg-violet-100 text-violet-800 font-semibold">AI Synthesized</span>
+                <span className="text-[10px] px-1.5 py-0.2 rounded bg-violet-100 text-violet-800 font-semibold">AI-generated</span>
               </div>
               <p className="text-slate-700">
                 1. Type 2 Diabetes Mellitus with worsening glycemic control (recent HbA1c 8.4%).
@@ -973,12 +881,12 @@ function StepFiveVerifyApprove({ onNext, onPrev }: { onNext: () => void; onPrev:
             Verify & Approve
           </h2>
           <p className="text-lg sm:text-xl font-bold text-brand-700 mt-2">
-            AI drafts. Proton verifies. You decide.
+            Every draft is reviewed before it becomes part of the record.
           </p>
         </div>
 
         <p className="text-slate-600 text-sm leading-relaxed">
-          Proton never assumes AI output is clinically flawless. Before any clinical draft is signed, deterministic safety rules check for drug-allergy conflicts, dosage parameters, and missing fields.
+          AI-generated content can be wrong. Before any clinical draft is signed, deterministic safety rules check for drug-allergy conflicts, dosage parameters, and missing fields.
         </p>
 
         {/* Safety Principles */}
@@ -1126,7 +1034,7 @@ function StepSixLongitudinalMemory({
       {/* Left Column */}
       <div className="lg:col-span-5 space-y-5">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 border border-brand-200 text-brand-800 text-xs font-semibold">
-          <Brain size={13} className="text-brand-600" />
+          <FileText size={13} className="text-brand-600" />
           <span>Step 6 &bull; Longitudinal Patient Memory</span>
         </div>
 
@@ -1140,7 +1048,7 @@ function StepSixLongitudinalMemory({
         </div>
 
         <p className="text-slate-600 text-sm leading-relaxed">
-          Approved information becomes part of the patient's story. AI remembers only what you approve. When this consultation ends, Proton automatically extracts updates so Eleanor's next visit begins with complete context.
+          Proton saves only the changes you approve. At the end of a consultation, proposed updates are shown for review before they are added to the patient record.
         </p>
 
         {/* Value Callouts */}
@@ -1198,7 +1106,7 @@ function StepSixLongitudinalMemory({
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2.5">
               <div className="h-8 w-8 rounded-lg bg-brand-600 text-white flex items-center justify-center shadow-xs">
-                <Brain size={18} />
+                <FileText size={18} />
               </div>
               <div>
                 <h3 className="text-sm font-bold text-slate-900 tracking-tight">

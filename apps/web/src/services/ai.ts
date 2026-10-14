@@ -4,6 +4,28 @@ export interface ClinicalAIService {
   generateNote(transcript: string, patientContext?: string, template?: string): Promise<any>;
 }
 
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export async function sendClinicalChat(messages: ChatMessage[], patientContext?: string): Promise<string> {
+  const response = await fetch(`${API_BASE_URL}/api/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages, patientContext }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || 'Clinical chat is unavailable. Please try again.');
+  }
+  if (typeof data.message !== 'string' || !data.message.trim()) {
+    throw new Error('Clinical chat returned an empty response. Please try again.');
+  }
+  return data.message;
+}
+
 export class RealAIService implements ClinicalAIService {
   async generateNote(transcript: string, patientContext?: string, template?: string): Promise<any> {
     const response = await fetch(`${API_BASE_URL}/api/generate-note`, {

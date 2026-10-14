@@ -8,7 +8,7 @@ import {
   ChevronDown, 
   X, 
   Plus, 
-  Sparkles,
+  ShieldCheck,
   Calendar,
   Activity,
   SlidersHorizontal,
@@ -79,14 +79,13 @@ export default function TreatmentDynamicsView({
   };
 
   return (
-    <div className="w-full bg-[#edf0ea] text-[#1c221e] relative rounded-3xl p-4 sm:p-6 shadow-sm border border-black/5 select-none transition-all duration-300 ease-[var(--ease-butter)]">
+    <div className="proton-dynamics-panel w-full bg-[#edf0ea] text-[#1c221e] relative rounded-3xl p-4 sm:p-6 shadow-sm border border-black/5 select-none transition-all duration-300 ease-[var(--ease-butter)]">
       
       {/* ── TOP ACTION BAR OVER TIMELINE ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-black/5">
         <div className="flex items-center gap-2">
-          <div className="h-2 w-2 rounded-full bg-[#d8f828] animate-ping" />
           <span className="text-xs font-bold tracking-tight text-[#1c221e] uppercase">
-            Continuous Longitudinal Trajectory &bull; 3-Month Hemodynamic Evolution
+            Patient history &bull; Last 3 months
           </span>
         </div>
 
@@ -125,14 +124,14 @@ export default function TreatmentDynamicsView({
 
           <div className="h-4 w-px bg-black/10 mx-1 hidden sm:block" />
 
-          {/* New Milestone CTA */}
+          {/* Start a new visit */}
           <button
             onClick={handleLaunchConsult}
-            className="px-3 py-1 rounded-full text-xs font-bold bg-[#1b211d] hover:bg-black text-[#e4f552] flex items-center gap-1.5 transition-all shadow-xs cursor-pointer shrink-0"
-            title="Start Consultation & Commit Follow-Up Node"
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#171717] hover:bg-[#333] text-white flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+            title="Start a new consultation"
           >
             <Plus size={13} className="stroke-[3]" />
-            <span className="hidden md:inline">Add Node</span>
+            <span className="hidden md:inline">New visit</span>
           </button>
         </div>
       </div>
@@ -275,7 +274,7 @@ export default function TreatmentDynamicsView({
             }`}
             title="Click to inspect August initial evaluation"
           >
-            <div className={`h-7 w-7 rounded-full bg-[#d8f828] text-black flex items-center justify-center shadow-xs border border-black/10 group-hover:shadow-md transition-shadow ${
+            <div className={`h-7 w-7 rounded-full bg-[#e5e5e5] text-[#171717] flex items-center justify-center border border-black/10 transition-colors ${
               activeMonthScrubber === 'aug' ? 'ring-4 ring-black/15' : ''
             }`}>
               <ClipboardList size={13} className="stroke-[2.5]" />
@@ -290,7 +289,7 @@ export default function TreatmentDynamicsView({
             <div className="text-sm font-bold text-[#141a16] tracking-tight flex items-center gap-1.5">
               <span>Aug</span>
               {activeMonthScrubber === 'aug' && (
-                <span className="h-1.5 w-1.5 rounded-full bg-black animate-ping" />
+                <span className="h-1.5 w-1.5 rounded-full bg-neutral-500" />
               )}
             </div>
             <div className="text-[10px] text-[#718076] font-medium -mt-0.5">I Week &bull; Baseline</div>
@@ -345,7 +344,7 @@ export default function TreatmentDynamicsView({
             <div className="relative my-2 h-11 w-full rounded-xl overflow-hidden bg-[#eef1eb] flex items-center justify-center">
               <svg className="absolute inset-0 w-full h-full" viewBox="0 0 160 40" preserveAspectRatio="none">
                 <path d="M0 26 Q 40 10, 80 24 T 160 14 L 160 40 L 0 40 Z" fill="#909e86" opacity="0.65" />
-                <path d="M0 20 Q 40 6, 80 18 T 160 8 L 160 40 L 0 40 Z" fill="#d8f828" opacity="0.8" />
+                <path d="M0 20 Q 40 6, 80 18 T 160 8 L 160 40 L 0 40 Z" fill="#bdbdbd" opacity="0.8" />
               </svg>
               <div className="relative z-10 bg-[#161c18] text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm">
                 180 / 120
@@ -390,8 +389,7 @@ export default function TreatmentDynamicsView({
                     (e.target as HTMLElement).style.display = 'none';
                   }}
                 />
-                <div className="absolute top-4 left-5 h-2 w-2 rounded-full bg-[#35df85] shadow-[0_0_8px_#35df85] animate-ping" />
-                <div className="absolute top-4 left-5 h-2 w-2 rounded-full bg-[#35df85]" />
+                <div className="absolute top-4 left-5 h-2 w-2 rounded-full border border-white bg-neutral-700" />
               </div>
             </div>
           </div>
@@ -409,7 +407,7 @@ export default function TreatmentDynamicsView({
             }`}
             title="Click to inspect September titration milestone"
           >
-            <div className={`h-7 w-7 rounded-full bg-[#d8f828] text-black flex items-center justify-center shadow-xs border border-black/10 group-hover:shadow-md transition-shadow ${
+            <div className={`h-7 w-7 rounded-full bg-[#e5e5e5] text-[#171717] flex items-center justify-center border border-black/10 transition-colors ${
               activeMonthScrubber === 'sep' ? 'ring-4 ring-black/15' : ''
             }`}>
               <ClipboardList size={13} className="stroke-[2.5]" />
@@ -424,7 +422,7 @@ export default function TreatmentDynamicsView({
             <div className="text-sm font-bold text-[#141a16] tracking-tight flex items-center gap-1.5">
               <span>Sep</span>
               {activeMonthScrubber === 'sep' && (
-                <span className="h-1.5 w-1.5 rounded-full bg-black animate-ping" />
+                <span className="h-1.5 w-1.5 rounded-full bg-neutral-500" />
               )}
             </div>
             <div className="text-[10px] text-[#718076] font-medium -mt-0.5">I Week &bull; Step-Up</div>
@@ -487,7 +485,7 @@ export default function TreatmentDynamicsView({
             <div className="relative my-2 h-11 w-full rounded-xl overflow-hidden bg-[#eef1eb] flex items-center justify-center">
               <svg className="absolute inset-0 w-full h-full" viewBox="0 0 160 40" preserveAspectRatio="none">
                 <path d="M0 24 Q 40 14, 80 18 T 160 12 L 160 40 L 0 40 Z" fill="#909e86" opacity="0.65" />
-                <path d="M0 18 Q 40 8, 80 14 T 160 6 L 160 40 L 0 40 Z" fill="#d8f828" opacity="0.8" />
+                <path d="M0 18 Q 40 8, 80 14 T 160 6 L 160 40 L 0 40 Z" fill="#bdbdbd" opacity="0.8" />
               </svg>
               <div className="relative z-10 bg-[#161c18] text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm">
                 135 / 92
@@ -552,7 +550,7 @@ export default function TreatmentDynamicsView({
             }`}
             title="Click to inspect current treatment state"
           >
-            <div className={`h-7 w-7 rounded-full bg-[#1b211d] text-[#e4f552] flex items-center justify-center shadow-xs border border-black/10 group-hover:shadow-md transition-shadow ${
+            <div className={`h-7 w-7 rounded-full bg-[#171717] text-white flex items-center justify-center border border-black/10 transition-colors ${
               activeMonthScrubber === 'today' ? 'ring-4 ring-black/15' : ''
             }`}>
               <Activity size={13} className="stroke-[2.5]" />
@@ -567,7 +565,7 @@ export default function TreatmentDynamicsView({
             <div className="text-sm font-bold text-[#141a16] tracking-tight flex items-center gap-1.5">
               <span>Oct &bull; Today</span>
               {activeMonthScrubber === 'today' && (
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 animate-ping" />
+                <span className="h-1.5 w-1.5 rounded-full bg-neutral-500" />
               )}
             </div>
             <div className="text-[10px] text-[#718076] font-medium -mt-0.5">III Week &bull; Controlled</div>
@@ -629,7 +627,7 @@ export default function TreatmentDynamicsView({
             <div className="relative my-2 h-11 w-full rounded-xl overflow-hidden bg-[#eef1eb] flex items-center justify-center">
               <svg className="absolute inset-0 w-full h-full" viewBox="0 0 160 40" preserveAspectRatio="none">
                 <path d="M0 26 Q 40 18, 80 20 T 160 14 L 160 40 L 0 40 Z" fill="#909e86" opacity="0.65" />
-                <path d="M0 20 Q 40 10, 80 16 T 160 8 L 160 40 L 0 40 Z" fill="#d8f828" opacity="0.8" />
+                <path d="M0 20 Q 40 10, 80 16 T 160 8 L 160 40 L 0 40 Z" fill="#bdbdbd" opacity="0.8" />
               </svg>
               <div className="relative z-10 bg-[#161c18] text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm">
                 142 / 88
@@ -644,19 +642,19 @@ export default function TreatmentDynamicsView({
             </div>
           </div>
 
-          {/* Today MedGemma Trajectory Modeling Card */}
+          {/* Current cardiovascular risk summary */}
           <div 
             onClick={() => setActiveModal('today-trajectory')}
             className="absolute left-[1095px] top-[235px] z-10 w-[190px] bg-[#f7f8f5] hover:bg-white rounded-3xl p-3.5 shadow-sm border border-black/5 hover:border-black/20 hover:shadow-lg transition-all duration-300 cursor-pointer"
-            title="Click to view MedGemma Continuous Predictive Trajectory"
+            title="Click to view the cardiovascular risk summary"
           >
             <div className="flex items-center justify-between text-xs font-bold text-[#161c18] mb-1">
               <span className="flex items-center gap-1">
-                <Sparkles size={13} className="text-purple-600" />
-                <span>AI Trajectory</span>
+                <Activity size={13} className="text-[#555]" />
+                <span>Risk estimate</span>
               </span>
-              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700">
-                94% Target
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[#ededed] text-[#555]">
+                Updated
               </span>
             </div>
 
@@ -692,7 +690,7 @@ export default function TreatmentDynamicsView({
               <ClipboardList size={11} />
               <span className="relative">
                 <PillIcon size={11} />
-                <span className="absolute -top-1.5 -right-2 bg-[#d8f828] text-black text-[8px] font-bold h-3 w-3 rounded-full flex items-center justify-center">
+                <span className="absolute -top-1.5 -right-2 bg-[#e5e5e5] text-[#171717] text-[8px] font-bold h-3 w-3 rounded-full flex items-center justify-center">
                   6
                 </span>
               </span>
@@ -713,13 +711,13 @@ export default function TreatmentDynamicsView({
               <ClipboardList size={11} />
               <span className="relative">
                 <PillIcon size={11} />
-                <span className="absolute -top-1.5 -right-2 bg-[#d8f828] text-black text-[8px] font-bold h-3 w-3 rounded-full flex items-center justify-center">
+                <span className="absolute -top-1.5 -right-2 bg-[#e5e5e5] text-[#171717] text-[8px] font-bold h-3 w-3 rounded-full flex items-center justify-center">
                   2
                 </span>
               </span>
               <span className="relative ml-1">
                 <FlaskConical size={11} />
-                <span className="absolute -top-1.5 -right-2 bg-[#d8f828] text-black text-[8px] font-bold h-3 w-3 rounded-full flex items-center justify-center">
+                <span className="absolute -top-1.5 -right-2 bg-[#e5e5e5] text-[#171717] text-[8px] font-bold h-3 w-3 rounded-full flex items-center justify-center">
                   3
                 </span>
               </span>
@@ -737,7 +735,7 @@ export default function TreatmentDynamicsView({
               <ClipboardList size={11} />
               <span className="relative">
                 <PillIcon size={11} />
-                <span className="absolute -top-1.5 -right-2 bg-[#d8f828] text-black text-[8px] font-bold h-3 w-3 rounded-full flex items-center justify-center">
+                <span className="absolute -top-1.5 -right-2 bg-[#e5e5e5] text-[#171717] text-[8px] font-bold h-3 w-3 rounded-full flex items-center justify-center">
                   6
                 </span>
               </span>
@@ -752,7 +750,7 @@ export default function TreatmentDynamicsView({
             <button 
               onClick={() => handleMonthClick('aug')}
               className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full transition-colors cursor-pointer ${
-                activeMonthScrubber === 'aug' ? 'bg-white/20 text-[#d8f828]' : 'text-slate-300 hover:text-white'
+                activeMonthScrubber === 'aug' ? 'bg-white/20 text-white' : 'text-slate-300 hover:text-white'
               }`}
             >
               <span className="text-[11px] font-bold">Aug</span>
@@ -760,7 +758,7 @@ export default function TreatmentDynamicsView({
               <PillIcon size={11} />
               <span className="relative">
                 <FlaskConical size={11} />
-                <span className="absolute -top-1.5 -right-2 bg-[#d8f828] text-black text-[8px] font-bold h-3 w-3 rounded-full flex items-center justify-center">
+                <span className="absolute -top-1.5 -right-2 bg-[#e5e5e5] text-[#171717] text-[8px] font-bold h-3 w-3 rounded-full flex items-center justify-center">
                   4
                 </span>
               </span>
@@ -770,14 +768,14 @@ export default function TreatmentDynamicsView({
             <button 
               onClick={() => handleMonthClick('sep')}
               className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full transition-colors cursor-pointer ${
-                activeMonthScrubber === 'sep' ? 'bg-white/20 text-[#d8f828]' : 'text-slate-300 hover:text-white'
+                activeMonthScrubber === 'sep' ? 'bg-white/20 text-white' : 'text-slate-300 hover:text-white'
               }`}
             >
               <span className="text-[11px] font-bold">Sep</span>
               <ClipboardList size={11} />
               <span className="relative">
                 <PillIcon size={11} />
-                <span className="absolute -top-1.5 -right-2 bg-[#d8f828] text-black text-[8px] font-bold h-3 w-3 rounded-full flex items-center justify-center">
+                <span className="absolute -top-1.5 -right-2 bg-[#e5e5e5] text-[#171717] text-[8px] font-bold h-3 w-3 rounded-full flex items-center justify-center">
                   2
                 </span>
               </span>
@@ -787,13 +785,13 @@ export default function TreatmentDynamicsView({
             <button 
               onClick={() => handleMonthClick('today')}
               className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full transition-colors cursor-pointer ${
-                activeMonthScrubber === 'today' ? 'bg-white/20 text-[#d8f828]' : 'text-slate-300 hover:text-white'
+                activeMonthScrubber === 'today' ? 'bg-white/20 text-white' : 'text-slate-300 hover:text-white'
               }`}
             >
               <span className="text-[11px] font-bold">Today</span>
               <span className="relative">
                 <Activity size={11} />
-                <span className="absolute -top-1.5 -right-2 bg-[#d8f828] text-black text-[8px] font-bold h-3 w-3 rounded-full flex items-center justify-center">
+                <span className="absolute -top-1.5 -right-2 bg-[#e5e5e5] text-[#171717] text-[8px] font-bold h-3 w-3 rounded-full flex items-center justify-center">
                   6
                 </span>
               </span>
@@ -821,7 +819,7 @@ export default function TreatmentDynamicsView({
                    activeModal === 'aug-symptoms' ? 'Neuro-Cardiovascular Symptom Review' :
                    activeModal === 'sep-ecg' ? '12-Lead Electrocardiogram' :
                    activeModal === 'mri-scan' ? 'Diagnostic Neuroimaging' :
-                   activeModal === 'today-trajectory' ? 'MedGemma Trajectory Synthesis' : 'Clinical Milestone Review'}
+                   activeModal === 'today-trajectory' ? 'Cardiovascular risk summary' : 'Clinical Milestone Review'}
                 </span>
               </div>
               <button 
@@ -843,7 +841,7 @@ export default function TreatmentDynamicsView({
                       <h3 className="text-xl font-bold text-[#141a16]">Aspirin (Acetylsalicylic Acid)</h3>
                       <p className="text-xs text-[#718076] mt-0.5">81 mg Delayed-Release Tablet &bull; Oral Daily</p>
                     </div>
-                    <span className="text-[10px] font-bold bg-[#1b211d] text-[#e4f552] px-2 py-0.5 rounded-full">
+                    <span className="text-[10px] font-semibold bg-[#f2f2f2] text-[#555] px-2 py-0.5 rounded-full">
                       Active Rx
                     </span>
                   </div>
@@ -868,9 +866,9 @@ export default function TreatmentDynamicsView({
                   </div>
 
                   <div className="bg-[#edf0ea] p-3.5 rounded-2xl text-xs text-[#455249] flex items-start gap-2.5">
-                    <Sparkles size={16} className="text-purple-600 shrink-0 mt-0.5" />
+                    <ShieldCheck size={16} className="text-[#555] shrink-0 mt-0.5" />
                     <p className="leading-relaxed">
-                      <strong>MedGemma Safety Note:</strong> Platelet inhibition confirmed. Patient demonstrates normal gastric tolerance with enteric-coated formulation. No GI bleeding risk factors identified.
+                      <strong>Medication safety note:</strong> Platelet inhibition confirmed. Patient demonstrates normal gastric tolerance with enteric-coated formulation. No GI bleeding risk factors identified.
                     </p>
                   </div>
                 </>
@@ -905,9 +903,9 @@ export default function TreatmentDynamicsView({
                   </div>
 
                   <div className="bg-[#edf0ea] p-3.5 rounded-2xl text-xs text-[#455249] flex items-start gap-2.5">
-                    <Sparkles size={16} className="text-purple-600 shrink-0 mt-0.5" />
+                    <ShieldCheck size={16} className="text-[#555] shrink-0 mt-0.5" />
                     <p className="leading-relaxed">
-                      <strong>MedGemma Clinical Rationale:</strong> Cardioselective &beta;1-receptor blockade added following persistent stage 2 hypertension with exertional tachycardia. Headache resolved within 72 hours of reaching 5 mg.
+                      <strong>Clinical rationale:</strong> Cardioselective &beta;1-receptor blockade added following persistent stage 2 hypertension with exertional tachycardia. Headache resolved within 72 hours of reaching 5 mg.
                     </p>
                   </div>
                 </>
@@ -1108,8 +1106,8 @@ export default function TreatmentDynamicsView({
               {/* TRAJECTORY MODAL */}
               {activeModal === 'today-trajectory' && (
                 <>
-                  <h3 className="text-xl font-bold text-[#141a16]">Google MedGemma Longitudinal Modeling</h3>
-                  <p className="text-xs text-[#718076]">Continuous Multimodal Trajectory Alignment</p>
+                  <h3 className="text-xl font-bold text-[#141a16]">Cardiovascular risk summary</h3>
+                  <p className="text-xs text-[#718076]">Change over time</p>
 
                   <div className="bg-white p-4 rounded-2xl border border-black/5 space-y-2 text-xs">
                     <div className="flex justify-between">
@@ -1157,7 +1155,7 @@ export default function TreatmentDynamicsView({
                 onClick={handleLaunchConsult}
                 className="text-xs font-bold text-[#141a16] hover:text-brand-700 flex items-center gap-1 cursor-pointer"
               >
-                <span>Launch Consultation Copilot</span>
+                <span>Start consultation</span>
                 <ArrowRight size={13} />
               </button>
 

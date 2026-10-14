@@ -12,6 +12,13 @@ class GrokProvider extends AIProvider {
     throw new Error('Grok audio transcription not implemented in this version.');
   }
 
+  async chat(messages) {
+    const prompt = messages
+      .map(({ role, content }) => `${role === 'system' ? 'System' : role === 'assistant' ? 'Assistant' : 'Clinician'}: ${content}`)
+      .join('\n\n');
+    return this._callGrok(prompt, null, null, false);
+  }
+
   async generateNote(transcript, patientContext, noteSchema, template) {
     const prompt = `You are an expert clinical AI. Given the following consultation transcript and patient context, generate a structured clinical note formatted as ${template}. 
 Do not fabricate information. If information for a section is missing from the transcript, put "Not mentioned" or "None".

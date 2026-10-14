@@ -26,18 +26,19 @@ import {
   Stethoscope, 
   ChevronRight, 
   ChevronDown,
-  Sparkles, 
   RotateCcw, 
   ShieldAlert, 
   Plus,
   Activity,
-  Dna,
   SlidersHorizontal,
   ClipboardList
 } from 'lucide-react';
 import Layout from '../components/Layout';
 import OnboardingFlow from '../components/OnboardingFlow';
 import TreatmentDynamicsView from '../components/TreatmentDynamicsView';
+import DoctorDeskHome from '../components/DoctorDeskHome';
+import DoctorDeskEncounter, { type DoctorDeskPatient } from '../components/DoctorDeskEncounter';
+import { TODAY_CLINIC_SCHEDULE } from '../data/clinicSchedule';
 
 interface AttentionItem {
   id: string;
@@ -104,6 +105,13 @@ type DashboardTab =
   | 'allergies' 
   | 'genetics';
 
+const secondaryDashboardTabs: { value: DashboardTab; label: string }[] = [
+  { value: 'medications', label: 'Medications' },
+  { value: 'labs', label: 'Labs' },
+  { value: 'allergies', label: 'Allergies' },
+  { value: 'genetics', label: 'Genetics' }
+];
+
 export default function Dashboard() {
   const medplum = useMedplum();
   const navigate = useNavigate();
@@ -121,7 +129,21 @@ export default function Dashboard() {
   const [conditions, setConditions] = useState<Condition[]>([]);
 
   // Navigation tab state
-  const [activeTab, setActiveTab] = useState<DashboardTab>('dynamics');
+  const [activeTab, setActiveTab] = useState<DashboardTab>('visits');
+  const selectedSecondaryTab = secondaryDashboardTabs.some(tab => tab.value === activeTab) ? activeTab : '';
+
+  // Doctor's Desk State
+  const [deskViewMode, setDeskViewMode] = useState<'desk' | 'timeline'>('desk');
+  const [activeDeskPatient, setActiveDeskPatient] = useState<DoctorDeskPatient | null>(null);
+  const [deskPatients, setDeskPatients] = useState<DoctorDeskPatient[]>(TODAY_CLINIC_SCHEDULE);
+  const [completedPatientIds, setCompletedPatientIds] = useState<string[]>(() => {
+    try {
+      const stored = sessionStorage.getItem('proton_completed_patients');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
 
   // Selected Patient State (Defaults to Eleanor Vance)
   const [selectedPatientId, setSelectedPatientId] = useState<string>('');
@@ -441,7 +463,7 @@ export default function Dashboard() {
         category: 'SAFETY',
         patientId: eleanorPatient?.id || 'demo-eleanor-vance',
         patientName: 'Eleanor Vance',
-        title: 'MedGemma Safety Copilot: Potassium Monitoring with Lisinopril',
+        title: 'Medication safety: Potassium monitoring with Lisinopril',
         subtitle: 'Serum K+ is 4.8 mEq/L with eGFR 68 mL/min — scheduled repeat in 4 weeks',
         timestamp: 'Active',
         urgency: 'high',
@@ -454,7 +476,7 @@ export default function Dashboard() {
         patientId: eleanorPatient?.id || 'demo-eleanor-vance',
         patientName: 'Eleanor Vance',
         title: 'Ambulatory Holter & BP Synthesis awaiting final sign-off',
-        subtitle: 'MedGemma generated assessment note draft awaiting clinical approval',
+        subtitle: 'Assessment note draft awaiting clinical approval',
         timestamp: 'Today',
         urgency: 'medium',
         actionUrl: `/consultation?patient=${eleanorPatient?.id || 'demo-eleanor-vance'}`,
@@ -565,7 +587,7 @@ export default function Dashboard() {
         patientName: getPatientName(patId),
         documentType: doc.description || doc.type?.text || 'Metabolic Lab Report',
         date: doc.date ? new Date(doc.date).toLocaleDateString() : 'Recent',
-        confidence: `AI extraction ${conf}`,
+        confidence: `Extraction confidence ${conf}`,
         status: 'Awaiting physician review',
         actionUrl: `/document-review?patient=${patId}`
       });
@@ -729,9 +751,71 @@ export default function Dashboard() {
   const completedConsults = encounters.filter(e => e.status === 'finished' || !e.status || (e.status as string) === 'completed').length;
   const inProgressDrafts = impressions.filter(i => i.status === 'in-progress').length;
 
+  if (activeDeskPatient) {
+    return (
+      <DoctorDeskEncounter
+        patient={activeDeskPatient}
+        onCloseMeeting={(summary) => {
+          const updated = [...new Set([...completedPatientIds, summary.patientId])];
+          setCompletedPatientIds(updated);
+          try {
+            sessionStorage.setItem('proton_completed_patients', JSON.stringify(updated));
+          } catch {}
+          setActiveDeskPatient(null);
+        }}
+        onBackToDesk={() => setActiveDeskPatient(null)}
+      />
+    );
+  }
+
+  if (deskViewMode === 'desk') {
+    return (
+      <Layout fullBleed={true} canvasBg="bg-[#fafaf9]">
+        <div className="min-h-screen bg-[#fafaf9]">
+          {/* Top Switcher Bar */}
+          <div className="bg-white border-b border-[#e4e4e7] px-6 py-2.5 flex items-center justify-between text-xs text-[#71717a]">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-[#09090b]">Active Workspace:</span>
+              <span className="bg-[#0284c7]/10 text-[#0284c7] border border-[#0284c7]/20 px-2 py-0.5 rounded font-medium">
+                Today's Clinic Desk
+              </span>
+            </div>
+            <button
+              onClick={() => setDeskViewMode('timeline')}
+              className="text-[#71717a] hover:text-[#09090b] underline underline-offset-4 text-xs font-medium cursor-pointer transition-colors"
+            >
+              Switch to Longitudinal Patient Analytics →
+            </button>
+          </div>
+
+          <DoctorDeskHome
+            patients={deskPatients}
+            completedPatientIds={completedPatientIds}
+            onOpenPatientEncounter={(p) => setActiveDeskPatient(p)}
+            onAddNewPatient={(newPt) => setDeskPatients(prev => [newPt, ...prev])}
+          />
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout fullBleed={true} canvasBg="bg-[#edf0ea]">
-      <div className="w-full min-h-screen bg-[#edf0ea] text-[#1c221e] px-4 sm:px-6 lg:px-8 py-4 sm:py-6 flex flex-col gap-5 animate-in fade-in duration-200">
+      <div className="proton-command-center w-full min-h-screen bg-[#edf0ea] text-[#1c221e] px-4 sm:px-6 lg:px-8 py-4 sm:py-6 flex flex-col gap-5 animate-in fade-in duration-200">
+        
+        {/* RETURN TO DESK BANNER */}
+        <div className="bg-white border border-[#e4e4e7] text-[#09090b] px-5 py-3 rounded-2xl flex items-center justify-between text-xs shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <span className="w-2 h-2 rounded-full bg-[#0284c7]" />
+            <span className="text-[#52525b] font-medium">Viewing Longitudinal Care & Analytics.</span>
+          </div>
+          <button
+            onClick={() => setDeskViewMode('desk')}
+            className="bg-[#0284c7] hover:bg-[#0369a1] text-white px-3.5 py-1.5 rounded-lg font-semibold text-xs transition-colors cursor-pointer shadow-sm"
+          >
+            ← Back to Morning Clinic Desk
+          </button>
+        </div>
 
         {/* ERROR BANNER */}
         {error && (
@@ -750,24 +834,17 @@ export default function Dashboard() {
         )}
 
         {/* ============================================================== */}
-        {/* 1. SCULPTED ORGANIC TAB HEADER (Google MedGemma Language)      */}
+        {/* 1. PATIENT OVERVIEW */}
         {/* ============================================================== */}
-        <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pt-1">
+        <header className="proton-command-header flex flex-col lg:flex-row lg:items-center justify-between gap-4 pt-1">
           
           {/* Top Left: Sculpted Organic Tab Scoop */}
           <div className="flex items-center gap-3 flex-wrap">
             
-            {/* Dark Slate Pill Badge */}
-            <div className="bg-[#1c221e] text-white px-3.5 py-1.5 rounded-full flex items-center gap-2 shadow-xs">
-              <span className="h-2 w-2 rounded-full bg-[#d8f828] animate-pulse" />
-              <span className="text-xs font-bold tracking-tight uppercase font-mono">
-                Proton // Clinical Dynamics
-              </span>
-            </div>
+            <div className="proton-dashboard-eyebrow">ACTIVE PATIENT</div>
 
-            {/* Specialty Title */}
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#161c18] font-sans">
-              Cardiology &amp; Longitudinal Care
+              Care overview
             </h1>
 
             {/* Patient Panel Switcher Dropdown */}
@@ -808,9 +885,6 @@ export default function Dashboard() {
                             DOB: {p.birthDate || 'Unknown'} &bull; {p.gender || 'Unknown'}
                           </div>
                         </div>
-                        {isCurrent && (
-                          <span className="h-1.5 w-1.5 rounded-full bg-[#d8f828]" />
-                        )}
                       </button>
                     );
                   })}
@@ -909,107 +983,53 @@ export default function Dashboard() {
 
           </div>
 
-          {/* Top Right: Sculpted White Pill Navigation Tabs */}
-          <nav className="flex items-center gap-1.5 overflow-x-auto py-1 pl-1">
-            
-            {/* 1. Treatment Dynamics Tab */}
-            <button
-              onClick={() => setActiveTab('dynamics')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-300 ease-[var(--ease-butter)] cursor-pointer ${
-                activeTab === 'dynamics'
-                  ? 'bg-white text-[#161c18] shadow-xs font-bold border border-black/5'
-                  : 'bg-white/60 hover:bg-white text-[#455249]'
-              }`}
-            >
-              <Activity size={13} className={activeTab === 'dynamics' ? 'text-black stroke-[2.5]' : ''} />
-              <span>Treatment Dynamics</span>
-            </button>
-
-            {/* 2. Clinical Attention / Cockpit Tab */}
-            <button
-              onClick={() => setActiveTab('attention')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-300 ease-[var(--ease-butter)] cursor-pointer ${
-                activeTab === 'attention'
-                  ? 'bg-white text-[#161c18] shadow-xs font-bold border border-black/5'
-                  : 'bg-white/60 hover:bg-white text-[#455249]'
-              }`}
-            >
-              <AlertTriangle size={13} className={activeTab === 'attention' ? 'text-amber-700' : ''} />
-              <span>Clinical Attention</span>
-              {attentionItems.length > 0 && (
-                <span className="bg-[#1c221e] text-[#d8f828] text-[9px] font-bold px-1.5 py-0.2 rounded-full">
-                  {attentionItems.length}
-                </span>
-              )}
-            </button>
-
-            {/* 3. Visits & Encounters Tab */}
+          <nav className="proton-dashboard-tabs flex items-center gap-1.5 overflow-x-auto py-1 pl-1" aria-label="Patient dashboard views">
             <button
               onClick={() => setActiveTab('visits')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-300 ease-[var(--ease-butter)] cursor-pointer ${
-                activeTab === 'visits'
-                  ? 'bg-white text-[#161c18] shadow-xs font-bold border border-black/5'
-                  : 'bg-white/60 hover:bg-white text-[#455249]'
-              }`}
+              aria-pressed={activeTab === 'visits'}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${activeTab === 'visits' ? 'bg-white text-[#161c18] border border-black/10' : 'text-[#455249] hover:bg-white/70'}`}
             >
               <ClipboardList size={13} />
               <span>Visits</span>
               <span className="text-[10px] text-[#718076] font-normal">({encounters.length})</span>
             </button>
 
-            {/* 4. Medications & Titrations Tab */}
             <button
-              onClick={() => setActiveTab('medications')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-300 ease-[var(--ease-butter)] cursor-pointer ${
-                activeTab === 'medications'
-                  ? 'bg-white text-[#161c18] shadow-xs font-bold border border-black/5'
-                  : 'bg-white/60 hover:bg-white text-[#455249]'
-              }`}
+              onClick={() => setActiveTab('attention')}
+              aria-pressed={activeTab === 'attention'}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${activeTab === 'attention' ? 'bg-white text-[#161c18] border border-black/10' : 'text-[#455249] hover:bg-white/70'}`}
             >
-              <PillIcon size={13} />
-              <span>Medications</span>
-              <span className="text-[10px] text-[#718076] font-normal">({medRequests.length || 4})</span>
+              <AlertTriangle size={13} />
+              <span>Needs review</span>
+              {attentionItems.length > 0 && (
+                <span className="bg-[#f2f2f2] text-[#555] text-[9px] font-medium px-1.5 py-0.2 rounded-full">
+                  {attentionItems.length}
+                </span>
+              )}
             </button>
 
-            {/* 5. Labs & Diagnostics Tab */}
             <button
-              onClick={() => setActiveTab('labs')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-300 ease-[var(--ease-butter)] cursor-pointer ${
-                activeTab === 'labs'
-                  ? 'bg-white text-[#161c18] shadow-xs font-bold border border-black/5'
-                  : 'bg-white/60 hover:bg-white text-[#455249]'
-              }`}
+              onClick={() => setActiveTab('dynamics')}
+              aria-pressed={activeTab === 'dynamics'}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${activeTab === 'dynamics' ? 'bg-white text-[#161c18] border border-black/10' : 'text-[#455249] hover:bg-white/70'}`}
             >
-              <FlaskConical size={13} />
-              <span>Labs</span>
+              <Activity size={13} />
+              <span>Timeline</span>
             </button>
 
-            {/* 6. Allergies Tab */}
-            <button
-              onClick={() => setActiveTab('allergies')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-300 ease-[var(--ease-butter)] cursor-pointer ${
-                activeTab === 'allergies'
-                  ? 'bg-white text-[#161c18] shadow-xs font-bold border border-black/5'
-                  : 'bg-white/60 hover:bg-white text-[#455249]'
-              }`}
+            <label className="sr-only" htmlFor="patient-records-view">More patient records</label>
+            <select
+              id="patient-records-view"
+              value={selectedSecondaryTab}
+              onChange={(event) => {
+                const selectedTab = secondaryDashboardTabs.find(tab => tab.value === event.target.value);
+                if (selectedTab) setActiveTab(selectedTab.value);
+              }}
+              className={`rounded-full border border-black/10 bg-white px-3 py-1.5 text-xs font-medium text-[#455249] outline-none focus-visible:ring-2 focus-visible:ring-[#737373] ${selectedSecondaryTab ? 'text-[#161c18]' : ''}`}
             >
-              <ShieldAlert size={13} />
-              <span>Allergies</span>
-            </button>
-
-            {/* 7. Genetics Tab */}
-            <button
-              onClick={() => setActiveTab('genetics')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-300 ease-[var(--ease-butter)] cursor-pointer ${
-                activeTab === 'genetics'
-                  ? 'bg-white text-[#161c18] shadow-xs font-bold border border-black/5'
-                  : 'bg-white/60 hover:bg-white text-[#455249]'
-              }`}
-            >
-              <Dna size={13} />
-              <span>Genetics</span>
-            </button>
-
+              <option value="">More records</option>
+              {secondaryDashboardTabs.map(tab => <option key={tab.value} value={tab.value}>{tab.label}</option>)}
+            </select>
           </nav>
 
         </header>
@@ -1017,7 +1037,7 @@ export default function Dashboard() {
         {/* ============================================================== */}
         {/* 2. PROMINENT PATIENT VITALS BANNER                             */}
         {/* ============================================================== */}
-        <section className="bg-[#f5f6f2] rounded-3xl p-4 sm:p-5 shadow-sm border border-black/5 flex flex-col xl:flex-row xl:items-center justify-between gap-5 transition-all">
+        <section className="proton-patient-banner bg-[#f5f6f2] rounded-3xl p-4 sm:p-5 shadow-sm border border-black/5 flex flex-col xl:flex-row xl:items-center justify-between gap-5 transition-all">
           
           {/* Patient Card (Left) */}
           <div className="flex items-center gap-4 shrink-0">
@@ -1030,7 +1050,6 @@ export default function Dashboard() {
                   (e.target as HTMLElement).style.display = 'none';
                 }}
               />
-              <span className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-[#d8f828] border-2 border-white shadow-xs" />
             </div>
 
             <div>
@@ -1038,8 +1057,8 @@ export default function Dashboard() {
                 <span className="text-xs text-[#718076] font-medium tracking-wide">
                   {activePatientGender}, {activePatientAge} &bull; #{activePatientMRN}
                 </span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#1c221e] text-[#e4f552]">
-                  Cardiology Panel
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#f2f2f2] text-[#555]">
+                  Patient record
                 </span>
               </div>
               <h2 className="text-xl sm:text-2xl font-bold text-[#141a16] tracking-tight leading-snug mt-0.5">
@@ -1118,7 +1137,7 @@ export default function Dashboard() {
                   onClick={() => {
                     navigate(`/consultation?patient=${activePatient?.id || 'demo-eleanor-vance'}`);
                   }}
-                  className="px-4 py-2 rounded-2xl text-xs font-bold bg-[#1c221e] hover:bg-black text-[#e4f552] flex items-center gap-2 shadow-sm transition-all active:scale-95 cursor-pointer"
+                  className="px-4 py-2 rounded-lg text-xs font-semibold bg-[#171717] hover:bg-[#333] text-white flex items-center gap-2 transition-colors cursor-pointer"
                 >
                   <Mic size={14} className="stroke-[2.5]" />
                   <span>Start Consultation</span>
@@ -1166,22 +1185,22 @@ export default function Dashboard() {
         </section>
 
         {/* ============================================================== */}
-        {/* SYNTHETIC BETA TOUR BANNER (For Eleanor Vance Case)            */}
+        {/* SAMPLE PATIENT SHORTCUT */}
         {/* ============================================================== */}
-        <div className="bg-gradient-to-r from-[#1c221e] via-[#28322c] to-[#1c221e] text-white rounded-2xl p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 border border-black/10">
+        <div className="proton-beta-tour bg-gradient-to-r from-[#1c221e] via-[#28322c] to-[#1c221e] text-white rounded-2xl p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 border border-black/10">
           <div className="flex items-start gap-3">
-            <div className="h-9 w-9 rounded-xl bg-white/10 text-[#d8f828] flex items-center justify-center shrink-0 border border-white/10">
-              <Sparkles size={18} />
+            <div className="h-9 w-9 rounded-lg bg-[#f2f2f2] text-[#333] flex items-center justify-center shrink-0 border border-[#e5e5e5]">
+              <ClipboardList size={17} />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-bold text-sm tracking-tight text-white">Explore Proton with a Synthetic Patient</h3>
-                <span className="text-[9px] uppercase font-bold px-2 py-0.5 rounded-full bg-[#d8f828]/20 text-[#d8f828]">
-                  Physician Beta Tour
+                <h3 className="font-bold text-sm tracking-tight text-white">Explore a sample patient</h3>
+                <span className="text-[9px] uppercase font-bold px-2 py-0.5 rounded-full bg-white/10 text-white">
+                  SAMPLE RECORD
                 </span>
               </div>
               <p className="text-xs text-white/80 mt-0.5 leading-relaxed">
-                60-second walkthrough: Continuous treatment timeline &bull; Multimodal AI note synthesis &bull; Drug safety checks &bull; Longitudinal FHIR R4 memory.
+                See how visits, medications, test results, and clinical notes fit together.
               </p>
             </div>
           </div>
@@ -1203,7 +1222,7 @@ export default function Dashboard() {
                 }}
                 className="bg-white hover:bg-slate-100 text-[#161c18] px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm inline-flex items-center gap-1.5 cursor-pointer"
               >
-                <span>Synthesize Eleanor Vance</span>
+                <span>Create sample patient</span>
                 <ArrowRight size={14} />
               </button>
             )}
@@ -1246,7 +1265,7 @@ export default function Dashboard() {
                   <div className="text-3xl font-bold text-[#141a16] tracking-tight">{patients.length}</div>
                   <div className="flex items-end gap-1 h-6 shrink-0 opacity-80">
                     <div className="w-1.5 bg-[#909e86] rounded-xs h-3" />
-                    <div className="w-1.5 bg-[#d8f828] rounded-xs h-4.5" />
+                    <div className="w-1.5 bg-neutral-400 rounded-xs h-4.5" />
                     <div className="w-1.5 bg-[#1c221e] rounded-xs h-6" />
                   </div>
                 </div>
@@ -1340,7 +1359,7 @@ export default function Dashboard() {
                     </p>
                   </div>
                 </div>
-                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-[#1c221e] text-[#d8f828]">
+                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-[#f2f2f2] text-[#555]">
                   {attentionItems.length} Items
                 </span>
               </div>
@@ -1512,7 +1531,7 @@ export default function Dashboard() {
 
         {/* TAB 3: VISITS & ENCOUNTERS */}
         {activeTab === 'visits' && (
-          <div className="bg-white rounded-3xl border border-black/5 p-6 shadow-xs space-y-4 animate-in fade-in duration-300">
+          <div className="proton-dashboard-visits bg-white rounded-3xl border border-black/5 p-6 shadow-xs space-y-4 animate-in fade-in duration-300">
             <div className="flex items-center justify-between pb-3 border-b border-black/5">
               <div>
                 <h3 className="text-lg font-bold text-[#141a16]">Longitudinal Visits &amp; Consultations</h3>
@@ -1520,7 +1539,7 @@ export default function Dashboard() {
               </div>
               <button
                 onClick={() => navigate(`/consultation?patient=${activePatient?.id || 'demo-eleanor-vance'}`)}
-                className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#1c221e] text-[#e4f552] flex items-center gap-1.5 cursor-pointer shadow-xs"
+                className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-[#171717] text-white flex items-center gap-1.5 cursor-pointer"
               >
                 <Plus size={13} /> New Visit
               </button>
@@ -1550,7 +1569,7 @@ export default function Dashboard() {
                   status: 'Completed & Signed'
                 }
               ].map((v, i) => (
-                <div key={i} className="p-4 bg-[#f8f9f6] rounded-2xl border border-black/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div key={i} className="proton-visit-row p-4 bg-[#f8f9f6] rounded-2xl border border-black/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold text-[#141a16]">{v.type}</span>
@@ -1585,7 +1604,7 @@ export default function Dashboard() {
               </div>
               <button
                 onClick={() => navigate(`/patients/${activePatient?.id || 'demo-eleanor-vance'}`)}
-                className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#1c221e] text-[#e4f552] flex items-center gap-1.5 cursor-pointer shadow-xs"
+                className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-[#171717] text-white flex items-center gap-1.5 cursor-pointer"
               >
                 <Plus size={13} /> Order Medication
               </button>
@@ -1638,17 +1657,17 @@ export default function Dashboard() {
                   <div className="text-xs text-[#526056] space-y-1 pt-1 border-t border-black/5">
                     <div><strong>Indication:</strong> {m.indication}</div>
                     <div><strong>Titration:</strong> {m.titration}</div>
-                    <div className="text-[11px] text-emerald-800 font-medium"><strong>Safety Copilot:</strong> {m.safety}</div>
+                    <div className="text-[11px] text-emerald-800 font-medium"><strong>Safety check:</strong> {m.safety}</div>
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* MedGemma Safety Alert Box */}
+            {/* Medication safety note */}
             <div className="p-4 rounded-2xl bg-[#edf0ea] border border-black/5 flex items-start gap-3 text-xs text-[#455249]">
-              <Sparkles size={18} className="text-purple-600 shrink-0 mt-0.5" />
+              <ShieldAlert size={18} className="text-[#454545] shrink-0 mt-0.5" />
               <div>
-                <span className="font-bold text-[#141a16] block mb-0.5">MedGemma Pharmacotherapy Copilot Review:</span>
+                <span className="font-bold text-[#141a16] block mb-0.5">Medication safety review:</span>
                 <p className="leading-relaxed">
                   Dual antihypertensive therapy (Lisinopril + Bisoprolol) achieves synergism with complementary renin-angiotensin-aldosterone and sympathetic nervous system inhibition. Baseline serum potassium monitoring confirmed safe.
                 </p>
@@ -1768,7 +1787,7 @@ export default function Dashboard() {
                 <p className="text-xs text-[#718076]">Genotypic allele markers for {activePatientName}</p>
               </div>
               <span className="text-xs font-bold px-3 py-1 rounded-full bg-purple-100 text-purple-700">
-                MedGemma Precision Engine
+                Clinical decision support
               </span>
             </div>
 

@@ -3,7 +3,7 @@ import {
   Check, 
   X, 
   Edit2, 
-  BrainCircuit,
+  FileText,
   Save
 } from 'lucide-react';
 import type { MemoryProposal } from '../types/clinicalBrain';
@@ -48,7 +48,7 @@ export default function MemoryProposalPanel({
       <div className="bg-gradient-to-r from-brand-50 via-purple-50 to-white px-6 py-4 border-b border-brand-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
           <div className="h-8 w-8 rounded-lg bg-brand-600 text-white flex items-center justify-center shadow-xs">
-            <BrainCircuit size={18} />
+            <FileText size={18} />
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -104,7 +104,7 @@ export default function MemoryProposalPanel({
                   return <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-900">✓ RESOLVED</span>;
                 case 'PENDING':
                 default:
-                  return <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-900">⏳ PENDING</span>;
+                  return <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-900">PENDING</span>;
               }
             };
 

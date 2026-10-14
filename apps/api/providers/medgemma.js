@@ -97,6 +97,10 @@ class MedGemmaProvider extends AIProvider {
     );
   }
 
+  async chat(messages) {
+    return this._callMedGemma(messages, false);
+  }
+
   /**
    * Clinical note generation from consultation transcript and patient context.
    */

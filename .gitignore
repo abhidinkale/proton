@@ -93,3 +93,4 @@ apps/api/test_ai_*.cjs
 apps/api/test_models.cjs
 apps/api/update_*.cjs
 apps/api/apps/
+.vercel

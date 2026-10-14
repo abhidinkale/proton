@@ -218,7 +218,7 @@ async function executeProviderOperation(operationName, provider, inputBytes, fn,
       attempt++;
       const isTimeout = error.name === 'TimeoutError';
       const status = error.status || 500;
-      const isTransient = isTimeout || status === 429 || status === 503;
+      const isTransient = (isTimeout || status === 429 || status === 503) && error.code !== 'AI_CHAT_UNAVAILABLE';
 
       if (!isTransient || attempt > maxRetries) {
         const latencyMs = Date.now() - startTime;
@@ -332,6 +332,62 @@ app.post('/api/generate-note', async (req, res) => {
     }
     const status = error.status === 429 ? 429 : 502;
     res.status(status).json({ error: 'AI note generation service unavailable. Please retry or continue manually.' });
+  }
+});
+
+app.post('/api/chat', async (req, res) => {
+  const { messages, patientContext } = req.body || {};
+  if (!Array.isArray(messages) || messages.length === 0 || messages.length > 16) {
+    return res.status(400).json({ error: 'Provide between 1 and 16 recent chat messages.' });
+  }
+
+  const validMessages = messages.every(message =>
+    message &&
+    (message.role === 'user' || message.role === 'assistant') &&
+    typeof message.content === 'string' &&
+    message.content.trim().length > 0 &&
+    message.content.length <= 4000
+  );
+  if (!validMessages || messages[messages.length - 1].role !== 'user') {
+    return res.status(400).json({ error: 'Chat messages must contain text and end with a clinician message.' });
+  }
+
+  let systemContent = 'You are a clinical copilot assistant for a practicing physician. Answer clearly, concisely, and practically as an executive clinical colleague. Do not give generic textbook disclaimers. Give structured, decision-ready answers.';
+  if (patientContext && typeof patientContext === 'string' && patientContext.trim()) {
+    systemContent += `\n\nACTIVE PATIENT CLINICAL CHART:\n${patientContext.trim()}\n\nUse this active patient chart data to answer the physician's questions specifically and accurately.`;
+  }
+
+  const providerMessages = [
+    {
+      role: 'system',
+      content: systemContent
+    },
+    ...messages.map(({ role, content }) => ({ role, content: content.trim() }))
+  ];
+
+  let provider;
+  try {
+    provider = getProvider();
+  } catch {
+    return res.status(503).json({ error: 'Clinical chat provider is not configured. Check server settings.' });
+  }
+
+  try {
+    const inputBytes = Buffer.byteLength(JSON.stringify(providerMessages), 'utf-8');
+    const response = await executeProviderOperation('chat', provider, inputBytes, async () => provider.chat(providerMessages));
+    if (!response || typeof response.text !== 'string' || !response.text.trim()) {
+      return res.status(502).json({ error: 'Clinical chat returned an empty or invalid response.' });
+    }
+    res.json({ message: response.text.trim() });
+  } catch (error) {
+    if (error.name === 'TimeoutError') {
+      return res.status(504).json({ error: 'Clinical chat timed out. Please try again.' });
+    }
+    if (error.code === 'MEDGEMMA_UNAVAILABLE' || error.message?.includes('MedGemma local inference server is unavailable')) {
+      return res.status(503).json({ error: error.message, provider: 'medgemma', code: 'MEDGEMMA_UNAVAILABLE' });
+    }
+    const status = error.status === 429 ? 429 : error.status === 503 ? 503 : 502;
+    res.status(status).json({ error: status === 503 ? error.message : 'Clinical chat is unavailable. Please try again.' });
   }
 });
 

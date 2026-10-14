@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { useMedplum } from '@medplum/react';
+import DoctorDeskEncounter from '../components/DoctorDeskEncounter';
+import { TODAY_CLINIC_SCHEDULE } from '../data/clinicSchedule';
 import type { 
   Patient, 
   Condition, 
@@ -14,7 +16,7 @@ import type {
 } from '@medplum/fhirtypes';
 import { 
   ArrowLeft, Mic, FileText, LayoutList, Square, Check, Loader2, 
-  AlertCircle, ShieldCheck, Sparkles, Pill, Plus, Trash2, Edit2, 
+  AlertCircle, ShieldCheck, Pill, Plus, Trash2, Edit2,
   Printer, CheckCircle2, X, AlertTriangle, FlaskConical, AlertOctagon, Activity
 } from 'lucide-react';
 import Layout from '../components/Layout';
@@ -60,10 +62,16 @@ const DEFAULT_MED_FORM: Omit<PrescriptionItem, 'id'> = {
 };
 
 export default function Consultation() {
+  const navigate = useNavigate();
   const medplum = useMedplum();
   const [searchParams] = useSearchParams();
   const patientId = searchParams.get('patient');
-  
+  const [viewMode, setViewMode] = useState<'desk' | 'legacy'>('desk');
+
+  const selectedDeskPatient = TODAY_CLINIC_SCHEDULE.find(
+    p => p.id === patientId || p.id.includes(patientId || '')
+  ) || TODAY_CLINIC_SCHEDULE[0];
+
   const [patient, setPatient] = useState<Patient | null>(null);
   const [panelPatients, setPanelPatients] = useState<Patient[]>([]);
   const [conditions, setConditions] = useState<Condition[]>([]);
@@ -903,12 +911,44 @@ export default function Consultation() {
     }
   };
 
+  if (viewMode === 'desk') {
+    return (
+      <div className="relative">
+        <div className="bg-[#121824] border-b border-[#1c2433] px-6 py-2 flex items-center justify-between text-xs text-[#8ea3b7]">
+          <span>Encounter Mode: <strong className="text-white">Physician Workspace & Scribe</strong></span>
+          <button
+            onClick={() => setViewMode('legacy')}
+            className="text-[#64748b] hover:text-[#8ea3b7] underline cursor-pointer"
+          >
+            Switch to Legacy Verification View →
+          </button>
+        </div>
+        <DoctorDeskEncounter
+          patient={selectedDeskPatient}
+          onCloseMeeting={() => navigate('/')}
+          onBackToDesk={() => navigate('/')}
+        />
+      </div>
+    );
+  }
+
   return (
     <Layout>
-      <div className="h-[calc(100vh-80px)] flex flex-col bg-slate-50 rounded-xl overflow-hidden border border-slate-200">
+      <div className="proton-consultation-workspace h-[calc(100vh-80px)] flex flex-col bg-slate-50 rounded-xl overflow-hidden border border-slate-200">
+        
+        {/* Switch back to desk banner */}
+        <div className="bg-[#121824] text-white px-4 py-2 flex items-center justify-between text-xs border-b border-[#1c2433]">
+          <span>Viewing Legacy Verification Screen.</span>
+          <button
+            onClick={() => setViewMode('desk')}
+            className="bg-[#0284c7] hover:bg-[#0369a1] text-white px-3 py-1 rounded-lg font-semibold text-xs cursor-pointer"
+          >
+            ← Back to Doctor's Desk
+          </button>
+        </div>
         
         {/* Header */}
-        <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0">
+        <header className="proton-consultation-header bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-4">
             <Link to={patientId ? `/patients/${patientId}` : "/patients"} className="text-slate-400 hover:text-slate-700 transition-colors">
               <ArrowLeft size={20} />
@@ -979,7 +1019,7 @@ export default function Consultation() {
         </header>
 
         {/* Primary Action Guidance Banner */}
-        <div className="bg-slate-100/80 border-b border-slate-200 px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs shrink-0">
+        <div className="proton-consultation-stage bg-slate-100/80 border-b border-slate-200 px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs shrink-0">
           <div className="flex items-center gap-3">
             <span className="font-bold text-slate-500 uppercase tracking-wider text-[10px]">
               Current Stage:
@@ -1023,7 +1063,7 @@ export default function Consultation() {
             )}
             {status === 'recording' && (
               <span className="text-red-600 font-semibold flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-red-500 animate-ping" /> Live audio active &mdash; Click "Stop & Generate Note" when done
+                <span className="h-2 w-2 rounded-full bg-red-500" /> Live audio active &mdash; Click "Stop & Generate Note" when done
               </span>
             )}
             {status === 'review' && (
@@ -1039,7 +1079,7 @@ export default function Consultation() {
         </div>
 
         {/* Workspace Grid */}
-        <div className="flex-1 flex overflow-hidden">
+        <div className="proton-consultation-grid flex-1 flex overflow-hidden">
           
           {/* Left Context Panel */}
           <div className="w-80 bg-white border-r border-slate-200 overflow-y-auto shrink-0 flex flex-col">
@@ -1228,10 +1268,7 @@ export default function Consultation() {
                   <h2 className="font-semibold text-base">Consultation Transcript</h2>
                   {(status === 'recording' || status === 'transcribing') && (
                     <span className="flex items-center gap-1.5 ml-2">
-                      <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-                      </span>
+                      <span className="inline-flex h-2 w-2 rounded-full bg-red-500"></span>
                       <span className="text-xs text-slate-500 font-medium">Recording</span>
                     </span>
                   )}
@@ -1267,7 +1304,7 @@ export default function Consultation() {
                             className="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-5 py-2.5 rounded-full text-sm font-medium inline-flex items-center gap-2 transition-colors shadow-xs cursor-pointer"
                             title="Simulate dialogue without microphone hardware"
                           >
-                            <Sparkles size={16} className="text-brand-600" /> Use Sample Dialogue
+                            <FileText size={16} className="text-brand-600" /> Use Sample Dialogue
                           </button>
                         </div>
                         <div className="mt-4 pt-3 border-t border-slate-100 max-w-md mx-auto w-full">
@@ -1313,7 +1350,7 @@ export default function Consultation() {
                       </span>
                     ) : (
                       <span className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-100 px-3 py-1 rounded-full border border-amber-200">
-                        <Sparkles size={13} /> AI generated — physician review required
+                        <FileText size={13} /> AI-generated draft — physician review required
                       </span>
                     )}
                   </div>
@@ -1376,7 +1413,7 @@ export default function Consultation() {
                 <div className="mt-4">
                   <ClinicalVerificationPanel
                     report={noteReport}
-                    title="AI Draft Check"
+                    title="Draft safety checks"
                     subtitle="Template structure, required clinical sections & patient linkage"
                     onToggleAcknowledge={handleToggleAcknowledge}
                     onAcknowledgeAll={() => handleAcknowledgeAll(noteReport)}
@@ -1722,7 +1759,7 @@ export default function Consultation() {
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full border border-amber-200">
-                        <Sparkles size={14} /> DRAFT &mdash; REVIEW REQUIRED
+                        <FileText size={14} /> DRAFT &mdash; REVIEW REQUIRED
                       </span>
                     )}
                   </div>
@@ -1816,7 +1853,7 @@ export default function Consultation() {
                       <div className="flex items-center justify-between mb-3 border-b border-slate-200 pb-3">
                         <div className="flex items-center gap-2">
                           <div className="h-7 w-7 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center">
-                            <Sparkles size={16} />
+                            <Activity size={16} />
                           </div>
                           <div>
                             <h3 className="font-semibold text-sm text-slate-900">Physician Feedback Loop</h3>

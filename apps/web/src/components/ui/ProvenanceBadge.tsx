@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Sparkles, Edit3, ShieldCheck, XCircle, FileText, CheckCircle2 } from 'lucide-react';
+import { Edit3, ShieldCheck, XCircle, FileText, CheckCircle2 } from 'lucide-react';
 
 export type ProvenanceType = 
   | 'AI_DRAFT'
@@ -44,8 +44,8 @@ export default function ProvenanceBadge({
         bg: 'bg-violet-50',
         text: 'text-violet-800',
         border: 'border-violet-200',
-        icon: <Sparkles size={size === 'xs' ? 10 : 12} className="text-violet-600 shrink-0" />,
-        description: 'Synthesized by AI copilot • Physician review required'
+        icon: <FileText size={size === 'xs' ? 10 : 12} className="text-violet-600 shrink-0" />,
+        description: 'AI-generated draft • Physician review required'
       };
       break;
     case 'AI_EXTRACTED':
@@ -65,8 +65,8 @@ export default function ProvenanceBadge({
         bg: 'bg-purple-50',
         text: 'text-purple-800',
         border: 'border-purple-200',
-        icon: <Sparkles size={size === 'xs' ? 10 : 12} className="text-purple-600 shrink-0" />,
-        description: 'Inferred by clinical reasoning • Doctor validation required'
+        icon: <FileText size={size === 'xs' ? 10 : 12} className="text-purple-600 shrink-0" />,
+        description: 'AI-inferred • Physician review required'
       };
       break;
     case 'PHYSICIAN_EDITED':

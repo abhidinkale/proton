@@ -263,8 +263,8 @@ export default function DocumentReview() {
 
   return (
     <Layout>
-      <div className="h-[calc(100vh-80px)] flex flex-col bg-slate-50 rounded-xl overflow-hidden border border-slate-200">
-        <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0">
+      <div className="proton-document-workspace h-[calc(100vh-80px)] flex flex-col bg-slate-50 rounded-xl overflow-hidden border border-slate-200">
+        <header className="proton-document-header bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-4">
             <Link to={effectivePatientId ? `/patients/${effectivePatientId}` : "/"} className="text-slate-400 hover:text-slate-700 transition-colors">
               <ArrowLeft size={20} />
@@ -327,7 +327,7 @@ export default function DocumentReview() {
           </div>
         </header>
 
-        <div className="flex-1 overflow-hidden p-6 flex flex-col">
+        <div className="proton-document-content flex-1 overflow-hidden p-6 flex flex-col">
           {status === 'idle' || status === 'extracting' || status === 'error' ? (
             <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-2xl bg-white p-12 text-center max-w-2xl mx-auto w-full my-auto">
               <div className="h-16 w-16 bg-brand-50 text-brand-600 rounded-full flex items-center justify-center mb-4">

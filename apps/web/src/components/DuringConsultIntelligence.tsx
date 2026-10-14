@@ -1,5 +1,4 @@
 import { 
-  Sparkles, 
   X, 
   Database, 
   Activity, 
@@ -27,7 +26,7 @@ export default function DuringConsultIntelligence({
     return (
       <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-500 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Sparkles size={14} className="text-brand-500" />
+          <Activity size={14} className="text-brand-500" />
           <span className="font-medium text-slate-600">Clinical Context Stream Active</span>
           <span className="text-slate-400">&bull; Historical context surfaces when relevant concepts are discussed</span>
         </div>
@@ -54,11 +53,11 @@ export default function DuringConsultIntelligence({
   };
 
   return (
-    <div className="bg-gradient-to-r from-brand-50/70 via-slate-50 to-brand-50/40 border border-brand-200 rounded-xl p-4 shadow-xs space-y-3 animate-in fade-in duration-150">
+    <div className="proton-during-consult-context bg-gradient-to-r from-brand-50/70 via-slate-50 to-brand-50/40 border border-brand-200 rounded-xl p-4 shadow-xs space-y-3 animate-in fade-in duration-150">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="h-6 w-6 rounded-md bg-brand-100 text-brand-700 flex items-center justify-center">
-            <Sparkles size={14} />
+            <FileText size={14} />
           </div>
           <div>
             <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">

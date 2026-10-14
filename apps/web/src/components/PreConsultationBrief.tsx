@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { 
-  Sparkles, 
+  FileText,
   Clock, 
   ChevronDown, 
   ChevronUp, 
@@ -73,7 +73,7 @@ export default function PreConsultationBrief({
       default:
         return (
           <span className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase bg-purple-500/30 text-purple-200 border border-purple-500/40 inline-flex items-center gap-1">
-            <Sparkles size={10} /> AI-Inferred
+            <FileText size={10} /> AI-Inferred
           </span>
         );
     }
@@ -117,12 +117,12 @@ export default function PreConsultationBrief({
   const whatMattersItems = intelligence.whatMattersToday || [];
 
   return (
-    <div className="bg-gradient-to-br from-slate-900 via-brand-950 to-slate-900 text-white rounded-2xl shadow-lg border border-brand-800/40 overflow-hidden mb-6">
+    <div className="proton-preconsultation-brief bg-gradient-to-br from-slate-900 via-brand-950 to-slate-900 text-white rounded-2xl shadow-lg border border-brand-800/40 overflow-hidden mb-6">
       {/* Header Bar */}
       <div className="px-6 py-4 flex items-center justify-between border-b border-white/10">
         <div className="flex items-center gap-3">
           <div className="h-9 w-9 rounded-xl bg-brand-500/20 text-brand-300 border border-brand-400/30 flex items-center justify-center">
-            <Sparkles size={18} />
+            <FileText size={18} />
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -165,7 +165,7 @@ export default function PreConsultationBrief({
             <div className="p-4 rounded-xl bg-brand-900/40 border border-brand-500/30">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-brand-300 font-bold uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-                  <Sparkles size={14} className="text-brand-400" />
+                  <Activity size={14} className="text-brand-400" />
                   What Matters Today ({whatMattersItems.length} key priorities)
                 </span>
                 <span className="text-[10px] text-brand-300/70">

@@ -18,6 +18,13 @@ class DemoProvider extends AIProvider {
     });
   }
 
+  async chat() {
+    const error = new Error('Clinical chat is unavailable in demo mode. Configure a live AI provider to enable it.');
+    error.status = 503;
+    error.code = 'AI_CHAT_UNAVAILABLE';
+    throw error;
+  }
+
   async generateNote(transcript, patientContext, noteSchema, template) {
     return new Promise((resolve) => {
       setTimeout(() => {

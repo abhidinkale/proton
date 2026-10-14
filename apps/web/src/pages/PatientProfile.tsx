@@ -21,7 +21,8 @@ import {
   Printer,
   AlertTriangle,
   ArrowUpRight,
-  Plus
+  Plus,
+  LoaderCircle
 } from 'lucide-react';
 import Layout from '../components/Layout';
 import type { PrescriptionItem } from '../types/prescription';
@@ -417,8 +418,16 @@ export default function PatientProfile() {
   if (loading) {
     return (
       <Layout>
-        <div className="py-24 text-center text-zinc-500 text-sm">
-          Loading patient record...
+        <div className="mx-auto max-w-3xl space-y-4 py-10" role="status" aria-label="Loading patient record">
+          <div className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
+            <LoaderCircle size={16} className="animate-spin" />
+            Loading patient record
+          </div>
+          <div className="h-24 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface)]" aria-hidden="true" />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="h-36 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface)]" aria-hidden="true" />
+            <div className="h-36 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface)]" aria-hidden="true" />
+          </div>
         </div>
       </Layout>
     );
@@ -462,7 +471,7 @@ export default function PatientProfile() {
 
   return (
     <Layout>
-      <div className="max-w-4xl mx-auto space-y-10 pb-16">
+      <div className="proton-patient-profile max-w-4xl mx-auto space-y-10 pb-16">
         
         {/* Breadcrumb / Back Link */}
         <Link 

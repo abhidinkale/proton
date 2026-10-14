@@ -1,22 +1,23 @@
 @import "tailwindcss";
+@import "../node_modules/@fontsource-variable/source-sans-3/index.css";
 
 @theme {
   /* ── Refined Clinical Palette ── */
-  --color-brand-50: #eff6ff;
-  --color-brand-100: #dbeafe;
-  --color-brand-200: #bfdbfe;
-  --color-brand-300: #93c5fd;
-  --color-brand-400: #60a5fa;
-  --color-brand-500: #3b82f6;
-  --color-brand-600: #2563eb;
-  --color-brand-700: #1d4ed8;
-  --color-brand-800: #1e40af;
-  --color-brand-900: #1e3a8a;
-  --color-brand-950: #172554;
+  --color-brand-50: #f7f7f7;
+  --color-brand-100: #eeeeee;
+  --color-brand-200: #dedede;
+  --color-brand-300: #c7c7c7;
+  --color-brand-400: #a2a2a2;
+  --color-brand-500: #737373;
+  --color-brand-600: #292929;
+  --color-brand-700: #202020;
+  --color-brand-800: #191919;
+  --color-brand-900: #151515;
+  --color-brand-950: #111111;
 
   /* ── Typography (Refined Modern Sans-Serif) ── */
-  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-display: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Source Sans 3 Variable', sans-serif;
+  --font-display: 'Source Sans 3 Variable', sans-serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
 
   /* ── Clinical Environment (Warm Neutral & White Surfaces) ── */
@@ -46,12 +47,26 @@
 
   /* ── Border Radius (Restrained, Editorial) ── */
   --radius-sm: 0.25rem;
-  --radius-md: 0.375rem;
-  --radius-lg: 0.5rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
   --radius-xl: 0.75rem;
+  --radius-2xl: 0.75rem;
+  --radius-3xl: 1rem;
 
   /* ── Transitions ── */
   --ease-butter: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+:root {
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --radius-control: 0.5rem;
+  --radius-card: 0.75rem;
+  --radius-dialog: 1rem;
 }
 
 /* ── Base Styles (Quiet Clinical Workspace) ── */
@@ -62,17 +77,19 @@ html, body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  font-kerning: normal;
+  font-synthesis: none;
 }
 
 /* ── Selection ── */
 ::selection {
-  background-color: #dbeafe;
-  color: #1e3a8a;
+  background-color: #e5e5e5;
+  color: #171717;
 }
 
 /* ── Focus Ring System ── */
 *:focus-visible {
-  outline: 2px solid #2563eb;
+  outline: 2px solid #171717;
   outline-offset: 1px;
 }
 
@@ -251,12 +268,12 @@ html, body {
 }
 
 .proton-btn-primary {
-  background-color: #2563eb;
+  background-color: #171717;
   color: #ffffff;
 }
 
 .proton-btn-primary:hover {
-  background-color: #1d4ed8;
+  background-color: #333333;
 }
 
 .proton-btn-secondary {
@@ -326,4 +343,3132 @@ html, body {
 
 .proton-animate-in {
   animation: none;
+}
+
+/* Premium clinical workspace shell */
+.proton-workspace-shell {
+  --workspace-ink: #17231d;
+  --workspace-muted: #879189;
+  --workspace-line: #e8ebe5;
+  --workspace-accent: #c7e879;
+  display: flex;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  background: #f5f6f1;
+  color: var(--workspace-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+.proton-sidebar {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  flex: 0 0 252px;
+  flex-direction: column;
+  padding: 25px 16px 15px;
+  background:
+    radial-gradient(ellipse at 0% 0%, rgba(198, 231, 119, 0.08), transparent 42%),
+    #15211b;
+  color: #f5f7f2;
+}
+
+.proton-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 8px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.proton-brand-mark {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 11px;
+  background: var(--workspace-accent);
+  color: #1b281f;
+  box-shadow: 0 5px 18px rgba(199, 232, 121, 0.15);
+}
+
+.proton-brand-word {
+  font-size: 20px;
+  font-weight: 650;
+  letter-spacing: -0.055em;
+}
+
+.proton-brand-word span {
+  color: var(--workspace-accent);
+}
+
+.proton-brand-caption {
+  align-self: center;
+  margin: 2px 0 0 auto;
+  color: #8c9a90;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.12em;
+}
+
+.proton-search-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin: 34px 0 27px;
+  padding: 10px 11px;
+  border: 1px solid rgba(238, 243, 232, 0.1);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.045);
+  color: #bdc7be;
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.proton-search-trigger:hover {
+  border-color: rgba(199, 232, 121, 0.34);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.proton-search-trigger kbd {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: auto;
+  padding: 3px 5px;
+  border: 1px solid rgba(238, 243, 232, 0.13);
+  border-radius: 5px;
+  color: #9ba79e;
+  font-family: var(--font-mono);
+  font-size: 9px;
+}
+
+.proton-nav-label {
+  padding: 0 11px 10px;
+  color: #78867c;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+}
+
+.proton-primary-nav,
+.proton-sidebar-footer {
+  display: grid;
+  gap: 4px;
+}
+
+.proton-nav-link {
+  position: relative;
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 11px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #aab5ac;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.proton-nav-link:hover {
+  background: rgba(255, 255, 255, 0.065);
+  color: #fff;
+}
+
+.proton-nav-link.is-active {
+  background: rgba(199, 232, 121, 0.12);
+  color: #e5f4c5;
+}
+
+.proton-nav-link.is-active::before {
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 0;
+  width: 2px;
+  border-radius: 3px;
+  background: var(--workspace-accent);
+  content: "";
+}
+
+.proton-sidebar-spacer {
+  flex: 1;
+  min-height: 18px;
+}
+
+.proton-safety-card {
+  display: flex;
+  gap: 10px;
+  margin: 12px 2px 16px;
+  padding: 13px 11px;
+  border: 1px solid rgba(199, 232, 121, 0.13);
+  border-radius: 11px;
+  background: rgba(199, 232, 121, 0.055);
+}
+
+.proton-safety-icon {
+  display: grid;
+  flex: 0 0 27px;
+  height: 27px;
+  place-items: center;
+  border-radius: 8px;
+  background: rgba(199, 232, 121, 0.13);
+  color: var(--workspace-accent);
+}
+
+.proton-safety-title {
+  margin: 1px 0 4px;
+  color: #e5ebdf;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.proton-safety-card p {
+  margin: 0;
+  color: #9eaaa0;
+  font-size: 9px;
+  line-height: 1.55;
+}
+
+.proton-sidebar-footer {
+  padding-top: 10px;
+  border-top: 1px solid rgba(238, 243, 232, 0.09);
+}
+
+.proton-signout:hover {
+  color: #ffc2b7;
+}
+
+.proton-evaluator-profile {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 11px 1px 0;
+  padding: 12px 5px 0;
+  border-top: 1px solid rgba(238, 243, 232, 0.08);
+}
+
+.proton-avatar {
+  display: grid;
+  flex: 0 0 31px;
+  height: 31px;
+  place-items: center;
+  border: 1px solid rgba(199, 232, 121, 0.3);
+  border-radius: 50%;
+  background: rgba(199, 232, 121, 0.12);
+  color: #d9eeac;
+  font-family: var(--font-mono);
+  font-size: 9px;
+}
+
+.proton-profile-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  color: #e2e8e1;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.proton-profile-copy small {
+  color: #87948a;
+  font-size: 9px;
+  font-weight: 400;
+}
+
+.proton-profile-arrow {
+  margin-left: auto;
+  color: #78867c;
+}
+
+.proton-workspace-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.proton-topbar {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  min-height: 77px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 12px 34px;
+  border-bottom: 1px solid var(--workspace-line);
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(16px);
+}
+
+.proton-breadcrumb {
+  margin-bottom: 4px;
+  color: #98a198;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+}
+
+.proton-breadcrumb span {
+  padding: 0 5px;
+  color: #c5cbc3;
+}
+
+.proton-topbar-context h1 {
+  margin: 0;
+  color: #1a261f;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.proton-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.proton-environment-pill {
+  display: inline-flex;
+  min-height: 29px;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px;
+  border: 1px solid #e4ead9;
+  border-radius: 100px;
+  background: #f7faef;
+  color: #647448;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.055em;
+  white-space: nowrap;
+}
+
+.proton-topbar-search {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid #e5e9e2;
+  border-radius: 9px;
+  background: #fff;
+  color: #69756b;
+  cursor: pointer;
+  transition: border-color 160ms ease, color 160ms ease;
+}
+
+.proton-topbar-search:hover {
+  border-color: #bdce9b;
+  color: #31422f;
+}
+
+.proton-start-visit {
+  display: inline-flex;
+  min-height: 35px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 13px;
+  border: 1px solid #19261e;
+  border-radius: 9px;
+  background: #19261e;
+  color: #f5f7f2;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 550;
+  cursor: pointer;
+  transition: transform 160ms ease, background 160ms ease;
+}
+
+.proton-start-visit:hover {
+  transform: translateY(-1px);
+  background: #27382c;
+}
+
+.proton-workspace-canvas {
+  flex: 1;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.proton-canvas-content {
+  width: min(100%, 1480px);
+  margin: 0 auto;
+  padding: 30px 34px 48px;
+}
+
+.proton-canvas-content.is-full-bleed {
+  width: 100%;
+  padding: 0;
+}
+
+.proton-canvas-content.is-fill-canvas {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+}
+
+.proton-mobile-nav {
+  display: none;
+}
+
+.proton-workspace-shell button:focus-visible,
+.proton-workspace-shell a:focus-visible {
+  outline: 2px solid #a4c765;
+  outline-offset: 2px;
+}
+
+@media (max-width: 1000px) {
+  .proton-sidebar {
+    flex-basis: 220px;
+  }
+
+  .proton-topbar {
+    padding-right: 22px;
+    padding-left: 22px;
+  }
+
+  .proton-canvas-content {
+    padding-right: 22px;
+    padding-left: 22px;
+  }
+}
+
+@media (max-width: 760px) {
+  .proton-workspace-shell {
+    display: block;
+  }
+
+  .proton-sidebar {
+    display: none;
+  }
+
+  .proton-workspace-main {
+    height: 100%;
+  }
+
+  .proton-topbar {
+    min-height: 66px;
+    padding: 10px 16px;
+  }
+
+  .proton-topbar-context h1 {
+    font-size: 15px;
+  }
+
+  .proton-breadcrumb {
+    font-size: 7px;
+  }
+
+  .proton-topbar-actions {
+    gap: 7px;
+  }
+
+  .proton-environment-pill {
+    padding: 0 7px;
+    font-size: 7px;
+  }
+
+  .proton-topbar-search {
+    width: 32px;
+    height: 32px;
+  }
+
+  .proton-start-visit {
+    min-height: 32px;
+    padding: 0 9px;
+  }
+
+  .proton-start-visit span {
+    display: none;
+  }
+
+  .proton-mobile-nav {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--workspace-line);
+    background: #fff;
+  }
+
+  .proton-mobile-nav-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 52px;
+    gap: 4px;
+    padding: 6px 4px;
+    border-radius: var(--radius-control);
+    color: #738076;
+    font-size: 10px;
+    font-weight: 500;
+    text-decoration: none;
+    text-align: center;
+  }
+
+  .proton-mobile-nav-link.is-active {
+    background: #eff4e6;
+    color: #35482e;
+  }
+
+  .proton-canvas-content {
+    padding: 20px 15px 34px;
+  }
+
+  .proton-canvas-content.is-full-bleed {
+    padding: 0;
+  }
+}
+
+@media (max-width: 420px) {
+  .proton-topbar {
+    gap: 8px;
+  }
+
+  .proton-environment-pill {
+    max-width: 90px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Clinical command center */
+.proton-command-center {
+  --command-ink: #1b2921;
+  --command-muted: #77837a;
+  --command-line: #e4e9df;
+  gap: 20px !important;
+  padding: 27px clamp(18px, 3vw, 42px) 44px !important;
+  background:
+    radial-gradient(ellipse at 88% 5%, rgba(216, 231, 195, 0.22), transparent 31%),
+    #f5f6f1 !important;
+  color: var(--command-ink) !important;
+}
+
+.proton-command-header {
+  align-items: flex-end !important;
+  gap: 18px !important;
+  padding: 0 0 16px;
+  border-bottom: 1px solid var(--command-line);
+}
+
+.proton-command-header > div:first-child {
+  gap: 9px 12px !important;
+}
+
+.proton-command-header > div:first-child > div:first-child:not(.proton-dashboard-eyebrow) {
+  padding: 6px 10px !important;
+  border: 1px solid #e2e8d9;
+  border-radius: 8px !important;
+  background: #edf3e4 !important;
+  color: #526641 !important;
+  box-shadow: none !important;
+}
+
+.proton-command-header > div:first-child > div:first-child span:last-child {
+  font-size: 9px !important;
+  letter-spacing: 0.08em !important;
+}
+
+.proton-command-header > div:first-child > div:first-child span:first-child {
+  width: 6px !important;
+  height: 6px !important;
+  background: #8fac44 !important;
+}
+
+.proton-command-header h1 {
+  margin-right: 8px;
+  color: #1a261f !important;
+  font-size: clamp(19px, 2vw, 24px) !important;
+  font-weight: 610 !important;
+  letter-spacing: -0.045em !important;
+}
+
+.proton-command-header > div:first-child > div:nth-last-child(2) > button,
+.proton-command-header input {
+  min-height: 34px;
+  border-color: #e2e7df !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  box-shadow: 0 2px 5px rgba(29, 44, 32, 0.025);
+}
+
+.proton-command-header input {
+  border-radius: 9px !important;
+}
+
+.proton-dashboard-tabs {
+  max-width: 100%;
+  gap: 4px !important;
+  padding: 0 !important;
+  scrollbar-width: thin;
+}
+
+.proton-dashboard-tabs button {
+  min-height: 35px;
+  padding: 0 11px !important;
+  border: 1px solid transparent;
+  border-radius: 9px !important;
+  background: transparent !important;
+  color: #66736a !important;
+  font-size: 10px !important;
+  font-weight: 550 !important;
+  transition: background 150ms ease, color 150ms ease, border-color 150ms ease !important;
+}
+
+.proton-dashboard-tabs button:hover {
+  background: #fff !important;
+  color: #26352a !important;
+}
+
+.proton-dashboard-tabs button[class*="border-black/5"] {
+  border-color: #e2e8dd !important;
+  background: #fff !important;
+  color: #25352a !important;
+  box-shadow: 0 2px 6px rgba(32, 48, 34, 0.045) !important;
+}
+
+.proton-patient-banner {
+  gap: 26px !important;
+  padding: 19px 21px !important;
+  border: 1px solid #e4e9df !important;
+  border-radius: 18px !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  box-shadow: 0 8px 24px rgba(27, 41, 33, 0.035) !important;
+}
+
+.proton-patient-banner > div:first-child img {
+  border-radius: 15px !important;
+  box-shadow: none !important;
+}
+
+.proton-patient-banner h2 {
+  color: #1b2921 !important;
+  font-size: 20px !important;
+  font-weight: 620 !important;
+  letter-spacing: -0.04em !important;
+}
+
+.proton-patient-banner > div:first-child span[class*="bg-[#1c221e]"] {
+  border-radius: 7px !important;
+  background: #23332a !important;
+  color: #e8f1d5 !important;
+}
+
+.proton-patient-banner > div:last-child {
+  gap: 12px !important;
+}
+
+.proton-patient-banner > div:last-child > div:first-child {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(60px, 1fr)) auto;
+  gap: 0;
+  width: 100%;
+}
+
+.proton-patient-banner > div:last-child > div:first-child > div {
+  min-width: 0;
+  padding: 2px 12px;
+  border-left: 1px solid #edf0eb;
+}
+
+.proton-patient-banner > div:last-child > div:first-child > div:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.proton-patient-banner > div:last-child > div:first-child > div > div:first-child {
+  color: #89948a !important;
+  font-size: 9px !important;
+  letter-spacing: 0.025em;
+}
+
+.proton-patient-banner > div:last-child > div:first-child > div > div:last-child {
+  margin-top: 4px !important;
+  color: #26352a !important;
+  font-size: 14px !important;
+  font-weight: 620 !important;
+}
+
+.proton-patient-banner > div:last-child > div:first-child > div:first-child > div:last-child {
+  font-size: 12px !important;
+}
+
+.proton-patient-banner button[class*="bg-[#1c221e]"] {
+  min-height: 37px;
+  padding: 0 14px !important;
+  border-radius: 9px !important;
+  background: #203127 !important;
+  color: #f4f7ee !important;
+  box-shadow: 0 4px 10px rgba(28, 49, 34, 0.12) !important;
+}
+
+.proton-beta-tour {
+  align-items: center;
+  padding: 13px 16px !important;
+  border: 1px solid #e2e9d8 !important;
+  border-radius: 13px !important;
+  background: linear-gradient(105deg, #edf3e5, #f7f9f2 70%) !important;
+  color: #26352a !important;
+  box-shadow: none !important;
+}
+
+.proton-beta-tour > div:first-child > div:first-child {
+  border-color: #dce6ce !important;
+  background: #e4edd7 !important;
+  color: #647b42 !important;
+}
+
+.proton-beta-tour h3 {
+  color: #253329 !important;
+  font-size: 12px !important;
+  font-weight: 620 !important;
+}
+
+.proton-beta-tour > div:first-child span {
+  background: #e1ebd2 !important;
+  color: #647946 !important;
+}
+
+.proton-beta-tour p {
+  color: #768276 !important;
+  font-size: 10px !important;
+}
+
+.proton-beta-tour a,
+.proton-beta-tour button {
+  min-height: 34px;
+  padding: 0 12px !important;
+  border: 1px solid #dce5d2;
+  border-radius: 8px !important;
+  background: #fff !important;
+  color: #314332 !important;
+  box-shadow: 0 2px 5px rgba(28, 49, 34, 0.04) !important;
+}
+
+.proton-dynamics-panel {
+  padding: 18px 20px !important;
+  border: 1px solid #e3e8df !important;
+  border-radius: 17px !important;
+  background: #fff !important;
+  box-shadow: 0 8px 24px rgba(27, 41, 33, 0.035) !important;
+}
+
+.proton-dynamics-panel > div:first-child {
+  padding-bottom: 13px !important;
+  border-color: #edf0eb !important;
+}
+
+.proton-dynamics-panel > div:first-child > div:first-child span:last-child {
+  color: #617064 !important;
+  font-size: 9px !important;
+  letter-spacing: 0.055em;
+}
+
+.proton-dynamics-panel > div:first-child button[class*="bg-[#1b211d]"] {
+  background: #223128 !important;
+  color: #f5f7ee !important;
+}
+
+.proton-dynamics-panel > div:first-child button[class*="bg-[#1b211d]"] span {
+  color: #f5f7ee !important;
+}
+
+.proton-dynamics-panel > div:first-child button[class*="bg-[#1b211d]"]:last-child {
+  color: #e4f1d2 !important;
+}
+
+.proton-command-center button:focus-visible,
+.proton-command-center a:focus-visible {
+  outline: 2px solid #9dbb69;
+  outline-offset: 2px;
+}
+
+@media (max-width: 1000px) {
+  .proton-command-center {
+    gap: 16px !important;
+  }
+
+  .proton-patient-banner > div:last-child > div:first-child {
+    grid-template-columns: repeat(3, minmax(70px, 1fr));
+    row-gap: 12px;
+  }
+
+  .proton-patient-banner > div:last-child > div:first-child > div:nth-child(4) {
+    padding-left: 0;
+    border-left: 0;
+  }
+}
+
+@media (max-width: 760px) {
+  .proton-command-center {
+    gap: 14px !important;
+    padding: 18px 14px 30px !important;
+  }
+
+  .proton-command-header {
+    align-items: stretch !important;
+    gap: 11px !important;
+    padding-bottom: 13px;
+  }
+
+  .proton-command-header > div:first-child {
+    gap: 8px !important;
+  }
+
+  .proton-command-header h1 {
+    flex-basis: 100%;
+    margin: 1px 0;
+    font-size: 19px !important;
+  }
+
+  .proton-command-header > div:first-child > div:nth-last-child(2),
+  .proton-command-header > div:first-child > div:last-child {
+    min-width: min(100%, 230px) !important;
+  }
+
+  .proton-dashboard-tabs {
+    width: 100%;
+    padding-bottom: 2px !important;
+  }
+
+  .proton-dashboard-tabs button {
+    flex: 0 0 auto;
+  }
+
+  .proton-patient-banner {
+    gap: 16px !important;
+    padding: 15px !important;
+    border-radius: 15px !important;
+  }
+
+  .proton-patient-banner > div:last-child {
+    align-items: stretch !important;
+  }
+
+  .proton-patient-banner > div:last-child > div:first-child {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 12px;
+  }
+
+  .proton-patient-banner > div:last-child > div:first-child > div {
+    padding: 0 8px;
+  }
+
+  .proton-patient-banner > div:last-child > div:first-child > div:nth-child(4) {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .proton-patient-banner > div:last-child > div:first-child > div:last-child {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .proton-patient-banner > div:first-child > div:last-child > div:first-child {
+    flex-wrap: wrap;
+    gap: 4px 7px;
+  }
+
+  .proton-patient-banner > div:first-child > div:last-child > div:first-child > span:last-child {
+    display: none;
+  }
+
+  .proton-patient-banner > div:first-child > div:last-child > div:first-child > span:first-child {
+    font-size: 10px;
+  }
+
+  .proton-beta-tour {
+    gap: 10px !important;
+    padding: 12px !important;
+  }
+
+  .proton-beta-tour p {
+    line-height: 1.55;
+  }
+
+  .proton-dynamics-panel {
+    padding: 14px 12px !important;
+    border-radius: 14px !important;
+  }
+}
+
+/* Quiet monochrome workspace */
+.proton-workspace-shell {
+  --workspace-ink: #171717;
+  --workspace-muted: #737373;
+  --workspace-line: #e8e8e8;
+  --workspace-accent: #171717;
+  background: #fff;
+  color: #171717;
+}
+
+.proton-sidebar {
+  border-right: 1px solid #e8e8e8;
+  background: #fff;
+  color: #171717;
+}
+
+.proton-brand-mark {
+  border-radius: 9px;
+  background: #171717;
+  color: #fff;
+  box-shadow: none;
+}
+
+.proton-brand-word span {
+  color: #737373;
+}
+
+.proton-brand-caption,
+.proton-nav-label,
+.proton-profile-copy small {
+  color: #858585;
+}
+
+.proton-search-trigger {
+  border-color: #e7e7e7;
+  border-radius: 8px;
+  background: #fff;
+  color: #666;
+}
+
+.proton-search-trigger:hover {
+  border-color: #c8c8c8;
+  background: #fafafa;
+  color: #171717;
+}
+
+.proton-search-trigger kbd {
+  border-color: #e7e7e7;
+  color: #777;
+}
+
+.proton-nav-link {
+  border-radius: var(--radius-control);
+  color: #666;
+}
+
+.proton-nav-link:hover {
+  background: #f6f6f6;
+  color: #171717;
+}
+
+.proton-nav-link.is-active {
+  background: #f2f2f2;
+  color: #171717;
+}
+
+.proton-nav-link.is-active::before {
+  background: #171717;
+}
+
+.proton-safety-card {
+  border-color: #e8e8e8;
+  border-radius: var(--radius-card);
+  background: #fafafa;
+}
+
+.proton-safety-icon,
+.proton-avatar {
+  border-color: #e6e6e6;
+  background: #f1f1f1;
+  color: #343434;
+}
+
+.proton-safety-title,
+.proton-profile-copy {
+  color: #333;
+}
+
+.proton-safety-card p {
+  color: #777;
+}
+
+.proton-sidebar-footer,
+.proton-evaluator-profile {
+  border-color: #e8e8e8;
+}
+
+.proton-topbar {
+  border-color: #e8e8e8;
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.proton-breadcrumb,
+.proton-breadcrumb span {
+  color: #8a8a8a;
+}
+
+.proton-topbar-context h1 {
+  color: #171717;
+}
+
+.proton-environment-pill {
+  border-color: #e7e7e7;
+  border-radius: var(--radius-control);
+  background: #fafafa;
+  color: #666;
+}
+
+.proton-topbar-search {
+  border-color: #e7e7e7;
+  border-radius: 8px;
+  color: #555;
+}
+
+.proton-topbar-search:hover {
+  border-color: #bdbdbd;
+  color: #171717;
+}
+
+.proton-start-visit {
+  border-color: #171717;
+  border-radius: 8px;
+  background: #171717;
+  color: #fff;
+}
+
+.proton-start-visit:hover {
+  background: #333;
+}
+
+.proton-workspace-canvas {
+  background: #f8f8f8;
+}
+
+.proton-mobile-nav {
+  border-color: #e8e8e8;
+  background: rgba(255, 255, 255, 0.97);
+}
+
+.proton-mobile-nav-link {
+  color: #666;
+}
+
+.proton-mobile-nav-link.is-active {
+  background: #f1f1f1;
+  color: #171717;
+}
+
+.proton-mobile-nav-link.is-active::before {
+  background: #171717;
+}
+
+.proton-environment-copy-short {
+  display: none;
+}
+
+#root .proton-workspace-shell button:focus-visible,
+#root .proton-workspace-shell a:focus-visible {
+  outline-color: #171717;
+}
+
+@media (max-width: 420px) {
+  .proton-environment-copy-full {
+    display: none;
+  }
+
+  .proton-environment-copy-short {
+    display: inline;
+  }
+}
+
+.proton-command-center {
+  --command-ink: #171717;
+  --command-muted: #737373;
+  --command-line: #e7e7e7;
+  gap: 18px !important;
+  background: #f8f8f8 !important;
+  color: #171717 !important;
+}
+
+.proton-command-center svg[class*="text-emerald-"],
+.proton-command-center svg[class*="text-purple-"],
+.proton-command-center svg[class*="text-amber-"] {
+  color: #777 !important;
+}
+
+.proton-command-center div[class*="bg-emerald-50"],
+.proton-command-center div[class*="bg-purple-50"] {
+  background: #f2f2f2 !important;
+  color: #555 !important;
+}
+
+.proton-command-header {
+  border-color: #e7e7e7;
+}
+
+.proton-command-header > div:first-child > .proton-dashboard-eyebrow {
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #777;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+}
+
+.proton-command-header h1 {
+  color: #171717 !important;
+  font-size: clamp(22px, 2.2vw, 28px) !important;
+  font-weight: 550 !important;
+  letter-spacing: -0.045em !important;
+}
+
+.proton-command-header > div:first-child > div:nth-last-child(2) > button,
+.proton-command-header input {
+  border-color: #e4e4e4 !important;
+  border-radius: 8px !important;
+  background: #fff !important;
+  box-shadow: none !important;
+}
+
+.proton-dashboard-tabs {
+  border-bottom: 1px solid #e7e7e7;
+  gap: 2px !important;
+}
+
+.proton-dashboard-tabs button {
+  min-height: 38px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0 !important;
+  color: #737373 !important;
+}
+
+.proton-dashboard-tabs button:hover {
+  background: transparent !important;
+  color: #171717 !important;
+}
+
+.proton-dashboard-tabs button[class*="border-black/5"] {
+  border-color: #171717 !important;
+  background: transparent !important;
+  color: #171717 !important;
+  box-shadow: none !important;
+}
+
+.proton-patient-banner {
+  gap: 22px !important;
+  border-color: #e5e5e5 !important;
+  border-radius: 12px !important;
+  background: #fff !important;
+  box-shadow: none !important;
+}
+
+.proton-patient-banner h2 {
+  color: #171717 !important;
+  font-size: 21px !important;
+  font-weight: 560 !important;
+}
+
+.proton-patient-banner > div:first-child img {
+  border: 1px solid #e7e7e7 !important;
+  border-radius: 10px !important;
+}
+
+.proton-patient-banner > div:first-child > div:last-child > div:first-child > span[class*="bg-[#1c221e]"] {
+  border: 1px solid #e6e6e6;
+  border-radius: 5px !important;
+  background: #f5f5f5 !important;
+  color: #555 !important;
+}
+
+.proton-dashboard-tabs button span[class*="bg-[#1c221e]"] {
+  border-radius: 4px !important;
+  background: #ededed !important;
+  color: #444 !important;
+}
+
+.proton-patient-banner > div:last-child > div:first-child > div {
+  border-color: #ededed;
+}
+
+.proton-patient-banner > div:last-child > div:first-child > div > div:first-child {
+  color: #888 !important;
+}
+
+.proton-patient-banner > div:last-child > div:first-child > div > div:last-child {
+  color: #222 !important;
+  font-weight: 570 !important;
+}
+
+.proton-patient-banner button[class*="bg-[#1c221e]"] {
+  border-radius: 7px !important;
+  background: #171717 !important;
+  box-shadow: none !important;
+}
+
+.proton-beta-tour {
+  gap: 14px;
+  border-color: #e5e5e5 !important;
+  border-radius: 10px !important;
+  background: #fff !important;
+  color: #171717 !important;
+  box-shadow: none !important;
+}
+
+.proton-beta-tour > div:first-child > div:first-child {
+  border-color: #e4e4e4 !important;
+  border-radius: 8px !important;
+  background: #f3f3f3 !important;
+  color: #444 !important;
+}
+
+.proton-beta-tour h3 {
+  color: #222 !important;
+  font-size: 13px !important;
+  font-weight: 570 !important;
+}
+
+.proton-beta-tour > div:first-child span {
+  border: 1px solid #e5e5e5;
+  border-radius: 4px !important;
+  background: #f7f7f7 !important;
+  color: #777 !important;
+  letter-spacing: 0.07em;
+}
+
+.proton-beta-tour p {
+  color: #777 !important;
+  font-size: 11px !important;
+}
+
+.proton-beta-tour a,
+.proton-beta-tour button {
+  border-color: #dedede;
+  border-radius: 7px !important;
+  background: #171717 !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+
+.proton-dynamics-panel {
+  padding: 18px 20px !important;
+  border-color: #e5e5e5 !important;
+  border-radius: 12px !important;
+  background: #fff !important;
+  box-shadow: none !important;
+}
+
+.proton-dynamics-panel > div:first-child {
+  border-color: #ededed !important;
+}
+
+.proton-dynamics-panel > div:first-child > div:first-child span:last-child {
+  color: #666 !important;
+  font-size: 9px !important;
+  letter-spacing: 0.08em;
+}
+
+.proton-dynamics-panel [class~="bg-[#1b211d]"] {
+  background: #171717 !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+
+.proton-dynamics-panel [class~="bg-[#eef1eb]"],
+.proton-dynamics-panel [class~="bg-[#f7f8f5]"] {
+  background: #f7f7f7 !important;
+}
+
+.proton-dynamics-panel [class~="bg-[#909e86]"] {
+  color: #fff !important;
+}
+
+.proton-dynamics-panel svg path[fill="#909e86"] {
+  fill: #dedede !important;
+}
+
+.proton-dynamics-panel svg path[stroke="#2c332e"] {
+  stroke: #b8b8b8 !important;
+}
+
+.proton-command-center button:focus-visible,
+.proton-command-center a:focus-visible {
+  outline-color: #171717;
+}
+
+.proton-dashboard-visits {
+  padding: 20px !important;
+  border-color: #e5e5e5 !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+}
+
+.proton-dashboard-visits h3 {
+  color: #171717 !important;
+  font-size: 16px !important;
+  font-weight: 560 !important;
+}
+
+.proton-dashboard-visits > div:first-child {
+  border-color: #ededed !important;
+}
+
+.proton-dashboard-visits > div:first-child > button {
+  border-radius: 7px !important;
+  background: #171717 !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+
+.proton-visit-row {
+  gap: 14px !important;
+  padding: 16px 2px !important;
+  border: 0 !important;
+  border-bottom: 1px solid #ededed !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+}
+
+.proton-visit-row:last-child {
+  border-bottom: 0 !important;
+}
+
+.proton-visit-row > div:first-child > div:first-child > span:first-child {
+  color: #222 !important;
+  font-weight: 570 !important;
+}
+
+.proton-visit-row > div:first-child > div:first-child > span:last-child {
+  border: 1px solid #e7e7e7;
+  border-radius: 4px !important;
+  background: #f7f7f7 !important;
+  color: #666 !important;
+}
+
+.proton-visit-row > div:last-child a {
+  border-color: #e2e2e2 !important;
+  border-radius: 6px !important;
+  background: #fff !important;
+  box-shadow: none !important;
+}
+
+/* Patient directory */
+.proton-patients-page {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+  gap: 22px !important;
+}
+
+.proton-patients-header {
+  align-items: center !important;
+  gap: 18px !important;
+}
+
+.proton-patients-header h1 {
+  color: #1b2921 !important;
+  font-size: 25px !important;
+  font-weight: 620 !important;
+  letter-spacing: -0.045em !important;
+}
+
+.proton-patients-header p {
+  color: #78847a !important;
+  font-size: 12px !important;
+}
+
+.proton-patient-actions {
+  gap: 8px !important;
+}
+
+.proton-patient-actions button {
+  min-height: 36px;
+  padding: 0 11px !important;
+  border-radius: 9px !important;
+  font-size: 10px !important;
+  font-weight: 550 !important;
+  transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease !important;
+}
+
+.proton-patient-actions button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(31, 48, 34, 0.08);
+}
+
+.proton-patient-actions button:first-child {
+  border-color: #23372a !important;
+  background: #23372a !important;
+  color: #f5f7ef !important;
+}
+
+.proton-patient-actions button:nth-child(2) {
+  border-color: #dce7d1 !important;
+  background: #eff4e7 !important;
+  color: #586f3f !important;
+}
+
+.proton-patient-actions button:nth-child(3) {
+  border-color: #e1e6dd !important;
+  background: #fff !important;
+  color: #536056 !important;
+}
+
+.proton-patient-actions button:disabled {
+  cursor: progress;
+  opacity: 0.65;
+}
+
+.proton-patient-directory {
+  height: min(700px, calc(100dvh - 270px));
+  min-height: 400px;
+  border: 1px solid #e4e9df;
+  border-radius: 17px !important;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 8px 24px rgba(27, 41, 33, 0.035);
+}
+
+.proton-patient-searchbar {
+  min-height: 63px;
+  padding: 12px 17px !important;
+  border-color: #edf0eb !important;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.proton-patient-searchbox {
+  max-width: 450px !important;
+}
+
+.proton-patient-searchbox input {
+  min-height: 38px;
+  border-color: #e5e9e2 !important;
+  border-radius: 9px !important;
+  background: #fafbf9;
+  font-size: 11px !important;
+}
+
+.proton-patient-searchbox input:focus {
+  background: #fff;
+}
+
+.proton-patient-empty {
+  gap: 12px !important;
+  padding: 30px 20px;
+  text-align: center;
+}
+
+.proton-patient-empty > div:first-child {
+  width: 58px;
+  height: 58px;
+  border: 1px solid #e5ebdc;
+  border-radius: 17px !important;
+  background: #f1f5e9 !important;
+  color: #718d4f !important;
+}
+
+.proton-patient-empty > div:nth-child(2) p:first-child {
+  color: #253329 !important;
+  font-size: 15px !important;
+  font-weight: 620 !important;
+  letter-spacing: -0.02em;
+}
+
+.proton-patient-empty > div:nth-child(2) p:last-child {
+  max-width: 350px;
+  color: #7c887e !important;
+  font-size: 11px !important;
+  line-height: 1.6;
+}
+
+.proton-patient-empty button {
+  min-height: 37px;
+  margin-top: 4px;
+  padding: 0 13px !important;
+  border-radius: 9px !important;
+  background: #203127 !important;
+  font-size: 11px !important;
+}
+
+.proton-patient-table th {
+  padding: 11px 16px !important;
+  background: #f8f9f6 !important;
+  color: #818b81 !important;
+  font-family: var(--font-mono);
+  font-size: 8px !important;
+  letter-spacing: 0.075em;
+}
+
+.proton-patient-table td {
+  padding: 13px 16px !important;
+  border-color: #f0f2ee !important;
+  color: #66736a !important;
+  font-size: 11px !important;
+}
+
+.proton-patient-table td a {
+  color: #26352a !important;
+  font-size: 12px !important;
+}
+
+.proton-patient-table tbody tr {
+  transition: background 150ms ease;
+}
+
+.proton-patient-table tbody tr:hover {
+  background: #fafbf8;
+}
+
+.proton-patient-table tbody tr > td:first-child > div > div:first-child {
+  border-color: #e4ebda !important;
+  background: #f0f5e8 !important;
+  color: #617d43 !important;
+}
+
+@media (max-width: 760px) {
+  .proton-patients-page {
+    gap: 17px !important;
+  }
+
+  .proton-patients-header {
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+
+  .proton-patients-header h1 {
+    font-size: 22px !important;
+  }
+
+  .proton-patient-actions {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px !important;
+  }
+
+  .proton-patient-actions button {
+    min-width: 0;
+    min-height: 39px;
+    justify-content: flex-start;
+    padding: 5px 8px !important;
+    font-size: 9px !important;
+    line-height: 1.3;
+    text-align: left;
+    white-space: normal;
+  }
+
+  .proton-patient-directory {
+    height: min(590px, calc(100dvh - 335px));
+    min-height: 350px;
+    border-radius: 14px !important;
+  }
+
+  .proton-patient-searchbar {
+    padding: 10px 12px !important;
+  }
+
+  .proton-patient-empty {
+    padding: 22px 14px;
+  }
+
+  .proton-patient-empty > div:nth-child(2) p:first-child {
+    font-size: 14px !important;
+  }
+
+  .proton-patient-table {
+    min-width: 650px;
+  }
+}
+
+/* Consultation and document review workspaces */
+.proton-consultation-workspace,
+.proton-document-workspace {
+  height: calc(100dvh - 155px) !important;
+  min-height: 480px;
+  border: 1px solid #e4e9df !important;
+  border-radius: 17px !important;
+  background: #fff !important;
+  box-shadow: 0 8px 24px rgba(27, 41, 33, 0.035);
+}
+
+.proton-consultation-workspace {
+  color: #253329;
+}
+
+.proton-consultation-header,
+.proton-document-header {
+  min-height: 84px;
+  gap: 14px;
+  padding: 14px 19px !important;
+  border-color: #e9ede7 !important;
+  background: #fff !important;
+}
+
+.proton-document-header > div:first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.proton-document-header > div:first-child > div:last-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.proton-document-header > div:first-child > div:last-child > div:last-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.proton-document-header > div:first-child > div:last-child > div:last-child > div:first-child {
+  align-items: flex-start !important;
+  flex-wrap: wrap;
+  gap: 6px !important;
+}
+
+.proton-consultation-header h1,
+.proton-document-header h1 {
+  color: #26352a !important;
+  font-size: 16px !important;
+  font-weight: 620 !important;
+  letter-spacing: -0.035em !important;
+}
+
+.proton-consultation-header p,
+.proton-document-header p {
+  color: #7d897f !important;
+  font-size: 10px !important;
+}
+
+.proton-consultation-header > div:first-child > div > div:first-child,
+.proton-document-header > div:first-child > div > div:first-child {
+  color: #8a958b !important;
+  font-size: 9px !important;
+}
+
+.proton-document-header > div:first-child > div:last-child > div:last-child > div:first-child > span {
+  align-self: flex-start;
+}
+
+.proton-document-header h1 {
+  white-space: nowrap;
+}
+
+.proton-consultation-header > div:first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.proton-consultation-header > div:first-child > div:last-child,
+.proton-consultation-header > div:first-child > div:last-child > div:last-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.proton-consultation-header > div:first-child > div > div:first-child,
+.proton-document-header > div:first-child > div > div:nth-child(2) {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  place-items: center;
+  border: 1px solid #e2e9da;
+  border-radius: 11px !important;
+  background: #f0f5e8 !important;
+  color: #688249 !important;
+}
+
+.proton-consultation-stage {
+  gap: 10px !important;
+  padding: 11px 19px !important;
+  border-color: #e9ede7 !important;
+  background: #f8f9f6 !important;
+}
+
+.proton-consultation-stage > div:first-child {
+  gap: 8px !important;
+}
+
+.proton-consultation-stage > div:first-child > span:first-child {
+  color: #879187 !important;
+  font-size: 8px !important;
+  letter-spacing: 0.1em !important;
+}
+
+.proton-consultation-stage > div:first-child > div {
+  gap: 5px !important;
+}
+
+.proton-consultation-stage > div:first-child > div > span:nth-child(even) {
+  color: #c3cbc1 !important;
+}
+
+.proton-consultation-stage > div:first-child > div > span:nth-child(odd) {
+  padding: 5px 8px !important;
+  border: 1px solid #e6eae3;
+  border-radius: 7px !important;
+  background: #fff;
+  color: #778278;
+  font-size: 8px !important;
+}
+
+.proton-consultation-stage > div:first-child > div > span[class*="bg-brand-700"] {
+  border-color: #2d4435 !important;
+  background: #26392c !important;
+  color: #f2f6e9 !important;
+  box-shadow: none !important;
+}
+
+.proton-consultation-stage > div:last-child {
+  color: #6f7d71 !important;
+  font-size: 10px !important;
+}
+
+.proton-consultation-grid > div:first-child {
+  width: 292px !important;
+  background: #fff !important;
+  border-color: #e9ede7 !important;
+}
+
+.proton-consultation-grid > div:first-child > div {
+  padding: 16px !important;
+  border-color: #eef1ec !important;
+}
+
+.proton-consultation-grid > div:first-child h2 {
+  color: #879187 !important;
+  font-size: 8px !important;
+  letter-spacing: 0.11em !important;
+}
+
+.proton-consultation-grid > div:first-child p,
+.proton-consultation-grid > div:first-child > div > div {
+  color: #536157;
+  font-size: 11px !important;
+  line-height: 1.55;
+}
+
+.proton-consultation-grid > div:first-child p.font-semibold {
+  color: #29372e !important;
+  font-size: 15px !important;
+}
+
+.proton-consultation-grid > div:first-child select,
+.proton-document-header select {
+  min-height: 36px;
+  border: 1px solid #e1e7de !important;
+  border-radius: 9px !important;
+  background: #fafbf9 !important;
+  color: #3c4a3f !important;
+  font-size: 10px !important;
+}
+
+.proton-consultation-grid > div:first-child > div:nth-child(3) {
+  background: #f8f9f6 !important;
+}
+
+.proton-consultation-grid > div:last-child {
+  gap: 16px !important;
+  padding: 18px !important;
+  background: #f5f6f2 !important;
+}
+
+.proton-consultation-grid > div:last-child > * {
+  border-radius: 13px;
+}
+
+.proton-consultation-workspace button,
+.proton-document-workspace button {
+  transition: filter 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+
+.proton-consultation-workspace [class*="bg-brand-600"] {
+  border-color: #26392c !important;
+  background-color: #26392c !important;
+  color: #f5f7ef !important;
+}
+
+.proton-consultation-workspace [class*="bg-brand-700"] {
+  border-color: #26392c !important;
+  background-color: #26392c !important;
+  color: #f5f7ef !important;
+}
+
+.proton-consultation-workspace button[class*="bg-brand-500"] {
+  border-color: #26392c !important;
+  background-color: #26392c !important;
+  color: #f5f7ef !important;
+}
+
+.proton-consultation-workspace [class*="bg-brand-100"],
+.proton-consultation-workspace [class*="bg-brand-50"] {
+  background-color: #eff4e7 !important;
+  color: #617b45 !important;
+}
+
+.proton-consultation-workspace [class*="text-brand-600"],
+.proton-consultation-workspace [class*="text-brand-700"],
+.proton-consultation-workspace [class*="text-brand-300"],
+.proton-consultation-workspace [class*="text-brand-200"] {
+  color: #607a45 !important;
+}
+
+.proton-consultation-workspace [class*="border-brand-"] {
+  border-color: #dfe7d5 !important;
+}
+
+.proton-document-workspace [class*="bg-brand-600"],
+.proton-document-workspace [class*="bg-brand-700"] {
+  border-color: #26392c !important;
+  background-color: #26392c !important;
+  color: #f5f7ef !important;
+}
+
+.proton-document-workspace [class*="bg-brand-100"],
+.proton-document-workspace [class*="bg-brand-50"] {
+  background-color: #eff4e7 !important;
+  color: #617b45 !important;
+}
+
+.proton-consultation-workspace button:focus-visible,
+.proton-document-workspace button:focus-visible,
+.proton-consultation-workspace select:focus-visible,
+.proton-document-workspace select:focus-visible,
+.proton-document-workspace input:focus-visible {
+  outline: 2px solid #9dbb69;
+  outline-offset: 2px;
+}
+
+.proton-consultation-header button[class*="bg-brand-600"],
+.proton-document-header button[class*="bg-brand-600"] {
+  min-height: 36px;
+  border-radius: 9px !important;
+  background: #23352a !important;
+  font-size: 10px !important;
+}
+
+.proton-document-workspace {
+  background: #f8f9f6 !important;
+}
+
+.proton-document-content {
+  gap: 14px !important;
+  padding: 17px !important;
+}
+
+.proton-document-content > div {
+  border-radius: 13px !important;
+}
+
+.proton-document-content > div[class*="border-dashed"] {
+  max-width: 660px;
+  border-color: #dfe6d9 !important;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(199, 232, 121, 0.09), transparent 48%),
+    #fff !important;
+  box-shadow: 0 8px 26px rgba(27, 41, 33, 0.035);
+}
+
+.proton-document-content > div[class*="border-dashed"] > div:first-child {
+  width: 58px;
+  height: 58px;
+  border: 1px solid #e4ebdc;
+  border-radius: 17px !important;
+  background: #f0f5e8 !important;
+  color: #69834b !important;
+}
+
+.proton-document-content h2 {
+  color: #27362c !important;
+  font-size: 18px !important;
+  font-weight: 620 !important;
+  letter-spacing: -0.03em;
+}
+
+.proton-document-content p {
+  color: #78847a !important;
+  font-size: 11px !important;
+  line-height: 1.65;
+}
+
+.proton-document-content button[class*="bg-brand-600"],
+.proton-document-content a[class*="bg-brand-600"] {
+  min-height: 38px;
+  border: 1px solid #24372b;
+  border-radius: 9px !important;
+  background: #24372b !important;
+  font-size: 10px !important;
+}
+
+.proton-document-content button[class*="bg-white"] {
+  min-height: 38px;
+  border-color: #dfe5dc !important;
+  border-radius: 9px !important;
+  color: #425047 !important;
+  font-size: 10px !important;
+}
+
+.proton-document-content table th {
+  background: #f8f9f6 !important;
+  color: #77837a !important;
+  font-size: 8px !important;
+}
+
+.proton-document-content table td {
+  border-color: #eef1ec !important;
+  font-size: 10px;
+}
+
+@media (max-width: 760px) {
+  .proton-consultation-workspace,
+  .proton-document-workspace {
+    height: auto !important;
+    min-height: 0;
+    overflow: visible !important;
+    border-radius: 14px !important;
+  }
+
+  .proton-consultation-header,
+  .proton-document-header {
+    align-items: flex-start !important;
+    flex-direction: column;
+    padding: 13px !important;
+  }
+
+  .proton-consultation-header > div,
+  .proton-document-header > div {
+    max-width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .proton-consultation-header > div:last-child,
+  .proton-document-header > div:last-child {
+    width: 100%;
+  }
+
+  .proton-consultation-stage {
+    align-items: flex-start !important;
+    flex-direction: column;
+    padding: 11px 13px !important;
+  }
+
+  .proton-consultation-stage > div:first-child {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .proton-consultation-stage > div:first-child > div {
+    flex-wrap: wrap;
+  }
+
+  .proton-consultation-grid {
+    flex-direction: column;
+    overflow: visible !important;
+  }
+
+  .proton-consultation-grid > div:first-child {
+    width: 100% !important;
+    max-height: none;
+    overflow: visible !important;
+    border-right: 0 !important;
+    border-bottom: 1px solid #e9ede7;
+  }
+
+  .proton-consultation-grid > div:last-child {
+    min-height: 500px;
+    overflow: visible !important;
+    padding: 12px !important;
+  }
+
+  .proton-document-content {
+    min-height: 430px;
+    overflow: visible !important;
+    padding: 12px !important;
+  }
+
+  .proton-document-content > div[class*="border-dashed"] {
+    min-height: 400px;
+    padding: 28px 16px !important;
+  }
+
+  .proton-document-content table {
+    min-width: 850px;
+  }
+}
+
+/* Patient record and workspace settings */
+.proton-patient-profile {
+  max-width: 1050px !important;
+  gap: 26px !important;
+  padding-bottom: 54px !important;
+}
+
+.proton-patient-profile > header:first-of-type {
+  position: relative;
+  display: grid;
+  gap: 12px;
+  padding: 24px;
+  border: 1px solid #e4e9df;
+  border-radius: 17px;
+  background:
+    radial-gradient(ellipse at 92% 2%, rgba(199, 232, 121, 0.12), transparent 34%),
+    #fff;
+  box-shadow: 0 8px 24px rgba(27, 41, 33, 0.035);
+}
+
+.proton-patient-profile > header:first-of-type h1 {
+  color: #1c2a22 !important;
+  font-size: clamp(25px, 3vw, 34px) !important;
+  font-weight: 620 !important;
+  letter-spacing: -0.055em !important;
+}
+
+.proton-patient-profile > header:first-of-type > div:first-child > div {
+  color: #7b887d !important;
+  font-size: 10px !important;
+}
+
+.proton-patient-profile > header:first-of-type > div:nth-child(2) {
+  display: flex;
+  gap: 7px;
+}
+
+.proton-patient-profile > header:first-of-type > div:nth-child(2) > span {
+  padding: 6px 9px;
+  border: 1px solid #e6ebdf;
+  border-radius: 7px;
+  background: #f8faf5;
+  color: #526451;
+  font-size: 10px;
+}
+
+.proton-patient-profile > header:first-of-type > div:nth-child(3) {
+  justify-self: start;
+  border-color: #f0d5b3 !important;
+  border-radius: 8px !important;
+  font-size: 10px !important;
+}
+
+.proton-patient-profile > section {
+  padding: 20px !important;
+  border: 1px solid #e6eae3;
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.83);
+}
+
+.proton-patient-profile > section > div:first-child {
+  padding-bottom: 13px;
+  border-bottom: 1px solid #edf0eb;
+}
+
+.proton-patient-profile > section h2 {
+  color: #59675d !important;
+  font-size: 9px !important;
+  letter-spacing: 0.11em !important;
+}
+
+.proton-patient-profile > section .grid > div {
+  padding: 13px;
+  border: 1px solid #edf0eb;
+  border-radius: 10px;
+  background: #fbfcfa;
+}
+
+.proton-patient-profile > section button {
+  border-radius: 8px !important;
+}
+
+.proton-patient-profile a.clinical-btn-primary {
+  border: 1px solid #26392c !important;
+  border-radius: 9px !important;
+  background: #26392c !important;
+  color: #f5f7ef !important;
+}
+
+.proton-patient-profile a.clinical-btn-secondary {
+  border-color: #dfe6da !important;
+  border-radius: 9px !important;
+  background: #fff !important;
+  color: #526052 !important;
+}
+
+.proton-settings-page {
+  max-width: 900px !important;
+  gap: 17px !important;
+  padding-bottom: 46px;
+}
+
+.proton-settings-page > div:first-child {
+  padding: 4px 0 14px;
+}
+
+.proton-settings-page > div:first-child h1 {
+  color: #1c2a22 !important;
+  font-size: 24px !important;
+  font-weight: 620 !important;
+  letter-spacing: -0.045em;
+}
+
+.proton-settings-page > div:first-child p {
+  max-width: 620px;
+  color: #7b887d !important;
+  font-size: 11px !important;
+  line-height: 1.6;
+}
+
+.proton-settings-page > .proton-card {
+  padding: 19px !important;
+  border-color: #e4e9df !important;
+  border-radius: 14px !important;
+  box-shadow: 0 5px 16px rgba(27, 41, 33, 0.025);
+}
+
+.proton-settings-page > .proton-card > div:first-child {
+  padding-bottom: 12px;
+  border-color: #edf0eb !important;
+}
+
+.proton-settings-page > .proton-card h2 {
+  color: #2d3b31 !important;
+  font-size: 12px !important;
+  font-weight: 620 !important;
+}
+
+.proton-settings-page > .proton-card > div:first-child > div {
+  border: 1px solid #e7ecdf;
+  border-radius: 9px !important;
+  background: #f3f6ed !important;
+  color: #6b834a !important;
+}
+
+.proton-settings-page > .proton-card > div:nth-child(2) > div,
+.proton-settings-page > .proton-card > div:nth-child(3) > div {
+  border-color: #ebeee8 !important;
+  border-radius: 9px !important;
+}
+
+.proton-settings-page > .proton-card > div:nth-child(2) span,
+.proton-settings-page > .proton-card > div:nth-child(3) p {
+  line-height: 1.55;
+}
+
+.proton-settings-page [class*="bg-violet-50"] {
+  border-color: #e5e5e5 !important;
+  background: #f7f7f7 !important;
+}
+
+.proton-settings-page [class*="text-violet-"] {
+  color: #555 !important;
+}
+
+.proton-settings-page [class*="border-violet-"] {
+  border-color: #e5e5e5 !important;
+}
+
+.proton-settings-page [class*="bg-blue-50"] {
+  border-color: #e5e5e5 !important;
+  background: #f7f7f7 !important;
+  color: #555 !important;
+}
+
+.proton-settings-page [class*="text-blue-"] {
+  color: #555 !important;
+}
+
+.proton-settings-page > div:last-child {
+  border-radius: 12px !important;
+}
+
+@media (max-width: 760px) {
+  .proton-patient-profile {
+    gap: 16px !important;
+  }
+
+  .proton-patient-profile > header:first-of-type {
+    padding: 17px;
+    border-radius: 14px;
+  }
+
+  .proton-patient-profile > header:first-of-type > div:nth-child(2) {
+    flex-wrap: wrap;
+  }
+
+  .proton-patient-profile > section {
+    padding: 15px !important;
+    border-radius: 13px;
+  }
+
+  .proton-settings-page {
+    gap: 12px !important;
+  }
+
+  .proton-settings-page > .proton-card {
+    padding: 15px !important;
+  }
+}
+
+/* Keep the guided tour aligned with Proton's quiet workspace surfaces. */
+.proton-onboarding {
+  background: #fff !important;
+  color: #171717 !important;
+  backdrop-filter: none;
+}
+
+.proton-onboarding header {
+  border-color: #e8e8e8 !important;
+  background: rgba(255, 255, 255, 0.97) !important;
+  box-shadow: none !important;
+}
+
+.proton-onboarding [class*="from-brand-"][class*="to-indigo-"] {
+  background: #f7f7f7 !important;
+  color: #171717 !important;
+  box-shadow: none !important;
+}
+
+.proton-onboarding [class*="bg-gradient-to-r"] {
+  background: #f7f7f7 !important;
+}
+
+.proton-onboarding [class*="bg-brand-600"] {
+  background-color: #171717 !important;
+  color: #fff !important;
+}
+
+.proton-onboarding [class*="bg-emerald-600"] {
+  background-color: #171717 !important;
+}
+
+.proton-onboarding [class*="bg-brand-500"] {
+  background-color: #f1f1f1 !important;
+}
+
+.proton-onboarding [class*="text-brand-400"],
+.proton-onboarding [class*="text-brand-300"] {
+  color: #555 !important;
+}
+
+.proton-onboarding [class*="text-brand-700"],
+.proton-onboarding [class*="text-brand-800"],
+.proton-onboarding [class*="text-brand-900"] {
+  color: #333 !important;
+}
+
+.proton-onboarding [class*="bg-brand-50"] {
+  background-color: #f5f5f5 !important;
+}
+
+.proton-onboarding [class*="border-brand-200"] {
+  border-color: #e4e4e4 !important;
+}
+
+.proton-onboarding h1.text-white {
+  color: #171717 !important;
+}
+
+.proton-onboarding [class*="bg-slate-950"],
+.proton-onboarding [class*="bg-slate-900"],
+.proton-onboarding [class*="bg-slate-800"] {
+  background: #f7f7f7 !important;
+}
+
+.proton-onboarding [class*="bg-slate-950"] .text-white,
+.proton-onboarding [class*="bg-slate-900"] .text-white,
+.proton-onboarding [class*="bg-slate-800"] .text-white {
+  color: #171717 !important;
+}
+
+.proton-onboarding [class*="text-slate-"] {
+  color: #505050 !important;
+}
+
+.proton-onboarding [class*="text-emerald-"],
+.proton-onboarding [class*="text-amber-"] {
+  color: #404040 !important;
+}
+
+.proton-onboarding [class*="border-slate-800"] {
+  border-color: #e5e5e5 !important;
+}
+
+.proton-onboarding button {
+  border-radius: 7px !important;
+  box-shadow: none !important;
+}
+
+/* Workspace appearance */
+.proton-theme-toggle {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 10px;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  background: #fff;
+  color: #525252;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 550;
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.proton-theme-toggle:hover {
+  border-color: #c8c8c8;
+  background: #f7f7f7;
+  color: #171717;
+}
+
+.proton-card {
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.035);
+}
+
+@media (max-width: 760px) {
+  .proton-theme-toggle {
+    width: 34px;
+    min-width: 34px;
+    padding: 0;
+  }
+
+  .proton-theme-toggle span {
+    display: none;
+  }
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --color-surface: #181818;
+  --color-surface-raised: #1e1e1e;
+  --color-surface-sunken: #111111;
+  --color-surface-overlay: rgba(0, 0, 0, 0.72);
+  --color-border-default: #303030;
+  --color-border-subtle: #252525;
+  --color-border-strong: #444444;
+  --color-text-primary: #f1f1f1;
+  --color-text-secondary: #b0b0b0;
+  --color-text-tertiary: #898989;
+  --color-text-inverse: #171717;
+  background: #111;
+}
+
+html[data-theme="dark"] body {
+  background: #111;
+  color: #ededed;
+}
+
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) {
+  background: #111;
+  color: #ededed;
+}
+
+html[data-theme="dark"] .proton-sidebar {
+  border-color: #282828;
+  background: #141414;
+  color: #ededed;
+}
+
+html[data-theme="dark"] .proton-brand-mark {
+  background: #f0f0f0;
+  color: #111;
+}
+
+html[data-theme="dark"] .proton-brand-word span {
+  color: #a7a7a7;
+}
+
+html[data-theme="dark"] .proton-search-trigger,
+html[data-theme="dark"] .proton-topbar-search,
+html[data-theme="dark"] .proton-theme-toggle {
+  border-color: #333;
+  background: #191919;
+  color: #c5c5c5;
+}
+
+html[data-theme="dark"] .proton-search-trigger:hover,
+html[data-theme="dark"] .proton-topbar-search:hover,
+html[data-theme="dark"] .proton-theme-toggle:hover {
+  border-color: #555;
+  background: #222;
+  color: #fff;
+}
+
+html[data-theme="dark"] .proton-search-trigger kbd,
+html[data-theme="dark"] .proton-sidebar-footer,
+html[data-theme="dark"] .proton-evaluator-profile {
+  border-color: #2d2d2d;
+}
+
+html[data-theme="dark"] .proton-nav-link {
+  color: #aaa;
+}
+
+html[data-theme="dark"] .proton-nav-link:hover,
+html[data-theme="dark"] .proton-nav-link.is-active,
+html[data-theme="dark"] .proton-mobile-nav-link.is-active {
+  background: #252525;
+  color: #f5f5f5;
+}
+
+html[data-theme="dark"] .proton-nav-link.is-active::before,
+html[data-theme="dark"] .proton-mobile-nav-link.is-active::before {
+  background: #f0f0f0;
+}
+
+html[data-theme="dark"] .proton-safety-card {
+  border-color: #303030;
+  background: #191919;
+}
+
+html[data-theme="dark"] .proton-safety-icon,
+html[data-theme="dark"] .proton-avatar {
+  border-color: #3a3a3a;
+  background: #242424;
+  color: #e5e5e5;
+}
+
+html[data-theme="dark"] .proton-safety-title,
+html[data-theme="dark"] .proton-profile-copy {
+  color: #dedede;
+}
+
+html[data-theme="dark"] .proton-safety-card p,
+html[data-theme="dark"] .proton-profile-copy small,
+html[data-theme="dark"] .proton-profile-arrow {
+  color: #929292;
+}
+
+html[data-theme="dark"] .proton-topbar,
+html[data-theme="dark"] .proton-mobile-nav {
+  border-color: #292929;
+  background: rgba(20, 20, 20, 0.96);
+}
+
+html[data-theme="dark"] .proton-topbar-context h1 {
+  color: #f1f1f1;
+}
+
+html[data-theme="dark"] .proton-breadcrumb,
+html[data-theme="dark"] .proton-breadcrumb span {
+  color: #8c8c8c;
+}
+
+html[data-theme="dark"] .proton-environment-pill {
+  border-color: #333;
+  background: #1b1b1b;
+  color: #bdbdbd;
+}
+
+html[data-theme="dark"] .proton-start-visit {
+  border-color: #f0f0f0;
+  background: #f0f0f0;
+  color: #171717;
+}
+
+html[data-theme="dark"] .proton-start-visit:hover {
+  background: #d8d8d8;
+}
+
+html[data-theme="dark"] .proton-workspace-canvas,
+html[data-theme="dark"] .proton-classic-shell main {
+  background: #111;
+}
+
+html[data-theme="dark"] :is(.proton-consultation-workspace, .proton-document-workspace) {
+  border-color: #303030 !important;
+  background: #191919 !important;
+  box-shadow: none;
+}
+
+html[data-theme="dark"] :is(.proton-consultation-header, .proton-document-header) {
+  border-color: #303030 !important;
+  background: #191919 !important;
+}
+
+html[data-theme="dark"] :is(.proton-consultation-stage, .proton-document-content) {
+  border-color: #303030 !important;
+  background: #151515 !important;
+}
+
+html[data-theme="dark"] .proton-document-header > div:first-child > div > div:nth-child(2) {
+  border-color: #383838 !important;
+  background: #242424 !important;
+  color: #dedede !important;
+}
+
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-brand-50"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-brand-100"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-brand-200"] {
+  background-color: #252525 !important;
+}
+
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-brand-600"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-brand-700"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-brand-800"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-brand-900"] {
+  color: #dedede !important;
+}
+
+html[data-theme="dark"] .proton-mobile-nav-link {
+  color: #a0a0a0;
+}
+
+html[data-theme="dark"] .proton-classic-shell > div > div:first-child,
+html[data-theme="dark"] .proton-classic-shell aside,
+html[data-theme="dark"] .proton-classic-shell aside > div:first-child,
+html[data-theme="dark"] .proton-classic-shell main > div:not([class*="bg-"]) {
+  border-color: #2d2d2d;
+  background-color: #181818;
+  color: #e8e8e8;
+}
+
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) .proton-card,
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) .clinical-surface {
+  border-color: #303030;
+  background-color: #191919;
+  color: #e7e7e7;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.16);
+}
+
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) .clinical-title,
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) .clinical-value-large {
+  color: #ededed;
+}
+
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) .clinical-subtitle,
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) .clinical-section-header {
+  color: #aaa;
+}
+
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) .clinical-divider {
+  border-color: #303030;
+}
+
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) .clinical-table th {
+  border-color: #303030;
+  background: #1c1c1c;
+  color: #aaa;
+}
+
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) .clinical-table td {
+  border-color: #2b2b2b;
+  color: #dedede;
+}
+
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) .clinical-table tr:hover td {
+  background: #202020;
+}
+
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) :is(.clinical-btn-secondary, .proton-btn-secondary) {
+  border-color: #383838;
+  background: #1c1c1c;
+  color: #e5e5e5;
+}
+
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) :is(.clinical-btn-secondary, .proton-btn-secondary):hover {
+  border-color: #505050;
+  background: #252525;
+}
+
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) :is(.clinical-btn-ghost, .proton-btn-ghost) {
+  color: #aaa;
+}
+
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) :is(.clinical-btn-ghost, .proton-btn-ghost):hover {
+  background: #252525;
+  color: #f2f2f2;
+}
+
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) :is(input, select, textarea, .proton-input) {
+  border-color: #383838;
+  background-color: #141414;
+  color: #ededed;
+}
+
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) input::placeholder,
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) textarea::placeholder {
+  color: #858585;
+}
+
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-white"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-slate-50"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-slate-100"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-gray-50"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-gray-100"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-zinc-50"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-zinc-100"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-neutral-50"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-neutral-100"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-[#fafaf9]"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-[#edf0ea]"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-[#f5f6f1]"] {
+  background-color: #1b1b1b !important;
+}
+
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-slate-200"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-gray-200"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-zinc-200"] {
+  background-color: #292929 !important;
+}
+
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-slate-800"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-slate-900"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-gray-800"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-gray-900"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-zinc-800"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-zinc-900"] {
+  background-color: #111 !important;
+}
+
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="border-slate-"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="border-gray-"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="border-zinc-"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="border-neutral-"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="border-white"] {
+  border-color: #333 !important;
+}
+
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-slate-900"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-slate-800"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-gray-900"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-gray-800"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-zinc-900"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-zinc-800"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-neutral-900"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-neutral-800"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-black"] {
+  color: #ededed !important;
+}
+
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-slate-700"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-slate-600"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-gray-700"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-gray-600"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-zinc-700"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-zinc-600"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-neutral-700"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-neutral-600"] {
+  color: #c5c5c5 !important;
+}
+
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-slate-500"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-slate-400"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-gray-500"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-gray-400"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-zinc-500"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-zinc-400"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-neutral-500"],
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-neutral-400"] {
+  color: #999 !important;
+}
+
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="hover:bg-slate-50"]:hover,
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="hover:bg-slate-100"]:hover,
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="hover:bg-gray-50"]:hover,
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="hover:bg-zinc-50"]:hover {
+  background-color: #252525 !important;
+}
+
+html[data-theme="dark"] .proton-command-center {
+  background: #111 !important;
+  color: #e7e7e7 !important;
+}
+
+html[data-theme="dark"] .proton-command-header {
+  border-color: #303030 !important;
+}
+
+html[data-theme="dark"] .proton-command-header h1,
+html[data-theme="dark"] .proton-dashboard-visits h3 {
+  color: #ededed !important;
+}
+
+html[data-theme="dark"] .proton-command-header > div:first-child > div:nth-last-child(2) > button,
+html[data-theme="dark"] .proton-command-header input {
+  border-color: #383838 !important;
+  background: #191919 !important;
+  color: #ededed !important;
+}
+
+html[data-theme="dark"] .proton-dashboard-tabs {
+  border-color: #303030;
+}
+
+html[data-theme="dark"] .proton-dashboard-tabs button {
+  color: #aaa !important;
+}
+
+html[data-theme="dark"] .proton-dashboard-tabs button:hover,
+html[data-theme="dark"] .proton-dashboard-tabs button[class*="border-black/5"] {
+  background: #222 !important;
+  color: #f2f2f2 !important;
+}
+
+html[data-theme="dark"] .proton-dashboard-tabs button[class*="border-black/5"] {
+  border-color: #aaa !important;
+}
+
+html[data-theme="dark"] .proton-dashboard-tabs button[aria-pressed="true"],
+html[data-theme="dark"] .proton-dashboard-tabs select {
+  border-color: #444 !important;
+  background: #222 !important;
+  color: #f2f2f2 !important;
+}
+
+html[data-theme="dark"] .proton-dashboard-tabs button span[class*="bg-[#1c221e]"] {
+  background: #333 !important;
+  color: #eee !important;
+}
+
+html[data-theme="dark"] .proton-patient-banner,
+html[data-theme="dark"] .proton-beta-tour,
+html[data-theme="dark"] .proton-dashboard-visits,
+html[data-theme="dark"] .proton-dynamics-panel {
+  border-color: #303030 !important;
+  background: #191919 !important;
+  color: #e7e7e7 !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="dark"] .proton-patient-banner h2,
+html[data-theme="dark"] .proton-beta-tour h3,
+html[data-theme="dark"] .proton-dashboard-visits h3,
+html[data-theme="dark"] .proton-visit-row > div:first-child > div:first-child > span:first-child {
+  color: #ededed !important;
+}
+
+html[data-theme="dark"] .proton-patient-banner > div:last-child > div:first-child > div {
+  border-color: #333 !important;
+}
+
+html[data-theme="dark"] .proton-patient-banner > div:last-child > div:first-child > div > div:last-child {
+  color: #ededed !important;
+}
+
+html[data-theme="dark"] .proton-patient-banner > div:first-child > div:last-child > div:first-child > span[class*="bg-[#1c221e]"] {
+  border-color: #383838 !important;
+  background: #303030 !important;
+  color: #ededed !important;
+}
+
+html[data-theme="dark"] .proton-patient-banner > div:first-child > div:last-child > div:first-child > span[class*="bg-white"] {
+  border-color: #383838 !important;
+  background: #2a2a2a !important;
+  color: #dedede !important;
+}
+
+html[data-theme="dark"] .proton-beta-tour > div:first-child > div:first-child,
+html[data-theme="dark"] .proton-beta-tour > div:first-child span,
+html[data-theme="dark"] .proton-visit-row > div:first-child > div:first-child > span:last-child {
+  border-color: #383838 !important;
+  background: #242424 !important;
+  color: #c8c8c8 !important;
+}
+
+html[data-theme="dark"] .proton-beta-tour p,
+html[data-theme="dark"] .proton-dynamics-panel > div:first-child > div:first-child span:last-child {
+  color: #aaa !important;
+}
+
+html[data-theme="dark"] .proton-dashboard-visits > div:first-child,
+html[data-theme="dark"] .proton-visit-row {
+  border-color: #303030 !important;
+}
+
+html[data-theme="dark"] .proton-visit-row {
+  background: #191919 !important;
+}
+
+html[data-theme="dark"] .proton-patient-banner :is(button, a)[class*="bg-white"],
+html[data-theme="dark"] .proton-visit-row > div:last-child a {
+  border-color: #383838 !important;
+  background: #242424 !important;
+}
+
+html[data-theme="dark"] .proton-command-center [class*="bg-[#f5f6"],
+html[data-theme="dark"] .proton-command-center [class*="bg-[#f8f"],
+html[data-theme="dark"] .proton-command-center [class*="bg-[#eef1"],
+html[data-theme="dark"] .proton-command-center [class*="bg-[#faf"] {
+  background-color: #242424 !important;
+}
+
+html[data-theme="dark"] .proton-command-center [class*="text-[#141a16"],
+html[data-theme="dark"] .proton-command-center [class*="text-[#161c18"],
+html[data-theme="dark"] .proton-command-center [class*="text-[#1c221e"],
+html[data-theme="dark"] .proton-command-center [class*="text-[#2a362e"],
+html[data-theme="dark"] .proton-command-center [class*="text-[#354038"],
+html[data-theme="dark"] .proton-command-center [class*="text-[#455249"],
+html[data-theme="dark"] .proton-command-center [class*="text-[#526056"] {
+  color: #e2e2e2 !important;
+}
+
+html[data-theme="dark"] .proton-command-center [class*="718076"],
+html[data-theme="dark"] .proton-command-center [class*="778076"],
+html[data-theme="dark"] .proton-command-center [class*="818b81"] {
+  color: #aaa !important;
+}
+
+html[data-theme="dark"] .proton-dynamics-panel [class~="bg-[#eef1eb]"],
+html[data-theme="dark"] .proton-dynamics-panel [class~="bg-[#f7f8f5]"] {
+  background: #242424 !important;
+}
+
+html[data-theme="dark"] .proton-patients-header h1,
+html[data-theme="dark"] .proton-patient-empty > div:nth-child(2) p:first-child,
+html[data-theme="dark"] .proton-patient-table td a {
+  color: #ededed !important;
+}
+
+html[data-theme="dark"] .proton-patients-header p,
+html[data-theme="dark"] .proton-patient-empty > div:nth-child(2) p:last-child {
+  color: #aaa !important;
+}
+
+html[data-theme="dark"] .proton-patient-directory {
+  border-color: #303030 !important;
+  background: #191919 !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="dark"] .proton-patient-searchbar {
+  border-color: #303030 !important;
+  background: #1d1d1d !important;
+}
+
+html[data-theme="dark"] .proton-patient-searchbox input {
+  border-color: #383838 !important;
+  background: #141414 !important;
+  color: #ededed !important;
+}
+
+html[data-theme="dark"] .proton-patient-searchbox input:focus {
+  background: #141414 !important;
+}
+
+html[data-theme="dark"] .proton-patient-table th {
+  border-color: #303030 !important;
+  background: #222 !important;
+  color: #aaa !important;
+}
+
+html[data-theme="dark"] .proton-patient-table td {
+  border-color: #303030 !important;
+  color: #b8b8b8 !important;
+}
+
+html[data-theme="dark"] .proton-patient-table tbody tr:hover {
+  background: #222 !important;
+}
+
+html[data-theme="dark"] .proton-patient-actions button:nth-child(2),
+html[data-theme="dark"] .proton-patient-actions button:nth-child(3) {
+  border-color: #383838 !important;
+  background: #222 !important;
+  color: #dedede !important;
+}
+
+html[data-theme="dark"] .proton-consultation-grid > div:first-child,
+html[data-theme="dark"] .proton-consultation-grid > div:last-child {
+  border-color: #303030 !important;
+  background: #191919 !important;
+  color: #e2e2e2 !important;
+}
+
+html[data-theme="dark"] .proton-consultation-grid > div:first-child > div,
+html[data-theme="dark"] .proton-consultation-grid > div:first-child > div:nth-child(3) {
+  border-color: #303030 !important;
+  background: #1d1d1d !important;
+}
+
+html[data-theme="dark"] .proton-consultation-grid > div:first-child h2 {
+  color: #aaa !important;
+}
+
+html[data-theme="dark"] .proton-consultation-grid > div:first-child p,
+html[data-theme="dark"] .proton-consultation-grid > div:first-child > div > div {
+  color: #bbb !important;
+}
+
+html[data-theme="dark"] .proton-consultation-grid > div:first-child p.font-semibold {
+  color: #ededed !important;
+}
+
+html[data-theme="dark"] .proton-consultation-grid > div:first-child select,
+html[data-theme="dark"] .proton-document-header select {
+  border-color: #383838 !important;
+  background: #141414 !important;
+  color: #dedede !important;
+}
+
+html[data-theme="dark"] .proton-consultation-workspace [class*="bg-brand-50"],
+html[data-theme="dark"] .proton-consultation-workspace [class*="bg-brand-100"],
+html[data-theme="dark"] .proton-document-workspace [class*="bg-brand-50"],
+html[data-theme="dark"] .proton-document-workspace [class*="bg-brand-100"] {
+  background: #252525 !important;
+  color: #d2d2d2 !important;
+}
+
+html[data-theme="dark"] .proton-consultation-workspace [class*="text-brand-600"],
+html[data-theme="dark"] .proton-consultation-workspace [class*="text-brand-700"],
+html[data-theme="dark"] .proton-consultation-workspace [class*="text-brand-300"],
+html[data-theme="dark"] .proton-consultation-workspace [class*="text-brand-200"],
+html[data-theme="dark"] .proton-document-workspace [class*="text-brand-600"] {
+  color: #c6c6c6 !important;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html[data-theme] body,
+  html[data-theme] .proton-workspace-shell,
+  html[data-theme] .proton-classic-shell,
+  html[data-theme] .proton-workspace-shell :is(.proton-topbar, .proton-sidebar, .proton-workspace-canvas),
+  html[data-theme] .proton-card,
+  html[data-theme] .proton-theme-toggle {
+    transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
+  }
+}
+
+.proton-preconsultation-brief,
+.proton-during-consult-context {
+  border: 1px solid #e5e5e5 !important;
+  border-radius: 10px !important;
+  background: #fff !important;
+  color: #171717 !important;
+  box-shadow: none !important;
+}
+
+.proton-preconsultation-brief [class*="text-white"],
+.proton-preconsultation-brief [class*="text-brand-"],
+.proton-during-consult-context [class*="text-slate-"],
+.proton-during-consult-context [class*="text-brand-"] {
+  color: #555 !important;
+}
+
+.proton-preconsultation-brief [class*="bg-black/40"],
+.proton-preconsultation-brief [class*="bg-black/"],
+.proton-during-consult-context [class*="bg-brand-"] {
+  background: #f7f7f7 !important;
+}
+
+.proton-preconsultation-brief [class*="border-brand-"],
+.proton-during-consult-context [class*="border-brand-"] {
+  border-color: #e5e5e5 !important;
+}
+
+.proton-patient-intelligence > div:first-child {
+  background: #171717 !important;
+  color: #fff !important;
+}
+
+.proton-patient-intelligence > div:first-child [class*="text-brand-"],
+.proton-patient-intelligence > div:first-child [class*="text-white"] {
+  color: #fff !important;
+}
+
+.proton-patient-intelligence > div:first-child [class*="bg-brand-"] {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.proton-patient-intelligence [class*="bg-brand-"],
+.proton-patient-intelligence [class*="border-brand-"] {
+  border-color: #e5e5e5 !important;
+  background-color: #f7f7f7 !important;
+}
+
+.proton-patient-intelligence [class*="text-brand-"] {
+  color: #444 !important;
+}
+
+/* Shared workspace rules: keep the clinical UI quiet and consistent across pages. */
+:is(.proton-workspace-shell, .proton-classic-shell) {
+  --workspace-space-1: 0.25rem;
+  --workspace-space-2: 0.5rem;
+  --workspace-space-3: 0.75rem;
+  --workspace-space-4: 1rem;
+  --workspace-space-6: 1.5rem;
+  --workspace-space-8: 2rem;
+  --workspace-control-radius: 0.5rem;
+  --workspace-card-radius: 0.75rem;
+  --workspace-dialog-radius: 1rem;
+  --workspace-border: #e5e5e5;
+  --workspace-surface: #fff;
+  --workspace-canvas: #f8f8f8;
+  --workspace-text: #171717;
+  --workspace-muted: #737373;
+  font-family: var(--font-sans);
+  color: var(--workspace-text);
+}
+
+:is(.proton-workspace-shell, .proton-classic-shell) .proton-workspace-canvas {
+  background: var(--workspace-canvas) !important;
+}
+
+.proton-workspace-shell .proton-topbar,
+.proton-workspace-shell .proton-mobile-nav {
+  background: var(--workspace-surface) !important;
+  backdrop-filter: none;
+}
+
+:is(.proton-workspace-shell, .proton-classic-shell) :is(.proton-card, .proton-patient-banner, .proton-dashboard-visits, .proton-patient-intelligence, .proton-consultation-workspace, .proton-document-workspace, .proton-preconsultation-brief, .proton-during-consult-context, .proton-dynamics-panel) {
+  border-radius: var(--workspace-card-radius) !important;
+  box-shadow: none !important;
+}
+
+:is(.proton-workspace-shell, .proton-classic-shell) :is([class~="rounded-2xl"], [class~="rounded-3xl"]) {
+  border-radius: var(--workspace-card-radius) !important;
+}
+
+:is(.proton-workspace-shell, .proton-classic-shell) :is([class~="rounded-xl"], [class~="rounded-lg"], [class~="rounded-md"]) {
+  border-radius: var(--workspace-control-radius) !important;
+}
+
+:is(.proton-workspace-shell, .proton-classic-shell) :is([class~="shadow-lg"], [class~="shadow-xl"], [class~="shadow-2xl"]) {
+  box-shadow: none !important;
+}
+
+:is(.proton-workspace-shell, .proton-classic-shell) :is(button, a) {
+  transition-property: color, background-color, border-color, opacity !important;
+  transition-duration: 140ms !important;
+  transition-timing-function: ease-out !important;
+}
+
+:is(.proton-workspace-shell, .proton-classic-shell) :is(button, a):not(:disabled):hover {
+  transform: none !important;
+}
+
+:is(.proton-workspace-shell, .proton-classic-shell) :is(button, a, input, select, textarea):focus-visible {
+  outline: 2px solid #737373;
+  outline-offset: 2px;
+}
+
+.proton-classic-mobile-nav {
+  display: none;
+}
+
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) {
+  --workspace-border: #303030;
+  --workspace-surface: #181818;
+  --workspace-canvas: #111;
+  --workspace-text: #ededed;
+  --workspace-muted: #a0a0a0;
+}
+
+html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) :is(.proton-card, .proton-patient-banner, .proton-dashboard-visits, .proton-patient-intelligence, .proton-consultation-workspace, .proton-document-workspace, .proton-preconsultation-brief, .proton-during-consult-context, .proton-dynamics-panel) {
+  border-color: var(--workspace-border) !important;
+  background-color: var(--workspace-surface) !important;
+}
+
+@media (max-width: 760px) {
+  .proton-workspace-shell .proton-mobile-nav,
+  .proton-classic-mobile-nav {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-1);
+    padding: var(--space-2) var(--space-3);
+    border-bottom: 1px solid var(--workspace-border);
+    background: var(--workspace-surface);
+  }
+
+  .proton-workspace-shell .proton-mobile-nav-link,
+  .proton-classic-mobile-nav-link {
+    display: flex;
+    min-width: 0;
+    min-height: 3.25rem;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+    padding: var(--space-1);
+    border-radius: var(--workspace-control-radius);
+    color: var(--workspace-muted);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    line-height: 1.2;
+    text-align: center;
+    text-decoration: none;
+  }
+
+  .proton-workspace-shell .proton-mobile-nav-link.is-active,
+  .proton-classic-mobile-nav-link.is-active {
+    background: #f1f1f1;
+    color: var(--workspace-text);
+  }
+
+  html[data-theme="dark"] .proton-workspace-shell .proton-mobile-nav-link.is-active,
+  html[data-theme="dark"] .proton-classic-mobile-nav-link.is-active {
+    background: #262626;
+    color: #f1f1f1;
+  }
+
+  .proton-classic-shell {
+    display: block;
+    height: 100dvh;
+  }
+
+  .proton-classic-shell > aside {
+    display: none;
+  }
+
+  .proton-classic-shell > .flex-1 {
+    height: calc(100dvh - 12rem);
+  }
+
+  .proton-workspace-shell .proton-workspace-main {
+    height: calc(100dvh - 12rem);
+  }
+
+  .proton-classic-shell > .flex-1 > div:first-child {
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .proton-classic-shell > .flex-1 > div:first-child > div:first-child {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 420px) {
+  .proton-workspace-shell .proton-topbar {
+    padding-right: var(--space-3);
+    padding-left: var(--space-3);
+  }
+
+  .proton-workspace-shell .proton-topbar-actions {
+    gap: var(--space-1);
+  }
+
+  .proton-workspace-shell .proton-environment-pill {
+    display: none;
+  }
+
+  .proton-workspace-shell .proton-canvas-content {
+    padding-right: var(--space-3);
+    padding-left: var(--space-3);
+  }
 }

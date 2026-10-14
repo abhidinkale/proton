@@ -1,183 +1,195 @@
-import { useState, useEffect, type ReactNode } from 'react';
-import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { 
-  Users, 
-  Settings, 
-  LogOut, 
-  FileText, 
-  Search, 
-  CheckSquare, 
+import { useEffect, useState, type ReactNode } from 'react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import {
   Activity,
-  CalendarDays
+  ArrowUpRight,
+  CalendarDays,
+  CheckSquare,
+  Command,
+  FileText,
+  LogOut,
+  MessageSquareText,
+  Search,
+  Settings,
+  ShieldCheck,
+  Users
 } from 'lucide-react';
 import { useMedplum } from '@medplum/react';
+import ClassicLayout from './ClassicLayout';
+import AppearanceToggle from './AppearanceToggle';
 import CommandPalette from './ui/CommandPalette';
 
 interface LayoutProps {
   children: ReactNode;
   fullBleed?: boolean;
+  fillCanvas?: boolean;
   canvasBg?: string;
 }
 
-export default function Layout({ 
-  children,
-  fullBleed = false,
-  canvasBg = 'bg-[#fafaf9]'
-}: LayoutProps) {
+const navigation = [
+  { to: '/', label: 'Today', icon: CalendarDays, end: true },
+  { to: '/patients', label: 'Patients', icon: Users },
+  { to: '/consultation', label: 'Consultations', icon: Activity },
+  { to: '/document-review', label: 'Documents', icon: FileText },
+  { to: '/review', label: 'Review queue', icon: CheckSquare },
+  { to: '/assistant', label: 'Assistant', icon: MessageSquareText }
+];
+
+function getPageTitle(pathname: string): string {
+  if (pathname.startsWith('/patients/')) return 'Patient overview';
+  if (pathname.startsWith('/patients')) return 'Patients';
+  if (pathname.startsWith('/consultation')) return 'Consultation';
+  if (pathname.startsWith('/assistant')) return 'Clinical assistant';
+  if (pathname.startsWith('/document-review') || pathname.startsWith('/documents') || pathname.startsWith('/review')) {
+    return 'Document review';
+  }
+  if (pathname.startsWith('/settings')) return 'Settings';
+  return 'Today';
+}
+
+export default function Layout({ children, fullBleed = false, fillCanvas = false, canvasBg = 'bg-[#f5f6f1]' }: LayoutProps) {
   const medplum = useMedplum();
   const navigate = useNavigate();
   const location = useLocation();
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  // Default to the clean clinical layout unless legacy terminal workspace is explicitly chosen
+  const isLegacyDark = localStorage.getItem('proton_workspace_ui') === 'legacy_dark';
+  const classic = !isLegacyDark;
 
-  const handleLogout = () => {
-    medplum.signOut().then(() => {
-      navigate('/login');
-    });
-  };
-
-  // Keyboard shortcut listener for ⌘K / Ctrl+K
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
         const activeTag = document.activeElement?.tagName?.toLowerCase();
         if (activeTag !== 'input' && activeTag !== 'textarea') {
-          e.preventDefault();
-          setIsCommandPaletteOpen((prev) => !prev);
+          event.preventDefault();
+          setIsCommandPaletteOpen((isOpen) => !isOpen);
         }
       }
     };
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Primary navigation specified: Today, Patients, Consultations, Documents, Review
-  const primaryNavItems = [
-    { to: '/', icon: CalendarDays, label: 'Today', end: true },
-    { to: '/patients', icon: Users, label: 'Patients' },
-    { to: '/consultation', icon: Activity, label: 'Consultations' },
-    { to: '/document-review', icon: FileText, label: 'Documents' },
-    { to: '/review', icon: CheckSquare, label: 'Review' },
-  ];
+  if (classic) {
+    return (
+      <ClassicLayout
+        fullBleed={fullBleed}
+        fillCanvas={fillCanvas}
+        canvasBg={canvasBg}
+      >
+        {children}
+      </ClassicLayout>
+    );
+  }
 
-  const isActive = (path: string, end?: boolean) => {
-    if (end) return location.pathname === path;
-    return location.pathname.startsWith(path);
+  const handleLogout = () => {
+    medplum.signOut().then(() => navigate('/login'));
   };
 
+  const openCommandPalette = () => setIsCommandPaletteOpen(true);
+
   return (
-    <div className="flex h-screen bg-[#fafaf9] text-zinc-900 font-sans antialiased overflow-hidden">
-      {/* ── Sidebar (Calm Clinical Workspace Shell) ── */}
-      <aside className="w-56 bg-white border-r border-zinc-200 flex flex-col shrink-0">
-        
-        {/* Brand Header */}
-        <div className="px-5 py-5 border-b border-zinc-200/80">
-          <div className="flex items-center justify-between">
-            <span className="font-semibold text-base tracking-tight text-zinc-900">
-              Proton
-            </span>
-            <span className="text-[11px] font-medium text-zinc-400">
-              Evaluation
-            </span>
+    <div className="proton-workspace-shell">
+      <aside className="proton-sidebar">
+        <NavLink to="/" className="proton-brand" aria-label="Proton home">
+          <span className="proton-brand-word">proton<span>.</span></span>
+        </NavLink>
+
+        <button type="button" className="proton-search-trigger" onClick={openCommandPalette}>
+          <Search size={15} />
+          <span>Find anything</span>
+          <kbd><Command size={10} /> K</kbd>
+        </button>
+
+        <div className="proton-nav-label">WORKSPACE</div>
+        <nav className="proton-primary-nav" aria-label="Primary navigation">
+          {navigation.map(({ to, label, icon: Icon, end }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={end}
+              className={({ isActive }) => `proton-nav-link${isActive ? ' is-active' : ''}`}
+            >
+              <Icon size={17} strokeWidth={1.8} />
+              <span>{label}</span>
+            </NavLink>
+          ))}
+        </nav>
+
+        <div className="proton-sidebar-spacer" />
+
+        <div className="proton-safety-card">
+          <div className="proton-safety-icon"><ShieldCheck size={16} /></div>
+          <div>
+            <div className="proton-safety-title">Your clinical judgement</div>
+            <p>Every decision stays with the care team.</p>
           </div>
         </div>
 
-        {/* Search Input Trigger */}
-        <div className="px-3 pt-3 pb-2">
-          <button
-            onClick={() => setIsCommandPaletteOpen(true)}
-            className="w-full flex items-center justify-between px-2.5 py-1.5 text-xs text-zinc-500 bg-zinc-50 hover:bg-zinc-100 hover:text-zinc-800 border border-zinc-200 rounded-md transition-colors cursor-pointer"
-            title="Search patients or execute actions (⌘K)"
-          >
-            <span className="flex items-center gap-2">
-              <Search size={13} className="text-zinc-400" />
-              <span>Search patients</span>
-            </span>
-            <kbd className="text-[10px] text-zinc-400 font-sans border border-zinc-200 px-1 rounded bg-white">
-              ⌘K
-            </kbd>
-          </button>
-        </div>
-
-        {/* Primary Navigation */}
-        <nav className="flex-1 px-3 py-2 space-y-0.5">
-          {primaryNavItems.map((item) => {
-            const active = isActive(item.to, item.end);
-            return (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                  active
-                    ? 'bg-zinc-100 text-zinc-900 font-semibold'
-                    : 'text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900'
-                }`}
-              >
-                <item.icon 
-                  size={15} 
-                  strokeWidth={active ? 2.25 : 1.75} 
-                  className={active ? 'text-zinc-900' : 'text-zinc-400'} 
-                />
-                <span>{item.label}</span>
-              </NavLink>
-            );
-          })}
-        </nav>
-
-        {/* Secondary: Settings & Sign Out */}
-        <div className="px-3 py-3 border-t border-zinc-200 space-y-0.5">
-          <NavLink
-            to="/settings"
-            className={({ isActive: active }) => `flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
-              active
-                ? 'bg-zinc-100 text-zinc-900 font-semibold'
-                : 'text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900'
-            }`}
-          >
-            <Settings size={15} strokeWidth={1.75} className="text-zinc-400" />
+        <div className="proton-sidebar-footer">
+          <NavLink to="/settings" className={({ isActive }) => `proton-nav-link${isActive ? ' is-active' : ''}`}>
+            <Settings size={17} strokeWidth={1.8} />
             <span>Settings</span>
           </NavLink>
-
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2.5 px-2.5 py-1.5 w-full text-left rounded-md text-xs font-medium text-zinc-500 hover:bg-zinc-50 hover:text-red-700 transition-colors cursor-pointer"
-          >
-            <LogOut size={15} strokeWidth={1.75} className="text-zinc-400" />
+          <button type="button" className="proton-nav-link proton-signout" onClick={handleLogout}>
+            <LogOut size={17} strokeWidth={1.8} />
             <span>Sign out</span>
           </button>
+          <div className="proton-evaluator-profile">
+            <div className="proton-avatar">DR</div>
+            <div className="proton-profile-copy">
+              <span>Physician workspace</span>
+              <small>Synthetic evaluation</small>
+            </div>
+            <ArrowUpRight size={14} className="proton-profile-arrow" />
+          </div>
         </div>
       </aside>
 
-      {/* ── Main Workspace Area ── */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        
-        {/* Subtle Evaluation Context Bar */}
-        <div className="bg-white border-b border-zinc-200 px-6 py-2 flex items-center justify-between text-xs text-zinc-500 shrink-0">
-          <div className="flex items-center gap-2">
-            <span className="font-medium text-zinc-700">Clinical Evaluation Environment</span>
-            <span className="text-zinc-300">•</span>
-            <span className="text-zinc-500">Synthetic FHIR R4 Records</span>
+      <div className="proton-workspace-main">
+        <header className="proton-topbar">
+          <div className="proton-topbar-context">
+            <div className="proton-breadcrumb">PROTON <span>/</span> WORKSPACE</div>
+            <h1>{getPageTitle(location.pathname)}</h1>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-[11px] text-zinc-500">
-              Physician approval required for all clinical commitments
+          <div className="proton-topbar-actions">
+            <span className="proton-environment-pill" aria-label="Synthetic data only" title="Synthetic data only">
+              <span className="proton-environment-copy-full">SYNTHETIC DATA ONLY</span>
+              <span className="proton-environment-copy-short">SYNTHETIC</span>
             </span>
+            <button type="button" className="proton-topbar-search" onClick={openCommandPalette} aria-label="Search workspace">
+              <Search size={16} />
+            </button>
+            <AppearanceToggle />
+            <button type="button" className="proton-start-visit" onClick={() => navigate('/consultation')}>
+              <Activity size={15} />
+              <span>New consultation</span>
+            </button>
           </div>
-        </div>
+        </header>
 
-        {/* Page Canvas */}
-        <main className={`flex-1 overflow-y-auto ${canvasBg}`}>
-          {fullBleed ? children : (
-            <div className="max-w-6xl mx-auto px-6 py-8">{children}</div>
-          )}
+        <nav className="proton-mobile-nav" aria-label="Primary navigation">
+          {navigation.map(({ to, label, icon: Icon, end }) => (
+            <NavLink key={to} to={to} end={end} className={({ isActive }) => `proton-mobile-nav-link${isActive ? ' is-active' : ''}`}>
+              <Icon size={16} />
+              <span>{label === 'Review queue' ? 'Review' : label}</span>
+            </NavLink>
+          ))}
+          <NavLink to="/settings" className={({ isActive }) => `proton-mobile-nav-link${isActive ? ' is-active' : ''}`}>
+            <Settings size={16} />
+            <span>Settings</span>
+          </NavLink>
+        </nav>
+
+        <main className={`proton-workspace-canvas ${canvasBg}`}>
+          <div className={`proton-canvas-content${fullBleed ? ' is-full-bleed' : ''}${fillCanvas ? ' is-fill-canvas' : ''}`}>
+            {children}
+          </div>
         </main>
       </div>
 
-      {/* Command Palette */}
-      <CommandPalette
-        isOpen={isCommandPaletteOpen}
-        onClose={() => setIsCommandPaletteOpen(false)}
-      />
+      <CommandPalette isOpen={isCommandPaletteOpen} onClose={() => setIsCommandPaletteOpen(false)} />
     </div>
   );
 }
