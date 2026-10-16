@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-16T21:51:36.330Z",
+  "timestamp": "2026-10-16T22:55:46.453Z",
   "provider": "gemini",
   "model": "gemini-3.5-flash-lite",
   "isLive": true,
@@ -14,8 +14,8 @@
     "passed": 9,
     "failed": 1,
     "factualAccuracyRate": 90,
-    "negativesPreserved": 8,
-    "negativesFailed": 21,
+    "negativesPreserved": 11,
+    "negativesFailed": 18,
     "unsupportedClaims": 0
   },
   "hallucinationProbes": {
@@ -88,14 +88,14 @@
   "documentExtraction": {
     "totalDocs": 5,
     "groundTruthFacts": 19,
-    "extractedFacts": 29,
+    "extractedFacts": 28,
     "correctFacts": 19,
     "missingFacts": 0,
     "unsupportedFacts": 0,
     "sourceGroundingRate": "100.0"
   },
   "confidenceCalibration": {
-    "highConfidenceCount": 29,
+    "highConfidenceCount": 28,
     "mediumConfidenceCount": 0,
     "lowConfidenceCount": 0,
     "lowConfidenceFlaggedProperly": true
@@ -112,34 +112,34 @@
   },
   "latency": {
     "noteLatencies": [
-      3611,
-      1448,
-      1328,
-      1512,
-      2573,
-      1474,
-      1479,
-      1176,
-      2528,
-      1211
+      1496,
+      2068,
+      1301,
+      1739,
+      1230,
+      1536,
+      3273,
+      1329,
+      3661,
+      1529
     ],
     "docLatencies": [
-      3636,
-      4474,
-      3944,
-      3424,
-      3778
+      3947,
+      5778,
+      3483,
+      4533,
+      3319
     ],
-    "min": 1176,
-    "max": 4474,
-    "avg": 2506,
-    "median": 2528
+    "min": 1230,
+    "max": 5778,
+    "avg": 2681,
+    "median": 2068
   },
   "costUsage": {
     "totalPromptTokens": 2951,
-    "totalCandidateTokens": 1354,
-    "totalTokens": 4305,
-    "estimatedCostUSD": 0.00126
+    "totalCandidateTokens": 1338,
+    "totalTokens": 4289,
+    "estimatedCostUSD": 0.00125
   },
   "failureModes": {
     "testsRun": 5,

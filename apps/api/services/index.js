@@ -9,6 +9,7 @@ const { FhirService, fhirService } = require('./fhir/fhirService');
 const { AuditService, auditService } = require('./audit/auditService');
 const { AIService, aiService } = require('./ai/aiService');
 const { ClinicalPipeline, clinicalPipeline, ClinicalPipelineError } = require('./clinical/clinicalPipeline');
+const { IntakeService, intakeService, IntakeValidationError, branchingEngine, escalationEngine, contextMapper } = require('./intake');
 
 module.exports = {
   // Media
@@ -36,5 +37,13 @@ module.exports = {
   // Clinical Pipeline
   ClinicalPipeline,
   clinicalPipeline,
-  ClinicalPipelineError
+  ClinicalPipelineError,
+
+  // Clinical Intake
+  IntakeService,
+  intakeService,
+  IntakeValidationError,
+  branchingEngine,
+  escalationEngine,
+  contextMapper
 };

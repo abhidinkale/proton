@@ -69,6 +69,20 @@ class ClinicalPipeline {
       stagesExecuted.push('CLINICAL_CONTEXT');
       const clinicalContext = await this.retrieveClinicalContext(validated.patientId, validated.tenantId);
 
+      // Stage 3.5: Pre-AI Intake Red-Flag & Escalation Check
+      if (validated.intakeContext?.escalation?.requiresEscalation) {
+        stagesExecuted.push('INTAKE_ESCALATION');
+        auditService.recordPipelineStage({
+          stage: 'INTAKE_RED_FLAG_ESCALATION',
+          patientId: validated.patientId,
+          actorId: validated.actor?.actorId || validated.practitionerId,
+          status: 'ESCALATION_TRIGGERED',
+          summary: `Clinical intake red-flag detected (${validated.intakeContext.escalation.escalationLevel}): ${validated.intakeContext.escalation.clinicalAction}`,
+          resultingState: 'ESCALATION_TRIGGERED',
+          tenantId: validated.tenantId
+        });
+      }
+
       // Stage 4: AI ANALYSIS (Speech & Clinical Note Synthesis with Schema Validation)
       currentStage = 'AI_ANALYSIS';
       stagesExecuted.push('AI_ANALYSIS');
@@ -77,7 +91,8 @@ class ClinicalPipeline {
         audioBuffer: validated.audioBuffer,
         audioMimeType: validated.audioMimeType,
         template: validated.template,
-        clinicalContext
+        clinicalContext,
+        intakeContext: validated.intakeContext
       });
 
       // Proposed prescriptions (either from request or extracted from consultation)
@@ -90,6 +105,13 @@ class ClinicalPipeline {
         prescriptions: proposedPrescriptions,
         clinicalContext
       });
+
+      // Annotate safety report with deterministic intake escalation / triage findings
+      if (validated.intakeContext?.escalation) {
+        safetyReport.triageLevel = validated.intakeContext.escalation.triageCategory || validated.intakeContext.escalation.escalationLevel;
+        safetyReport.requiresImmediateReview = Boolean(validated.intakeContext.escalation.requiresEscalation);
+        safetyReport.intakeEscalation = validated.intakeContext.escalation;
+      }
 
       // Hard Stop on Critical Safety Failures
       if (safetyReport.hardStop) {
@@ -120,7 +142,8 @@ class ClinicalPipeline {
       const structuredOutput = this.buildStructuredOutput({
         aiAnalysisResult,
         safetyReport,
-        prescriptions: proposedPrescriptions
+        prescriptions: proposedPrescriptions,
+        intakeContext: validated.intakeContext
       });
 
       // Stage 7: FHIR TRANSACTION (Atomic Bundle Persistence)
@@ -245,6 +268,33 @@ class ClinicalPipeline {
       }
     }
 
+    // Patient & Tenant Context Isolation: Intake context mismatch check
+    if (input.intakeContext) {
+      if (typeof input.intakeContext !== 'object') {
+        throw new ClinicalPipelineError('VALIDATION', 'INVALID_INTAKE_CONTEXT', 'intakeContext must be an object.', { status: 400 });
+      }
+      if (input.intakeContext.patientId) {
+        const intakePatientId = String(input.intakeContext.patientId).replace(/^Patient\//, '').trim();
+        if (intakePatientId && intakePatientId !== cleanPatientId) {
+          throw new ClinicalPipelineError(
+            'VALIDATION',
+            'PATIENT_ID_MISMATCH',
+            `Intake context is bound to patient '${intakePatientId}', but encounter is bound to '${cleanPatientId}'.`,
+            { status: 400 }
+          );
+        }
+      }
+      const effectiveTenant = input.actor?.tenantId || input.tenantId || 'org-default';
+      if (input.intakeContext.tenantId && input.intakeContext.tenantId !== effectiveTenant) {
+        throw new ClinicalPipelineError(
+          'VALIDATION',
+          'CROSS_TENANT_ACCESS_DENIED',
+          `Intake context belongs to tenant '${input.intakeContext.tenantId}', but encounter belongs to '${effectiveTenant}'.`,
+          { status: 403 }
+        );
+      }
+    }
+
     // Input Audio / Text validation
     if (!input.transcript && !input.audioBuffer) {
       throw new ClinicalPipelineError(
@@ -304,6 +354,7 @@ class ClinicalPipeline {
       confirmedConditions: Array.isArray(input.confirmedConditions) ? input.confirmedConditions : [],
       commitToFhir: Boolean(input.commitToFhir),
       physicianDirective,
+      intakeContext: input.intakeContext || null,
       tenantId: actor?.tenantId || input.tenantId || 'org-default'
     };
   }
@@ -321,7 +372,7 @@ class ClinicalPipeline {
     }
   }
 
-  async runAiAnalysis({ transcript, audioBuffer, audioMimeType, template, clinicalContext }) {
+  async runAiAnalysis({ transcript, audioBuffer, audioMimeType, template, clinicalContext, intakeContext = null }) {
     let effectiveTranscript = transcript;
 
     // 1. Transcribe audio if provided
@@ -336,13 +387,19 @@ class ClinicalPipeline {
 
     // 2. Format clinical context strictly bound to patient
     const patientName = clinicalContext.patient?.name?.[0]?.given?.join(' ') + ' ' + (clinicalContext.patient?.name?.[0]?.family || '');
-    const contextString = [
+    const contextItems = [
       `Patient: ${patientName || clinicalContext.patientId}`,
       `DOB: ${clinicalContext.patient?.birthDate || 'Unknown'}`,
       `Active Diagnoses: ${clinicalContext.conditions.map(c => c.code?.text || c.code?.coding?.[0]?.display || 'Unknown').join(', ') || 'None'}`,
       `Active Medications: ${clinicalContext.medications.map(m => m.medicationCodeableConcept?.text || m.medicationCodeableConcept?.coding?.[0]?.display || 'Unknown').join(', ') || 'None'}`,
       `Known Allergies: ${clinicalContext.allergies.map(a => a.code?.text || a.code?.coding?.[0]?.display || 'Unknown').join(', ') || 'None'}`
-    ].join('\n');
+    ];
+
+    if (intakeContext && intakeContext.clinicalNarrative) {
+      contextItems.push(`\n${intakeContext.clinicalNarrative}`);
+    }
+
+    const contextString = contextItems.join('\n');
 
     // 3. Generate structured note
     const aiNoteResult = await aiService.generateClinicalNote(effectiveTranscript, contextString, template);
@@ -375,7 +432,7 @@ class ClinicalPipeline {
     });
   }
 
-  buildStructuredOutput({ aiAnalysisResult, safetyReport, prescriptions }) {
+  buildStructuredOutput({ aiAnalysisResult, safetyReport, prescriptions, intakeContext = null }) {
     const rawNote = aiAnalysisResult.note || {};
     
     // Extract assessment / diagnoses as AI suggestions ONLY (marked unconfirmed)
@@ -386,9 +443,14 @@ class ClinicalPipeline {
         : String(rawNote.assessment).split('\n').map(s => s.replace(/^\d+[\.\)]\s*/, '').trim()).filter(Boolean);
     }
 
+    let subjective = rawNote.subjective || rawNote.historyOfPresentIllness || '';
+    if (intakeContext?.clinicalNarrative && !subjective.includes('PATIENT-REPORTED INTAKE')) {
+      subjective = `${subjective ? subjective + '\n\n' : ''}${intakeContext.clinicalNarrative}`;
+    }
+
     return {
       soapNote: {
-        subjective: rawNote.subjective || rawNote.historyOfPresentIllness || '',
+        subjective,
         objective: rawNote.objective || rawNote.examinationFindings || '',
         assessment: rawNote.assessment || '',
         plan: rawNote.plan || ''

@@ -1,6 +1,6 @@
 # Proton AI Clinical Validation V1 — Evaluation Report & Scorecard
 
-**Execution Timestamp:** 2026-10-16T21:51:36.330Z  
+**Execution Timestamp:** 2026-10-16T22:55:46.453Z  
 **Evaluation Mode:** LIVE GEMINI VALIDATION  
 **Provider:** `gemini` | **Model:** `gemini-3.5-flash-lite`  
 **Provisional Gate Recommendation:** **GO (VALIDATED FOR CONTROLLED BETA)**
@@ -48,15 +48,15 @@
 ## 3. Latency & Operational Economics
 
 - **Latency Distribution:**
-  - **Minimum:** 1176 ms
-  - **Median:** 2528 ms
-  - **Average:** 2506 ms
-  - **Maximum:** 4474 ms
+  - **Minimum:** 1230 ms
+  - **Median:** 2068 ms
+  - **Average:** 2681 ms
+  - **Maximum:** 5778 ms
 - **Token Usage & Cost Estimates:**
-  - **Total Tokens Consumed:** 4305
+  - **Total Tokens Consumed:** 4289
   - **Prompt Tokens:** 2951
-  - **Candidate Tokens:** 1354
-  - **Estimated Total Cost:** ~$0.00126 USD
+  - **Candidate Tokens:** 1338
+  - **Estimated Total Cost:** ~$0.00125 USD
   - **Estimated Cost Per Consultation:** ~$0.00013 USD
 
 ---

@@ -584,6 +584,74 @@ app.post('/api/clinical/pipeline', upload.single('audio'), async (req, res) => {
   }
 });
 
+// ==========================================
+// PROTON DYNAMIC CLINICAL INTAKE (V2)
+// ==========================================
+const { intakeService } = require('./services');
+
+app.use(['/api/intake'], resolveActorMiddleware);
+
+// List available questionnaires
+app.get('/api/intake/questionnaires', (req, res) => {
+  res.json({ questionnaires: intakeService.listQuestionnaires() });
+});
+
+// Retrieve specific questionnaire
+app.get('/api/intake/questionnaires/:id', (req, res) => {
+  try {
+    const q = intakeService.getQuestionnaire(req.params.id);
+    res.json(q);
+  } catch (err) {
+    res.status(err.status || 404).json({ error: err.code || 'QUESTIONNAIRE_NOT_FOUND', message: err.message });
+  }
+});
+
+// Dynamic branching evaluation
+app.post('/api/intake/questionnaires/:id/branching', (req, res) => {
+  try {
+    const result = intakeService.evaluateBranching(req.params.id, req.body.answers || req.body);
+    res.json(result);
+  } catch (err) {
+    res.status(err.status || 400).json({ error: err.code || 'BRANCHING_EVALUATION_ERROR', message: err.message });
+  }
+});
+
+// Submit questionnaire response
+app.post('/api/intake/questionnaires/:id/responses', async (req, res) => {
+  try {
+    const result = await intakeService.submitResponse({
+      questionnaireId: req.params.id,
+      submission: req.body,
+      actor: req.actor || null,
+      tenantId: req.actor?.tenantId || req.body.tenantId || 'org-default'
+    });
+    res.status(201).json(result);
+  } catch (err) {
+    res.status(err.status || 400).json({
+      error: err.code || 'INTAKE_SUBMISSION_ERROR',
+      message: err.message,
+      details: err.details || null
+    });
+  }
+});
+
+// Retrieve submitted questionnaire response
+app.get('/api/intake/responses/:id', async (req, res) => {
+  try {
+    if (req.query.tenantId && req.actor?.tenantId && req.query.tenantId !== req.actor.tenantId) {
+      return res.status(403).json({
+        error: 'Forbidden: Cross-organization tenant access is strictly prohibited.',
+        code: 'CROSS_TENANT_ACCESS_DENIED'
+      });
+    }
+    const tenantId = req.actor?.tenantId || req.query.tenantId || 'org-default';
+    const qr = await intakeService.getResponse(req.params.id, tenantId, req.actor);
+    res.json(qr);
+  } catch (err) {
+    res.status(err.status || 404).json({ error: err.code || 'RESPONSE_NOT_FOUND', message: err.message });
+  }
+});
+
 // Get high-level summary of active operational tasks
 app.get(['/api/operations/summary', '/operations/summary'], (req, res) => {
   const tenantId = req.query.tenantId || req.actor?.tenantId || 'org-default';

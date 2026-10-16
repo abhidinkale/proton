@@ -2,11 +2,13 @@ import { useState, useRef, useEffect, type FormEvent, type KeyboardEvent } from 
 import { 
   ArrowLeft, Mic, Square, Check, Loader2, AlertCircle, AlertTriangle, 
   Pill, FileText, Activity, Send, Plus, CheckCircle2, Copy,
-  ClipboardList, Sparkles, RefreshCw, X, Printer, Play
+  ClipboardList, Sparkles, RefreshCw, X, Printer, Play, ClipboardCheck
 } from 'lucide-react';
 import { RealAIService, sendClinicalChat, type ChatMessage } from '../services/ai';
 import { RealSpeechService } from '../services/speech';
 import PrescriptionPDFModal from './PrescriptionPDFModal';
+import IntakeReview from './intake/IntakeReview';
+import DynamicIntake from './intake/DynamicIntake';
 import type { PrescriptionItem } from '../types/prescription';
 import type { Patient } from '@medplum/fhirtypes';
 
@@ -51,7 +53,7 @@ interface DoctorDeskEncounterProps {
 }
 
 export default function DoctorDeskEncounter({ patient, onCloseMeeting, onBackToDesk }: DoctorDeskEncounterProps) {
-  const [activeTab, setActiveTab] = useState<'note' | 'chart' | 'orders'>('note');
+  const [activeTab, setActiveTab] = useState<'note' | 'chart' | 'orders' | 'intake'>('note');
 
   // Ambient Scribe & Note states
   const [isRecording, setIsRecording] = useState(false);
@@ -59,6 +61,7 @@ export default function DoctorDeskEncounter({ patient, onCloseMeeting, onBackToD
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isGeneratingNote, setIsGeneratingNote] = useState(false);
   const [showPdfModal, setShowPdfModal] = useState(false);
+  const [showIntakeModal, setShowIntakeModal] = useState(false);
 
   const getInitialTranscript = (pid: string) => {
     if (pid.includes('arthur')) {
@@ -243,6 +246,11 @@ export default function DoctorDeskEncounter({ patient, onCloseMeeting, onBackToD
       if ((e.metaKey || e.ctrlKey) && e.key === '3') {
         e.preventDefault();
         setActiveTab('orders');
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === '4') {
+        e.preventDefault();
+        setActiveTab('intake');
         return;
       }
 
@@ -590,6 +598,17 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
                   {prescriptions.length}
                 </span>
               </button>
+              <button
+                onClick={() => setActiveTab('intake')}
+                className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
+                  activeTab === 'intake'
+                    ? 'bg-[#18181b] text-white shadow-xs'
+                    : 'text-[#71717a] hover:text-[#09090b] hover:bg-[#f4f4f5]'
+                }`}
+              >
+                <ClipboardCheck size={14} />
+                Patient Intake (FHIR)
+              </button>
             </div>
 
             {/* Ambient Mic & Audio Test Controls */}
@@ -893,6 +912,16 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
               </div>
             </div>
           )}
+
+          {/* TAB 4: PATIENT INTAKE (FHIR) */}
+          {activeTab === 'intake' && (
+            <div className="flex-1 overflow-hidden flex flex-col">
+              <IntakeReview
+                patientId={patient.id}
+                onLaunchNewIntake={() => setShowIntakeModal(true)}
+              />
+            </div>
+          )}
         </section>
 
         {/* RIGHT PANEL: CLINICAL COPILOT SIDEBAR (35%) */}
@@ -1080,6 +1109,32 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
               >
                 Sign Off & Close Meeting
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DYNAMIC PATIENT INTAKE MODAL */}
+      {showIntakeModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-[#fbfbfa] border border-[#e4e4e7] rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl flex flex-col relative animate-in fade-in zoom-in-95 duration-150">
+            <button
+              onClick={() => setShowIntakeModal(false)}
+              className="absolute top-4 right-4 z-10 p-2 text-[#71717a] hover:text-[#09090b] hover:bg-[#f4f4f5] rounded-full transition-colors cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+              <DynamicIntake
+                patientId={patient.id}
+                onComplete={(result) => {
+                  try {
+                    localStorage.setItem(`proton_intake_response_${patient.id}`, JSON.stringify(result.questionnaireResponse));
+                  } catch {}
+                  setShowIntakeModal(false);
+                }}
+                onCancel={() => setShowIntakeModal(false)}
+              />
             </div>
           </div>
         </div>

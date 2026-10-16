@@ -274,6 +274,7 @@ class SafetyService {
 
     return {
       passed,
+      isSafe: passed,
       hardStop: hasCritical,
       totalChecks: prescriptions.length,
       contraindications,
