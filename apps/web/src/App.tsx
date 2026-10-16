@@ -11,6 +11,7 @@ import DocumentReview from './pages/DocumentReview';
 import Assistant from './pages/Assistant';
 import Operations from './pages/Operations';
 import Settings from './pages/Settings';
+import MobileCapturePage from './pages/MobileCapturePage';
 import { authService } from './services/auth';
 
 // Lazy-load the landing page since it's only for unauthenticated visitors
@@ -66,6 +67,7 @@ export default function App() {
       } />
       <Route path="/landing" element={<Navigate to="/welcome" replace />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/capture" element={<MobileCapturePage />} />
       <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/patients" element={<ProtectedRoute><Patients /></ProtectedRoute>} />

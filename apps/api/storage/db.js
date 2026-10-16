@@ -252,6 +252,76 @@ function runMigrations(db) {
         CREATE INDEX IF NOT EXISTS idx_jobs_runnable ON operational_jobs(status, next_run_at);
         CREATE INDEX IF NOT EXISTS idx_jobs_source_task ON operational_jobs(source_task_id);
       `
+    },
+    {
+      version: 3,
+      name: 'secure_capture_sessions',
+      sql: `
+        -- 9. Secure Cross-Device Capture Sessions
+        CREATE TABLE IF NOT EXISTS capture_sessions (
+          id TEXT PRIMARY KEY,
+          tenant_id TEXT NOT NULL DEFAULT 'org-default',
+          actor_id TEXT NOT NULL,
+          actor_role TEXT NOT NULL,
+          actor_name TEXT NOT NULL,
+          patient_id TEXT NOT NULL,
+          encounter_id TEXT,
+          status TEXT NOT NULL CHECK (status IN ('CREATED', 'PAIRING', 'PAIRED', 'ACTIVE', 'COMPLETED', 'EXPIRED', 'CANCELLED', 'REVOKED')),
+          pairing_token_hash TEXT NOT NULL,
+          pairing_token_consumed INTEGER NOT NULL DEFAULT 0,
+          mobile_token_hash TEXT,
+          created_at TEXT NOT NULL,
+          expires_at TEXT NOT NULL,
+          paired_at TEXT,
+          completed_at TEXT,
+          cancelled_at TEXT,
+          revoked_at TEXT,
+          metadata_json TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_capture_tenant ON capture_sessions(tenant_id);
+        CREATE INDEX IF NOT EXISTS idx_capture_patient ON capture_sessions(patient_id);
+        CREATE INDEX IF NOT EXISTS idx_capture_token_hash ON capture_sessions(pairing_token_hash);
+        CREATE INDEX IF NOT EXISTS idx_capture_status ON capture_sessions(status);
+      `
+    },
+    {
+      version: 4,
+      name: 'secure_capture_media_and_upload_capabilities',
+      sql: `
+        -- 10. Capture Upload Capabilities
+        CREATE TABLE IF NOT EXISTS capture_upload_capabilities (
+          id TEXT PRIMARY KEY,
+          tenant_id TEXT NOT NULL DEFAULT 'org-default',
+          session_id TEXT NOT NULL REFERENCES capture_sessions(id),
+          token_hash TEXT NOT NULL,
+          consumed INTEGER NOT NULL DEFAULT 0,
+          created_at TEXT NOT NULL,
+          expires_at TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_upload_cap_session ON capture_upload_capabilities(session_id);
+        CREATE INDEX IF NOT EXISTS idx_upload_cap_hash ON capture_upload_capabilities(token_hash);
+
+        -- 11. Capture Media Registry
+        CREATE TABLE IF NOT EXISTS capture_media (
+          id TEXT PRIMARY KEY,
+          tenant_id TEXT NOT NULL DEFAULT 'org-default',
+          session_id TEXT NOT NULL REFERENCES capture_sessions(id),
+          patient_id TEXT NOT NULL,
+          encounter_id TEXT,
+          storage_key TEXT NOT NULL,
+          mime_type TEXT NOT NULL,
+          file_size INTEGER NOT NULL,
+          sha256 TEXT NOT NULL,
+          width INTEGER,
+          height INTEGER,
+          fhir_media_id TEXT,
+          fhir_provenance_id TEXT,
+          captured_at TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_media_session ON capture_media(session_id);
+        CREATE INDEX IF NOT EXISTS idx_media_patient ON capture_media(patient_id);
+        CREATE INDEX IF NOT EXISTS idx_media_tenant ON capture_media(tenant_id);
+      `
     }
   ];
 

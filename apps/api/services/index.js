@@ -10,6 +10,8 @@ const { AuditService, auditService } = require('./audit/auditService');
 const { AIService, aiService } = require('./ai/aiService');
 const { ClinicalPipeline, clinicalPipeline, ClinicalPipelineError } = require('./clinical/clinicalPipeline');
 const { IntakeService, intakeService, IntakeValidationError, branchingEngine, escalationEngine, contextMapper } = require('./intake');
+const { captureSessionService, CaptureSessionService, CaptureSessionError, VALID_TRANSITIONS, tokenManager, TokenManager, sessionStore, SessionStore, imageQualityValidator, ImageQualityValidator, ImageQualityError, PAIRING_TTL_MS, ACTIVE_TTL_MS, UPLOAD_TTL_MS } = require('./capture');
+const { storageService, StorageAdapter, LocalStorageAdapter } = require('./storage');
 
 module.exports = {
   // Media
@@ -45,5 +47,26 @@ module.exports = {
   IntakeValidationError,
   branchingEngine,
   escalationEngine,
-  contextMapper
+  contextMapper,
+
+  // Capture Sessions (M2B-1 & M2B-2)
+  captureSessionService,
+  CaptureSessionService,
+  CaptureSessionError,
+  VALID_TRANSITIONS,
+  tokenManager,
+  TokenManager,
+  sessionStore,
+  SessionStore,
+  imageQualityValidator,
+  ImageQualityValidator,
+  ImageQualityError,
+  PAIRING_TTL_MS,
+  ACTIVE_TTL_MS,
+  UPLOAD_TTL_MS,
+
+  // Storage
+  storageService,
+  StorageAdapter,
+  LocalStorageAdapter
 };

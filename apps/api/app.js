@@ -652,6 +652,125 @@ app.get('/api/intake/responses/:id', async (req, res) => {
   }
 });
 
+// ==========================================
+// PROTON SECURE CAPTURE SESSIONS (V2 M2B-1)
+// ==========================================
+const { captureSessionService } = require('./services');
+
+// Create a new capture session (Desktop Clinician)
+app.post('/api/capture/sessions', resolveActorMiddleware, requireRole(['physician', 'operations_staff', 'system']), (req, res) => {
+  try {
+    const { patientId, encounterId, ttlMs } = req.body;
+    const session = captureSessionService.createSession({
+      patientId,
+      encounterId,
+      actor: req.actor,
+      ttlMs
+    });
+    res.status(201).json(session);
+  } catch (err) {
+    res.status(err.status || 400).json({
+      error: err.code || 'CAPTURE_SESSION_ERROR',
+      message: err.message
+    });
+  }
+});
+
+// Pair a mobile device using opaque single-use capability token
+app.post('/api/capture/sessions/:id/pair', (req, res) => {
+  try {
+    const { pairingToken } = req.body;
+    const result = captureSessionService.pairSession(req.params.id, pairingToken);
+    res.json(result);
+  } catch (err) {
+    res.status(err.status || 400).json({
+      error: err.code || 'CAPTURE_PAIRING_ERROR',
+      message: err.message
+    });
+  }
+});
+
+// Retrieve safe session state (Desktop Clinician)
+app.get('/api/capture/sessions/:id', resolveActorMiddleware, (req, res) => {
+  try {
+    const session = captureSessionService.getSession(req.params.id, req.actor);
+    res.json(session);
+  } catch (err) {
+    res.status(err.status || 400).json({
+      error: err.code || 'CAPTURE_SESSION_ERROR',
+      message: err.message
+    });
+  }
+});
+
+// Cancel capture session (Desktop Clinician)
+app.post('/api/capture/sessions/:id/cancel', resolveActorMiddleware, (req, res) => {
+  try {
+    const result = captureSessionService.cancelSession(req.params.id, req.actor);
+    res.json(result);
+  } catch (err) {
+    res.status(err.status || 400).json({
+      error: err.code || 'CAPTURE_SESSION_ERROR',
+      message: err.message
+    });
+  }
+});
+
+// Request upload capability (Paired Mobile Device)
+app.post('/api/capture/sessions/:id/upload-capability', (req, res) => {
+  try {
+    const { mobileToken } = req.body;
+    const result = captureSessionService.issueUploadCapability(req.params.id, mobileToken);
+    res.json(result);
+  } catch (err) {
+    res.status(err.status || 400).json({
+      error: err.code || 'CAPTURE_CAPABILITY_ERROR',
+      message: err.message
+    });
+  }
+});
+
+// Secure image upload from paired mobile device
+app.post('/api/capture/sessions/:id/upload', upload.single('image'), async (req, res) => {
+  try {
+    const uploadToken = req.body.uploadToken || req.headers['x-upload-token'];
+    if (!req.file || !req.file.buffer) {
+      return res.status(400).json({
+        error: 'IMAGE_FILE_REQUIRED',
+        message: 'No image file uploaded.'
+      });
+    }
+
+    const result = await captureSessionService.processUpload({
+      sessionId: req.params.id,
+      uploadToken,
+      buffer: req.file.buffer,
+      declaredMimeType: req.file.mimetype
+    });
+
+    res.status(201).json(result);
+  } catch (err) {
+    res.status(err.status || 400).json({
+      error: err.code || 'CAPTURE_UPLOAD_ERROR',
+      message: err.message,
+      details: err.details || null
+    });
+  }
+});
+
+// Retrieve media list for a capture session (Desktop Clinician)
+app.get('/api/capture/sessions/:id/media', resolveActorMiddleware, (req, res) => {
+  try {
+    const mediaList = captureSessionService.getMediaForSession(req.params.id, req.actor);
+    res.json({ media: mediaList });
+  } catch (err) {
+    res.status(err.status || 400).json({
+      error: err.code || 'CAPTURE_MEDIA_ERROR',
+      message: err.message
+    });
+  }
+});
+
 // Get high-level summary of active operational tasks
 app.get(['/api/operations/summary', '/operations/summary'], (req, res) => {
   const tenantId = req.query.tenantId || req.actor?.tenantId || 'org-default';

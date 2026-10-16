@@ -2,13 +2,14 @@ import { useState, useRef, useEffect, type FormEvent, type KeyboardEvent } from 
 import { 
   ArrowLeft, Mic, Square, Check, Loader2, AlertCircle, AlertTriangle, 
   Pill, FileText, Activity, Send, Plus, CheckCircle2, Copy,
-  ClipboardList, Sparkles, RefreshCw, X, Printer, Play, ClipboardCheck
+  ClipboardList, Sparkles, RefreshCw, X, Printer, Play, ClipboardCheck, Smartphone
 } from 'lucide-react';
 import { RealAIService, sendClinicalChat, type ChatMessage } from '../services/ai';
 import { RealSpeechService } from '../services/speech';
 import PrescriptionPDFModal from './PrescriptionPDFModal';
 import IntakeReview from './intake/IntakeReview';
 import DynamicIntake from './intake/DynamicIntake';
+import CaptureSessionPanel from './capture/CaptureSessionPanel';
 import type { PrescriptionItem } from '../types/prescription';
 import type { Patient } from '@medplum/fhirtypes';
 
@@ -62,6 +63,7 @@ export default function DoctorDeskEncounter({ patient, onCloseMeeting, onBackToD
   const [isGeneratingNote, setIsGeneratingNote] = useState(false);
   const [showPdfModal, setShowPdfModal] = useState(false);
   const [showIntakeModal, setShowIntakeModal] = useState(false);
+  const [showCaptureModal, setShowCaptureModal] = useState(false);
 
   const getInitialTranscript = (pid: string) => {
     if (pid.includes('arthur')) {
@@ -623,6 +625,15 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
               </button>
 
               <button
+                onClick={() => setShowCaptureModal(true)}
+                title="Pair mobile device for secure multimodal capture"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-[#52525b] hover:text-[#09090b] bg-[#f4f4f5] hover:bg-[#e4e4e7] border border-[#e4e4e7] transition-colors cursor-pointer"
+              >
+                <Smartphone size={12} className="text-[#8b5cf6]" />
+                <span>Mobile Capture (QR)</span>
+              </button>
+
+              <button
                 onClick={toggleRecording}
                 className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                   isRecording
@@ -1137,6 +1148,17 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
               />
             </div>
           </div>
+        </div>
+      )}
+
+      {/* MOBILE CAPTURE SESSION MODAL (M2B-1) */}
+      {showCaptureModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <CaptureSessionPanel
+            patientId={patient.id}
+            encounterId="enc-active"
+            onClose={() => setShowCaptureModal(false)}
+          />
         </div>
       )}
     </div>

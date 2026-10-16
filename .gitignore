@@ -61,6 +61,8 @@ build/
 *.sqlite
 *.sqlite3
 *.db
+apps/api/data/uploads/
+apps/api/data/*.db
 .cache/
 .vite/
 .turbo/
