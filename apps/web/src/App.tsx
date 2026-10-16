@@ -9,6 +9,7 @@ import PatientProfile from './pages/PatientProfile';
 import Consultation from './pages/Consultation';
 import DocumentReview from './pages/DocumentReview';
 import Assistant from './pages/Assistant';
+import Operations from './pages/Operations';
 import Settings from './pages/Settings';
 import { authService } from './services/auth';
 
@@ -66,12 +67,15 @@ export default function App() {
       <Route path="/landing" element={<Navigate to="/welcome" replace />} />
       <Route path="/login" element={<Login />} />
       <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/patients" element={<ProtectedRoute><Patients /></ProtectedRoute>} />
       <Route path="/patients/:id" element={<ProtectedRoute><PatientProfile /></ProtectedRoute>} />
       <Route path="/consultation" element={<ProtectedRoute><Consultation /></ProtectedRoute>} />
       <Route path="/consultations/*" element={<ProtectedRoute><Consultation /></ProtectedRoute>} />
       <Route path="/document-review" element={<ProtectedRoute><DocumentReview /></ProtectedRoute>} />
+      <Route path="/documents" element={<ProtectedRoute><DocumentReview /></ProtectedRoute>} />
       <Route path="/assistant" element={<ProtectedRoute><Assistant /></ProtectedRoute>} />
+      <Route path="/operations" element={<ProtectedRoute><Operations /></ProtectedRoute>} />
       <Route path="/documents/review" element={<ProtectedRoute><DocumentReview /></ProtectedRoute>} />
       <Route path="/review" element={<ProtectedRoute><DocumentReview /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />

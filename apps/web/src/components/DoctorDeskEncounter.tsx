@@ -183,6 +183,7 @@ export default function DoctorDeskEncounter({ patient, onCloseMeeting, onBackToD
   // Close Meeting Modal State
   const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
   const [copySuccess, setCopySuccess] = useState<string | null>(null);
+  const [deskShortcutFeedback, setDeskShortcutFeedback] = useState<string | null>(null);
 
   // Audio Recording references
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -192,6 +193,80 @@ export default function DoctorDeskEncounter({ patient, onCloseMeeting, onBackToD
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
+
+  // Global Physician Keyboard Shortcuts for Doctor's Desk
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: globalThis.KeyboardEvent) => {
+      // 1. Esc to close open modals
+      if (e.key === 'Escape') {
+        if (isCloseModalOpen) setIsCloseModalOpen(false);
+        if (showPdfModal) setShowPdfModal(false);
+        return;
+      }
+
+      // 2. Cmd/Ctrl + Enter: Open sign-off modal
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        setIsCloseModalOpen(true);
+        setDeskShortcutFeedback('Ready to sign off (⌘↵)');
+        setTimeout(() => setDeskShortcutFeedback(null), 2500);
+        return;
+      }
+
+      // 3. Cmd/Ctrl + S: Save draft to session storage
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        try {
+          sessionStorage.setItem(`proton_desk_draft_${patient.id}`, JSON.stringify({
+            transcript,
+            note,
+            prescriptions,
+            updatedAt: new Date().toISOString()
+          }));
+          setDeskShortcutFeedback('Encounter draft saved (⌘S)');
+          setTimeout(() => setDeskShortcutFeedback(null), 2500);
+        } catch {}
+        return;
+      }
+
+      // 4. Cmd/Ctrl + 1/2/3 to switch tabs
+      if ((e.metaKey || e.ctrlKey) && e.key === '1') {
+        e.preventDefault();
+        setActiveTab('note');
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === '2') {
+        e.preventDefault();
+        setActiveTab('chart');
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === '3') {
+        e.preventDefault();
+        setActiveTab('orders');
+        return;
+      }
+
+      // 5. Cmd/Ctrl + Shift + C: Copy formatted note
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 'c' || e.key === 'C')) {
+        const fullText = `SUBJECTIVE:\n${note.subjective}\n\nOBJECTIVE:\n${note.objective}\n\nASSESSMENT:\n${note.assessment}\n\nPLAN:\n${note.plan}`;
+        navigator.clipboard.writeText(fullText);
+        setDeskShortcutFeedback('SOAP note copied to clipboard');
+        setTimeout(() => setDeskShortcutFeedback(null), 2000);
+        return;
+      }
+
+      // 6. Alt + Space: Toggle recording
+      if (e.altKey && e.code === 'Space') {
+        e.preventDefault();
+        void toggleRecording();
+        setDeskShortcutFeedback(isRecording ? 'Recording paused' : 'Recording started');
+        setTimeout(() => setDeskShortcutFeedback(null), 2000);
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [isCloseModalOpen, showPdfModal, patient.id, transcript, note, prescriptions, isRecording]);
 
   const chartContext = `
 Patient: ${patient.name}, ${patient.age}${patient.gender.charAt(0).toUpperCase()}, DOB: ${patient.dob}, MRN: ${patient.mrn}
@@ -254,6 +329,8 @@ Active Note Plan: ${note.plan}
       }
     } catch (err: any) {
       console.error('Transcription error:', err);
+      setCopySuccess(err.message || 'No valid audio was transcribed. Please check microphone or type directly.');
+      setTimeout(() => setCopySuccess(null), 4000);
     } finally {
       setIsTranscribing(false);
     }
@@ -447,12 +524,20 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
             <span>Prescription PDF</span>
           </button>
 
+          {deskShortcutFeedback && (
+            <div className="flex items-center gap-1.5 bg-[#18181b] text-white px-3 py-1.5 rounded-xl text-xs font-medium shadow-md">
+              <CheckCircle2 size={13} className="text-emerald-400" />
+              <span>{deskShortcutFeedback}</span>
+            </div>
+          )}
+
           <button
             onClick={() => setIsCloseModalOpen(true)}
             className="flex items-center gap-2 bg-[#16a34a] hover:bg-[#15803d] text-white font-semibold text-xs px-4 py-2 rounded-xl shadow-xs transition-all transform active:scale-95 cursor-pointer"
           >
             <Check size={15} strokeWidth={2.5} />
             <span>Close Meeting & Sign Off</span>
+            <span className="text-[10px] opacity-80 font-mono bg-[#15803d] px-1.5 py-0.5 rounded ml-0.5">⌘↵</span>
           </button>
         </div>
       </header>

@@ -1,4 +1,5 @@
 const path = require('path');
+const crypto = require('crypto');
 require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
@@ -7,6 +8,58 @@ const { Type } = require('@google/genai');
 const { getProvider, getProviderStatus } = require('./providers/factory');
 
 const app = express();
+app.disable('x-powered-by');
+
+// --- SECURITY HEADERS MIDDLEWARE ---
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Content-Security-Policy', "default-src 'self'");
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  if (process.env.NODE_ENV === 'production') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
+  next();
+});
+
+// --- IN-MEMORY RATE LIMITER ---
+const rateLimitMap = new Map();
+function createRateLimiter({ windowMs, maxRequests, message, code }) {
+  return (req, res, next) => {
+    if (process.env.NODE_ENV === 'test') return next();
+    const key = req.actor?.actorId || req.ip || req.connection?.remoteAddress || 'anonymous';
+    const now = Date.now();
+    let record = rateLimitMap.get(key);
+    if (!record || now > record.resetTime) {
+      record = { count: 1, resetTime: now + windowMs };
+      rateLimitMap.set(key, record);
+    } else {
+      record.count++;
+      if (record.count > maxRequests) {
+        res.setHeader('Retry-After', Math.ceil((record.resetTime - now) / 1000));
+        return res.status(429).json({ error: message, code });
+      }
+    }
+    next();
+  };
+}
+
+const generalLimiter = createRateLimiter({
+  windowMs: 60 * 1000,
+  maxRequests: 500,
+  message: 'Too many requests. Please try again later.',
+  code: 'RATE_LIMIT_EXCEEDED'
+});
+
+const aiLimiter = createRateLimiter({
+  windowMs: 60 * 1000,
+  maxRequests: 60,
+  message: 'AI endpoint rate limit exceeded. Please wait before retrying.',
+  code: 'AI_RATE_LIMIT_EXCEEDED'
+});
+
+app.use(generalLimiter);
+app.use(['/api/transcribe', '/api/generate-note', '/api/chat', '/api/extract-documents'], aiLimiter);
 
 const defaultLocalOrigins = [
   'http://localhost:3000',
@@ -47,7 +100,23 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+const { telemetryMiddleware } = require('./middleware/telemetry');
+const { validateConfig } = require('./config');
+
+// In production, ensure configuration fails closed if required secrets are missing
+if (process.env.NODE_ENV === 'production') {
+  try {
+    validateConfig();
+  } catch (err) {
+    console.error(err.message);
+    if (!process.env.SUPPRESS_CONFIG_EXIT) {
+      process.exit(1);
+    }
+  }
+}
+
 app.use(express.json({ limit: '10mb' }));
+app.use(telemetryMiddleware);
 
 // --- SAFE NON-PHI TELEMETRY LOGGER ---
 function logAiTelemetry({ provider, operation, status, latencyMs, inputBytes, outputBytes, model, errorCategory, tokens }) {
@@ -248,7 +317,10 @@ async function executeProviderOperation(operationName, provider, inputBytes, fn,
 // --- 1. TRANSCRIPTION ENDPOINT (Phase 5) ---
 app.post('/api/transcribe', upload.single('audio'), async (req, res) => {
   if (!req.file || !req.file.buffer || req.file.buffer.length === 0) {
-    return res.status(400).json({ error: 'No audio file provided or audio file is empty.' });
+    return res.status(400).json({
+      error: 'TRANSCRIPTION_INPUT_INVALID',
+      message: 'No valid audio input was provided.'
+    });
   }
 
   let provider;
@@ -270,6 +342,12 @@ app.post('/api/transcribe', upload.single('audio'), async (req, res) => {
 
     res.json({ transcript: response.text });
   } catch (error) {
+    if (error.code === 'TRANSCRIPTION_INPUT_INVALID' || error.name === 'TranscriptionInputError') {
+      return res.status(400).json({
+        error: 'TRANSCRIPTION_INPUT_INVALID',
+        message: error.message || 'No valid audio input was provided.'
+      });
+    }
     if (error.name === 'TimeoutError') {
       return res.status(504).json({ error: 'AI transcription service timed out. Please retry or continue manually.' });
     }
@@ -442,6 +520,670 @@ app.post('/api/extract-documents', upload.array('documents', 5), async (req, res
   }
 });
 
+// ==========================================
+// PROTON HEALTHCARE OPERATIONS OS ENDPOINTS
+// ==========================================
+const operationsEngine = require('./agents/engine');
+const { verifyRefillProposal } = require('./agents/refillReferralAgent');
+const { resolvePatientIdentity } = require('./agents/identityResolver');
+const { executeInternalTool, ToolExecutionError } = require('./agents/tools');
+const { IdempotencyConflictError } = require('./agents/idempotency');
+const { resolveActorMiddleware, requireRole } = require('./middleware/rbac');
+const { globalSyntheticGateway } = require('./storage/communicationGateway');
+const { patientCommunicationAgent } = require('./agents/patientCommunicationAgent');
+const { schedulingAgentV2 } = require('./agents/schedulingAgentV2');
+const { refillAgentV2 } = require('./agents/refillAgentV2');
+const { referralAgentV2 } = require('./agents/referralAgentV2');
+const { documentFaxAgent } = require('./agents/documentFaxAgent');
+const { brainOperationsBridge } = require('./agents/brainOperationsBridge');
+
+// Mount authoritative actor resolution & dev persona adapter
+app.use(['/api/operations', '/operations', '/api/clinical'], resolveActorMiddleware);
+
+// ==========================================
+// PROTON CANONICAL CLINICAL PIPELINE (V2)
+// ==========================================
+const { clinicalPipeline } = require('./services');
+
+app.post('/api/clinical/pipeline', upload.single('audio'), async (req, res) => {
+  try {
+    const inputPayload = {
+      ...req.body,
+      actor: req.actor || null,
+      tenantId: req.actor?.tenantId || req.body.tenantId || 'org-default'
+    };
+
+    if (req.file) {
+      inputPayload.audioBuffer = req.file.buffer;
+      inputPayload.audioMimeType = req.file.mimetype;
+    }
+
+    if (typeof inputPayload.prescriptions === 'string') {
+      try { inputPayload.prescriptions = JSON.parse(inputPayload.prescriptions); } catch {}
+    }
+    if (typeof inputPayload.confirmedPrescriptions === 'string') {
+      try { inputPayload.confirmedPrescriptions = JSON.parse(inputPayload.confirmedPrescriptions); } catch {}
+    }
+    if (typeof inputPayload.confirmedConditions === 'string') {
+      try { inputPayload.confirmedConditions = JSON.parse(inputPayload.confirmedConditions); } catch {}
+    }
+    if (typeof inputPayload.commitToFhir === 'string') {
+      inputPayload.commitToFhir = inputPayload.commitToFhir === 'true';
+    }
+
+    const result = await clinicalPipeline.execute(inputPayload);
+    res.json(result);
+  } catch (err) {
+    const status = err.status || 400;
+    res.status(status).json({
+      error: err.code || 'CLINICAL_PIPELINE_ERROR',
+      stage: err.stage || 'UNKNOWN',
+      message: err.message,
+      details: err.details || null
+    });
+  }
+});
+
+// Get high-level summary of active operational tasks
+app.get(['/api/operations/summary', '/operations/summary'], (req, res) => {
+  const tenantId = req.query.tenantId || req.actor?.tenantId || 'org-default';
+  if (req.query.tenantId && req.actor && req.query.tenantId !== req.actor.tenantId) {
+    return res.status(403).json({
+      error: 'Forbidden: Cross-organization tenant access is strictly prohibited.',
+      code: 'CROSS_TENANT_ACCESS_DENIED'
+    });
+  }
+  res.json(operationsEngine.getSummary(tenantId));
+});
+
+// List operational tasks with filter by category or status
+app.get(['/api/operations/tasks', '/operations/tasks'], (req, res) => {
+  const { status, category, patientId } = req.query;
+  const tenantId = req.query.tenantId || req.actor?.tenantId || 'org-default';
+  if (req.query.tenantId && req.actor && req.query.tenantId !== req.actor.tenantId) {
+    return res.status(403).json({
+      error: 'Forbidden: Cross-organization tenant access is strictly prohibited.',
+      code: 'CROSS_TENANT_ACCESS_DENIED'
+    });
+  }
+  const tasks = operationsEngine.getTasks({ status, category, patientId, tenantId });
+  res.json({ tasks });
+});
+
+// Patient identity resolution endpoint (Multi-tier confidence scoring)
+app.post(['/api/operations/identity/resolve', '/operations/identity/resolve'], (req, res) => {
+  try {
+    const { patientId, mrn, phone, birthDate } = req.body;
+    const result = resolvePatientIdentity({ patientId, mrn, phone, birthDate });
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Inbound triage submission from patient communication channels
+app.post(['/api/operations/triage', '/operations/triage'], async (req, res) => {
+  try {
+    const { patientId, mrn, phone, birthDate, message, channel, patientContext, idempotencyKey } = req.body;
+    const effectiveIdempotencyKey = idempotencyKey || req.headers['x-idempotency-key'];
+    const tenantId = req.actor?.tenantId || 'org-default';
+
+    if (!message || !message.trim()) {
+      return res.status(400).json({ error: 'Message content is required for clinical triage.' });
+    }
+    const result = await operationsEngine.handleTriageSubmission({
+      patientId,
+      mrn,
+      phone,
+      birthDate,
+      message,
+      channel: channel || 'portal',
+      patientContext: patientContext || {},
+      idempotencyKey: effectiveIdempotencyKey,
+      tenantId
+    });
+    res.json(result);
+  } catch (err) {
+    if (err instanceof IdempotencyConflictError) {
+      return res.status(409).json({ error: err.message, code: err.code });
+    }
+    console.error('Triage error:', err.message || err);
+    res.status(500).json({ error: 'Failed to process inbound message triage.' });
+  }
+});
+
+// Consultation follow-up & appointment extraction (Agent 2: Scheduler)
+app.post(['/api/operations/scheduling/followup', '/operations/scheduling/followup'], async (req, res) => {
+  try {
+    const { consultationPlanText, patientId, patientAcuity, patientName, idempotencyKey } = req.body;
+    const effectiveIdempotencyKey = idempotencyKey || req.headers['x-idempotency-key'];
+    const tenantId = req.actor?.tenantId || 'org-default';
+
+    if (!consultationPlanText) {
+      return res.status(400).json({ error: 'consultationPlanText is required to extract follow-up scheduling plan.' });
+    }
+    const result = await operationsEngine.handleSchedulingFollowup({
+      consultationPlanText,
+      patientId,
+      patientAcuity,
+      patientName,
+      idempotencyKey: effectiveIdempotencyKey,
+      tenantId
+    });
+    res.json(result);
+  } catch (err) {
+    if (err instanceof IdempotencyConflictError) {
+      return res.status(409).json({ error: err.message, code: err.code });
+    }
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Versioned Care Gap Evaluation (Agent 2: Scheduler)
+app.post(['/api/operations/scheduling/care-gaps', '/operations/scheduling/care-gaps'], (req, res) => {
+  try {
+    const { patientId, conditions, recentLabs } = req.body;
+    const tenantId = req.actor?.tenantId || 'org-default';
+    const result = operationsEngine.handleCareGapAssessment({
+      patientId: patientId || 'eleanor-vance',
+      conditions: conditions || ['Type 2 Diabetes Mellitus', 'Essential Hypertension'],
+      recentLabs: recentLabs || [],
+      tenantId
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Deterministic refill safety verification (Agent 3: CareFlow)
+app.post(['/api/operations/refills/verify', '/operations/refills/verify'], (req, res) => {
+  try {
+    const report = verifyRefillProposal(req.body);
+    res.json(report);
+  } catch (err) {
+    console.error('Refill verification error:', err.message || err);
+    res.status(500).json({ error: 'Failed to verify medication refill safety.' });
+  }
+});
+
+// Specialist Referral Packet Compilation (Agent 3: CareFlow)
+app.post(['/api/operations/referrals/compile', '/operations/referrals/compile'], async (req, res) => {
+  try {
+    const {
+      patientId,
+      patientName,
+      patientAgeSex,
+      specialty,
+      specialtyCode,
+      targetProviderOrClinic,
+      clinicalIndication,
+      hpiSummary,
+      relevantLabs,
+      currentMedications,
+      documentedAllergies,
+      vitalsSummary,
+      orderingPhysician
+    } = req.body;
+    const tenantId = req.actor?.tenantId || 'org-default';
+
+    if (!specialty || !clinicalIndication) {
+      return res.status(400).json({ error: 'specialty and clinicalIndication are required.' });
+    }
+
+    const result = await operationsEngine.handleReferralCompilation({
+      patientId: patientId || 'arthur-pendelton',
+      patientName: patientName || 'Arthur Pendelton',
+      patientAgeSex: patientAgeSex || '74M',
+      specialty,
+      specialtyCode,
+      targetProviderOrClinic,
+      clinicalIndication,
+      hpiSummary: hpiSummary || 'Clinical referral order.',
+      relevantLabs: relevantLabs || [],
+      currentMedications: currentMedications || [],
+      documentedAllergies: documentedAllergies || [],
+      vitalsSummary,
+      orderingPhysician,
+      tenantId
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Restricted Internal Tool Execution Gateway
+// INVARIANT: Browser/client cannot invoke arbitrary tools. Protected by internal secret.
+app.post(['/api/operations/internal/tools/execute', '/operations/internal/tools/execute'], async (req, res) => {
+  const internalSecret = req.headers['x-proton-internal-secret'] || '';
+  const expectedSecret = process.env.INTERNAL_AGENT_SECRET || 'internal-secret-token';
+
+  const secretBuffer = Buffer.from(internalSecret);
+  const expectedBuffer = Buffer.from(expectedSecret);
+
+  if (!internalSecret || secretBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(secretBuffer, expectedBuffer)) {
+    return res.status(403).json({
+      error: 'Forbidden: Direct external browser invocation of privileged tools is blocked.',
+      code: 'UNAUTHORIZED_TOOL_INVOCATION'
+    });
+  }
+
+  try {
+    const { toolName, params, callerContext } = req.body;
+    const result = await executeInternalTool(toolName, params, callerContext || { role: 'INTERNAL_AGENT_ENGINE' });
+    res.json(result);
+  } catch (err) {
+    const status = err.statusCode || 400;
+    res.status(status).json({ error: err.message, code: err.code });
+  }
+});
+
+// Physician task approval (1-click sign-off, dose adjustment, or message dispatch)
+// RBAC INVARIANT: Strictly requires physician role
+app.post(['/api/operations/tasks/:id/approve', '/operations/tasks/:id/approve'], requireRole(['physician']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { doctor, editedContent, physicianDecision, selectedOptionId, overrideReason } = req.body;
+    const result = await operationsEngine.approveTask({
+      taskId: id,
+      doctor: doctor || req.actor?.actorName || 'Dr. Sarah Lin, MD',
+      actorId: req.actor?.actorId || 'usr-md-lin-01',
+      actorRole: req.actor?.actorRole || 'physician',
+      tenantId: req.actor?.tenantId || 'org-default',
+      editedContent,
+      physicianDecision,
+      selectedOptionId,
+      overrideReason
+    });
+    res.json(result);
+  } catch (err) {
+    if (err instanceof operationsEngine.FhirPersistenceError) {
+      return res.status(502).json({ error: err.message, code: err.code });
+    }
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Physician task rejection
+// RBAC INVARIANT: Strictly requires physician role
+app.post(['/api/operations/tasks/:id/reject', '/operations/tasks/:id/reject'], requireRole(['physician']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { doctor, reason } = req.body;
+    const result = await operationsEngine.rejectTask({
+      taskId: id,
+      doctor: doctor || req.actor?.actorName || 'Dr. Sarah Lin, MD',
+      actorId: req.actor?.actorId || 'usr-md-lin-01',
+      actorRole: req.actor?.actorRole || 'physician',
+      tenantId: req.actor?.tenantId || 'org-default',
+      reason
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Dispatch communication (Administrative autonomous or Approved Clinical)
+app.post(['/api/operations/communications/:id/dispatch', '/operations/communications/:id/dispatch'], async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { channel } = req.body;
+    const tenantId = req.actor?.tenantId || 'org-default';
+    const task = operationsEngine.getTasks({ tenantId }).find(t => t.id === id);
+
+    // RBAC INVARIANT: Clinical communication strictly requires physician role
+    if (task && task.triageDetails?.communicationCategory === 'clinical') {
+      if (req.actor && req.actor.actorRole !== 'physician') {
+        return res.status(403).json({
+          error: `Forbidden: Role '${req.actor.actorRole}' cannot approve or dispatch clinical communications. Physician sign-off required.`,
+          code: 'INSUFFICIENT_CLINICAL_PRIVILEGES'
+        });
+      }
+    }
+
+    const result = await operationsEngine.dispatchCommunication({
+      taskId: id,
+      channel,
+      tenantId,
+      actorId: req.actor?.actorId || 'agent-connect',
+      actorRole: req.actor?.actorRole || 'agent',
+      actorName: req.actor?.actorName || 'Proton Connect Agent'
+    });
+    res.json(result);
+  } catch (err) {
+    const status = err.statusCode || 400;
+    res.status(status).json({ error: err.message, code: err.code });
+  }
+});
+
+// Explicit confirmation of proposed appointment booking (Agent 2: Scheduler)
+// Allowed for Physician and Operations Staff
+app.post(['/api/operations/scheduling/:id/confirm', '/operations/scheduling/:id/confirm'], requireRole(['physician', 'operations_staff']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { confirmedBy } = req.body;
+    const result = await operationsEngine.confirmAppointmentBooking({
+      taskId: id,
+      confirmedBy: confirmedBy || req.actor?.actorName || 'Operations Staff',
+      actorId: req.actor?.actorId || 'usr-ops-marcus-01',
+      actorRole: req.actor?.actorRole || 'operations_staff',
+      tenantId: req.actor?.tenantId || 'org-default'
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// ==========================================
+// WORKSTREAM 2: AGENTIC OPERATIONS ENDPOINTS
+// ==========================================
+
+// Subagent 1: Patient Communication Agent — Inbound Message Ingestion & Intent Triage
+app.post(['/api/operations/communications/inbound', '/operations/communications/inbound'], async (req, res) => {
+  try {
+    const tenantId = req.actor?.tenantId || 'org-default';
+    const result = await patientCommunicationAgent.processInboundMessage({
+      ...req.body,
+      tenantId,
+      actor: req.actor || { actorId: 'system-inbound', actorRole: 'system', actorName: 'Inbound Gateway' }
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Subagent 2: Scheduling Agent V2 — Reschedule Appointment
+app.post(['/api/operations/scheduling/reschedule', '/operations/scheduling/reschedule'], requireRole(['physician', 'operations_staff']), async (req, res) => {
+  try {
+    const tenantId = req.actor?.tenantId || 'org-default';
+    const result = await schedulingAgentV2.rescheduleAppointment({
+      ...req.body,
+      actorId: req.actor?.actorId || 'usr-ops-marcus-01',
+      actorRole: req.actor?.actorRole || 'operations_staff',
+      tenantId
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Subagent 2: Scheduling Agent V2 — Cancel Appointment
+app.post(['/api/operations/scheduling/cancel', '/operations/scheduling/cancel'], requireRole(['physician', 'operations_staff']), async (req, res) => {
+  try {
+    const tenantId = req.actor?.tenantId || 'org-default';
+    const result = await schedulingAgentV2.cancelAppointment({
+      ...req.body,
+      actorId: req.actor?.actorId || 'usr-ops-marcus-01',
+      actorRole: req.actor?.actorRole || 'operations_staff',
+      tenantId
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Subagent 2: Scheduling Agent V2 — Appointment Reminder
+app.post(['/api/operations/scheduling/reminder', '/operations/scheduling/reminder'], async (req, res) => {
+  try {
+    const tenantId = req.actor?.tenantId || 'org-default';
+    const result = await schedulingAgentV2.sendAppointmentReminder({
+      ...req.body,
+      tenantId
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Subagent 3: Refill Agent V2 — Process Inbound Refill Request
+app.post(['/api/operations/refills/request', '/operations/refills/request'], async (req, res) => {
+  try {
+    const tenantId = req.actor?.tenantId || 'org-default';
+    const result = await refillAgentV2.processRefillRequest({
+      ...req.body,
+      requesterRole: req.body.requesterRole || req.actor?.actorRole || 'pharmacy',
+      tenantId
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Subagent 3: Refill Agent V2 — Physician Refill Approval
+app.post(['/api/operations/refills/:id/approve', '/operations/refills/:id/approve'], requireRole(['physician']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const tenantId = req.actor?.tenantId || 'org-default';
+    const result = await refillAgentV2.approveRefill({
+      taskId: id,
+      approvingDoctor: req.body.doctor || req.actor?.actorName || 'Dr. Sarah Lin, MD',
+      actorId: req.actor?.actorId || 'usr-md-lin-01',
+      actorRole: req.actor?.actorRole || 'physician',
+      clinicalRationale: req.body.clinicalRationale,
+      approvedDose: req.body.approvedDose,
+      tenantId
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Subagent 4: Referral Agent V2 — Prepare Referral Packet
+app.post(['/api/operations/referrals/prepare', '/operations/referrals/prepare'], async (req, res) => {
+  try {
+    const tenantId = req.actor?.tenantId || 'org-default';
+    const result = await referralAgentV2.prepareReferralPacket({
+      ...req.body,
+      orderingPhysician: req.body.orderingPhysician || req.actor?.actorName || 'Dr. Sarah Lin, MD',
+      tenantId
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Subagent 4: Referral Agent V2 — Physician Referral Authorization
+app.post(['/api/operations/referrals/:id/authorize', '/operations/referrals/:id/authorize'], requireRole(['physician']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const tenantId = req.actor?.tenantId || 'org-default';
+    const result = await referralAgentV2.approveAndTransmit({
+      taskId: id,
+      approvingDoctor: req.body.doctor || req.actor?.actorName || 'Dr. Sarah Lin, MD',
+      actorId: req.actor?.actorId || 'usr-md-lin-01',
+      actorRole: req.actor?.actorRole || 'physician',
+      transmissionMethod: req.body.transmissionMethod || 'electronic_ehr_direct',
+      tenantId
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Subagent 5: Document / Fax Agent — Ingest & OCR Document
+app.post(['/api/operations/documents/ingest', '/operations/documents/ingest'], async (req, res) => {
+  try {
+    const tenantId = req.actor?.tenantId || 'org-default';
+    const result = await documentFaxAgent.ingestDocument({
+      ...req.body,
+      tenantId
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Subagent 5: Document / Fax Agent — Physician Approve Facts
+app.post(['/api/operations/documents/:id/approve', '/operations/documents/:id/approve'], requireRole(['physician']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const tenantId = req.actor?.tenantId || 'org-default';
+    const result = await documentFaxAgent.approveDocumentFacts({
+      taskId: id,
+      approvedFactIds: req.body.approvedFactIds || [],
+      doctor: req.body.doctor || req.actor?.actorName || 'Dr. Sarah Lin, MD',
+      actorId: req.actor?.actorId || 'usr-md-lin-01',
+      actorRole: req.actor?.actorRole || 'physician',
+      tenantId
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Subagent 7: Clinical Brain Bridge — Closed Loops
+app.post(['/api/operations/bridge/consultation', '/operations/bridge/consultation'], async (req, res) => {
+  try {
+    const tenantId = req.actor?.tenantId || 'org-default';
+    const result = await brainOperationsBridge.bridgeConsultationToFollowUp({
+      ...req.body,
+      tenantId
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.post(['/api/operations/bridge/symptom', '/operations/bridge/symptom'], async (req, res) => {
+  try {
+    const tenantId = req.actor?.tenantId || 'org-default';
+    const result = await brainOperationsBridge.bridgePatientSymptomToClinicalEscalation({
+      ...req.body,
+      tenantId
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.post(['/api/operations/bridge/lab-caregap', '/operations/bridge/lab-caregap'], requireRole(['physician']), async (req, res) => {
+  try {
+    const tenantId = req.actor?.tenantId || 'org-default';
+    const result = await brainOperationsBridge.bridgeExternalLabToCareGapClosure({
+      ...req.body,
+      approvingDoctor: req.body.doctor || req.actor?.actorName || 'Dr. Sarah Lin, MD',
+      tenantId
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Operations audit log — GET is allowed, POST is strictly rejected
+// INVARIANT: Authoritative audit records are exclusively emitted server-side during validated state transitions.
+app.get(['/api/operations/audit', '/operations/audit'], (req, res) => {
+  const limit = parseInt(req.query.limit, 10) || 50;
+  const tenantId = req.query.tenantId || req.actor?.tenantId || 'org-default';
+  if (req.query.tenantId && req.actor && req.query.tenantId !== req.actor.tenantId) {
+    return res.status(403).json({
+      error: 'Forbidden: Cross-organization tenant access is strictly prohibited.',
+      code: 'CROSS_TENANT_ACCESS_DENIED'
+    });
+  }
+  res.json({ auditEvents: operationsEngine.getAuditEvents(limit, tenantId) });
+});
+
+app.get(['/api/operations/audit/verify', '/operations/audit/verify'], (req, res) => {
+  const tenantId = req.query.tenantId || req.actor?.tenantId || 'org-default';
+  const verification = operationsEngine.verifyAuditChain(tenantId);
+  res.json(verification);
+});
+
+// Test / Failure injection endpoint for synthetic communication gateway
+// Only enabled in non-production, requires authenticated operational role
+app.post(['/api/operations/gateway/failure-mode', '/operations/gateway/failure-mode'], requireRole(['physician', 'operations_staff', 'admin']), (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ error: 'Endpoint unavailable in production.', code: 'NOT_FOUND' });
+  }
+  const { enable, reason } = req.body;
+  globalSyntheticGateway.setFailureMode(enable, reason);
+  res.json({ failureMode: enable, reason: reason || null });
+});
+
+app.post(['/api/operations/audit', '/operations/audit'], (req, res) => {
+  res.status(403).json({
+    error: 'Forbidden: Authoritative audit records can only be generated server-side during validated state transitions. Client audit injection is blocked.',
+    code: 'UNAUTHORIZED_AUDIT_INJECTION'
+  });
+});
+
+// Background Jobs Endpoint (Tenant-Scoped)
+const jobRepository = require('./storage/jobRepository');
+const { runWorkerCycle } = require('./workers/reconciliationWorker');
+
+app.get(['/api/operations/jobs', '/operations/jobs'], (req, res) => {
+  const tenantId = req.query.tenantId || req.actor?.tenantId || 'org-default';
+  if (req.query.tenantId && req.actor && req.query.tenantId !== req.actor.tenantId) {
+    return res.status(403).json({
+      error: 'Forbidden: Cross-organization tenant access is strictly prohibited.',
+      code: 'CROSS_TENANT_ACCESS_DENIED'
+    });
+  }
+  const { status, jobType, sourceTaskId, limit } = req.query;
+  const jobs = jobRepository.listJobs({ tenantId, status, jobType, sourceTaskId, limit: parseInt(limit, 10) || 50 });
+  res.json({ jobs });
+});
+
+// Trigger worker reconciliation cycle (Operational Admin / Staff / Physician)
+app.post(['/api/operations/jobs/worker/cycle', '/operations/jobs/worker/cycle'], requireRole(['physician', 'operations_staff', 'admin', 'agent']), async (req, res) => {
+  const tenantId = req.actor?.tenantId || 'org-default';
+  try {
+    const workerResults = await runWorkerCycle({
+      workerId: `worker-api-${req.actor?.actorId || 'daemon'}`,
+      tenantId
+    });
+    res.json({ success: true, processedJobs: workerResults });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- PHYSICIAN PILOT FEEDBACK HARNESS ---
+const pilotFeedbackRepo = require('./storage/pilotFeedbackRepository');
+
+app.post(['/api/pilot/feedback', '/pilot/feedback'], async (req, res) => {
+  try {
+    const feedback = pilotFeedbackRepo.recordPilotFeedback({
+      ...req.body,
+      tenantId: req.actor?.tenantId || req.body.tenantId || 'org-default',
+      clinicianId: req.actor?.actorId || req.body.clinicianId || 'usr-md-lin-01'
+    });
+    res.json({ success: true, feedback });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.get(['/api/pilot/summary', '/pilot/summary'], (req, res) => {
+  const tenantId = req.query.tenantId || req.actor?.tenantId || 'org-default';
+  const summary = pilotFeedbackRepo.getPilotSummary(tenantId);
+  res.json(summary);
+});
+
+app.get(['/api/pilot/feedback', '/pilot/feedback'], (req, res) => {
+  const tenantId = req.query.tenantId || req.actor?.tenantId || 'org-default';
+  const clinicianId = req.query.clinicianId || null;
+  const items = pilotFeedbackRepo.listPilotFeedback({ tenantId, clinicianId });
+  res.json({ feedback: items });
+});
+
+
 // Safe Express error handling
 app.use((err, req, res, next) => {
   if (err) {
@@ -453,3 +1195,4 @@ app.use((err, req, res, next) => {
 });
 
 module.exports = app;
+

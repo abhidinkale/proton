@@ -3,7 +3,6 @@ import {
   Check, 
   X, 
   Edit2, 
-  FileText,
   Save
 } from 'lucide-react';
 import type { MemoryProposal } from '../types/clinicalBrain';
@@ -43,23 +42,23 @@ export default function MemoryProposalPanel({
   const pendingCount = proposals.filter(p => p.status === 'PROPOSED').length;
 
   return (
-    <div className="bg-white border border-brand-200/90 rounded-2xl shadow-sm overflow-hidden mb-8">
+    <div className="bg-white border border-[#D5D2C9] rounded-md shadow-2xs overflow-hidden mb-8 font-sans">
       {/* Header */}
-      <div className="bg-gradient-to-r from-brand-50 via-purple-50 to-white px-6 py-4 border-b border-brand-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="bg-[#111315] text-white px-6 py-4 border-b border-[#222831] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <div className="h-8 w-8 rounded-lg bg-brand-600 text-white flex items-center justify-center shadow-xs">
-            <FileText size={18} />
+          <div className="h-8 w-8 rounded bg-white text-[#111315] flex items-center justify-center font-mono-clinical font-bold text-xs">
+            MP
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-bold text-slate-900 text-sm tracking-tight">
-                PATIENT MEMORY UPDATE PROPOSALS
+              <h3 className="font-editorial text-xl sm:text-2xl text-white tracking-normal">
+                Patient Memory Update Proposals
               </h3>
-              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-brand-100 text-brand-800 border border-brand-200">
+              <span className="text-[10px] font-mono-clinical uppercase tracking-wider px-2 py-0.5 rounded bg-[#1D232C] text-amber-300 border border-[#2E3643]">
                 Physician Gate Required
               </span>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-[#8A9199] mt-0.5">
               Proton detected updates to the patient's longitudinal story. Doctor reviews and approves each item before FHIR persistence.
             </p>
           </div>

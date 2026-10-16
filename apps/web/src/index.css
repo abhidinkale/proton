@@ -15,24 +15,25 @@
   --color-brand-900: #151515;
   --color-brand-950: #111111;
 
-  /* ── Typography (Refined Modern Sans-Serif) ── */
-  --font-sans: 'Source Sans 3 Variable', sans-serif;
-  --font-display: 'Source Sans 3 Variable', sans-serif;
+  /* ── Typography (Refined Modern Sans-Serif + Editorial Serif + Clinical Mono) ── */
+  --font-sans: 'Plus Jakarta Sans', 'Source Sans 3 Variable', sans-serif;
+  --font-display: 'Plus Jakarta Sans', 'Source Sans 3 Variable', sans-serif;
+  --font-editorial: 'Instrument Serif', Georgia, serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
 
-  /* ── Clinical Environment (Warm Neutral & White Surfaces) ── */
+  /* ── Clinical Environment (Warm Alabaster Canvas & Deep Carbon Ink) ── */
   --color-surface: #ffffff;
-  --color-surface-raised: #fbfbfa;
-  --color-surface-sunken: #f4f4f5;
-  --color-surface-overlay: rgba(24, 24, 27, 0.4);
+  --color-surface-raised: #f7f6f2;
+  --color-surface-sunken: #edebe4;
+  --color-surface-overlay: rgba(17, 19, 21, 0.45);
 
-  --color-border-default: #e4e4e7;
-  --color-border-subtle: #f4f4f5;
-  --color-border-strong: #d4d4d8;
+  --color-border-default: #e4e2dd;
+  --color-border-subtle: #eeece6;
+  --color-border-strong: #d5d2c9;
 
-  --color-text-primary: #18181b;
-  --color-text-secondary: #71717a;
-  --color-text-tertiary: #a1a1aa;
+  --color-text-primary: #111315;
+  --color-text-secondary: #5a6065;
+  --color-text-tertiary: #8a9199;
   --color-text-inverse: #ffffff;
 
   /* ── Semantic Colors (Restrained Clinical) ── */
@@ -47,8 +48,8 @@
 
   /* ── Border Radius (Restrained, Editorial) ── */
   --radius-sm: 0.25rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
   --radius-xl: 0.75rem;
   --radius-2xl: 0.75rem;
   --radius-3xl: 1rem;
@@ -64,21 +65,60 @@
   --space-4: 1rem;
   --space-6: 1.5rem;
   --space-8: 2rem;
-  --radius-control: 0.5rem;
-  --radius-card: 0.75rem;
-  --radius-dialog: 1rem;
+  --radius-control: 0.375rem;
+  --radius-card: 0.5rem;
+  --radius-dialog: 0.75rem;
 }
 
-/* ── Base Styles (Quiet Clinical Workspace) ── */
+/* ── Base Styles (Swiss Clinical Workspace) ── */
 html, body {
-  background-color: #fafaf9;
-  color: #18181b;
+  background-color: #F7F6F2;
+  color: #111315;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   font-kerning: normal;
   font-synthesis: none;
+}
+
+/* ── Swiss Clinical Typography & Utility Classes ── */
+.font-editorial {
+  font-family: 'Instrument Serif', Georgia, serif;
+}
+
+.font-mono-clinical {
+  font-family: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.bg-clinical-grid {
+  background-size: 32px 32px;
+  background-image: linear-gradient(to right, #222831 1px, transparent 1px), linear-gradient(to bottom, #222831 1px, transparent 1px);
+}
+
+.bg-clinical-grid-light {
+  background-size: 32px 32px;
+  background-image: linear-gradient(to right, #E4E2DD 1px, transparent 1px), linear-gradient(to bottom, #E4E2DD 1px, transparent 1px);
+}
+
+/* High-contrast semantic badges */
+.badge-ai-draft {
+  background-color: #FFF8EB;
+  border: 1px solid #F59E0B;
+  color: #B45309;
+}
+
+.badge-doctor-edited {
+  background-color: #ECFDF5;
+  border: 1px solid #10B981;
+  color: #047857;
+}
+
+.badge-safety-intercept {
+  background-color: #FEF2F2;
+  border: 1px solid #EF4444;
+  color: #B91C1C;
 }
 
 /* ── Selection ── */

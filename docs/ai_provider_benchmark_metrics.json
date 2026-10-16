@@ -1,0 +1,60 @@
+[
+  {
+    "provider": "demo",
+    "model": "demo-mock-model",
+    "available": true,
+    "noteGeneration": {
+      "tested": true,
+      "success": true,
+      "latencyMs": 3002,
+      "tokensUsed": 0,
+      "schemaValid": true,
+      "hasSubjective": true,
+      "hasObjective": true,
+      "hasAssessment": true,
+      "hasPlan": true
+    },
+    "documentExtraction": {
+      "tested": true,
+      "success": true,
+      "latencyMs": 2002,
+      "diagnosesFound": 3,
+      "medsFound": 0,
+      "allergiesPreserved": true,
+      "negationPreserved": false
+    },
+    "errorHandling": {
+      "handledEmptyTranscript": false,
+      "handledMalformedData": false
+    }
+  },
+  {
+    "provider": "medgemma",
+    "model": "mlx-community/medgemma-1.5-4b-it-4bit",
+    "available": true,
+    "noteGeneration": {
+      "tested": true,
+      "success": false,
+      "latencyMs": 0,
+      "tokensUsed": 0,
+      "schemaValid": false,
+      "hasSubjective": false,
+      "hasObjective": false,
+      "hasAssessment": false,
+      "hasPlan": false
+    },
+    "documentExtraction": {
+      "tested": true,
+      "success": false,
+      "latencyMs": 0,
+      "diagnosesFound": 0,
+      "medsFound": 0,
+      "allergiesPreserved": false,
+      "negationPreserved": false
+    },
+    "errorHandling": {
+      "handledEmptyTranscript": true,
+      "handledMalformedData": false
+    }
+  }
+]

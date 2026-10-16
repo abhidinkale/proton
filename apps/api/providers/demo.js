@@ -7,14 +7,21 @@ class DemoProvider extends AIProvider {
   }
 
   async transcribe(audioBuffer, mimeType) {
+    if (!audioBuffer || (Buffer.isBuffer(audioBuffer) && audioBuffer.length < 64)) {
+      const error = new Error("No valid audio input was provided.");
+      error.name = "TranscriptionInputError";
+      error.code = "TRANSCRIPTION_INPUT_INVALID";
+      error.status = 400;
+      throw error;
+    }
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve({
-          text: "Patient presents with a 3-day history of moderate frontal headache and mild nausea. They have taken ibuprofen with minimal relief. No recent travel. No fever.",
+          text: "Patient presents with symptoms discussed during consultation.",
           usageMetadata: { promptTokenCount: 0, candidatesTokenCount: 0, totalTokenCount: 0 },
           model: this.modelName
         });
-      }, 2000);
+      }, 500);
     });
   }
 

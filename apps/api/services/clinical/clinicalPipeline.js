@@ -1,0 +1,441 @@
+/**
+ * Proton Canonical Clinical Pipeline
+ * 
+ * Enforces the canonical 8-stage clinical execution flow with strict physician authority,
+ * patient isolation, deterministic safety gates, and tamper-evident audit provenance:
+ * 
+ * 1. INPUT           - Raw patient/encounter data, audio streams, or typed dialogue
+ * 2. VALIDATION      - Strict payload validation, format checks, patient ID matching, actor checks
+ * 3. CLINICAL CONTEXT- Strictly patient-bound retrieval of FHIR records (Conditions, Meds, Allergies)
+ * 4. AI ANALYSIS     - LLM synthesis, schema validation, zero silent mock fallbacks
+ * 5. SAFETY CHECK    - Deterministic drug-allergy, DDI, and dosage boundary verification
+ * 6. CLINICAL OUTPUT - Canonical structured clinical note (SOAP) and safety-verified draft
+ * 7. FHIR TRANSACTION- Atomic Medplum R4 Bundle commit (Encounter, ClinicalImpression, Condition, Meds, Provenance)
+ * 8. AUDIT/PROVENANCE- Cryptographic SHA-256 tamper-evident provenance log entry (success & failure)
+ */
+
+const { mediaService, TranscriptionInputError } = require('../media/mediaService');
+const { aiService } = require('../ai/aiService');
+const { safetyService } = require('../safety/safetyService');
+const { fhirService } = require('../fhir/fhirService');
+const { auditService } = require('../audit/auditService');
+
+class ClinicalPipelineError extends Error {
+  constructor(stage, code, message, details = {}) {
+    super(`[Pipeline:${stage}] ${message}`);
+    this.name = 'ClinicalPipelineError';
+    this.stage = stage;
+    this.code = code;
+    this.status = details.status || 400;
+    this.details = details;
+  }
+}
+
+class ClinicalPipeline {
+  /**
+   * Executes the canonical clinical pipeline.
+   * @param {Object} input
+   * @param {string} input.patientId - Required patient reference (e.g. 'Patient/123' or '123')
+   * @param {string} [input.practitionerId] - Responsible clinician reference
+   * @param {Object} [input.actor] - Authenticated actor context { actorId, actorRole, actorName, tenantId }
+   * @param {string} [input.transcript] - Clinical dialogue text
+   * @param {Buffer} [input.audioBuffer] - Raw consultation audio
+   * @param {string} [input.audioMimeType] - Audio MIME type
+   * @param {string} [input.template] - Consultation note template ('SOAP' | 'General Consultation')
+   * @param {Array<Object>} [input.prescriptions] - Proposed medications to safety verify
+   * @param {Array<Object>} [input.confirmedPrescriptions] - Explicit clinician-signed prescriptions for FHIR commit
+   * @param {Array<Object|string>} [input.confirmedConditions] - Explicit clinician-confirmed diagnoses for FHIR commit
+   * @param {boolean} [input.commitToFhir] - Whether to atomically commit the encounter to FHIR
+   * @param {string} [input.physicianDirective] - Clinician directive / override rationale
+   * @param {string} [input.tenantId] - Multi-tenant ID
+   * @returns {Promise<Object>} Complete pipeline result with provenance
+   */
+  async execute(input) {
+    const pipelineRunId = `pipe-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+    const startTime = Date.now();
+    const stagesExecuted = [];
+    let currentStage = 'INPUT';
+    let validated = null;
+
+    try {
+      // Stage 1 & 2: INPUT & VALIDATION
+      currentStage = 'VALIDATION';
+      stagesExecuted.push('INPUT');
+      stagesExecuted.push('VALIDATION');
+      validated = this.validateInput(input);
+
+      // Stage 3: CLINICAL CONTEXT (Strict patient binding & tenant isolation)
+      currentStage = 'CLINICAL_CONTEXT';
+      stagesExecuted.push('CLINICAL_CONTEXT');
+      const clinicalContext = await this.retrieveClinicalContext(validated.patientId, validated.tenantId);
+
+      // Stage 4: AI ANALYSIS (Speech & Clinical Note Synthesis with Schema Validation)
+      currentStage = 'AI_ANALYSIS';
+      stagesExecuted.push('AI_ANALYSIS');
+      const aiAnalysisResult = await this.runAiAnalysis({
+        transcript: validated.transcript,
+        audioBuffer: validated.audioBuffer,
+        audioMimeType: validated.audioMimeType,
+        template: validated.template,
+        clinicalContext
+      });
+
+      // Proposed prescriptions (either from request or extracted from consultation)
+      const proposedPrescriptions = validated.prescriptions || [];
+
+      // Stage 5: SAFETY CHECK (Deterministic verification BEFORE persistence)
+      currentStage = 'SAFETY_CHECK';
+      stagesExecuted.push('SAFETY_CHECK');
+      const safetyReport = this.runSafetyCheck({
+        prescriptions: proposedPrescriptions,
+        clinicalContext
+      });
+
+      // Hard Stop on Critical Safety Failures
+      if (safetyReport.hardStop) {
+        // Enforce physician authority: only verified clinician can provide directive override
+        if (!validated.physicianDirective) {
+          throw new ClinicalPipelineError(
+            'SAFETY_CHECK',
+            'CONTRAINDICATION_HARD_STOP',
+            'Prescription violates critical safety contraindications. Clinician directive required to override.',
+            { safetyReport, status: 422 }
+          );
+        }
+
+        // Validate that directive was issued by an authorized physician
+        if (!validated.actor || !['physician', 'practitioner'].includes(validated.actor.actorRole)) {
+          throw new ClinicalPipelineError(
+            'SAFETY_CHECK',
+            'UNAUTHORIZED_PHYSICIAN_OVERRIDE',
+            'Safety override rejected: only an authenticated physician/practitioner may issue clinical overrides.',
+            { safetyReport, status: 403 }
+          );
+        }
+      }
+
+      // Stage 6: STRUCTURED CLINICAL OUTPUT
+      currentStage = 'STRUCTURED_OUTPUT';
+      stagesExecuted.push('STRUCTURED_OUTPUT');
+      const structuredOutput = this.buildStructuredOutput({
+        aiAnalysisResult,
+        safetyReport,
+        prescriptions: proposedPrescriptions
+      });
+
+      // Stage 7: FHIR TRANSACTION (Atomic Bundle Persistence)
+      let fhirResult = null;
+      if (validated.commitToFhir) {
+        currentStage = 'FHIR_TRANSACTION';
+        stagesExecuted.push('FHIR_TRANSACTION');
+
+        // INVARIANT: Unconfirmed AI suggestions cannot create active FHIR resources.
+        // Only explicitly confirmed conditions and signed prescriptions are committed.
+        fhirResult = await this.commitFhirTransaction({
+          patientId: validated.patientId,
+          practitionerId: validated.practitionerId,
+          encounterId: validated.encounterId,
+          noteText: aiAnalysisResult.rawText,
+          confirmedConditions: validated.confirmedConditions,
+          confirmedPrescriptions: validated.confirmedPrescriptions,
+          tenantId: validated.tenantId
+        });
+      }
+
+      // Stage 8: AUDIT/PROVENANCE (Cryptographic Hash Chaining)
+      currentStage = 'AUDIT_PROVENANCE';
+      stagesExecuted.push('AUDIT_PROVENANCE');
+      const auditRecord = auditService.recordPipelineStage({
+        stage: 'COMPLETE',
+        patientId: validated.patientId,
+        actorId: validated.actor?.actorId || validated.practitionerId,
+        actorRole: validated.actor?.actorRole || 'practitioner',
+        actorName: validated.actor?.actorName || 'Proton Practitioner',
+        status: 'SUCCESS',
+        summary: `Completed canonical clinical pipeline with ${stagesExecuted.length} stages. Committed to FHIR: ${Boolean(validated.commitToFhir)}. Override: ${Boolean(validated.physicianDirective)}`,
+        physicianDirective: validated.physicianDirective,
+        resultingState: 'ENCOUNTER_FINALIZED',
+        tenantId: validated.tenantId
+      });
+
+      return {
+        success: true,
+        pipelineRunId,
+        durationMs: Date.now() - startTime,
+        stagesExecuted,
+        patientId: validated.patientId,
+        practitionerId: validated.practitionerId,
+        actor: validated.actor,
+        aiAnalysis: aiAnalysisResult,
+        safety: safetyReport,
+        output: structuredOutput,
+        fhirTransaction: fhirResult,
+        provenance: {
+          auditId: auditRecord.eventId || auditRecord.id,
+          currentHash: auditRecord.currentHash,
+          timestamp: new Date().toISOString()
+        }
+      };
+    } catch (err) {
+      // Ensure failed operations are immutably recorded in the audit trail
+      const failureStage = err.stage || currentStage;
+      const effectivePatientId = validated?.patientId || input?.patientId || 'unknown-patient';
+      const effectiveActorId = validated?.actor?.actorId || input?.actor?.actorId || 'unknown-actor';
+      const effectiveTenantId = validated?.tenantId || input?.tenantId || 'org-default';
+
+      try {
+        auditService.recordPipelineStage({
+          stage: failureStage,
+          patientId: effectivePatientId,
+          actorId: effectiveActorId,
+          actorRole: validated?.actor?.actorRole || 'unknown',
+          status: 'FAILED',
+          summary: `Pipeline halted at ${failureStage}: ${err.message}`,
+          resultingState: 'PIPELINE_ERROR',
+          tenantId: effectiveTenantId
+        });
+      } catch (auditErr) {
+        console.error('[ClinicalPipeline] Emergency audit failure logging failed:', auditErr.message);
+      }
+
+      throw err;
+    }
+  }
+
+  // --- Pipeline Stage Implementations ---
+
+  validateInput(input) {
+    if (!input || typeof input !== 'object') {
+      throw new ClinicalPipelineError('VALIDATION', 'INPUT_REQUIRED', 'Missing pipeline input payload.');
+    }
+
+    if (!input.patientId) {
+      throw new ClinicalPipelineError('VALIDATION', 'PATIENT_ID_REQUIRED', 'Encounter must be bound to a valid patientId.');
+    }
+
+    const cleanPatientId = String(input.patientId).replace(/^Patient\//, '').trim();
+    if (!cleanPatientId) {
+      throw new ClinicalPipelineError('VALIDATION', 'PATIENT_ID_INVALID', 'Invalid patientId provided.');
+    }
+
+    // Patient Context Isolation: Child item patient mismatch check
+    if (Array.isArray(input.prescriptions)) {
+      for (const rx of input.prescriptions) {
+        if (rx.patientId && String(rx.patientId).replace(/^Patient\//, '').trim() !== cleanPatientId) {
+          throw new ClinicalPipelineError(
+            'VALIDATION',
+            'PATIENT_ID_MISMATCH',
+            `Prescription item specifies patient '${rx.patientId}', but encounter is bound to '${cleanPatientId}'.`,
+            { status: 400 }
+          );
+        }
+      }
+    }
+
+    if (Array.isArray(input.confirmedConditions)) {
+      for (const cond of input.confirmedConditions) {
+        if (typeof cond === 'object' && cond.patientId && String(cond.patientId).replace(/^Patient\//, '').trim() !== cleanPatientId) {
+          throw new ClinicalPipelineError(
+            'VALIDATION',
+            'PATIENT_ID_MISMATCH',
+            `Condition item specifies patient '${cond.patientId}', but encounter is bound to '${cleanPatientId}'.`,
+            { status: 400 }
+          );
+        }
+      }
+    }
+
+    // Input Audio / Text validation
+    if (!input.transcript && !input.audioBuffer) {
+      throw new ClinicalPipelineError(
+        'VALIDATION',
+        'NO_CLINICAL_INPUT',
+        'Either audioBuffer or text transcript must be provided to initiate the clinical encounter.'
+      );
+    }
+
+    if (input.audioBuffer) {
+      mediaService.validateAudioInput(input.audioBuffer, input.audioMimeType);
+    }
+
+    // Actor context
+    const actor = input.actor || null;
+    const practitionerId = actor?.actorId 
+      ? `Practitioner/${actor.actorId}` 
+      : (input.practitionerId || 'Practitioner/practitioner-default');
+
+    // Physician Directive & Override Validation
+    let physicianDirective = null;
+    if (input.physicianDirective) {
+      const directiveText = String(input.physicianDirective).trim();
+      if (directiveText.length < 10) {
+        throw new ClinicalPipelineError(
+          'VALIDATION',
+          'DIRECTIVE_TOO_SHORT',
+          'Physician directive must provide substantive clinical rationale (minimum 10 characters).',
+          { status: 400 }
+        );
+      }
+
+      // Check role authorization: Only physician or practitioner can provide a directive override
+      if (actor && !['physician', 'practitioner'].includes(actor.actorRole)) {
+        throw new ClinicalPipelineError(
+          'VALIDATION',
+          'UNAUTHORIZED_PHYSICIAN_OVERRIDE',
+          `Actor with role '${actor.actorRole}' is not authorized to issue physician directives. Required role: physician.`,
+          { status: 403 }
+        );
+      }
+
+      physicianDirective = directiveText;
+    }
+
+    return {
+      patientId: cleanPatientId,
+      practitionerId,
+      actor,
+      encounterId: input.encounterId,
+      transcript: input.transcript ? String(input.transcript).trim() : null,
+      audioBuffer: input.audioBuffer || null,
+      audioMimeType: input.audioMimeType || 'audio/webm',
+      template: input.template || 'General Consultation',
+      prescriptions: Array.isArray(input.prescriptions) ? input.prescriptions : [],
+      confirmedPrescriptions: Array.isArray(input.confirmedPrescriptions) ? input.confirmedPrescriptions : [],
+      confirmedConditions: Array.isArray(input.confirmedConditions) ? input.confirmedConditions : [],
+      commitToFhir: Boolean(input.commitToFhir),
+      physicianDirective,
+      tenantId: actor?.tenantId || input.tenantId || 'org-default'
+    };
+  }
+
+  async retrieveClinicalContext(patientId, tenantId) {
+    try {
+      return await fhirService.getPatientClinicalContext(patientId, tenantId);
+    } catch (err) {
+      throw new ClinicalPipelineError(
+        'CLINICAL_CONTEXT',
+        err.code || 'CONTEXT_FETCH_FAILED',
+        `Failed to retrieve patient clinical context for ${patientId}: ${err.message}`,
+        { status: err.status || 500 }
+      );
+    }
+  }
+
+  async runAiAnalysis({ transcript, audioBuffer, audioMimeType, template, clinicalContext }) {
+    let effectiveTranscript = transcript;
+
+    // 1. Transcribe audio if provided
+    if (audioBuffer && !effectiveTranscript) {
+      const transcriptionResult = await aiService.transcribeAudio(audioBuffer, audioMimeType);
+      effectiveTranscript = transcriptionResult.text;
+    }
+
+    if (!effectiveTranscript || !effectiveTranscript.trim()) {
+      throw new TranscriptionInputError("No speech could be recognized from the consultation input.");
+    }
+
+    // 2. Format clinical context strictly bound to patient
+    const patientName = clinicalContext.patient?.name?.[0]?.given?.join(' ') + ' ' + (clinicalContext.patient?.name?.[0]?.family || '');
+    const contextString = [
+      `Patient: ${patientName || clinicalContext.patientId}`,
+      `DOB: ${clinicalContext.patient?.birthDate || 'Unknown'}`,
+      `Active Diagnoses: ${clinicalContext.conditions.map(c => c.code?.text || c.code?.coding?.[0]?.display || 'Unknown').join(', ') || 'None'}`,
+      `Active Medications: ${clinicalContext.medications.map(m => m.medicationCodeableConcept?.text || m.medicationCodeableConcept?.coding?.[0]?.display || 'Unknown').join(', ') || 'None'}`,
+      `Known Allergies: ${clinicalContext.allergies.map(a => a.code?.text || a.code?.coding?.[0]?.display || 'Unknown').join(', ') || 'None'}`
+    ].join('\n');
+
+    // 3. Generate structured note
+    const aiNoteResult = await aiService.generateClinicalNote(effectiveTranscript, contextString, template);
+
+    // 4. Strict runtime schema validation of AI output
+    const note = aiNoteResult.note;
+    if (!note || typeof note !== 'object') {
+      throw new ClinicalPipelineError(
+        'AI_ANALYSIS',
+        'AI_SCHEMA_VALIDATION_FAILED',
+        'AI note generator returned invalid non-object output.',
+        { status: 502 }
+      );
+    }
+
+    return {
+      transcript: effectiveTranscript,
+      note: aiNoteResult.note,
+      rawText: aiNoteResult.rawText,
+      model: aiNoteResult.model,
+      usage: aiNoteResult.usage
+    };
+  }
+
+  runSafetyCheck({ prescriptions, clinicalContext }) {
+    return safetyService.evaluatePrescriptionSafety({
+      prescriptions,
+      allergies: clinicalContext.allergies,
+      activeMedications: clinicalContext.medications
+    });
+  }
+
+  buildStructuredOutput({ aiAnalysisResult, safetyReport, prescriptions }) {
+    const rawNote = aiAnalysisResult.note || {};
+    
+    // Extract assessment / diagnoses as AI suggestions ONLY (marked unconfirmed)
+    let suggestedDiagnoses = [];
+    if (rawNote.assessment) {
+      suggestedDiagnoses = Array.isArray(rawNote.assessment) 
+        ? rawNote.assessment 
+        : String(rawNote.assessment).split('\n').map(s => s.replace(/^\d+[\.\)]\s*/, '').trim()).filter(Boolean);
+    }
+
+    return {
+      soapNote: {
+        subjective: rawNote.subjective || rawNote.historyOfPresentIllness || '',
+        objective: rawNote.objective || rawNote.examinationFindings || '',
+        assessment: rawNote.assessment || '',
+        plan: rawNote.plan || ''
+      },
+      rawNote,
+      // Invariant: Mark suggested diagnoses as unconfirmed AI drafts
+      suggestedDiagnoses: suggestedDiagnoses.map(d => ({
+        name: typeof d === 'string' ? d : (d.name || 'Diagnosis'),
+        status: 'PROPOSED_BY_AI',
+        clinicianConfirmed: false
+      })),
+      prescriptions: prescriptions.map(rx => ({
+        ...rx,
+        safetyStatus: safetyReport.contraindications.some(c => c.medication.toLowerCase() === (rx.name || '').toLowerCase()) 
+          ? 'CONTRAINDICATED' 
+          : 'VERIFIED'
+      }))
+    };
+  }
+
+  async commitFhirTransaction({ patientId, practitionerId, encounterId, noteText, confirmedConditions, confirmedPrescriptions, tenantId }) {
+    const bundle = fhirService.buildEncounterBundle({
+      patientId,
+      practitionerId,
+      encounterId,
+      noteText,
+      confirmedConditions,
+      confirmedPrescriptions
+    });
+
+    try {
+      return await fhirService.executeTransaction(bundle);
+    } catch (err) {
+      throw new ClinicalPipelineError(
+        'FHIR_TRANSACTION',
+        'ATOMIC_TRANSACTION_FAILED',
+        `Failed to commit atomic FHIR bundle: ${err.message}`,
+        { status: 500 }
+      );
+    }
+  }
+}
+
+const clinicalPipeline = new ClinicalPipeline();
+
+module.exports = {
+  ClinicalPipeline,
+  clinicalPipeline,
+  ClinicalPipelineError
+};

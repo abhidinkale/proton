@@ -27,37 +27,39 @@ export default function ClinicalVerificationPanel({
   const { checks, passedCount, warningCount, blockedCount, unacknowledgedWarningCount } = report;
 
   return (
-    <div className={`border rounded-2xl overflow-hidden transition-all shadow-xs ${
+    <div className={`border rounded-md overflow-hidden transition-all shadow-2xs ${
       blockedCount > 0 
-        ? 'bg-red-50/20 border-red-200' 
+        ? 'bg-[#FEF2F2] border-[#EF4444]' 
         : warningCount > 0 
-          ? 'bg-amber-50/20 border-amber-200' 
-          : 'bg-emerald-50/20 border-emerald-200'
+          ? 'bg-[#FFFBEB] border-[#F59E0B]' 
+          : 'bg-[#F0FDF4] border-[#10B981]'
     }`}>
       {/* HEADER */}
       <div className={`px-5 py-3.5 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
         blockedCount > 0 
-          ? 'bg-red-50/60 border-red-200 text-red-900' 
+          ? 'bg-red-100/70 border-red-300 text-[#B91C1C]' 
           : warningCount > 0 
-            ? 'bg-amber-50/60 border-amber-200 text-amber-900' 
-            : 'bg-emerald-50/60 border-emerald-200 text-emerald-900'
+            ? 'bg-amber-100/70 border-amber-300 text-[#B45309]' 
+            : 'bg-emerald-100/70 border-emerald-300 text-[#047857]'
       }`}>
         <div className="flex items-center gap-2.5">
           {blockedCount > 0 ? (
-            <ShieldAlert size={18} className="text-red-600 shrink-0" />
+            <ShieldAlert size={18} className="text-[#B91C1C] shrink-0" />
           ) : warningCount > 0 ? (
-            <AlertTriangle size={18} className="text-amber-600 shrink-0" />
+            <AlertTriangle size={18} className="text-[#B45309] shrink-0" />
           ) : (
-            <ShieldCheck size={18} className="text-emerald-600 shrink-0" />
+            <ShieldCheck size={18} className="text-[#047857] shrink-0" />
           )}
           <div>
             <h3 className="font-bold text-sm tracking-tight flex items-center gap-2">
               {title}
-              <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border bg-white shadow-2xs">
+              <span className={`text-[10px] font-mono-clinical font-semibold uppercase tracking-wider px-2 py-0.5 rounded border bg-white ${
+                blockedCount > 0 ? 'text-[#B91C1C] border-red-300' : warningCount > 0 ? 'text-[#B45309] border-amber-300' : 'text-[#047857] border-emerald-300'
+              }`}>
                 {blockedCount > 0 ? 'Action Blocked' : warningCount > 0 ? 'Review Required' : 'All Checks Passed'}
               </span>
             </h3>
-            <p className="text-xs opacity-80 mt-0.5">{subtitle}</p>
+            <p className="text-xs opacity-90 mt-0.5 font-mono-clinical">{subtitle}</p>
           </div>
         </div>
 

@@ -1,8 +1,8 @@
 # Proton AI Clinical Validation V1 — Evaluation Report & Scorecard
 
-**Execution Timestamp:** 2026-10-11T21:10:40.279Z  
+**Execution Timestamp:** 2026-10-16T21:51:36.330Z  
 **Evaluation Mode:** LIVE GEMINI VALIDATION  
-**Provider:** `gemini` | **Model:** `gemini-3.8-flash`  
+**Provider:** `gemini` | **Model:** `gemini-3.5-flash-lite`  
 **Provisional Gate Recommendation:** **GO (VALIDATED FOR CONTROLLED BETA)**
 
 ---
@@ -48,15 +48,15 @@
 ## 3. Latency & Operational Economics
 
 - **Latency Distribution:**
-  - **Minimum:** 2923 ms
-  - **Median:** 3072 ms
-  - **Average:** 3174 ms
-  - **Maximum:** 3769 ms
+  - **Minimum:** 1176 ms
+  - **Median:** 2528 ms
+  - **Average:** 2506 ms
+  - **Maximum:** 4474 ms
 - **Token Usage & Cost Estimates:**
-  - **Total Tokens Consumed:** 4402
+  - **Total Tokens Consumed:** 4305
   - **Prompt Tokens:** 2951
-  - **Candidate Tokens:** 1451
-  - **Estimated Total Cost:** ~$0.00131 USD
+  - **Candidate Tokens:** 1354
+  - **Estimated Total Cost:** ~$0.00126 USD
   - **Estimated Cost Per Consultation:** ~$0.00013 USD
 
 ---
@@ -86,7 +86,7 @@ Simulated clinician review across all 10 synthetic consultations:
 An independent audit of the validation methodology and scorecard findings revealed critical constraints that must govern physician interpretation:
 
 1. **Synthetic Demo vs. Live Model Provider**:
-   - The reported scorecard reflects execution mode `gemini` (`gemini-3.8-flash`).
+   - The reported scorecard reflects execution mode `gemini` (`gemini-3.5-flash-lite`).
    - In demo mode, zero token counts and zero costs reflect local fixture generation, not cloud LLM token pricing.
    - For live deployment with Gemini 3.5 Flash, expected baseline costs are ~$0.075 / 1M input tokens and ~$0.30 / 1M output tokens, averaging **~$0.0008 to $0.0025 per consultation**.
 

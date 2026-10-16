@@ -29,13 +29,15 @@ import type { PrescriptionItem } from '../types/prescription';
 import PrescriptionPDFModal from '../components/PrescriptionPDFModal';
 import EvidenceModal from '../components/EvidenceModal';
 import type { ClinicalEvidence } from '../types/clinicalBrain';
+import { operationsService } from '../services/operationsService';
+import type { OperationalTask } from '../types/operations';
 
-type TimelineFilter = 'all' | 'consultations' | 'prescriptions' | 'labs' | 'documents';
+type TimelineFilter = 'all' | 'consultations' | 'prescriptions' | 'labs' | 'documents' | 'communications' | 'referrals' | 'operations';
 
 interface TimelineEvent {
   id: string;
   date: Date;
-  type: 'consultation' | 'prescription' | 'observation' | 'document' | 'condition';
+  type: 'consultation' | 'prescription' | 'observation' | 'document' | 'condition' | 'communication' | 'referral' | 'scheduling' | 'operation';
   title: string;
   description: string;
   badge?: {
@@ -77,6 +79,9 @@ interface TimelineEvent {
     name: string;
     sourceQuote?: string;
   };
+  operationalData?: {
+    task: OperationalTask;
+  };
   resource: any;
   sourceDoc?: string;
 }
@@ -95,6 +100,7 @@ export default function PatientProfile() {
   const [allergies, setAllergies] = useState<AllergyIntolerance[]>([]);
   const [observations, setObservations] = useState<Observation[]>([]);
   const [documents, setDocuments] = useState<DocumentReference[]>([]);
+  const [operationalTasks, setOperationalTasks] = useState<OperationalTask[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Timeline UI States
@@ -198,6 +204,26 @@ export default function PatientProfile() {
     };
     fetchAll();
   }, [medplum, id, location.key]);
+
+  useEffect(() => {
+    if (!id && !patient) return;
+    operationsService.getTasks().then(tasks => {
+      const pFamily = patient?.name?.[0]?.family?.toLowerCase() || '';
+      const pGiven = patient?.name?.[0]?.given?.[0]?.toLowerCase() || '';
+      const relevant = tasks.filter(t => {
+        const tName = t.patientName.toLowerCase();
+        return (
+          t.patientId === id ||
+          (patient?.id && t.patientId === patient.id) ||
+          (id && id.toLowerCase().includes('eleanor') && t.patientId.toLowerCase().includes('eleanor')) ||
+          (id && id.toLowerCase().includes('arthur') && t.patientId.toLowerCase().includes('arthur')) ||
+          (pFamily && tName.includes(pFamily)) ||
+          (pGiven && tName.includes(pGiven))
+        );
+      });
+      setOperationalTasks(relevant);
+    }).catch(() => {});
+  }, [id, patient]);
 
   const intelligence = useMemo(() => {
     return synthesizePatientIntelligence(
@@ -411,6 +437,50 @@ export default function PatientProfile() {
       }
     });
 
+    // Operational Events (Communications, Refills, Referrals, Scheduling)
+    operationalTasks.forEach(task => {
+      const d = task.createdAt;
+      let eventType: TimelineEvent['type'] = 'operation';
+      let eventTitle = task.title;
+      let badgeText = task.status.toUpperCase();
+      let badgeVariant: 'approved' | 'draft' | 'warning' | 'neutral' = 'neutral';
+
+      if (task.category === 'triage') {
+        eventType = 'communication';
+        eventTitle = 'Inbound Communication & AI Triage Draft';
+        badgeText = task.triageDetails?.risk.emergencyRedFlag ? 'EMERGENCY RED FLAG' : (task.priority === 'urgent' ? 'Urgent Triage' : 'Routine Inbound');
+        badgeVariant = task.triageDetails?.risk.emergencyRedFlag || task.priority === 'urgent' ? 'warning' : 'neutral';
+      } else if (task.category === 'refill') {
+        eventType = 'prescription';
+        eventTitle = `Rx Refill Review: ${task.refillDetails?.medicationName || 'Medication'}`;
+        badgeText = task.status === 'completed' ? 'Refill Approved' : (task.refillDetails?.safetyReport.warnings?.length ? 'Safety Review Required' : 'Awaiting MD Review');
+        badgeVariant = task.status === 'completed' ? 'approved' : 'warning';
+      } else if (task.category === 'referral') {
+        eventType = 'referral';
+        eventTitle = `Specialist Referral: ${task.referralDetails?.specialty || 'Specialty'}`;
+        badgeText = task.status === 'completed' ? 'Signed & Dispatched' : 'Packet Prepared';
+        badgeVariant = task.status === 'completed' ? 'approved' : 'neutral';
+      } else if (task.category === 'scheduling') {
+        eventType = 'scheduling';
+        eventTitle = `Care Gap Recall: ${task.schedulingDetails?.title || 'Appointment'}`;
+        badgeText = task.status === 'completed' ? 'Scheduled' : 'Action Suggested';
+        badgeVariant = task.status === 'completed' ? 'approved' : 'neutral';
+      }
+
+      events.push({
+        id: task.id,
+        date: new Date(d),
+        type: eventType,
+        title: eventTitle,
+        description: task.summary,
+        badge: { text: badgeText, variant: badgeVariant },
+        operationalData: {
+          task
+        },
+        resource: task
+      });
+    });
+
     events.sort((a, b) => b.date.getTime() - a.date.getTime());
     return events;
   };
@@ -452,9 +522,12 @@ export default function PatientProfile() {
   const filteredTimeline = allTimelineEvents.filter(event => {
     if (activeFilter === 'all') return true;
     if (activeFilter === 'consultations') return event.type === 'consultation';
-    if (activeFilter === 'prescriptions') return event.type === 'prescription';
+    if (activeFilter === 'prescriptions') return event.type === 'prescription' || event.operationalData?.task.category === 'refill';
     if (activeFilter === 'labs') return event.type === 'observation';
     if (activeFilter === 'documents') return event.type === 'document';
+    if (activeFilter === 'communications') return event.type === 'communication' || event.operationalData?.task.category === 'triage';
+    if (activeFilter === 'referrals') return event.type === 'referral' || event.operationalData?.task.category === 'referral';
+    if (activeFilter === 'operations') return !!event.operationalData;
     return true;
   });
 
@@ -665,7 +738,10 @@ export default function PatientProfile() {
                 { id: 'consultations', label: 'Consultations' },
                 { id: 'prescriptions', label: 'Prescriptions' },
                 { id: 'labs', label: 'Labs' },
-                { id: 'documents', label: 'Documents' }
+                { id: 'documents', label: 'Documents' },
+                { id: 'communications', label: 'Comms' },
+                { id: 'referrals', label: 'Referrals' },
+                { id: 'operations', label: 'Operations' }
               ].map(f => (
                 <button
                   key={f.id}
@@ -788,6 +864,78 @@ export default function PatientProfile() {
                           <div className="text-zinc-500">
                             <span>Status: {event.observationData.status}</span>
                             {event.sourceDoc && <span> · Source: {event.sourceDoc}</span>}
+                          </div>
+                        )}
+
+                        {event.operationalData && (
+                          <div className="space-y-2 pt-1 border-t border-zinc-200/60">
+                            <div className="flex items-center justify-between">
+                              <span className="font-semibold text-zinc-900">Operations OS Record:</span>
+                              <Link
+                                to="/operations"
+                                className="text-xs text-[#0F4C81] hover:underline font-medium inline-flex items-center gap-1"
+                              >
+                                <span>Open Operations OS</span>
+                                <ArrowUpRight size={11} />
+                              </Link>
+                            </div>
+                            
+                            {event.operationalData.task.triageDetails && (
+                              <div className="bg-zinc-50 p-2.5 rounded border border-zinc-200/60 space-y-1.5">
+                                <div className="text-[10px] text-zinc-500 font-mono font-medium">
+                                  INBOUND MESSAGE:
+                                </div>
+                                <div className="text-zinc-800 italic">
+                                  "{event.operationalData.task.triageDetails.inboundMessage}"
+                                </div>
+                                {event.operationalData.task.triageDetails.aiDraftResponse && (
+                                  <div className="pt-1.5 border-t border-zinc-200/60">
+                                    <div className="text-[10px] text-zinc-500 font-mono font-medium">AI TRIAGE DRAFT:</div>
+                                    <div className="text-zinc-700 whitespace-pre-wrap">
+                                      {event.operationalData.task.triageDetails.aiDraftResponse}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {event.operationalData.task.refillDetails && (
+                              <div className="bg-zinc-50 p-2.5 rounded border border-zinc-200/60 space-y-1.5">
+                                <div className="text-[10px] font-mono font-medium text-zinc-500">
+                                  REFILL SAFETY AUDIT & LAB EVIDENCE:
+                                </div>
+                                <div className="text-zinc-800">
+                                  {event.operationalData.task.refillDetails.clinicalContext.relevantLabSummary}
+                                </div>
+                                {event.operationalData.task.refillDetails.safetyReport.warnings?.length > 0 && (
+                                  <div className="text-amber-700 font-mono text-[11px] bg-amber-50 p-1.5 rounded border border-amber-200">
+                                    SAFETY ADVISORY: {event.operationalData.task.refillDetails.safetyReport.warnings.join(' • ')}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {event.operationalData.task.referralDetails && (
+                              <div className="bg-zinc-50 p-2.5 rounded border border-zinc-200/60 space-y-1">
+                                <div className="text-[10px] font-mono font-medium text-zinc-500">
+                                  REFERRAL BRIEF & HPI SUMMARY:
+                                </div>
+                                <div className="text-zinc-700 whitespace-pre-wrap">
+                                  {event.operationalData.task.referralDetails.referralSummaryPacket.hpiSummary}
+                                </div>
+                              </div>
+                            )}
+
+                            {event.operationalData.task.schedulingDetails && (
+                              <div className="bg-zinc-50 p-2.5 rounded border border-zinc-200/60 space-y-1">
+                                <div className="text-[10px] font-mono font-medium text-zinc-500">
+                                  RECALL REASON & PROPOSED WINDOW:
+                                </div>
+                                <div className="text-zinc-700">
+                                  {event.operationalData.task.schedulingDetails.clinicalReason} — Slot: {event.operationalData.task.schedulingDetails.proposedSlot?.start ? new Date(event.operationalData.task.schedulingDetails.proposedSlot.start).toLocaleDateString() : 'Pending'}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>

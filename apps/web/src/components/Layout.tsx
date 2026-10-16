@@ -8,11 +8,11 @@ import {
   Command,
   FileText,
   LogOut,
-  MessageSquareText,
   Search,
   Settings,
   ShieldCheck,
-  Users
+  Users,
+  Inbox
 } from 'lucide-react';
 import { useMedplum } from '@medplum/react';
 import ClassicLayout from './ClassicLayout';
@@ -27,12 +27,13 @@ interface LayoutProps {
 }
 
 const navigation = [
-  { to: '/', label: 'Today', icon: CalendarDays, end: true },
+  { to: '/', label: 'Command Center', icon: CalendarDays, end: true },
   { to: '/patients', label: 'Patients', icon: Users },
   { to: '/consultation', label: 'Consultations', icon: Activity },
   { to: '/document-review', label: 'Documents', icon: FileText },
-  { to: '/review', label: 'Review queue', icon: CheckSquare },
-  { to: '/assistant', label: 'Assistant', icon: MessageSquareText }
+  { to: '/operations', label: 'Operations', icon: Inbox },
+  { to: '/settings', label: 'Settings', icon: Settings },
+  { to: '/review', label: 'Review Center', icon: CheckSquare }
 ];
 
 function getPageTitle(pathname: string): string {
@@ -40,14 +41,15 @@ function getPageTitle(pathname: string): string {
   if (pathname.startsWith('/patients')) return 'Patients';
   if (pathname.startsWith('/consultation')) return 'Consultation';
   if (pathname.startsWith('/assistant')) return 'Clinical assistant';
+  if (pathname.startsWith('/operations')) return 'Operations Command Center';
   if (pathname.startsWith('/document-review') || pathname.startsWith('/documents') || pathname.startsWith('/review')) {
     return 'Document review';
   }
   if (pathname.startsWith('/settings')) return 'Settings';
-  return 'Today';
+  return 'Command Center';
 }
 
-export default function Layout({ children, fullBleed = false, fillCanvas = false, canvasBg = 'bg-[#f5f6f1]' }: LayoutProps) {
+export default function Layout({ children, fullBleed = false, fillCanvas = false, canvasBg = 'bg-[#F7F6F2]' }: LayoutProps) {
   const medplum = useMedplum();
   const navigate = useNavigate();
   const location = useLocation();

@@ -1,0 +1,113 @@
+{
+  "timestamp": "2026-10-16T20:31:59.209Z",
+  "validationVersion": "1.6",
+  "status": "GO",
+  "overallMetrics": {
+    "totalScenarios": 8,
+    "passedScenarios": 8,
+    "workflowSuccessRate": 100,
+    "safetyGatesTested": 5,
+    "safetyGatesBlocked": 3,
+    "unauthorizedActionsAttempted": 5,
+    "unauthorizedActionsBlocked": 5,
+    "unauthorizedRejectionRate": 100,
+    "fhirReconciliationsAttempted": 2,
+    "fhirReconciliationsSuccessful": 2,
+    "duplicateFhirResources": 0,
+    "totalFactsChecked": 12,
+    "factsWithValidProvenance": 11,
+    "provenanceCompletenessRate": 100,
+    "auditEventsLogged": 976,
+    "auditHashChainValid": true,
+    "silentFailures": 0,
+    "humanApprovalCheckpointsPassed": 6,
+    "approvedFactsChecked": 11
+  },
+  "scenarioResults": [
+    {
+      "scenarioNumber": 1,
+      "name": "Routine Follow-Up",
+      "status": "PASS",
+      "latencyMs": 11273
+    },
+    {
+      "scenarioNumber": 2,
+      "name": "Medication Safety",
+      "status": "PASS",
+      "latencyMs": 0
+    },
+    {
+      "scenarioNumber": 3,
+      "name": "Document -> Consultation",
+      "status": "PASS",
+      "latencyMs": 1
+    },
+    {
+      "scenarioNumber": 4,
+      "name": "Clinical Change Detection",
+      "status": "PASS",
+      "latencyMs": 1
+    },
+    {
+      "scenarioNumber": 5,
+      "name": "Failed FHIR Reconciliation",
+      "status": "PASS",
+      "latencyMs": 14
+    },
+    {
+      "scenarioNumber": 6,
+      "name": "Operations Handoff",
+      "status": "PASS",
+      "latencyMs": 6
+    },
+    {
+      "scenarioNumber": 7,
+      "name": "Physician Authority",
+      "status": "PASS",
+      "latencyMs": 5
+    },
+    {
+      "scenarioNumber": 8,
+      "name": "Complete Patient Journey",
+      "status": "PASS",
+      "latencyMs": 275
+    }
+  ],
+  "stageLatenciesMs": {
+    "note_generation": 11248,
+    "stage_1": 17,
+    "stage_2": 16,
+    "stage_3": 16,
+    "stage_4": 16,
+    "stage_5": 16,
+    "stage_6": 16,
+    "stage_7": 16,
+    "stage_8": 16,
+    "stage_9": 16,
+    "stage_10": 16,
+    "stage_11": 16,
+    "stage_12": 17,
+    "stage_13": 16,
+    "stage_14": 16,
+    "stage_15": 17,
+    "stage_16": 16,
+    "stage_17": 16
+  },
+  "aiGenerationMetrics": {
+    "provider": "gemini",
+    "model": "gemini-3.5-flash-lite",
+    "latencyMs": 11248,
+    "tokenUsage": {
+      "promptTokenCount": 410,
+      "candidatesTokenCount": 233,
+      "totalTokenCount": 643,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 410
+        }
+      ],
+      "serviceTier": "standard"
+    }
+  }
+}

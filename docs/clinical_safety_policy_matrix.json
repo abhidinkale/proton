@@ -1,0 +1,128 @@
+{
+  "system": "Proton Healthcare Operations OS",
+  "version": "1.4.0",
+  "generatedAt": "2026-10-17T01:54:00Z",
+  "governanceSpecification": "Clinical Safety Policy & Action Classification Matrix",
+  "invariants": [
+    "Physician remains sole clinical authority for diagnostic, prescriptive, and treatment decisions.",
+    "Zero autonomous clinical communication dispatch without physician review and sign-off.",
+    "Zero autonomous prescribing or dosage alteration under any circumstance.",
+    "Zero raw chain-of-thought persisted in operational or clinical records.",
+    "Every clinical action is tied to an authoritative actor ID, organization/tenant ID, and audit hash."
+  ],
+  "actionClasses": [
+    {
+      "class": "CLASS_A",
+      "name": "Autonomous Administrative Operations",
+      "riskTier": "LOW",
+      "description": "Routine operational, logistics, and scheduling communications with zero clinical guidance or diagnosis.",
+      "autonomousExecutionPermitted": true,
+      "governanceConditions": [
+        "Communication is verified as strictly non-clinical (no symptoms, medications, or test interpretations).",
+        "Target tenant and patient identity match authoritative operational record.",
+        "Template contents adhere to approved clinic scheduling protocols."
+      ],
+      "examples": [
+        "Appointment confirmation SMS / email",
+        "Clinic arrival instructions and parking details",
+        "Scheduling slot availability proposals",
+        "Non-clinical annual wellness check scheduling prompts"
+      ],
+      "requiredApprovalRole": "none",
+      "allowedActors": ["agent-scheduling", "agent-communication", "operations_staff", "physician"],
+      "fhirResources": ["Appointment", "Communication"],
+      "auditEventType": "ADMINISTRATIVE_COMMUNICATION_DISPATCHED"
+    },
+    {
+      "class": "CLASS_B",
+      "name": "Human-Approved Clinical Communication & Triage Follow-Up",
+      "riskTier": "MODERATE",
+      "description": "Patient communication containing symptom guidance, blood pressure or vital interpretation, medication timing instructions, or triage follow-up plans.",
+      "autonomousExecutionPermitted": false,
+      "governanceConditions": [
+        "AI generates structured draft only with clinical rationale and source citations.",
+        "Must be reviewed and explicitly approved by an Attending Physician.",
+        "Physician can edit draft prior to transmission.",
+        "Backend validates physician credentials (active NPI, tenant scope) before dispatch."
+      ],
+      "examples": [
+        "Home BP monitoring guidance (e.g. Eleanor Vance 148/92 mmHg follow-up)",
+        "Post-consultation summary and care plan instructions",
+        "Symptom self-monitoring checklists for chronic condition management",
+        "General medication adherence questions"
+      ],
+      "requiredApprovalRole": "physician",
+      "allowedActors": ["physician"],
+      "fhirResources": ["Communication", "CarePlan"],
+      "auditEventType": "CLINICAL_COMMUNICATION_PHYSICIAN_APPROVED"
+    },
+    {
+      "class": "CLASS_C",
+      "name": "High-Risk Clinical Operations & Medication Continuity",
+      "riskTier": "HIGH",
+      "description": "Renewals and refills of established maintenance medications, specialist referrals, and clinical document/lab extraction commitments.",
+      "autonomousExecutionPermitted": false,
+      "governanceConditions": [
+        "Clinical Brain contradiction and safety engine must execute prior to presentation.",
+        "Drug-drug interactions, renal safety, allergy conflicts, and lab currency verified.",
+        "Attending physician must review, confirm or edit, and sign off with NPI.",
+        "Durable operational task closed only after successful FHIR persistence."
+      ],
+      "examples": [
+        "Maintenance antihypertensive refill (e.g. Lisinopril 20mg renewal)",
+        "Cardiology or Endocrinology specialist referral order",
+        "Sign-off on scanned lab report (e.g. HbA1c, eGFR) into patient longitudinal chart",
+        "Prior authorization clinical packet approval"
+      ],
+      "requiredApprovalRole": "physician",
+      "allowedActors": ["physician"],
+      "fhirResources": ["MedicationRequest", "ServiceRequest", "Observation", "DiagnosticReport", "Condition"],
+      "auditEventType": "HIGH_RISK_CLINICAL_ORDER_APPROVED"
+    },
+    {
+      "class": "CLASS_D",
+      "name": "Critical Safety Actions & Acute Emergency Escalations",
+      "riskTier": "CRITICAL",
+      "description": "Acute life-threatening red-flag symptoms, severe adverse drug events, or controlled substance safety violations.",
+      "autonomousExecutionPermitted": false,
+      "governanceConditions": [
+        "Immediate emergency diversion instructions (911 / Emergency Department) presented to patient.",
+        "Zero delay or conversational deflection allowed.",
+        "STAT notification pushed to attending physician urgent inbox.",
+        "Controlled substance requests are unconditionally blocked from automated refill workflows."
+      ],
+      "examples": [
+        "Acute crushing chest pain, radiating left arm pain, dyspnea (STEMI rule-out)",
+        "Sudden facial droop, arm weakness, slurred speech (acute stroke protocol)",
+        "Severe anaphylaxis or angioedema",
+        "Schedule II opioid refill request (e.g. Oxycodone 30mg) — hard blocked"
+      ],
+      "requiredApprovalRole": "emergency_physician_or_stat_escalation",
+      "allowedActors": ["physician", "emergency_protocol"],
+      "fhirResources": ["Flag", "Communication"],
+      "auditEventType": "EMERGENCY_RED_FLAG_ESCALATED"
+    },
+    {
+      "class": "CLASS_E",
+      "name": "Prohibited Autonomous Clinical Actions",
+      "riskTier": "PROHIBITED",
+      "description": "Actions that legally and clinically require autonomous physician judgment and must NEVER be executed by AI agents.",
+      "autonomousExecutionPermitted": false,
+      "governanceConditions": [
+        "Hard-blocked by Agent Engine policy POL-02 and POL-01.",
+        "Zero tolerance: Agent cannot possess clinical authority under any circumstance.",
+        "Any execution attempt aborts execution immediately with security audit alert."
+      ],
+      "examples": [
+        "Autonomous prescription formulation without human clinician evaluation",
+        "Autonomous clinical diagnosis assertion committed to FHIR without physician review",
+        "Autonomous discontinuation of life-sustaining medications",
+        "Direct binding treatment decision execution"
+      ],
+      "requiredApprovalRole": "strictly_prohibited_for_autonomous_agents",
+      "allowedActors": ["none"],
+      "fhirResources": [],
+      "auditEventType": "PROHIBITED_AUTONOMOUS_ACTION_BLOCKED"
+    }
+  ]
+}

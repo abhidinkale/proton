@@ -825,7 +825,7 @@ export function generateMemoryProposals(
         date: formatDate(new Date().toISOString()),
         title: 'Consultation History',
         excerpt: 'Denies fever or medication changes.',
-        provenance: 'FACT'
+        provenance: 'AI SYNTHESIS'
       }],
       status: 'PROPOSED'
     });

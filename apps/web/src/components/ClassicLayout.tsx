@@ -8,8 +8,8 @@ import {
   Search, 
   CheckSquare, 
   Activity,
-  MessageSquareText,
   CalendarDays,
+  Inbox
 } from 'lucide-react';
 import { useMedplum } from '@medplum/react';
 import AppearanceToggle from './AppearanceToggle';
@@ -26,7 +26,7 @@ export default function Layout({
   children,
   fullBleed = false,
   fillCanvas = false,
-  canvasBg = 'bg-[#fafaf9]'
+  canvasBg = 'bg-[#F7F6F2]'
 }: LayoutProps) {
   const medplum = useMedplum();
   const navigate = useNavigate();
@@ -54,14 +54,15 @@ export default function Layout({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Primary navigation specified: Today, Patients, Consultations, Documents, Review
+  // Primary navigation: Command Center, Patients, Consultations, Documents, Operations, Settings, Review Center
   const primaryNavItems = [
-    { to: '/', icon: CalendarDays, label: 'Today', end: true },
+    { to: '/', icon: CalendarDays, label: 'Command Center', end: true },
     { to: '/patients', icon: Users, label: 'Patients' },
     { to: '/consultation', icon: Activity, label: 'Consultations' },
     { to: '/document-review', icon: FileText, label: 'Documents' },
-    { to: '/review', icon: CheckSquare, label: 'Review' },
-    { to: '/assistant', icon: MessageSquareText, label: 'Assistant' },
+    { to: '/operations', icon: Inbox, label: 'Operations' },
+    { to: '/settings', icon: Settings, label: 'Settings' },
+    { to: '/review', icon: CheckSquare, label: 'Review Center' },
   ];
 
   const isActive = (path: string, end?: boolean) => {

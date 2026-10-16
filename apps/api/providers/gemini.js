@@ -1,6 +1,15 @@
 const { GoogleGenAI } = require('@google/genai');
 const { AIProvider } = require('./ai');
 
+class TranscriptionInputError extends Error {
+  constructor(message = "No valid audio input was provided.") {
+    super(message);
+    this.name = "TranscriptionInputError";
+    this.code = "TRANSCRIPTION_INPUT_INVALID";
+    this.status = 400;
+  }
+}
+
 class GeminiProvider extends AIProvider {
   constructor(apiKey, modelName) {
     super();
@@ -44,16 +53,11 @@ class GeminiProvider extends AIProvider {
 
   async transcribe(audioBuffer, mimeType) {
     if (!audioBuffer || !(audioBuffer instanceof Buffer) || audioBuffer.length === 0) {
-      throw new Error("Invalid or empty audio buffer provided for transcription.");
+      throw new TranscriptionInputError("No valid audio input was provided.");
     }
 
-    // Handle explicit "Use Sample Dialogue" trigger from Consultation UI
     if (audioBuffer.length < 64 && audioBuffer.toString('utf-8') === 'simulated-audio') {
-      return {
-        text: "Patient presents with a 3-day history of moderate frontal headache and mild nausea. They have taken ibuprofen with minimal relief. No recent travel. No fever.",
-        usageMetadata: { promptTokenCount: 0, candidatesTokenCount: 0, totalTokenCount: 0 },
-        model: this.modelName
-      };
+      throw new TranscriptionInputError("No valid audio input was provided.");
     }
 
     const audioPart = {
@@ -77,8 +81,8 @@ class GeminiProvider extends AIProvider {
     );
 
     let text = response.text ? response.text.trim() : '';
-    if (!text || text.length < 15 || /^(none|no speech|silence|beep|\[.*\]|\.+)$/i.test(text)) {
-      text = "Patient presents with a 3-day history of moderate frontal headache and mild nausea. They have taken ibuprofen with minimal relief. No recent travel. No fever.";
+    if (!text || text.length < 5 || /^(none|no speech|silence|beep|\[.*\]|\.+)$/i.test(text)) {
+      throw new TranscriptionInputError("No valid audio input was provided.");
     }
 
     return {
@@ -237,3 +241,4 @@ Rules:
 }
 
 module.exports = GeminiProvider;
+module.exports.TranscriptionInputError = TranscriptionInputError;

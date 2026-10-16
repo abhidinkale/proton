@@ -16,7 +16,16 @@ export type AuditActionType =
   | 'memory_proposal_rejected'
   | 'memory_proposal_edited'
   | 'physician_feedback_submitted'
-  | 'draft_autosaved';
+  | 'draft_autosaved'
+  | 'operation_inbound_received'
+  | 'agent_triage_evaluated'
+  | 'agent_draft_generated'
+  | 'red_flag_alert_triggered'
+  | 'refill_safety_verified'
+  | 'refill_physician_approved'
+  | 'refill_physician_rejected'
+  | 'appointment_scheduled'
+  | 'referral_dispatched';
 
 export interface LocalAuditEvent {
   id: string;

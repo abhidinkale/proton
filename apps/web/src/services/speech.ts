@@ -16,6 +16,11 @@ export class RealSpeechService implements SpeechToTextService {
     
     if (!response.ok) {
       const errPayload = await response.json().catch(() => ({}));
+      if (errPayload.error === 'TRANSCRIPTION_INPUT_INVALID') {
+        const error = new Error(errPayload.message || 'No valid audio input was provided.');
+        (error as any).code = 'TRANSCRIPTION_INPUT_INVALID';
+        throw error;
+      }
       throw new Error(errPayload.error || 'AI transcription service unavailable. Please retry or continue manually.');
     }
     
