@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect, type KeyboardEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
-  ArrowUp, LoaderCircle, Sparkles, Copy, Check, HelpCircle
+  ArrowUp, LoaderCircle, Sparkles, Copy, Check, HelpCircle, Camera, Mic
 } from 'lucide-react';
 import { sendClinicalChat, type ChatMessage } from '../services/ai';
 import Layout from '../components/Layout';
@@ -9,6 +10,7 @@ import type { DoctorDeskPatient } from '../components/DoctorDeskEncounter';
 import ProvenanceBadge from '../components/ui/ProvenanceBadge';
 
 export default function Assistant() {
+  const navigate = useNavigate();
   const [selectedPatientId, setSelectedPatientId] = useState<string>('demo-eleanor-vance');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState('');
@@ -261,33 +263,57 @@ Recent Labs: ${activePatient.recentLabs.map(l => `${l.name}: ${l.value} (${l.sta
           ))}
         </div>
 
-        {/* Composer Input Bar */}
-        <footer className="mt-2 shrink-0 bg-white border border-[#EAE8E3] rounded-2xl p-2 shadow-sm focus-within:border-[#111315] transition-colors">
+        {/* Composer Input Bar (Nolla style) */}
+        <footer className="mt-2 shrink-0 bg-white border border-[#EAE8E3] rounded-3xl p-2.5 sm:p-3 shadow-md focus-within:border-[#111315] focus-within:ring-1 focus-within:ring-[#111315] transition-all">
           {error && (
-            <div className="p-2 mb-2 text-xs text-red-700 bg-red-50 rounded-lg">
+            <div className="p-2 mb-2 text-xs text-rose-700 bg-rose-50 rounded-xl">
               {error}
             </div>
           )}
 
-          <div className="flex items-end gap-2">
+          <div className="space-y-2">
             <textarea
               value={draft}
               onChange={e => setDraft(e.target.value)}
               onKeyDown={handleComposerKeyDown}
-              placeholder={activePatient ? `Ask about ${activePatient.name}'s trajectory, interactions, or evidence...` : "Ask clinical question..."}
+              placeholder={activePatient ? `Ask about ${activePatient.name}'s trajectory, interactions, or evidence...` : "I have a question about this case..."}
               rows={2}
-              className="w-full bg-transparent px-3 py-1.5 text-xs sm:text-sm text-[#111315] placeholder-[#949CA4] outline-none resize-none"
+              className="w-full bg-transparent px-3 py-1.5 text-xs sm:text-sm text-[#111315] placeholder-[#949CA4] outline-hidden resize-none"
             />
 
-            <button
-              type="button"
-              onClick={() => submitMessage()}
-              disabled={!draft.trim() || isSending}
-              className="w-9 h-9 rounded-xl bg-[#111315] hover:bg-[#272B30] text-white flex items-center justify-center shrink-0 transition-colors shadow-xs cursor-pointer disabled:opacity-40"
-              title="Send message (Enter)"
-            >
-              {isSending ? <LoaderCircle size={15} className="animate-spin" /> : <ArrowUp size={16} />}
-            </button>
+            <div className="flex items-center justify-between pt-1 border-t border-[#F4F3EE]">
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => navigate('/document-review')}
+                  className="px-3 py-1.5 rounded-xl bg-[#F8F8F6] hover:bg-[#EFECE6] text-[#50575F] hover:text-[#111315] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer border border-[#EAE8E3]"
+                >
+                  <Camera size={13} />
+                  <span>Analyze Image</span>
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => navigate('/consultation')}
+                  className="p-2 rounded-xl text-[#6E767E] hover:text-[#111315] hover:bg-[#F8F8F6] transition-colors cursor-pointer"
+                  title="Ambient Dictation"
+                >
+                  <Mic size={16} />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => submitMessage()}
+                  disabled={!draft.trim() || isSending}
+                  className="w-8 h-8 rounded-full bg-[#111315] hover:bg-[#272B30] text-white flex items-center justify-center shrink-0 transition-all shadow-xs cursor-pointer disabled:opacity-40"
+                  title="Send message (Enter)"
+                >
+                  {isSending ? <LoaderCircle size={14} className="animate-spin" /> : <ArrowUp size={15} strokeWidth={2.5} />}
+                </button>
+              </div>
+            </div>
           </div>
         </footer>
 
