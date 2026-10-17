@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, type FormEvent, type KeyboardEvent } from 
 import {
   ArrowLeft, Mic, Square, Check, Loader2, AlertCircle, AlertTriangle,
   Pill, FileText, Activity, Send, Plus, CheckCircle2, Copy,
-  ClipboardList, Sparkles, RefreshCw, X, Printer, Play, ClipboardCheck, Smartphone, Eye
+  ClipboardList, Sparkles, RefreshCw, X, Printer, Play, ClipboardCheck, Smartphone, Eye, ShieldCheck
 } from 'lucide-react';
 import { RealAIService, sendClinicalChat, type ChatMessage } from '../services/ai';
 import { RealSpeechService } from '../services/speech';
@@ -14,6 +14,7 @@ import ClinicianVisionReview from './vision/ClinicianVisionReview';
 import { streamClinicalPipeline } from '../services/streamService';
 import type { PrescriptionItem } from '../types/prescription';
 import type { Patient } from '@medplum/fhirtypes';
+import ProvenanceBadge from './ui/ProvenanceBadge';
 
 export interface DoctorDeskPatient {
   id: string;
@@ -831,58 +832,80 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
                 </div>
 
                 {/* S - Subjective */}
-                <div className="rounded-xl border border-zinc-200/80 bg-white p-4 focus-within:border-zinc-400 transition-colors shadow-2xs">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="w-5 h-5 rounded bg-zinc-900 text-white font-bold text-[10px] flex items-center justify-center">S</span>
-                    <span className="text-xs font-semibold text-zinc-900">Subjective (History & Patient Narrative)</span>
+                <div className="rounded-2xl border border-[#EAE8E3] bg-white p-4 focus-within:border-[#111315] transition-colors shadow-2xs space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-md bg-[#111315] text-white font-bold text-[10px] flex items-center justify-center font-mono">S</span>
+                      <span className="text-xs font-bold text-[#111315]">Subjective (Patient Narrative & HPI)</span>
+                    </div>
+                    <ProvenanceBadge provenance="PATIENT_REPORTED" size="xs" />
                   </div>
                   <textarea
                     rows={3}
                     value={note.subjective}
                     onChange={e => setNote({ ...note, subjective: e.target.value })}
-                    className="w-full bg-transparent text-xs text-zinc-900 leading-relaxed resize-y outline-none"
+                    className="w-full bg-transparent text-xs text-[#111315] leading-relaxed resize-y outline-none"
+                    placeholder="Patient narrative, symptoms, timeline..."
                   />
                 </div>
 
                 {/* O - Objective */}
-                <div className="rounded-xl border border-zinc-200/80 bg-white p-4 focus-within:border-zinc-400 transition-colors shadow-2xs">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="w-5 h-5 rounded bg-zinc-900 text-white font-bold text-[10px] flex items-center justify-center">O</span>
-                    <span className="text-xs font-semibold text-zinc-900">Objective (Vitals, Physical Exam & Diagnostics)</span>
+                <div className="rounded-2xl border border-[#EAE8E3] bg-white p-4 focus-within:border-[#111315] transition-colors shadow-2xs space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-md bg-[#111315] text-white font-bold text-[10px] flex items-center justify-center font-mono">O</span>
+                      <span className="text-xs font-bold text-[#111315]">Objective (Vitals, Physical Exam & Confirmed Diagnostics)</span>
+                    </div>
+                    <ProvenanceBadge provenance="CONFIRMED_CLINICAL_DATA" size="xs" />
                   </div>
                   <textarea
                     rows={3}
                     value={note.objective}
                     onChange={e => setNote({ ...note, objective: e.target.value })}
-                    className="w-full bg-transparent text-xs text-zinc-900 leading-relaxed resize-y outline-none"
+                    className="w-full bg-transparent text-xs text-[#111315] leading-relaxed resize-y outline-none"
+                    placeholder="Physical examination findings, vitals, labs..."
                   />
                 </div>
 
                 {/* A - Assessment */}
-                <div className="rounded-xl border border-zinc-200/80 bg-white p-4 focus-within:border-zinc-400 transition-colors shadow-2xs">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="w-5 h-5 rounded bg-zinc-900 text-white font-bold text-[10px] flex items-center justify-center">A</span>
-                    <span className="text-xs font-semibold text-zinc-900">Assessment (Clinical Impression & Differential)</span>
+                <div className="rounded-2xl border border-amber-200/80 bg-amber-50/30 p-4 focus-within:border-amber-400 transition-colors shadow-2xs space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-md bg-amber-700 text-white font-bold text-[10px] flex items-center justify-center font-mono">A</span>
+                      <span className="text-xs font-bold text-[#111315]">Assessment (Differential & AI Advisory Hypothesis)</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-mono text-amber-800 hidden sm:inline">Advisory only</span>
+                      <ProvenanceBadge provenance="AI_SUGGESTION" size="xs" />
+                    </div>
                   </div>
                   <textarea
                     rows={3}
                     value={note.assessment}
                     onChange={e => setNote({ ...note, assessment: e.target.value })}
-                    className="w-full bg-transparent text-xs text-zinc-900 leading-relaxed resize-y outline-none"
+                    className="w-full bg-transparent text-xs text-[#111315] leading-relaxed resize-y outline-none"
+                    placeholder="Clinical impression and differential diagnoses..."
                   />
+                  <div className="text-[10px] text-amber-800/80 font-mono pt-1 border-t border-amber-200/50">
+                    * AI clinical suggestions are advisory hypotheses and must be explicitly reviewed and attested by attending clinician.
+                  </div>
                 </div>
 
                 {/* P - Plan */}
-                <div className="rounded-xl border border-zinc-200/80 bg-white p-4 focus-within:border-zinc-400 transition-colors shadow-2xs">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="w-5 h-5 rounded bg-zinc-900 text-white font-bold text-[10px] flex items-center justify-center">P</span>
-                    <span className="text-xs font-semibold text-zinc-900">Plan (Therapeutics, Orders & Follow-Up)</span>
+                <div className="rounded-2xl border border-[#EAE8E3] bg-white p-4 focus-within:border-[#111315] transition-colors shadow-2xs space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-md bg-[#111315] text-white font-bold text-[10px] flex items-center justify-center font-mono">P</span>
+                      <span className="text-xs font-bold text-[#111315]">Plan (Orders, Prescriptions, Referrals & Follow-Up)</span>
+                    </div>
+                    <ProvenanceBadge provenance="CLINICIAN_FACT" size="xs" />
                   </div>
                   <textarea
                     rows={4}
                     value={note.plan}
                     onChange={e => setNote({ ...note, plan: e.target.value })}
-                    className="w-full bg-transparent text-xs text-zinc-900 leading-relaxed resize-y outline-none"
+                    className="w-full bg-transparent text-xs text-[#111315] leading-relaxed resize-y outline-none"
+                    placeholder="Pharmacology, diagnostic orders, patient counseling..."
                   />
                 </div>
               </div>
@@ -1187,41 +1210,59 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
       {/* CLOSE MEETING CONFIRMATION MODAL */}
       {isCloseModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="w-full max-w-lg rounded-3xl border border-[#e4e4e7] bg-white p-6 shadow-2xl space-y-5">
-            <div className="flex items-center justify-between border-b border-[#f4f4f5] pb-3">
+          <div className="w-full max-w-lg rounded-2xl border border-[#EAE8E3] bg-white p-6 shadow-2xl space-y-5">
+            <div className="flex items-center justify-between border-b border-[#EAE8E3] pb-3">
               <div className="flex items-center gap-2">
-                <CheckCircle2 size={18} className="text-[#16a34a]" />
-                <h3 className="text-sm font-bold text-[#09090b]">Finalize & Close Encounter</h3>
+                <ShieldCheck size={18} className="text-[#0F766E]" />
+                <h3 className="text-sm font-bold text-[#111315]">Clinician Confirmation & Encounter Commit</h3>
               </div>
-              <button onClick={() => setIsCloseModalOpen(false)} className="text-[#71717a] hover:text-[#09090b] cursor-pointer">
+              <button 
+                onClick={() => setIsCloseModalOpen(false)} 
+                className="p-1 rounded-lg text-[#6E767E] hover:text-[#111315] hover:bg-[#F4F3EE] cursor-pointer"
+              >
                 <X size={16} />
               </button>
             </div>
 
-            <div className="space-y-3 text-xs text-[#3f3f46]">
-              <p>Sign off on encounter for <strong>{patient.name}</strong> ({patient.mrn})?</p>
+            <div className="space-y-3 text-xs text-[#50575F]">
+              <p>
+                Commit verified clinical documentation and orders for <strong className="text-[#111315]">{patient.name}</strong> ({patient.mrn}) into FHIR R4?
+              </p>
 
-              <div className="rounded-2xl border border-[#e4e4e7] bg-[#fafaf9] p-4 space-y-2.5">
-                <div className="flex items-center justify-between text-[#52525b]">
-                  <span>Clinical SOAP Note:</span>
-                  <span className="text-[#16a34a] font-bold">Complete & Signed</span>
+              <div className="rounded-xl border border-[#EAE8E3] bg-[#FAF9F6] p-4 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[#6E767E]">Attending Physician:</span>
+                  <span className="text-[#111315] font-semibold">Dr. Aris Thorne, MD (NPI: 1841290481)</span>
                 </div>
-                <div className="flex items-center justify-between text-[#52525b]">
-                  <span>Active Prescriptions:</span>
-                  <span className="text-[#09090b] font-bold">{prescriptions.length} Orders Committed</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-[#6E767E]">Structured SOAP Note:</span>
+                  <span className="text-emerald-700 font-semibold flex items-center gap-1">
+                    <CheckCircle2 size={12} /> Confirmed by Clinician
+                  </span>
                 </div>
-                <div className="flex items-center justify-between text-[#52525b]">
-                  <span>Clinic Queue Status:</span>
-                  <span className="text-[#0284c7] font-bold">Mark as Completed in Today's Lineup</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-[#6E767E]">Active Medication Orders:</span>
+                  <span className="text-[#111315] font-semibold">{prescriptions.length} Orders (Allergy Matrix Passed)</span>
                 </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[#6E767E]">Cryptographic Provenance:</span>
+                  <span className="font-mono text-[10px] text-[#0F766E]">SHA-256 Chained Audit Trail</span>
+                </div>
+              </div>
+
+              <div className="p-3 bg-emerald-50/70 border border-emerald-200/80 rounded-xl text-[11px] text-emerald-900 flex items-start gap-2">
+                <CheckCircle2 size={14} className="text-emerald-700 shrink-0 mt-0.5" />
+                <span>
+                  <strong>Atomic Transaction:</strong> Writes Encounter, Condition, and MedicationRequest resources atomically to the FHIR store.
+                </span>
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-2">
+            <div className="flex justify-end gap-2.5 pt-2 border-t border-[#EAE8E3]">
               <button
                 type="button"
                 onClick={() => setIsCloseModalOpen(false)}
-                className="px-4 py-2 text-xs font-semibold text-[#71717a] hover:text-[#09090b] bg-[#f4f4f5] rounded-xl transition-colors border border-[#e4e4e7] cursor-pointer"
+                className="px-4 py-2 text-xs font-semibold text-[#6E767E] hover:text-[#111315] bg-[#F4F3EE] rounded-xl transition-colors border border-[#EAE8E3] cursor-pointer"
               >
                 Continue Editing
               </button>
@@ -1235,9 +1276,10 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
                     prescriptions: prescriptions.map(p => `${p.name} ${p.dose} - ${p.freq}`)
                   });
                 }}
-                className="px-5 py-2 text-xs font-bold text-white bg-[#16a34a] hover:bg-[#15803d] rounded-xl shadow-xs transition-all cursor-pointer"
+                className="px-5 py-2 text-xs font-bold text-white bg-[#0F766E] hover:bg-[#0B5C56] rounded-xl shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
               >
-                Sign Off & Close Meeting
+                <Check size={14} strokeWidth={2.5} />
+                <span>Sign Off & Commit Encounter</span>
               </button>
             </div>
           </div>

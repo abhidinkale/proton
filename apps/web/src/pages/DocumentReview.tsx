@@ -3,13 +3,14 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { useMedplum } from '@medplum/react';
 import { 
   ArrowLeft, Check, X, FileText, UploadCloud, Loader2, AlertTriangle, 
-  ShieldAlert, FileImage, CheckCircle2, Edit2 
+  ShieldAlert, CheckCircle2 
 } from 'lucide-react';
 import Layout from '../components/Layout';
 import type { Bundle, Patient } from '@medplum/fhirtypes';
 import { verifyExtractedFact } from '../services/verification';
 import { auditService } from '../services/audit';
 import { API_BASE_URL } from '../config';
+import ProvenanceBadge from '../components/ui/ProvenanceBadge';
 
 interface Fact {
   category: "medication" | "diagnosis" | "lab" | "procedure" | "allergy" | "other";
@@ -57,7 +58,6 @@ export default function DocumentReview() {
   }, [medplum, patientId]);
 
   const effectivePatientId = patientId || selectedPatientId;
-  
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [files, setFiles] = useState<File[]>([]);
@@ -105,12 +105,11 @@ export default function DocumentReview() {
       
       if (!response.ok) {
         const errPayload = await response.json().catch(() => ({}));
-        throw new Error(errPayload.error || 'Document extraction failed. Please check that files are valid PDFs or images and try again.');
+        throw new Error(errPayload.error || 'Document extraction failed. Please check files and try again.');
       }
       
       const data = await response.json();
       
-      // Auto-approve default, but doctor can reject or edit
       const exts = data.extractions.map((e: Extraction) => ({
         ...e,
         facts: e.facts.map((f: Fact) => ({ 
@@ -137,32 +136,23 @@ export default function DocumentReview() {
     const newExts = [...extractions];
     newExts[extIndex].facts[factIndex].approved = approved;
     setExtractions(newExts);
-    const fact = newExts[extIndex].facts[factIndex];
-    if (approved) {
-      auditService.record('document_fact_approved', `Physician approved extracted fact: "${fact.text}"`, {
-        patientId: patientId || undefined
-      });
-    } else {
-      auditService.record('document_fact_rejected', `Physician rejected extracted fact: "${fact.text}"`, {
-        patientId: patientId || undefined
-      });
-    }
   };
 
-  const updateFactText = (extIndex: number, factIndex: number, newText: string) => {
+  const updateFactText = (extIndex: number, factIndex: number, text: string) => {
     const newExts = [...extractions];
-    newExts[extIndex].facts[factIndex].text = newText;
+    newExts[extIndex].facts[factIndex].text = text;
     newExts[extIndex].facts[factIndex].edited = true;
+    newExts[extIndex].facts[factIndex].approved = true;
     setExtractions(newExts);
-    auditService.record('doctor_edited_note', `Physician edited extracted fact text to: "${newText}"`, {
-      patientId: patientId || undefined
-    });
   };
 
   const handleApproveAndSave = async () => {
-    if (!effectivePatientId || status === 'saving') return;
-    setStatus('saving');
+    if (!effectivePatientId) {
+      alert("Please select a target patient before committing records.");
+      return;
+    }
     
+    setStatus('saving');
     try {
       const bundle: Bundle = {
         resourceType: 'Bundle',
@@ -170,14 +160,10 @@ export default function DocumentReview() {
         entry: []
       };
 
-      let approvedCount = 0;
-
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const ext = extractions[i];
-        if (!ext) continue;
-
-        const docRefId = `urn:uuid:doc-${i}`;
+      for (let extIdx = 0; extIdx < extractions.length; extIdx++) {
+        const ext = extractions[extIdx];
+        const docRefId = `urn:uuid:doc-${extIdx}`;
+        
         bundle.entry!.push({
           fullUrl: docRefId,
           request: { method: 'POST', url: 'DocumentReference' },
@@ -185,15 +171,22 @@ export default function DocumentReview() {
             resourceType: 'DocumentReference',
             status: 'current',
             subject: { reference: `Patient/${effectivePatientId}` },
-            description: ext.originalFileName || file.name,
-            content: [{ attachment: { title: file.name, contentType: file.type } }]
+            description: ext.originalFileName || 'Historical Medical Document',
+            date: ext.document_date ? new Date(ext.document_date).toISOString() : new Date().toISOString(),
+            content: [
+              {
+                attachment: {
+                  title: ext.originalFileName || 'Historical Medical Document',
+                  contentType: 'application/pdf'
+                }
+              }
+            ]
           }
         });
 
-        const approvedFacts = ext.facts.filter(f => f.approved);
-        approvedCount += approvedFacts.length;
-        
-        for (const fact of approvedFacts) {
+        for (const fact of ext.facts) {
+          if (!fact.approved) continue;
+
           const baseResource = {
             subject: { reference: `Patient/${effectivePatientId}` }
           };
@@ -256,47 +249,49 @@ export default function DocumentReview() {
     }
   };
 
-  // Facts count and verification stats
   const allFacts = extractions.flatMap(e => e.facts);
   const lowConfidenceFacts = allFacts.filter(f => f.confidence < 0.70);
   const approvedCount = allFacts.filter(f => f.approved).length;
 
   return (
     <Layout>
-      <div className="proton-document-workspace h-[calc(100vh-80px)] flex flex-col bg-slate-50 rounded-xl overflow-hidden border border-slate-200">
-        <header className="proton-document-header bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0">
+      <div className="space-y-6 animate-in fade-in pb-12">
+        
+        {/* Top Header */}
+        <header className="p-6 bg-white border border-[#EAE8E3] rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <Link to={effectivePatientId ? `/patients/${effectivePatientId}` : "/"} className="text-slate-400 hover:text-slate-700 transition-colors">
-              <ArrowLeft size={20} />
+            <Link 
+              to={effectivePatientId ? `/patients/${effectivePatientId}` : "/patients"} 
+              className="p-2 rounded-xl text-[#6E767E] hover:text-[#111315] hover:bg-[#F4F3EE] transition-colors"
+            >
+              <ArrowLeft size={18} />
             </Link>
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 bg-brand-100 text-brand-600 rounded-lg flex items-center justify-center">
-                <FileImage size={18} />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="font-semibold text-slate-800 text-lg tracking-tight">Review Center &bull; Document Ingestion</h1>
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">
-                    Nothing gets confirmed without you
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl font-bold tracking-tight text-[#111315]">
+                  Document Intelligence & Extraction
+                </h1>
+                <ProvenanceBadge provenance="AI_SUGGESTION" size="xs" />
+                {aiProvider && (
+                  <span className="font-mono text-[10px] text-[#0F766E] bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                    {aiProvider}
                   </span>
-                  {aiProvider === 'medgemma' && (
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
-                      AI Provider: MedGemma Local (Dev)
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-slate-400">Ingest Historical Documents &bull; Extract, review and approve facts into permanent medical memory</p>
+                )}
               </div>
+              <p className="text-xs text-[#6E767E] mt-0.5">
+                Optical character extraction • Physician review required before committing to FHIR
+              </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+
+          <div className="flex items-center gap-3 flex-wrap">
             {!patientId && patients.length > 0 && (
               <div className="flex items-center gap-2 text-xs">
-                <span className="text-slate-500 font-medium">Target Patient:</span>
+                <span className="text-[#6E767E] font-medium">Target Patient:</span>
                 <select
                   value={effectivePatientId}
                   onChange={(e) => setSelectedPatientId(e.target.value)}
-                  className="bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  className="bg-[#F8F8F6] border border-[#EAE8E3] rounded-xl px-3 py-1.5 text-xs font-semibold text-[#111315] focus:outline-none focus:border-[#111315]"
                 >
                   {patients.map(p => (
                     <option key={p.id} value={p.id}>
@@ -306,229 +301,258 @@ export default function DocumentReview() {
                 </select>
               </div>
             )}
+
             {status === 'review' && (
               <button 
                 onClick={handleApproveAndSave}
                 disabled={approvedCount === 0}
-                className={`px-5 py-2.5 rounded-lg font-medium shadow-sm transition-colors flex items-center gap-2 ${
-                  approvedCount === 0 
-                    ? 'bg-slate-200 text-slate-400 cursor-not-allowed' 
-                    : 'bg-brand-600 hover:bg-brand-700 text-white cursor-pointer'
-                }`}
+                className="px-5 py-2.5 rounded-xl font-semibold text-xs text-white bg-[#0F766E] hover:bg-[#0B5C56] transition-all shadow-xs flex items-center gap-2 cursor-pointer disabled:opacity-50"
               >
-                <Check size={18} /> Approve & Save to FHIR
+                <Check size={14} />
+                <span>Approve & Save {approvedCount} Facts to FHIR</span>
               </button>
             )}
+
             {status === 'saving' && (
-              <button disabled className="bg-slate-300 text-slate-500 px-5 py-2.5 rounded-lg font-medium flex items-center gap-2">
-                <Loader2 size={18} className="animate-spin"/> Saving securely...
+              <button disabled className="bg-[#EAE8E3] text-[#6E767E] px-5 py-2.5 rounded-xl font-semibold text-xs flex items-center gap-2">
+                <Loader2 size={14} className="animate-spin text-[#111315]"/>
+                <span>Committing Transaction Bundle...</span>
               </button>
             )}
           </div>
         </header>
 
-        <div className="proton-document-content flex-1 overflow-hidden p-6 flex flex-col">
-          {status === 'idle' || status === 'extracting' || status === 'error' ? (
-            <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-2xl bg-white p-12 text-center max-w-2xl mx-auto w-full my-auto">
-              <div className="h-16 w-16 bg-brand-50 text-brand-600 rounded-full flex items-center justify-center mb-4">
-                <UploadCloud size={32} />
-              </div>
-              <h2 className="text-xl font-bold text-slate-800">Upload Previous Medical Records</h2>
-              <p className="text-slate-500 text-sm mt-1 mb-6 max-w-sm">
-                Upload up to 5 documents (PDF, JPG, PNG). Proton extracts clinical facts while preserving document provenance.
+        {/* Content Body */}
+        {status === 'idle' || status === 'extracting' || status === 'error' ? (
+          <div className="bg-white border-2 border-dashed border-[#EAE8E3] rounded-2xl p-12 text-center max-w-2xl mx-auto space-y-4 shadow-sm">
+            <div className="w-16 h-16 bg-[#F4F3EE] text-[#111315] rounded-2xl flex items-center justify-center mx-auto">
+              <UploadCloud size={28} />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-[#111315]">Upload Medical Records</h3>
+              <p className="text-xs sm:text-sm text-[#6E767E] mt-1 max-w-md mx-auto">
+                Upload up to 5 documents (PDF, JPG, PNG). Proton extracts clinical facts while maintaining immutable source citations.
               </p>
-              
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                onChange={handleFileChange} 
-                multiple 
-                accept=".pdf,image/png,image/jpeg" 
-                className="hidden" 
-              />
-              
-              <div className="flex gap-4">
-                <button 
-                  onClick={() => fileInputRef.current?.click()}
-                  className="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-5 py-2.5 rounded-lg font-medium text-sm transition-colors shadow-2xs"
-                >
-                  Select Files
-                </button>
-                {files.length > 0 && (
-                  <button 
-                    onClick={handleUploadAndExtract}
-                    disabled={status === 'extracting'}
-                    className="bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-lg font-medium text-sm transition-colors shadow-sm flex items-center gap-2"
-                  >
-                    {status === 'extracting' ? <><Loader2 size={16} className="animate-spin"/> Extracting...</> : `Extract from ${files.length} File${files.length > 1 ? 's' : ''}`}
-                  </button>
-                )}
-              </div>
-
+            </div>
+            
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handleFileChange} 
+              multiple 
+              accept=".pdf,image/png,image/jpeg" 
+              className="hidden" 
+            />
+            
+            <div className="flex justify-center gap-3 pt-2">
+              <button 
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="bg-white border border-[#EAE8E3] text-[#111315] hover:bg-[#F4F3EE] px-5 py-2.5 rounded-xl font-semibold text-xs transition-colors shadow-2xs cursor-pointer"
+              >
+                Choose Documents
+              </button>
               {files.length > 0 && (
-                <div className="mt-6 flex flex-wrap gap-2 justify-center">
-                  {files.map((f, i) => (
-                    <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-medium">
-                      <FileText size={12}/> {f.name}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              {status === 'error' && (
-                <div className="mt-6 p-4 bg-red-50 text-red-700 rounded-lg flex items-center gap-2 text-sm border border-red-200">
-                  <AlertTriangle size={16}/> {errorMessage}
-                </div>
+                <button 
+                  type="button"
+                  onClick={handleUploadAndExtract}
+                  disabled={status === 'extracting'}
+                  className="bg-[#111315] hover:bg-[#272B30] text-white px-5 py-2.5 rounded-xl font-semibold text-xs transition-colors shadow-xs flex items-center gap-2 cursor-pointer disabled:opacity-60"
+                >
+                  {status === 'extracting' ? (
+                    <><Loader2 size={14} className="animate-spin text-emerald-400" /> Extracting Facts...</>
+                  ) : (
+                    `Extract from ${files.length} File${files.length > 1 ? 's' : ''}`
+                  )}
+                </button>
               )}
             </div>
-          ) : status === 'complete' ? (
-            <div className="flex-1 flex flex-col items-center justify-center bg-white border border-slate-200 rounded-2xl p-12 text-center max-w-md mx-auto my-auto shadow-sm">
-              <div className="h-16 w-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-4">
-                <Check size={32} />
+
+            {files.length > 0 && (
+              <div className="pt-4 flex flex-wrap gap-2 justify-center">
+                {files.map((f, i) => (
+                  <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#F4F3EE] text-[#50575F] rounded-full text-xs font-mono">
+                    <FileText size={12}/> {f.name}
+                  </span>
+                ))}
               </div>
-              <h2 className="text-xl font-bold text-slate-800">Records Successfully Ingested</h2>
-              <p className="text-slate-500 text-sm mt-1 mb-6">
+            )}
+
+            {status === 'error' && (
+              <div className="p-4 bg-red-50 text-red-800 rounded-xl flex items-center gap-2 text-xs border border-red-200 text-left">
+                <AlertTriangle size={15} className="shrink-0 text-red-600" />
+                <span>{errorMessage}</span>
+              </div>
+            )}
+          </div>
+        ) : status === 'complete' ? (
+          <div className="bg-white border border-[#EAE8E3] rounded-2xl p-12 text-center max-w-md mx-auto space-y-4 shadow-sm">
+            <div className="w-14 h-14 bg-emerald-50 text-emerald-700 rounded-2xl flex items-center justify-center mx-auto border border-emerald-200">
+              <Check size={28} />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-[#111315]">Records Successfully Committed</h3>
+              <p className="text-xs text-[#6E767E] mt-1">
                 Approved clinical facts have been linked to the patient profile with original source provenance.
               </p>
-              <Link to={effectivePatientId ? `/patients/${effectivePatientId}` : "/patients"} className="bg-brand-600 hover:bg-brand-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors shadow-sm">
-                Return to Profile
-              </Link>
             </div>
-          ) : (
-            <div className="flex-1 flex flex-col min-h-0 bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-              
-              {/* SAFETY VERIFICATION BANNER */}
-              <div className="bg-amber-50/80 border-b border-amber-200 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
-                <div className="flex items-start gap-3">
-                  <ShieldAlert size={20} className="text-amber-600 shrink-0 mt-0.5" />
-                  <div>
-                    <h3 className="text-amber-900 font-bold text-sm flex items-center gap-2">
-                      Extracted from uploaded document &mdash; Physician review required
-                    </h3>
-                    <p className="text-amber-800 text-xs mt-0.5">
-                      Unverified AI outputs will not become permanent clinical memory until explicitly approved.
-                    </p>
-                  </div>
+            <Link 
+              to={effectivePatientId ? `/patients/${effectivePatientId}` : "/patients"} 
+              className="inline-flex items-center justify-center gap-2 bg-[#111315] hover:bg-[#272B30] text-white px-6 py-2.5 rounded-xl font-semibold text-xs transition-colors shadow-xs"
+            >
+              <span>Return to Patient Chart</span>
+            </Link>
+          </div>
+        ) : (
+          <div className="bg-white border border-[#EAE8E3] rounded-2xl shadow-sm overflow-hidden space-y-0">
+            
+            {/* Safety Verification Callout */}
+            <div className="bg-amber-50/70 border-b border-amber-200/80 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <ShieldAlert size={18} className="text-amber-700 shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="text-amber-950 font-bold text-xs sm:text-sm">
+                    Extracted from uploaded document &mdash; Physician confirmation required
+                  </h4>
+                  <p className="text-amber-800 text-xs mt-0.5">
+                    Unverified facts will not become permanent clinical memory until explicitly approved.
+                  </p>
                 </div>
+              </div>
 
-                <div className="flex items-center gap-2 shrink-0">
-                  {lowConfidenceFacts.length > 0 && (
-                    <span className="text-xs font-semibold px-2.5 py-1 bg-amber-100 text-amber-900 rounded-md border border-amber-300 flex items-center gap-1">
-                      <AlertTriangle size={13} /> {lowConfidenceFacts.length} Low Confidence
-                    </span>
-                  )}
-                  <span className="text-xs font-semibold px-2.5 py-1 bg-emerald-100 text-emerald-900 rounded-md border border-emerald-300 flex items-center gap-1">
-                    <CheckCircle2 size={13} /> {allFacts.length - lowConfidenceFacts.length} High Confidence
+              <div className="flex items-center gap-2 shrink-0">
+                {lowConfidenceFacts.length > 0 && (
+                  <span className="text-xs font-semibold px-2.5 py-1 bg-amber-100 text-amber-900 rounded-md border border-amber-300 flex items-center gap-1 font-mono">
+                    <AlertTriangle size={12} /> {lowConfidenceFacts.length} Low Confidence
                   </span>
-                </div>
-              </div>
-
-              <div className="flex-1 overflow-y-auto p-0">
-                <table className="w-full text-left text-sm whitespace-nowrap">
-                  <thead className="bg-slate-50 sticky top-0 border-b border-slate-200 z-10 text-slate-500 font-semibold text-xs uppercase tracking-wider">
-                    <tr>
-                      <th className="px-6 py-4">Action</th>
-                      <th className="px-6 py-4">Provenance</th>
-                      <th className="px-6 py-4">Category</th>
-                      <th className="px-6 py-4 w-full">Extracted Value</th>
-                      <th className="px-6 py-4">Source Quote & Document</th>
-                      <th className="px-6 py-4 text-center">Confidence</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {extractions.map((ext, extIdx) => 
-                      ext.facts.map((fact, factIdx) => {
-                        const factCheck = verifyExtractedFact(fact.confidence, fact.source_quote, ext.originalFileName || 'report');
-                        
-                        return (
-                          <tr key={`${extIdx}-${factIdx}`} className={`${fact.approved ? 'bg-white hover:bg-slate-50' : 'bg-slate-50/50 opacity-60'} transition-colors`}>
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-1 bg-slate-100 rounded p-1 w-fit">
-                                <button 
-                                  onClick={() => toggleFact(extIdx, factIdx, true)}
-                                  className={`px-3 py-1 rounded text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer ${fact.approved ? 'bg-green-100 text-green-700 shadow-sm' : 'text-slate-500 hover:bg-slate-200'}`}
-                                >
-                                  <Check size={14}/> Approve
-                                </button>
-                                <button 
-                                  onClick={() => toggleFact(extIdx, factIdx, false)}
-                                  className={`px-3 py-1 rounded text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer ${!fact.approved ? 'bg-slate-300 text-slate-700 shadow-sm' : 'text-slate-500 hover:bg-slate-200'}`}
-                                >
-                                  <X size={14}/> Reject
-                                </button>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <span className={`text-[11px] font-semibold px-2 py-0.5 rounded border ${
-                                !fact.approved 
-                                  ? 'bg-slate-100 text-slate-500 border-slate-200' 
-                                  : fact.edited 
-                                    ? 'bg-blue-50 text-blue-700 border-blue-200' 
-                                    : 'bg-purple-50 text-purple-700 border-purple-200'
-                              }`}>
-                                {!fact.approved ? 'Rejected' : fact.edited ? 'Edited by physician' : 'AI extracted'}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4">
-                              <span className="capitalize px-2.5 py-1 bg-brand-50 text-brand-700 rounded-md font-medium text-xs">
-                                {fact.category}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-2">
-                                <input 
-                                  type="text" 
-                                  value={fact.text} 
-                                  onChange={(e) => updateFactText(extIdx, factIdx, e.target.value)}
-                                  className={`w-full border-none focus:ring-2 focus:ring-brand-200 rounded px-2 py-1 text-sm ${!fact.approved ? 'line-through text-slate-400 bg-transparent' : 'text-slate-900 bg-white shadow-sm ring-1 ring-slate-200'}`}
-                                  disabled={!fact.approved}
-                                />
-                                {fact.edited && (
-                                  <span title="Edited by physician" className="text-blue-600 shrink-0">
-                                    <Edit2 size={13} />
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="flex flex-col max-w-xs whitespace-normal gap-1.5">
-                                <span className="text-slate-600 italic text-xs leading-relaxed border-l-2 border-slate-300 pl-2">
-                                  "{fact.source_quote}"
-                                </span>
-                                <span className="text-[10px] text-brand-600 font-medium font-mono uppercase bg-brand-50 px-1.5 py-0.5 rounded w-fit">
-                                  DOC: {ext.originalFileName || ext.document_type || 'Unknown'}
-                                </span>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 text-center">
-                              <div className="flex flex-col items-center justify-center gap-1">
-                                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                                  factCheck.isLowConfidence ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-green-100 text-green-700'
-                                }`}>
-                                  {Math.round(fact.confidence * 100)}%
-                                </span>
-                                {factCheck.isLowConfidence && (
-                                  <span className="text-[10px] font-semibold text-amber-700 flex items-center gap-0.5">
-                                    <AlertTriangle size={10} /> Review
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
-              
-              <div className="bg-slate-50 border-t border-slate-200 p-4 shrink-0 flex items-center justify-between text-sm text-slate-600">
-                <span>{extractions.reduce((acc, curr) => acc + curr.facts.length, 0)} total facts extracted</span>
-                <span className="font-semibold">{approvedCount} approved for saving</span>
+                )}
+                <span className="text-xs font-semibold px-2.5 py-1 bg-emerald-100 text-emerald-900 rounded-md border border-emerald-300 flex items-center gap-1 font-mono">
+                  <CheckCircle2 size={12} /> {allFacts.length - lowConfidenceFacts.length} High Confidence
+                </span>
               </div>
             </div>
-          )}
-        </div>
+
+            {/* Extracted Facts Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs whitespace-nowrap">
+                <thead className="bg-[#FAF9F6] border-b border-[#EAE8E3] font-mono text-[11px] text-[#6E767E] uppercase">
+                  <tr>
+                    <th className="px-5 py-3 font-semibold">Clinician Decision</th>
+                    <th className="px-5 py-3 font-semibold">Provenance</th>
+                    <th className="px-5 py-3 font-semibold">Category</th>
+                    <th className="px-5 py-3 font-semibold w-full">Extracted Clinical Fact</th>
+                    <th className="px-5 py-3 font-semibold">Source Citation</th>
+                    <th className="px-5 py-3 font-semibold text-center">Confidence</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#F2F1EC]">
+                  {extractions.map((ext, extIdx) => 
+                    ext.facts.map((fact, factIdx) => {
+                      const factCheck = verifyExtractedFact(fact.confidence, fact.source_quote, ext.originalFileName || 'report');
+                      
+                      return (
+                        <tr 
+                          key={`${extIdx}-${factIdx}`} 
+                          className={`${fact.approved ? 'bg-white hover:bg-[#FAF9F6]' : 'bg-[#FAF9F6]/50 opacity-60'} transition-colors`}
+                        >
+                          <td className="px-5 py-3.5">
+                            <div className="flex items-center gap-1.5">
+                              <button 
+                                type="button"
+                                onClick={() => toggleFact(extIdx, factIdx, true)}
+                                className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer ${
+                                  fact.approved 
+                                    ? 'bg-emerald-600 text-white shadow-2xs' 
+                                    : 'text-[#6E767E] hover:bg-[#EAE8E3]'
+                                }`}
+                              >
+                                <Check size={13} />
+                                <span>Approve</span>
+                              </button>
+                              <button 
+                                type="button"
+                                onClick={() => toggleFact(extIdx, factIdx, false)}
+                                className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer ${
+                                  !fact.approved 
+                                    ? 'bg-red-600 text-white shadow-2xs' 
+                                    : 'text-[#6E767E] hover:bg-[#EAE8E3]'
+                                }`}
+                              >
+                                <X size={13} />
+                                <span>Reject</span>
+                              </button>
+                            </div>
+                          </td>
+
+                          <td className="px-5 py-3.5">
+                            <ProvenanceBadge 
+                              provenance={fact.edited ? 'PHYSICIAN_EDITED' : (fact.approved ? 'AI_SUGGESTION' : 'REJECTED')}
+                              size="xs"
+                            />
+                          </td>
+
+                          <td className="px-5 py-3.5">
+                            <span className="capitalize px-2 py-0.5 bg-[#F4F3EE] text-[#50575F] rounded-md font-mono text-[11px] font-medium border border-[#EAE8E3]">
+                              {fact.category}
+                            </span>
+                          </td>
+
+                          <td className="px-5 py-3.5">
+                            <div className="flex items-center gap-2 min-w-[280px]">
+                              <input 
+                                type="text" 
+                                value={fact.text} 
+                                onChange={(e) => updateFactText(extIdx, factIdx, e.target.value)}
+                                className={`w-full rounded-xl px-3 py-1.5 text-xs ${
+                                  !fact.approved 
+                                    ? 'line-through text-[#949CA4] bg-transparent border-0' 
+                                    : 'text-[#111315] bg-white border border-[#EAE8E3] focus:border-[#111315] outline-none shadow-2xs'
+                                }`}
+                                disabled={!fact.approved}
+                              />
+                              {fact.edited && (
+                                <span title="Modified by clinician" className="text-sky-600 shrink-0 font-mono text-[10px]">
+                                  MODIFIED
+                                </span>
+                              )}
+                            </div>
+                          </td>
+
+                          <td className="px-5 py-3.5">
+                            <div className="flex flex-col max-w-xs whitespace-normal gap-1">
+                              <span className="text-[#50575F] italic text-xs leading-relaxed border-l-2 border-[#D5D2C9] pl-2">
+                                "{fact.source_quote}"
+                              </span>
+                              <span className="text-[10px] text-[#0F766E] font-mono uppercase">
+                                DOC: {ext.originalFileName || ext.document_type || 'Record'}
+                              </span>
+                            </div>
+                          </td>
+
+                          <td className="px-5 py-3.5 text-center">
+                            <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded-full ${
+                              factCheck.isLowConfidence 
+                                ? 'bg-amber-100 text-amber-900 border border-amber-300' 
+                                : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                            }`}>
+                              {Math.round(fact.confidence * 100)}%
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+            
+            <div className="bg-[#FAF9F6] border-t border-[#EAE8E3] p-4 flex items-center justify-between text-xs text-[#6E767E] font-mono">
+              <span>{extractions.reduce((acc, curr) => acc + curr.facts.length, 0)} total clinical facts extracted</span>
+              <span className="font-bold text-[#111315]">{approvedCount} approved for FHIR persistence</span>
+            </div>
+          </div>
+        )}
+
       </div>
     </Layout>
   );

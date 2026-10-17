@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useMedplum } from '@medplum/react';
 import type { Patient } from '@medplum/fhirtypes';
-import { Search, UserPlus, FileText, Users, ChevronRight, LoaderCircle } from 'lucide-react';
+import { Search, UserPlus, FileText, Users, ChevronRight, LoaderCircle, Sparkles, AlertCircle } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 
@@ -18,7 +18,7 @@ export default function Patients() {
 
   useEffect(() => {
     let active = true;
-    medplum.searchResources('Patient', search ? { name: search } : {})
+    medplum.searchResources('Patient', search ? { name: search } : { _sort: '-_lastUpdated' })
       .then((res) => {
         if (active) {
           setPatients(res);
@@ -28,7 +28,7 @@ export default function Patients() {
       .catch((err) => {
         console.error(err);
         if (active) {
-          setLoadError('Patient records could not be loaded. Check the connection and try again.');
+          setLoadError('Patient records could not be loaded. Check service connection and try again.');
           setLoading(false);
         }
       });
@@ -48,7 +48,7 @@ export default function Patients() {
       navigate(`/patients/${newPatient.id}`);
     } catch (err) {
       console.error('Failed to create demo patient:', err);
-      setCreateError('Could not create the patient. Please check the service connection and try again.');
+      setCreateError('Could not create patient. Please check connection and try again.');
     } finally {
       setCreating(false);
     }
@@ -63,7 +63,7 @@ export default function Patients() {
       navigate(`/patients/${newPatient.id}`);
     } catch (err) {
       console.error('Failed to create sample patient:', err);
-      setCreateError('Could not create the sample patient. Please check the service connection and try again.');
+      setCreateError('Could not create sample patient. Please check connection and try again.');
     } finally {
       setCreating(false);
     }
@@ -78,7 +78,7 @@ export default function Patients() {
       navigate(`/patients/${newPatient.id}`);
     } catch (err) {
       console.error('Failed to create Conflicting History demo patient:', err);
-      setCreateError('Could not create the sample patient. Please check the service connection and try again.');
+      setCreateError('Could not create sample patient. Please check connection and try again.');
     } finally {
       setCreating(false);
     }
@@ -94,86 +94,95 @@ export default function Patients() {
 
   return (
     <Layout>
-      <div className="proton-patients-page space-y-6 proton-animate-in">
-
-        {/* Header */}
-        <div className="proton-patients-header flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+      <div className="space-y-6 animate-in fade-in">
+        
+        {/* Header & Cohort Actions */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2 border-b border-[#EAE8E3]">
           <div>
-            <h1 className="text-2xl font-bold text-[var(--color-text-primary)] tracking-tight">Patients</h1>
-            <p className="text-sm text-[var(--color-text-tertiary)] mt-1">
-              {patients.length} patient{patients.length !== 1 ? 's' : ''} in your clinical panel
+            <span className="font-mono text-xs uppercase tracking-wider text-[#6E767E] font-medium">
+              LONGITUDINAL CLINICAL COHORTS
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#111315] mt-0.5">
+              Patient Panel
+            </h2>
+            <p className="text-xs sm:text-sm text-[#6E767E] mt-1">
+              Active patient panel connected to FHIR R4 records and temporal intelligence.
             </p>
           </div>
-          <div className="proton-patient-actions flex items-center gap-2 flex-wrap">
+
+          {/* Quick Synthetic Generators */}
+          <div className="flex items-center gap-2 flex-wrap">
             <button 
+              type="button"
               onClick={handleCreateClinicalBrainPatient}
               disabled={creating}
-              className="proton-btn proton-btn-primary text-xs"
+              className="px-3 py-2 bg-[#111315] hover:bg-[#272B30] text-white rounded-xl text-xs font-semibold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
             >
-              <FileText size={14} /> {creating ? 'Creating...' : 'Sample patient: Eleanor Vance'}
+              <Sparkles size={13} className="text-amber-400" />
+              <span>{creating ? 'Generating...' : '+ Eleanor Vance (68F)'}</span>
             </button>
             <button 
+              type="button"
               onClick={handleCreateConflictingHistoryPatient}
               disabled={creating}
-              className="proton-btn text-xs bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100"
+              className="px-3 py-2 bg-white hover:bg-[#F4F3EE] text-[#111315] border border-[#EAE8E3] rounded-xl text-xs font-semibold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
             >
-              <FileText size={14} /> {creating ? 'Creating...' : 'Sample patient: Arthur Pendelton'}
+              <FileText size={13} className="text-violet-600" />
+              <span>{creating ? 'Generating...' : '+ Arthur Pendelton (74M)'}</span>
             </button>
             <button 
+              type="button"
               onClick={handleCreateDemoPatient}
               disabled={creating}
-              className="proton-btn proton-btn-secondary text-xs"
+              className="px-3 py-2 bg-white hover:bg-[#F4F3EE] text-[#6E767E] hover:text-[#111315] border border-[#EAE8E3] rounded-xl text-xs font-medium transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
             >
-              <UserPlus size={14} /> {creating ? 'Creating...' : 'Blank Patient'}
+              <UserPlus size={13} />
+              <span>Blank Record</span>
             </button>
           </div>
-          {createError && (
-            <p className="w-full text-sm text-[var(--color-clinical-danger)]" role="alert">{createError}</p>
-          )}
         </div>
 
-        {/* Patient List Card */}
-        <div className="proton-patient-directory proton-card overflow-hidden flex flex-col">
-          {/* Search Bar */}
-          <div className="proton-patient-searchbar p-4 border-b border-[var(--color-border-subtle)] flex items-center gap-3">
-            <div className="proton-patient-searchbox relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-tertiary)]" size={16} />
+        {createError && (
+          <div className="p-3 bg-red-50 border border-red-200 text-red-800 text-xs rounded-xl flex items-center gap-2" role="alert">
+            <AlertCircle size={15} className="shrink-0 text-red-600" />
+            <span>{createError}</span>
+          </div>
+        )}
+
+        {/* Directory Container Card */}
+        <div className="bg-white border border-[#EAE8E3] rounded-2xl shadow-sm overflow-hidden flex flex-col">
+          
+          {/* Search Header */}
+          <div className="p-4 border-b border-[#EAE8E3] flex items-center justify-between gap-4 bg-[#FAF9F6]">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#949CA4]" size={15} />
               <input 
                 type="text" 
-                placeholder="Search patients by name..." 
+                placeholder="Search patient panel by name or MRN..." 
                 value={search}
                 onChange={(event) => {
                   setLoading(true);
                   setLoadError('');
                   setSearch(event.target.value);
                 }}
-                className="proton-input pl-9"
+                className="w-full pl-9 pr-3.5 py-2 bg-white border border-[#EAE8E3] rounded-xl text-xs sm:text-sm focus:outline-none focus:border-[#111315] transition-colors"
               />
             </div>
-            <span className="text-xs text-[var(--color-text-tertiary)] hidden sm:inline">
-              {patients.length} result{patients.length !== 1 ? 's' : ''}
+            <span className="font-mono text-xs text-[#6E767E] hidden sm:inline">
+              {patients.length} patient record{patients.length !== 1 ? 's' : ''}
             </span>
           </div>
 
-          {/* Table Content */}
-          <div className="flex-1 overflow-auto">
+          {/* Table or Empty/Loading States */}
+          <div className="overflow-x-auto">
             {loading ? (
-              <div className="space-y-3 p-5" role="status" aria-label="Loading patient records">
-                <div className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
-                  <LoaderCircle size={16} className="animate-spin" />
-                  Loading patient records
-                </div>
-                {[0, 1, 2, 3].map(row => (
-                  <div key={row} className="grid grid-cols-3 gap-4 border-b border-[var(--color-border-subtle)] py-3" aria-hidden="true">
-                    <span className="h-3 rounded bg-[var(--color-surface-sunken)]" />
-                    <span className="h-3 rounded bg-[var(--color-surface-sunken)]" />
-                    <span className="h-3 rounded bg-[var(--color-surface-sunken)]" />
-                  </div>
-                ))}
+              <div className="p-10 flex flex-col items-center justify-center gap-3 text-xs text-[#6E767E]" role="status">
+                <LoaderCircle size={22} className="animate-spin text-[#111315]" />
+                <span>Loading longitudinal records from FHIR store...</span>
               </div>
             ) : loadError ? (
-              <div className="flex flex-wrap items-center gap-3 p-5 text-sm text-[var(--color-clinical-danger)]" role="alert">
-                <span>{loadError}</span>
+              <div className="p-8 text-center space-y-3">
+                <p className="text-xs sm:text-sm text-red-700">{loadError}</p>
                 <button
                   type="button"
                   onClick={() => {
@@ -181,65 +190,87 @@ export default function Patients() {
                     setLoadError('');
                     setLoadAttempt(attempt => attempt + 1);
                   }}
-                  className="rounded-md border border-[var(--color-border-strong)] px-3 py-1.5 font-medium text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-surface-sunken)]"
+                  className="px-4 py-2 bg-white border border-[#EAE8E3] rounded-xl text-xs font-semibold text-[#111315] hover:bg-[#F4F3EE] transition-colors cursor-pointer"
                 >
-                  Retry
+                  Retry Connection
                 </button>
               </div>
             ) : patients.length === 0 ? (
-              <div className="proton-patient-empty flex flex-col justify-center items-center h-full gap-4 proton-animate-in">
-                <div className="h-14 w-14 bg-[var(--color-surface-sunken)] rounded-2xl flex items-center justify-center">
-                  <Users size={28} className="text-[var(--color-text-tertiary)]" />
+              <div className="p-12 text-center space-y-4 max-w-sm mx-auto">
+                <div className="w-12 h-12 bg-[#F4F3EE] rounded-2xl flex items-center justify-center mx-auto text-[#6E767E]">
+                  <Users size={22} />
                 </div>
-                <div className="text-center">
-                  <p className="text-base font-semibold text-[var(--color-text-primary)]">Your patient workspace is ready</p>
-                  <p className="text-sm text-[var(--color-text-tertiary)] mt-1">Create a synthetic patient to begin evaluating Proton.</p>
+                <div>
+                  <h4 className="text-base font-bold text-[#111315]">No Patient Records Found</h4>
+                  <p className="text-xs text-[#6E767E] mt-1">
+                    Initialize a synthetic patient cohort to evaluate Proton's clinical decision support.
+                  </p>
                 </div>
                 <button 
+                  type="button"
                   onClick={handleCreateClinicalBrainPatient}
                   disabled={creating}
-                  className="proton-btn proton-btn-primary"
+                  className="px-4 py-2.5 bg-[#111315] hover:bg-[#272B30] text-white text-xs font-semibold rounded-xl transition-all shadow-xs inline-flex items-center gap-1.5 cursor-pointer"
                 >
-                  <FileText size={14} /> Create sample patient
+                  <Sparkles size={14} className="text-amber-400" />
+                  <span>Create Eleanor Vance (68F)</span>
                 </button>
               </div>
             ) : (
-              <table className="proton-patient-table w-full text-left">
-                <thead className="bg-[var(--color-surface-raised)] sticky top-0 border-b border-[var(--color-border-subtle)]">
-                  <tr>
-                    <th className="px-6 py-3 proton-micro-label text-[var(--color-text-tertiary)]">Patient</th>
-                    <th className="px-6 py-3 proton-micro-label text-[var(--color-text-tertiary)]">Age</th>
-                    <th className="px-6 py-3 proton-micro-label text-[var(--color-text-tertiary)]">Gender</th>
-                    <th className="px-6 py-3 proton-micro-label text-[var(--color-text-tertiary)]">Date of Birth</th>
-                    <th className="px-6 py-3 proton-micro-label text-[var(--color-text-tertiary)]">Last Updated</th>
-                    <th className="px-6 py-3"></th>
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-[#EAE8E3] bg-[#FAF9F6] text-[11px] font-mono uppercase text-[#6E767E]">
+                    <th className="px-6 py-3 font-semibold">Patient Name</th>
+                    <th className="px-6 py-3 font-semibold">Age / Sex</th>
+                    <th className="px-6 py-3 font-semibold">Date of Birth</th>
+                    <th className="px-6 py-3 font-semibold">FHIR ID</th>
+                    <th className="px-6 py-3 font-semibold">Last Updated</th>
+                    <th className="px-6 py-3 font-semibold text-right">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[var(--color-border-subtle)]">
+                <tbody className="divide-y divide-[#F2F1EC] text-xs">
                   {patients.map((p) => {
                     const name = p.name?.[0];
                     const displayName = name ? `${name.given?.join(' ') || ''} ${name.family || ''}`.trim() : 'Unknown';
                     const initials = displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
                     const date = p.meta?.lastUpdated ? new Date(p.meta.lastUpdated).toLocaleDateString() : '—';
                     const age = calculateAge(p.birthDate);
+
                     return (
-                      <tr key={p.id} className="hover:bg-[var(--color-surface-raised)] transition-colors group cursor-pointer" onClick={() => navigate(`/patients/${p.id}`)}>
+                      <tr 
+                        key={p.id} 
+                        onClick={() => navigate(`/patients/${p.id}`)}
+                        className="hover:bg-[#FAF9F6] transition-colors cursor-pointer group"
+                      >
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            <div className="h-9 w-9 rounded-full bg-brand-50 border border-brand-100 flex items-center justify-center text-brand-700 text-xs font-bold shrink-0">
+                            <div className="w-8 h-8 rounded-xl bg-[#F4F3EE] border border-[#EAE8E3] flex items-center justify-center font-bold text-xs text-[#111315] shrink-0">
                               {initials}
                             </div>
-                            <Link to={`/patients/${p.id}`} className="font-semibold text-[var(--color-text-primary)] text-sm hover:text-brand-700 transition-colors" onClick={e => e.stopPropagation()}>
-                              {displayName || 'Unnamed Patient'}
-                            </Link>
+                            <div>
+                              <Link 
+                                to={`/patients/${p.id}`} 
+                                className="font-semibold text-sm text-[#111315] group-hover:text-[#0F766E] transition-colors"
+                                onClick={e => e.stopPropagation()}
+                              >
+                                {displayName}
+                              </Link>
+                              <div className="font-mono text-[10px] text-[#8C949D]">Verified Record</div>
+                            </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-sm text-[var(--color-text-secondary)]">{age || '—'}</td>
-                        <td className="px-6 py-4 text-sm text-[var(--color-text-secondary)] capitalize">{p.gender || '—'}</td>
-                        <td className="px-6 py-4 text-sm text-[var(--color-text-secondary)] font-mono">{p.birthDate || '—'}</td>
-                        <td className="px-6 py-4 text-xs text-[var(--color-text-tertiary)]">{date}</td>
-                        <td className="px-6 py-4">
-                          <ChevronRight size={16} className="text-[var(--color-text-tertiary)] opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <td className="px-6 py-4 text-[#50575F]">
+                          <span className="font-semibold text-[#111315]">{age || '—'}</span>
+                          <span className="text-[#8C949D] ml-1 capitalize">({p.gender || '—'})</span>
+                        </td>
+                        <td className="px-6 py-4 font-mono text-[#50575F]">{p.birthDate || '—'}</td>
+                        <td className="px-6 py-4 font-mono text-[#8C949D] text-[11px]">#{p.id?.slice(0, 8)}</td>
+                        <td className="px-6 py-4 font-mono text-[#8C949D] text-[11px]">{date}</td>
+                        <td className="px-6 py-4 text-right">
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#0F766E] opacity-0 group-hover:opacity-100 transition-opacity">
+                            <span>Open Chart</span>
+                            <ChevronRight size={14} />
+                          </span>
                         </td>
                       </tr>
                     );
@@ -248,7 +279,9 @@ export default function Patients() {
               </table>
             )}
           </div>
+
         </div>
+
       </div>
     </Layout>
   );

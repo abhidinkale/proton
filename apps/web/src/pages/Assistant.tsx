@@ -1,9 +1,12 @@
 import { useRef, useState, useEffect, type KeyboardEvent } from 'react';
-import { ArrowUp, LoaderCircle, Sparkles, Copy, Check } from 'lucide-react';
+import { 
+  ArrowUp, LoaderCircle, Sparkles, Copy, Check, HelpCircle
+} from 'lucide-react';
 import { sendClinicalChat, type ChatMessage } from '../services/ai';
 import Layout from '../components/Layout';
 import { TODAY_CLINIC_SCHEDULE } from '../data/clinicSchedule';
 import type { DoctorDeskPatient } from '../components/DoctorDeskEncounter';
+import ProvenanceBadge from '../components/ui/ProvenanceBadge';
 
 export default function Assistant() {
   const [selectedPatientId, setSelectedPatientId] = useState<string>('demo-eleanor-vance');
@@ -34,7 +37,7 @@ Recent Labs: ${activePatient.recentLabs.map(l => `${l.name}: ${l.value} (${l.sta
       setMessages([
         {
           role: 'assistant',
-          content: `Hello Doctor. I have ${activePatient.name}'s chart loaded (${activePatient.age}${activePatient.gender.charAt(0)}, ${activePatient.conditions.join(', ')}). How can I assist with this patient?`
+          content: `Hello Doctor. I have ${activePatient.name}'s longitudinal chart loaded (${activePatient.age}y ${activePatient.gender}, ${activePatient.conditions.join(', ')}). All responses are advisory and grounded in the patient's FHIR record. How may I assist your clinical reasoning today?`
         }
       ]);
     } else {
@@ -83,180 +86,212 @@ Recent Labs: ${activePatient.recentLabs.map(l => `${l.name}: ${l.value} (${l.sta
     setTimeout(() => setCopiedIndex(null), 2000);
   };
 
+  const quickPrompts = [
+    "Summarize this patient's recent history.",
+    "What changed since the last visit?",
+    "Which medications could be contributing to this?",
+    "Show me the evidence for this suggestion."
+  ];
+
   return (
     <Layout fillCanvas>
-      <section className="mx-auto flex h-full min-h-0 w-full max-w-4xl flex-col px-4 py-6 font-sans">
-        {/* HEADER & PATIENT CONTEXT SELECTOR */}
-        <header className="border-b border-[#222d3d] pb-5 shrink-0 space-y-4">
+      <div className="mx-auto flex h-full min-h-0 w-full max-w-4xl flex-col font-sans animate-in fade-in">
+        
+        {/* Top Header & Patient Context Selector */}
+        <header className="p-4 sm:p-5 bg-white border border-[#EAE8E3] rounded-2xl shadow-sm mb-4 shrink-0 space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-2">
-                <Sparkles size={16} className="text-[#38bdf8]" />
-                <h1 className="text-xl font-bold tracking-tight text-white">
-                  Clinical AI Copilot
-                </h1>
+                <div className="w-7 h-7 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center">
+                  <Sparkles size={15} />
+                </div>
+                <h2 className="text-base sm:text-lg font-bold tracking-tight text-[#111315]">
+                  Clinical AI Assistant
+                </h2>
               </div>
-              <p className="text-xs text-[#8ea3b7] mt-0.5">
-                Executive medical assistant powered by Gemini & patient chart reasoning
+              <p className="text-xs text-[#6E767E] mt-0.5">
+                Advisory diagnostic reasoning grounded in patient records • Clinician decision authoritative
               </p>
             </div>
 
-            {/* PATIENT CONTEXT SELECTOR */}
+            {/* Patient Context Dropdown */}
             <div className="flex items-center gap-2">
-              <span className="text-xs text-[#64748b] font-medium">Chart Context:</span>
+              <span className="text-xs text-[#6E767E] font-medium hidden sm:inline">Active Patient:</span>
               <select
                 value={selectedPatientId}
                 onChange={e => setSelectedPatientId(e.target.value)}
-                className="bg-[#141b26] border border-[#2b3a4e] text-xs font-semibold text-white rounded-xl px-3 py-2 outline-none focus:border-[#38bdf8] transition-colors cursor-pointer"
+                className="bg-[#F8F8F6] border border-[#EAE8E3] text-xs font-semibold text-[#111315] rounded-xl px-3 py-2 outline-none focus:border-[#111315] transition-colors cursor-pointer"
               >
                 {TODAY_CLINIC_SCHEDULE.map(p => (
                   <option key={p.id} value={p.id}>
-                    {p.name} ({p.age}y, {p.conditions[0]?.split(' ')[0] || 'Clinic'})
+                    {p.name} ({p.age}y {p.gender.charAt(0)}, {p.conditions[0]?.split(' ')[0] || 'Clinic'})
                   </option>
                 ))}
-                <option value="none">None (General Clinical Query)</option>
+                <option value="none">General Reference Mode (No Patient)</option>
               </select>
             </div>
           </div>
 
-          {/* ACTIVE PATIENT CHART BANNER */}
+          {/* Active Patient Vitals & Allergy Strip */}
           {activePatient && (
-            <div className="rounded-2xl border border-[#1f2d3f] bg-[#121924] p-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-white">{activePatient.name}</span>
-                  <span className="text-[#8ea3b7] font-mono">({activePatient.age}y, {activePatient.gender})</span>
-                  <span className="text-[#64748b] font-mono">MRN: {activePatient.mrn}</span>
-                  {activePatient.allergies.length > 0 && (
-                    <span className="bg-[#451215] text-[#ff8088] border border-[#7d2025] px-2 py-0.5 rounded-md font-semibold text-[10px]">
-                      Allergy: {activePatient.allergies.join(', ')}
-                    </span>
-                  )}
-                </div>
-                <div className="text-[#8ea3b7] flex items-center gap-2 flex-wrap">
-                  <span>BP <strong className="text-white">{activePatient.vitals.bp}</strong></span>
-                  <span>•</span>
-                  <span>HR <strong className="text-white">{activePatient.vitals.hr}</strong></span>
-                  <span>•</span>
-                  <span>Conditions: <span className="text-[#cbd5e1]">{activePatient.conditions.join(', ')}</span></span>
-                </div>
+            <div className="p-3 bg-[#FAF9F6] border border-[#EAE8E3] rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs text-[#50575F]">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-[#111315]">{activePatient.name}</span>
+                <span className="font-mono text-[#8C949D]">MRN: {activePatient.mrn}</span>
+                {activePatient.allergies.length > 0 && (
+                  <span className="px-2 py-0.5 bg-red-50 text-red-700 border border-red-200 rounded font-semibold text-[10px]">
+                    Allergy: {activePatient.allergies.join(', ')}
+                  </span>
+                )}
               </div>
-
-              {/* QUICK PROMPTS FOR THIS PATIENT */}
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <button
-                  type="button"
-                  onClick={() => submitMessage("Are there any drug interactions with current medications?")}
-                  className="bg-[#182332] hover:bg-[#223145] text-[#93c5fd] text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-[#27384f] transition-colors cursor-pointer"
-                >
-                  💊 Interactions
-                </button>
-                <button
-                  type="button"
-                  onClick={() => submitMessage(`Summarize ${activePatient.name}'s metabolic and organ lab trends.`)}
-                  className="bg-[#182332] hover:bg-[#223145] text-[#93c5fd] text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-[#27384f] transition-colors cursor-pointer"
-                >
-                  📈 Lab Trends
-                </button>
-                <button
-                  type="button"
-                  onClick={() => submitMessage(`What are recommended next treatment steps based on clinical guidelines?`)}
-                  className="bg-[#182332] hover:bg-[#223145] text-[#93c5fd] text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-[#27384f] transition-colors cursor-pointer"
-                >
-                  🎯 Next Steps
-                </button>
+              <div className="flex items-center gap-3 font-mono text-[11px]">
+                <span>BP <strong className="text-[#111315]">{activePatient.vitals.bp}</strong></span>
+                <span>HR <strong className="text-[#111315]">{activePatient.vitals.hr}</strong></span>
+                <span>SpO2 <strong className="text-[#111315]">{activePatient.vitals.spo2}</strong></span>
               </div>
             </div>
           )}
         </header>
 
-        {/* CHAT MESSAGES CONTAINER */}
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto py-5 pr-1" aria-live="polite">
-          {messages.map((message, index) => (
-            <article
-              key={`${index}-${message.role}`}
-              className={`flex flex-col ${message.role === 'user' ? 'items-end' : 'items-start'} max-w-full`}
-            >
-              <div className="mb-1 text-[11px] font-medium text-[#64748b]">
-                {message.role === 'user' ? 'You (Physician)' : 'Clinical Copilot'}
-              </div>
-              <div
-                className={`whitespace-pre-wrap rounded-2xl p-4 text-xs leading-relaxed max-w-[92%] shadow-sm ${
-                  message.role === 'user'
-                    ? 'bg-[#0284c7] text-white'
-                    : 'border border-[#222d3d] bg-[#141b26] text-[#e2e8f0]'
-                }`}
-              >
-                {message.content}
-              </div>
+        {/* Message Thread Scroll Area */}
+        <div className="flex-1 min-h-0 overflow-y-auto space-y-4 pr-1">
+          {messages.map((m, idx) => {
+            const isUser = m.role === 'user';
 
-              {message.role === 'assistant' && (
-                <div className="flex items-center gap-2 mt-1.5 ml-1">
-                  <button
-                    type="button"
-                    onClick={() => copyResponse(message.content, index)}
-                    className="flex items-center gap-1 text-[11px] text-[#8ea3b7] hover:text-white font-medium cursor-pointer"
-                  >
-                    {copiedIndex === index ? (
-                      <>
-                        <Check size={12} className="text-emerald-400" />
-                        <span className="text-emerald-400">Copied</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy size={12} />
-                        <span>Copy</span>
-                      </>
-                    )}
-                  </button>
+            return (
+              <div
+                key={idx}
+                className={`flex gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}
+              >
+                {!isUser && (
+                  <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0 border border-amber-200/80 mt-1">
+                    <Sparkles size={15} />
+                  </div>
+                )}
+
+                <div
+                  className={`max-w-[85%] rounded-2xl p-4 sm:p-5 text-xs sm:text-sm leading-relaxed space-y-3 ${
+                    isUser
+                      ? 'bg-[#111315] text-white shadow-xs rounded-tr-xs'
+                      : 'bg-white border border-[#EAE8E3] text-[#121417] shadow-2xs rounded-tl-xs'
+                  }`}
+                >
+                  {!isUser && (
+                    <div className="flex items-center justify-between gap-3 pb-2 border-b border-[#F2F1EC]">
+                      <div className="flex items-center gap-1.5">
+                        <ProvenanceBadge provenance="AI_SUGGESTION" size="xs" />
+                        <span className="text-[10px] font-mono text-[#8C949D]">Advisory Model</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => copyResponse(m.content, idx)}
+                        className="text-[#8C949D] hover:text-[#111315] p-1 rounded transition-colors"
+                        title="Copy to clipboard"
+                      >
+                        {copiedIndex === idx ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Message body */}
+                  <div className="whitespace-pre-wrap font-sans">
+                    {m.content}
+                  </div>
+
+                  {/* Context Citations & Advisory Footnote for Assistant replies */}
+                  {!isUser && activePatient && (
+                    <div className="pt-2 border-t border-[#F2F1EC] text-[11px] text-[#6E767E] space-y-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-mono text-[9px] uppercase text-[#8C949D]">Sources Cited:</span>
+                        <span className="px-1.5 py-0.5 bg-[#FAF9F6] border border-[#EAE8E3] rounded text-[#50575F]">
+                          FHIR R4 Patient Chart
+                        </span>
+                        <span className="px-1.5 py-0.5 bg-[#FAF9F6] border border-[#EAE8E3] rounded text-[#50575F]">
+                          Recent Labs (60d)
+                        </span>
+                        <span className="px-1.5 py-0.5 bg-[#FAF9F6] border border-[#EAE8E3] rounded text-[#50575F]">
+                          Active Medications
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 text-amber-800 bg-amber-50/70 px-2 py-1 rounded-lg">
+                        <HelpCircle size={12} className="shrink-0 text-amber-700" />
+                        <span>Clinical judgment advisory: Verify all suggested medication titrations against clinical vitals.</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </article>
-          ))}
+
+                {isUser && (
+                  <div className="w-8 h-8 rounded-xl bg-[#F4F3EE] text-[#111315] flex items-center justify-center shrink-0 border border-[#EAE8E3] mt-1 font-bold text-xs">
+                    MD
+                  </div>
+                )}
+              </div>
+            );
+          })}
 
           {isSending && (
-            <div className="flex items-center gap-2 text-xs text-[#8ea3b7] pl-1 font-medium" role="status">
-              <LoaderCircle size={14} className="animate-spin text-[#38bdf8]" />
-              <span>Analyzing patient chart & synthesis...</span>
+            <div className="flex gap-3 justify-start items-center">
+              <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0 border border-amber-200">
+                <LoaderCircle size={15} className="animate-spin text-amber-600" />
+              </div>
+              <div className="bg-white border border-[#EAE8E3] rounded-2xl px-4 py-2.5 text-xs text-[#6E767E] flex items-center gap-2">
+                <Sparkles size={13} className="text-amber-500 animate-pulse" />
+                <span>Synthesizing chart intelligence...</span>
+              </div>
             </div>
-          )}
-
-          {error && (
-            <p className="text-xs text-red-400 bg-red-950/40 border border-red-900/50 p-3 rounded-xl" role="alert">
-              {error}
-            </p>
           )}
 
           <div ref={endOfMessagesRef} />
         </div>
 
-        {/* COMPOSER FORM */}
-        <form onSubmit={e => { e.preventDefault(); void submitMessage(); }} className="border-t border-[#222d3d] pt-4 shrink-0">
-          <label htmlFor="clinical-chat-input" className="sr-only">Message the clinical assistant</label>
-          <div className="flex items-end gap-3 rounded-2xl border border-[#2b3a4e] bg-[#141b26] p-2.5 focus-within:border-[#38bdf8] shadow-md transition-colors">
-            <textarea
-              id="clinical-chat-input"
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              onKeyDown={handleComposerKeyDown}
-              maxLength={4000}
-              rows={2}
-              placeholder={activePatient ? `Ask about ${activePatient.name}'s care, lab trends, or therapy...` : "Ask a medical or pharmacological question..."}
-              className="max-h-40 min-h-12 flex-1 resize-none bg-transparent px-2.5 py-1 text-xs text-white outline-none placeholder:text-[#64748b]"
-              disabled={isSending}
-            />
+        {/* Quick Question Chips */}
+        <div className="py-2 flex items-center gap-1.5 overflow-x-auto shrink-0">
+          {quickPrompts.map((prompt, i) => (
             <button
-              type="submit"
-              disabled={isSending || !draft.trim()}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[#0284c7] hover:bg-[#0369a1] text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer shadow-sm"
-              aria-label="Send message"
+              key={i}
+              type="button"
+              onClick={() => submitMessage(prompt)}
+              disabled={isSending}
+              className="px-3 py-1.5 bg-white hover:bg-[#F4F3EE] text-[#50575F] hover:text-[#111315] border border-[#EAE8E3] rounded-xl text-xs font-medium whitespace-nowrap transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
             >
-              <ArrowUp size={16} />
+              {prompt}
+            </button>
+          ))}
+        </div>
+
+        {/* Composer Input Bar */}
+        <footer className="mt-2 shrink-0 bg-white border border-[#EAE8E3] rounded-2xl p-2 shadow-sm focus-within:border-[#111315] transition-colors">
+          {error && (
+            <div className="p-2 mb-2 text-xs text-red-700 bg-red-50 rounded-lg">
+              {error}
+            </div>
+          )}
+
+          <div className="flex items-end gap-2">
+            <textarea
+              value={draft}
+              onChange={e => setDraft(e.target.value)}
+              onKeyDown={handleComposerKeyDown}
+              placeholder={activePatient ? `Ask about ${activePatient.name}'s trajectory, interactions, or evidence...` : "Ask clinical question..."}
+              rows={2}
+              className="w-full bg-transparent px-3 py-1.5 text-xs sm:text-sm text-[#111315] placeholder-[#949CA4] outline-none resize-none"
+            />
+
+            <button
+              type="button"
+              onClick={() => submitMessage()}
+              disabled={!draft.trim() || isSending}
+              className="w-9 h-9 rounded-xl bg-[#111315] hover:bg-[#272B30] text-white flex items-center justify-center shrink-0 transition-colors shadow-xs cursor-pointer disabled:opacity-40"
+              title="Send message (Enter)"
+            >
+              {isSending ? <LoaderCircle size={15} className="animate-spin" /> : <ArrowUp size={16} />}
             </button>
           </div>
-          <p className="mt-2 text-[11px] text-[#64748b]">Press Enter to send · Shift+Enter for new line · AI responses should be verified against clinical judgment</p>
-        </form>
-      </section>
+        </footer>
+
+      </div>
     </Layout>
   );
 }

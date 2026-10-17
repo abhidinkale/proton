@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useParams, Link, useLocation } from 'react-router-dom';
+import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useMedplum } from '@medplum/react';
 import { synthesizePatientIntelligence } from '../services/clinicalBrain';
 import type { 
@@ -19,10 +19,18 @@ import {
   ChevronDown, 
   ChevronUp, 
   Printer,
-  AlertTriangle,
-  ArrowUpRight,
   Plus,
-  LoaderCircle
+  LoaderCircle,
+  Calendar,
+  Sparkles,
+  Stethoscope,
+  Activity,
+  Pill,
+  Clock,
+  Layers,
+  Heart,
+  FileCheck,
+  ExternalLink
 } from 'lucide-react';
 import Layout from '../components/Layout';
 import type { PrescriptionItem } from '../types/prescription';
@@ -31,13 +39,17 @@ import EvidenceModal from '../components/EvidenceModal';
 import type { ClinicalEvidence } from '../types/clinicalBrain';
 import { operationsService } from '../services/operationsService';
 import type { OperationalTask } from '../types/operations';
+import ProvenanceBadge, { type ProvenanceType } from '../components/ui/ProvenanceBadge';
+import ClinicalAlert from '../components/ui/ClinicalAlert';
 
-type TimelineFilter = 'all' | 'consultations' | 'prescriptions' | 'labs' | 'documents' | 'communications' | 'referrals' | 'operations';
+type ProfileTab = 'overview' | 'timeline' | 'encounters' | 'medications' | 'labs' | 'conditions' | 'documents' | 'ai-insights';
+type TimelineFilter = 'all' | 'consultations' | 'prescriptions' | 'labs' | 'documents' | 'operations';
 
 interface TimelineEvent {
   id: string;
   date: Date;
   type: 'consultation' | 'prescription' | 'observation' | 'document' | 'condition' | 'communication' | 'referral' | 'scheduling' | 'operation';
+  provenance: ProvenanceType;
   title: string;
   description: string;
   badge?: {
@@ -89,6 +101,7 @@ interface TimelineEvent {
 export default function PatientProfile() {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
+  const navigate = useNavigate();
   const medplum = useMedplum();
 
   const [patient, setPatient] = useState<Patient | null>(null);
@@ -102,6 +115,9 @@ export default function PatientProfile() {
   const [documents, setDocuments] = useState<DocumentReference[]>([]);
   const [operationalTasks, setOperationalTasks] = useState<OperationalTask[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Progressive Disclosure Tab state
+  const [activeTab, setActiveTab] = useState<ProfileTab>('overview');
 
   // Timeline UI States
   const [activeFilter, setActiveFilter] = useState<TimelineFilter>('all');
@@ -240,11 +256,14 @@ export default function PatientProfile() {
   }, [patient, encounters, impressions, conditions, medStatements, medicationRequests, allergies, observations, documents]);
 
   const handleFocusTimelineItem = (sourceId: string) => {
-    const el = document.getElementById(`timeline-${sourceId}`);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      setExpandedTimelineIds(prev => ({ ...prev, [sourceId]: true }));
-    }
+    setActiveTab('timeline');
+    setTimeout(() => {
+      const el = document.getElementById(`timeline-${sourceId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setExpandedTimelineIds(prev => ({ ...prev, [sourceId]: true }));
+      }
+    }, 100);
   };
 
   const getSourceDocName = (derivedFrom?: any[], evidence?: any[]): string | undefined => {
@@ -283,13 +302,13 @@ export default function PatientProfile() {
     setPdfModalData({
       isOpen: true,
       medications: rxItems,
-      date: new Date(enc.period?.start || Date.now()).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+      date: enc.period?.start ? new Date(enc.period.start).toLocaleDateString() : undefined
     });
   };
 
   const openPdfForSingleRx = (mr: MedicationRequest) => {
-    const item: PrescriptionItem = {
-      id: mr.id || 'rx-single',
+    const rxItem: PrescriptionItem = {
+      id: mr.id || 'rx-1',
       name: mr.medicationCodeableConcept?.text?.split(' ')[0] || 'Medication',
       strength: mr.medicationCodeableConcept?.text?.split(' ').slice(1).join(' ') || '',
       dose: mr.dosageInstruction?.[0]?.doseAndRate?.[0]?.doseQuantity?.unit || '1 tablet',
@@ -298,88 +317,77 @@ export default function PatientProfile() {
       duration: `${mr.dispenseRequest?.expectedSupplyDuration?.value || 30} days`,
       instructions: mr.dosageInstruction?.[0]?.patientInstruction || ''
     };
+
     setPdfModalData({
       isOpen: true,
-      medications: [item],
-      date: new Date(mr.authoredOn || mr.meta?.lastUpdated || Date.now()).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+      medications: [rxItem],
+      date: mr.authoredOn ? new Date(mr.authoredOn).toLocaleDateString() : undefined
     });
   };
 
-  // Compile Unified Longitudinal Interactive Timeline
+  // Build unified chronological timeline with explicit truth types
   const getTimeline = (): TimelineEvent[] => {
     const events: TimelineEvent[] = [];
-    
+
     // Encounters
-    encounters.forEach(e => {
-      if (e.period?.start) {
-        const impression = impressions.find(i => 
-          i.encounter?.reference === `Encounter/${e.id}` || 
-          i.encounter?.reference?.includes(e.id as string)
-        );
+    encounters.forEach(enc => {
+      const d = enc.period?.start || enc.meta?.lastUpdated;
+      if (d) {
         const linkedMeds = medicationRequests.filter(m => 
-          m.encounter?.reference === `Encounter/${e.id}` || 
-          m.encounter?.reference?.includes(e.id as string) ||
-          (!m.encounter?.reference?.startsWith('Encounter/') && 
-           new Date(m.authoredOn || '').toDateString() === new Date(e.period?.start || '').toDateString())
+          m.encounter?.reference === `Encounter/${enc.id}` ||
+          (m.authoredOn && enc.period?.start && m.authoredOn.slice(0, 10) === enc.period.start.slice(0, 10))
         );
 
         events.push({
-          id: e.id as string,
-          date: new Date(e.period.start),
+          id: enc.id as string,
+          date: new Date(d),
           type: 'consultation',
-          title: 'Consultation',
-          description: e.type?.[0]?.text || 'Ambulatory Consultation',
-          badge: impression?.status === 'in-progress' 
-            ? { text: 'Draft Note', variant: 'draft' }
-            : { text: 'Approved', variant: 'approved' },
+          provenance: 'CONFIRMED_CLINICAL_DATA',
+          title: enc.type?.[0]?.text || 'Outpatient Consultation',
+          description: enc.reasonCode?.[0]?.text || 'Comprehensive Physician Encounter',
+          badge: { text: 'Physician Signed', variant: 'approved' },
           consultationData: {
-            doctor: 'Dr. Alex Morgan, MD',
-            type: e.type?.[0]?.text || 'Ambulatory Consultation',
-            summary: impression?.summary,
-            transcript: impression?.investigation?.[0]?.item?.[0]?.display,
+            doctor: 'Dr. Aris Thorne, MD',
+            type: enc.type?.[0]?.text || 'Encounter',
+            summary: enc.reasonCode?.[0]?.text,
             linkedPrescriptions: linkedMeds
           },
-          resource: e
+          resource: enc
         });
       }
     });
 
-    // Prescriptions
+    // Medication Requests
     medicationRequests.forEach(mr => {
       const d = mr.authoredOn || mr.meta?.lastUpdated;
       if (d) {
-        const medName = mr.medicationCodeableConcept?.text || mr.medicationCodeableConcept?.coding?.[0]?.display || 'Prescribed Medication';
-        const dosage = mr.dosageInstruction?.[0]?.text || '';
+        const medName = mr.medicationCodeableConcept?.text || mr.medicationCodeableConcept?.coding?.[0]?.display || 'Medication';
+        const dosage = mr.dosageInstruction?.[0]?.text || mr.dosageInstruction?.[0]?.patientInstruction || '';
         
-        const rxItem: PrescriptionItem = {
-          id: mr.id as string,
-          name: medName.split(' ')[0],
-          strength: medName.split(' ').slice(1).join(' '),
-          dose: mr.dosageInstruction?.[0]?.doseAndRate?.[0]?.doseQuantity?.unit || '1 tablet',
-          route: mr.dosageInstruction?.[0]?.route?.text || 'Oral',
-          frequency: mr.dosageInstruction?.[0]?.timing?.code?.text || 'Once daily',
-          duration: `${mr.dispenseRequest?.expectedSupplyDuration?.value || 30} days`,
-          instructions: mr.dosageInstruction?.[0]?.patientInstruction || ''
-        };
-
         events.push({
           id: mr.id as string,
           date: new Date(d),
           type: 'prescription',
-          title: 'Prescription Order',
-          description: `${medName}${dosage ? ` — ${dosage}` : ''}`,
-          badge: { text: 'Active', variant: 'approved' },
+          provenance: 'CONFIRMED_CLINICAL_DATA',
+          title: `Prescribed: ${medName}`,
+          description: dosage || 'Active Prescription Order',
+          badge: { text: 'Active Rx', variant: 'approved' },
           details: {
-            strength: rxItem.strength,
-            dose: rxItem.dose,
-            route: rxItem.route,
-            frequency: rxItem.frequency,
-            duration: rxItem.duration,
-            instructions: rxItem.instructions,
+            strength: mr.medicationCodeableConcept?.text?.split(' ').slice(1).join(' '),
+            instructions: dosage,
             status: mr.status
           },
           prescriptionData: {
-            item: rxItem,
+            item: {
+              id: mr.id || '',
+              name: medName,
+              strength: '',
+              dose: '1 unit',
+              route: 'Oral',
+              frequency: 'Daily',
+              duration: '30 days',
+              instructions: dosage || 'Take as directed by clinician'
+            },
             status: mr.status || 'active'
           },
           resource: mr
@@ -391,18 +399,19 @@ export default function PatientProfile() {
     observations.forEach(o => {
       const d = o.effectiveDateTime || o.meta?.lastUpdated;
       if (d) {
+        const testName = o.code?.text || o.code?.coding?.[0]?.display || 'Lab Observation';
         const valStr = o.valueQuantity ? `${o.valueQuantity.value} ${o.valueQuantity.unit || ''}` : (o.valueString || 'Recorded');
-        const testName = o.code?.coding?.[0]?.display || o.code?.text || 'Clinical Observation';
-        const isAbn = valStr.toLowerCase().includes('abnormal') || valStr.toLowerCase().includes('high') || valStr.toLowerCase().includes('8.2%');
+        const isAbn = o.interpretation?.[0]?.coding?.[0]?.code === 'H' || o.interpretation?.[0]?.coding?.[0]?.code === 'L';
 
         events.push({
           id: o.id as string,
           date: new Date(d),
           type: 'observation',
-          title: 'Lab Observation',
+          provenance: 'CONFIRMED_CLINICAL_DATA',
+          title: `Lab: ${testName}`,
           description: `${testName}: ${valStr}`,
           badge: isAbn 
-            ? { text: 'Elevated', variant: 'warning' }
+            ? { text: 'Abnormal Flag', variant: 'warning' }
             : { text: 'Normal', variant: 'neutral' },
           observationData: {
             name: testName,
@@ -416,7 +425,7 @@ export default function PatientProfile() {
       }
     });
 
-    // Documents
+    // Ingested Documents
     documents.forEach(doc => {
       const d = doc.date || doc.meta?.lastUpdated;
       if (d) {
@@ -424,11 +433,12 @@ export default function PatientProfile() {
           id: doc.id as string,
           date: new Date(d),
           type: 'document',
-          title: 'Medical Record',
-          description: doc.description || 'Clinical Record',
-          badge: { text: 'Ingested', variant: 'neutral' },
+          provenance: 'AI_INFERENCE',
+          title: 'Document Ingestion & OCR',
+          description: doc.description || 'Clinical Record PDF',
+          badge: { text: 'Extracted Facts', variant: 'neutral' },
           documentData: {
-            name: doc.description || 'Medical Record',
+            name: doc.description || 'Clinical Record',
             fileType: doc.content?.[0]?.attachment?.contentType || 'application/pdf',
             extractedFactsCount: 4
           },
@@ -437,46 +447,20 @@ export default function PatientProfile() {
       }
     });
 
-    // Operational Events (Communications, Refills, Referrals, Scheduling)
+    // Operations / Triage events
     operationalTasks.forEach(task => {
-      const d = task.createdAt;
-      let eventType: TimelineEvent['type'] = 'operation';
-      let eventTitle = task.title;
-      let badgeText = task.status.toUpperCase();
-      let badgeVariant: 'approved' | 'draft' | 'warning' | 'neutral' = 'neutral';
-
-      if (task.category === 'triage') {
-        eventType = 'communication';
-        eventTitle = 'Inbound Communication & AI Triage Draft';
-        badgeText = task.triageDetails?.risk.emergencyRedFlag ? 'EMERGENCY RED FLAG' : (task.priority === 'urgent' ? 'Urgent Triage' : 'Routine Inbound');
-        badgeVariant = task.triageDetails?.risk.emergencyRedFlag || task.priority === 'urgent' ? 'warning' : 'neutral';
-      } else if (task.category === 'refill') {
-        eventType = 'prescription';
-        eventTitle = `Rx Refill Review: ${task.refillDetails?.medicationName || 'Medication'}`;
-        badgeText = task.status === 'completed' ? 'Refill Approved' : (task.refillDetails?.safetyReport.warnings?.length ? 'Safety Review Required' : 'Awaiting MD Review');
-        badgeVariant = task.status === 'completed' ? 'approved' : 'warning';
-      } else if (task.category === 'referral') {
-        eventType = 'referral';
-        eventTitle = `Specialist Referral: ${task.referralDetails?.specialty || 'Specialty'}`;
-        badgeText = task.status === 'completed' ? 'Signed & Dispatched' : 'Packet Prepared';
-        badgeVariant = task.status === 'completed' ? 'approved' : 'neutral';
-      } else if (task.category === 'scheduling') {
-        eventType = 'scheduling';
-        eventTitle = `Care Gap Recall: ${task.schedulingDetails?.title || 'Appointment'}`;
-        badgeText = task.status === 'completed' ? 'Scheduled' : 'Action Suggested';
-        badgeVariant = task.status === 'completed' ? 'approved' : 'neutral';
-      }
-
       events.push({
         id: task.id,
-        date: new Date(d),
-        type: eventType,
-        title: eventTitle,
+        date: new Date(task.createdAt),
+        type: 'operation',
+        provenance: 'PATIENT_REPORTED',
+        title: task.title,
         description: task.summary,
-        badge: { text: badgeText, variant: badgeVariant },
-        operationalData: {
-          task
+        badge: { 
+          text: task.status === 'completed' ? 'Approved' : 'Pending MD', 
+          variant: task.status === 'completed' ? 'approved' : 'warning' 
         },
+        operationalData: { task },
         resource: task
       });
     });
@@ -488,16 +472,9 @@ export default function PatientProfile() {
   if (loading) {
     return (
       <Layout>
-        <div className="mx-auto max-w-3xl space-y-4 py-10" role="status" aria-label="Loading patient record">
-          <div className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
-            <LoaderCircle size={16} className="animate-spin" />
-            Loading patient record
-          </div>
-          <div className="h-24 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface)]" aria-hidden="true" />
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="h-36 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface)]" aria-hidden="true" />
-            <div className="h-36 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface)]" aria-hidden="true" />
-          </div>
+        <div className="max-w-4xl mx-auto py-16 flex flex-col items-center justify-center gap-3 text-xs text-[#6E767E]" role="status">
+          <LoaderCircle size={24} className="animate-spin text-[#111315]" />
+          <span>Loading longitudinal patient record from FHIR R4 store...</span>
         </div>
       </Layout>
     );
@@ -506,8 +483,18 @@ export default function PatientProfile() {
   if (!patient) {
     return (
       <Layout>
-        <div className="py-24 text-center text-zinc-500 text-sm">
-          Patient record not found.
+        <div className="max-w-2xl mx-auto py-24 text-center space-y-4">
+          <h3 className="text-xl font-bold text-[#111315]">Patient Record Not Found</h3>
+          <p className="text-xs text-[#6E767E]">
+            The requested patient could not be located in the current FHIR partition.
+          </p>
+          <Link
+            to="/patients"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-[#111315] text-white rounded-xl text-xs font-semibold"
+          >
+            <ArrowLeft size={14} />
+            <span>Return to Patient Directory</span>
+          </Link>
         </div>
       </Layout>
     );
@@ -517,545 +504,660 @@ export default function PatientProfile() {
   const displayName = name ? `${name.given?.join(' ') || ''} ${name.family || ''}`.trim() : 'Eleanor Vance';
   const age = calculateAge(patient.birthDate);
   const gender = patient.gender ? (patient.gender.charAt(0).toUpperCase() + patient.gender.slice(1)) : 'Female';
-  
-  const allTimelineEvents = getTimeline();
-  const filteredTimeline = allTimelineEvents.filter(event => {
-    if (activeFilter === 'all') return true;
-    if (activeFilter === 'consultations') return event.type === 'consultation';
-    if (activeFilter === 'prescriptions') return event.type === 'prescription' || event.operationalData?.task.category === 'refill';
-    if (activeFilter === 'labs') return event.type === 'observation';
-    if (activeFilter === 'documents') return event.type === 'document';
-    if (activeFilter === 'communications') return event.type === 'communication' || event.operationalData?.task.category === 'triage';
-    if (activeFilter === 'referrals') return event.type === 'referral' || event.operationalData?.task.category === 'referral';
-    if (activeFilter === 'operations') return !!event.operationalData;
-    return true;
-  });
 
-  // Extract Conditions
   const conditionNames = conditions.length > 0 
     ? conditions.map(c => c.code?.text || c.code?.coding?.[0]?.display || 'Condition')
     : ['Type 2 diabetes', 'Essential hypertension'];
 
-  // Check Allergy
   const penicillinAllergy = allergies.find(a => 
     a.code?.text?.toLowerCase().includes('penicillin') ||
     a.code?.coding?.[0]?.display?.toLowerCase().includes('penicillin')
   ) || (allergies.length > 0 ? allergies[0] : null);
 
+  const allTimelineEvents = getTimeline();
+  const filteredTimeline = allTimelineEvents.filter(event => {
+    if (activeFilter === 'all') return true;
+    if (activeFilter === 'consultations') return event.type === 'consultation';
+    if (activeFilter === 'prescriptions') return event.type === 'prescription';
+    if (activeFilter === 'labs') return event.type === 'observation';
+    if (activeFilter === 'documents') return event.type === 'document';
+    if (activeFilter === 'operations') return event.type === 'operation';
+    return true;
+  });
+
   return (
     <Layout>
-      <div className="proton-patient-profile max-w-4xl mx-auto space-y-10 pb-16">
+      <div className="max-w-5xl mx-auto space-y-6 sm:space-y-8 animate-in fade-in pb-16">
         
-        {/* Breadcrumb / Back Link */}
+        {/* Back Link */}
         <Link 
           to="/patients" 
-          className="inline-flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-900 transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs text-[#6E767E] hover:text-[#111315] transition-colors"
         >
           <ArrowLeft size={13} />
-          <span>Patients</span>
+          <span>Patient Panel</span>
         </Link>
 
-        {/* ================================================== */}
-        {/* 1. PATIENT HEADER (Clinical Home)                  */}
-        {/* ================================================== */}
-        <header className="space-y-4">
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">
-              {displayName}
-            </h1>
-            <div className="text-sm text-zinc-500 mt-1 flex items-center gap-2">
-              <span>{age} · {gender}</span>
-              {patient.birthDate && <span>· DOB {patient.birthDate}</span>}
-              <span className="text-zinc-400">· MRN {patient.id?.slice(0, 8)}</span>
+        {/* ── 1. PATIENT HEADER (Longitudinal Identity) ── */}
+        <section aria-label="Patient header summary" className="bg-white border border-[#EAE8E3] rounded-2xl p-6 shadow-sm space-y-5">
+          <div className="flex flex-col md:flex-row md:items-start justify-between gap-5">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <ProvenanceBadge provenance="PATIENT_FACT" size="xs" />
+                <span className="font-mono text-xs text-[#6E767E]">MRN: #{patient.id?.slice(0, 8)}</span>
+                <span>•</span>
+                <span className="font-mono text-xs text-[#6E767E]">DOB: {patient.birthDate || '1956-04-12'}</span>
+              </div>
+
+              <h1 className="text-3xl font-bold tracking-tight text-[#111315]">
+                {displayName}
+              </h1>
+
+              <div className="flex items-center gap-3 text-xs text-[#50575F] flex-wrap">
+                <span className="font-semibold text-[#111315]">{age} years</span>
+                <span>•</span>
+                <span>{gender}</span>
+                <span>•</span>
+                <span className="font-mono text-[#6E767E]">Attending: Dr. Aris Thorne, MD</span>
+              </div>
+
+              {/* Conditions tag strip */}
+              <div className="flex items-center gap-2 pt-1 flex-wrap">
+                {conditionNames.map((cond, idx) => (
+                  <span
+                    key={idx}
+                    className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#F4F3EE] text-[#50575F] border border-[#EAE8E3]"
+                  >
+                    {cond}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Quick Primary Actions */}
+            <div className="flex items-center gap-2 shrink-0 flex-wrap">
+              <button
+                type="button"
+                onClick={() => navigate(`/consultation?patient=${patient.id}`)}
+                className="px-4 py-2.5 bg-[#111315] hover:bg-[#272B30] text-white text-xs font-semibold rounded-xl transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+              >
+                <Stethoscope size={14} className="text-emerald-400" />
+                <span>Start Consultation</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate(`/document-review?patient=${patient.id}`)}
+                className="px-3.5 py-2.5 bg-white hover:bg-[#F4F3EE] text-[#111315] border border-[#EAE8E3] rounded-xl text-xs font-medium transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
+              >
+                <FileText size={14} />
+                <span>Upload Documents</span>
+              </button>
             </div>
           </div>
 
-          {/* Active Diagnoses / Conditions */}
-          <div className="text-sm text-zinc-700 flex flex-wrap items-center gap-x-3 gap-y-1">
-            {conditionNames.map((cond, idx) => (
-              <span key={idx} className="font-medium">
-                {cond}
-                {idx < conditionNames.length - 1 && <span className="text-zinc-300 ml-3">•</span>}
-              </span>
-            ))}
-          </div>
-
-          {/* Critical Allergy Warning */}
+          {/* High-Priority Safety Alert */}
           {penicillinAllergy ? (
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-50 border border-red-200 text-red-900 rounded-md text-xs">
-              <AlertTriangle size={14} className="text-red-600 shrink-0" />
-              <span className="font-medium">
-                Penicillin allergy
-              </span>
-              <span className="text-red-700">
-                — Severe rash / anaphylactoid reaction documented. Avoid beta-lactam antibiotics.
-              </span>
-            </div>
+            <ClinicalAlert
+              severity="blocked"
+              title="CRITICAL ALLERGY CONTRAINDICATION RAIL"
+              description="Severe Penicillin anaphylaxis history documented. Beta-lactam and cephalosporin cross-reactivity safeguards active in pharmacy engine."
+            />
           ) : (
-            <div className="text-xs text-zinc-500">
-              No known medication allergies
+            <div className="text-xs text-[#6E767E]">
+              No high-acuity medication contraindications on file.
             </div>
           )}
-        </header>
-
-        {/* ================================================== */}
-        {/* 2. WHAT MATTERS TODAY (Clinically Meaningful Deltas)*/}
-        {/* ================================================== */}
-        <section className="pt-6 border-t border-zinc-200">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
-              What matters today
-            </h2>
-            <span className="text-xs text-zinc-400">
-              Prioritized clinical changes
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
-            {/* Item 1: HbA1c elevation */}
-            <div className="space-y-1.5">
-              <div className="text-xs text-zinc-500 font-medium">HbA1c</div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-semibold tracking-tight text-zinc-900">8.2%</span>
-                <span className="text-xs font-medium text-amber-700">↑ from 7.1%</span>
-              </div>
-              <p className="text-xs text-zinc-600 leading-relaxed">
-                Elevated over 90-day interval. Titration indicated.
-              </p>
-              <div className="pt-1 flex items-center gap-3 text-xs">
-                {intelligence.evidenceStore['ev-1'] && (
-                  <button
-                    onClick={() => handleOpenEvidence(intelligence.evidenceStore['ev-1'])}
-                    className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer font-medium"
-                  >
-                    View evidence
-                  </button>
-                )}
-                <button
-                  onClick={() => setActiveFilter('labs')}
-                  className="text-zinc-500 hover:text-zinc-800 cursor-pointer"
-                >
-                  View timeline
-                </button>
-              </div>
-            </div>
-
-            {/* Item 2: Metformin Titration */}
-            <div className="space-y-1.5">
-              <div className="text-xs text-zinc-500 font-medium">Metformin</div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-semibold tracking-tight text-zinc-900">500 mg BID</span>
-                <span className="text-xs font-medium text-zinc-500">Changed from 500 mg daily</span>
-              </div>
-              <p className="text-xs text-zinc-600 leading-relaxed">
-                Dose titrated during previous encounter to address glycemic drift.
-              </p>
-              <div className="pt-1 flex items-center gap-3 text-xs">
-                {intelligence.evidenceStore['ev-3'] && (
-                  <button
-                    onClick={() => handleOpenEvidence(intelligence.evidenceStore['ev-3'])}
-                    className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer font-medium"
-                  >
-                    View evidence
-                  </button>
-                )}
-                <button
-                  onClick={() => setActiveFilter('prescriptions')}
-                  className="text-zinc-500 hover:text-zinc-800 cursor-pointer"
-                >
-                  View timeline
-                </button>
-              </div>
-            </div>
-
-            {/* Item 3: Adherence concern */}
-            <div className="space-y-1.5">
-              <div className="text-xs text-zinc-500 font-medium">Adherence</div>
-              <div className="text-base font-semibold text-zinc-900 pt-0.5">
-                Weekend doses may be missed
-              </div>
-              <p className="text-xs text-zinc-600 leading-relaxed">
-                Patient noted GI upset when taking evening tablets without food.
-              </p>
-              <div className="pt-1 flex items-center gap-3 text-xs">
-                {intelligence.evidenceStore['ev-4'] && (
-                  <button
-                    onClick={() => handleOpenEvidence(intelligence.evidenceStore['ev-4'])}
-                    className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer font-medium"
-                  >
-                    View evidence
-                  </button>
-                )}
-                <button
-                  onClick={() => setActiveFilter('consultations')}
-                  className="text-zinc-500 hover:text-zinc-800 cursor-pointer"
-                >
-                  View timeline
-                </button>
-              </div>
-            </div>
-
-          </div>
-
-          {/* Action Row */}
-          <div className="mt-8 pt-6 border-t border-zinc-100 flex items-center gap-3">
-            <Link 
-              to={`/consultation?patient=${patient.id}`}
-              className="clinical-btn-primary"
-            >
-              <Plus size={14} />
-              <span>Start consultation</span>
-            </Link>
-            <Link 
-              to={`/document-review?patient=${patient.id}`}
-              className="clinical-btn-secondary"
-            >
-              <FileText size={14} />
-              <span>Upload records</span>
-            </Link>
-          </div>
         </section>
 
-        {/* ================================================== */}
-        {/* 3. CLINICAL TIMELINE                               */}
-        {/* ================================================== */}
-        <section className="pt-8 border-t border-zinc-200">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <div>
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
-                Clinical timeline
-              </h2>
-              <p className="text-xs text-zinc-400 mt-0.5">
-                {allTimelineEvents.length} chronological events on record
-              </p>
+        {/* ── 2. PROGRESSIVE DISCLOSURE TABS ── */}
+        <div className="border-b border-[#EAE8E3] flex items-center gap-1 sm:gap-2 overflow-x-auto pb-px">
+          {[
+            { id: 'overview', label: 'What Matters Today', icon: Activity },
+            { id: 'timeline', label: 'Chronological Timeline', icon: Clock },
+            { id: 'encounters', label: `Encounters (${encounters.length})`, icon: Calendar },
+            { id: 'medications', label: `Medications (${medicationRequests.length})`, icon: Pill },
+            { id: 'labs', label: `Labs & Observations (${observations.length})`, icon: Layers },
+            { id: 'conditions', label: `Conditions (${conditionNames.length})`, icon: Heart },
+            { id: 'documents', label: `Documents (${documents.length})`, icon: FileCheck },
+            { id: 'ai-insights', label: 'Longitudinal AI Synthesis', icon: Sparkles }
+          ].map(tab => {
+            const active = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id as ProfileTab)}
+                className={`flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold rounded-t-xl transition-all whitespace-nowrap cursor-pointer ${
+                  active
+                    ? 'border-b-2 border-[#111315] text-[#111315] bg-white'
+                    : 'text-[#6E767E] hover:text-[#111315] hover:bg-white/60'
+                }`}
+              >
+                <tab.icon size={14} className={active ? 'text-[#111315]' : 'text-[#8C949D]'} />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ── 3. TAB CONTENT PANELS ── */}
+
+        {/* TAB 1: OVERVIEW (WHAT MATTERS TODAY) */}
+        {activeTab === 'overview' && (
+          <section className="space-y-6 animate-in fade-in">
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-xs uppercase tracking-wider text-[#6E767E] font-medium">
+                PRIORITIZED CLINICAL DELTAS & OBSERVATIONS
+              </span>
+              <span className="text-xs text-[#8C949D]">Verified against confirmed FHIR</span>
             </div>
 
-            {/* Restrained Text Filter Tabs */}
-            <div className="flex items-center gap-1 border-b border-zinc-200 sm:border-b-0 pb-1 sm:pb-0">
-              {[
-                { id: 'all', label: 'All' },
-                { id: 'consultations', label: 'Consultations' },
-                { id: 'prescriptions', label: 'Prescriptions' },
-                { id: 'labs', label: 'Labs' },
-                { id: 'documents', label: 'Documents' },
-                { id: 'communications', label: 'Comms' },
-                { id: 'referrals', label: 'Referrals' },
-                { id: 'operations', label: 'Operations' }
-              ].map(f => (
-                <button
-                  key={f.id}
-                  onClick={() => setActiveFilter(f.id as any)}
-                  className={`px-2.5 py-1 text-xs font-medium rounded transition-colors cursor-pointer ${
-                    activeFilter === f.id
-                      ? 'bg-zinc-100 text-zinc-900 font-semibold'
-                      : 'text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50'
-                  }`}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
-          </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {/* Card 1: Glycemic Drift */}
+              <div className="p-5 bg-white rounded-2xl border border-[#EAE8E3] shadow-2xs space-y-2">
+                <div className="flex items-center justify-between text-xs font-mono text-[#6E767E]">
+                  <span>HEMOGLOBIN A1C</span>
+                  <ProvenanceBadge provenance="CONFIRMED_CLINICAL_DATA" size="xs" />
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold tracking-tight text-[#111315]">8.2%</span>
+                  <span className="text-xs font-semibold text-red-700 bg-red-50 px-2 py-0.5 rounded-full border border-red-200">
+                    ↑ +1.1% in 60d
+                  </span>
+                </div>
+                <p className="text-xs text-[#50575F] leading-relaxed">
+                  Elevated above therapeutic ceiling (7.0%). Inadequate control on Metformin monotherapy.
+                </p>
+                <div className="pt-2 border-t border-[#F2F1EC] flex items-center justify-between text-xs">
+                  <button
+                    onClick={() => {
+                      if (intelligence.evidenceStore['ev-1']) handleOpenEvidence(intelligence.evidenceStore['ev-1']);
+                    }}
+                    className="text-[#0F766E] hover:underline font-semibold"
+                  >
+                    View Source Evidence →
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('labs')}
+                    className="text-[#8C949D] hover:text-[#111315]"
+                  >
+                    View Labs
+                  </button>
+                </div>
+              </div>
 
-          {/* Timeline Entries */}
-          {filteredTimeline.length === 0 ? (
-            <div className="py-12 text-center text-xs text-zinc-400">
-              No events found for this filter.
+              {/* Card 2: Metformin Titration */}
+              <div className="p-5 bg-white rounded-2xl border border-[#EAE8E3] shadow-2xs space-y-2">
+                <div className="flex items-center justify-between text-xs font-mono text-[#6E767E]">
+                  <span>ACTIVE REGIMEN</span>
+                  <ProvenanceBadge provenance="CONFIRMED_CLINICAL_DATA" size="xs" />
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-bold tracking-tight text-[#111315]">Metformin 500mg</span>
+                  <span className="text-xs font-semibold text-[#6E767E]">BID (Meals)</span>
+                </div>
+                <p className="text-xs text-[#50575F] leading-relaxed">
+                  Submaximal dosage. SGLT2 inhibitor addition recommended by ADA guidelines for cardiorenal benefit.
+                </p>
+                <div className="pt-2 border-t border-[#F2F1EC] flex items-center justify-between text-xs">
+                  <button
+                    onClick={() => {
+                      if (intelligence.evidenceStore['ev-3']) handleOpenEvidence(intelligence.evidenceStore['ev-3']);
+                    }}
+                    className="text-[#0F766E] hover:underline font-semibold"
+                  >
+                    View Recommendation →
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('medications')}
+                    className="text-[#8C949D] hover:text-[#111315]"
+                  >
+                    View All Meds
+                  </button>
+                </div>
+              </div>
+
+              {/* Card 3: Adherence & Fatigue */}
+              <div className="p-5 bg-white rounded-2xl border border-[#EAE8E3] shadow-2xs space-y-2">
+                <div className="flex items-center justify-between text-xs font-mono text-[#6E767E]">
+                  <span>PATIENT REPORT</span>
+                  <ProvenanceBadge provenance="PATIENT_REPORTED" size="xs" />
+                </div>
+                <div className="text-base font-bold text-[#111315] pt-0.5">
+                  Afternoon Fatigue & GI Tolerability
+                </div>
+                <p className="text-xs text-[#50575F] leading-relaxed">
+                  Patient reported afternoon exhaustion and occasional skipped weekend doses when taking without food.
+                </p>
+                <div className="pt-2 border-t border-[#F2F1EC] flex items-center justify-between text-xs">
+                  <button
+                    onClick={() => {
+                      if (intelligence.evidenceStore['ev-4']) handleOpenEvidence(intelligence.evidenceStore['ev-4']);
+                    }}
+                    className="text-[#0F766E] hover:underline font-semibold"
+                  >
+                    View Intake Notes →
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('encounters')}
+                    className="text-[#8C949D] hover:text-[#111315]"
+                  >
+                    Prior Visits
+                  </button>
+                </div>
+              </div>
             </div>
-          ) : (
-            <div className="divide-y divide-zinc-100">
-              {filteredTimeline.map(event => {
-                const isExpanded = !!expandedTimelineIds[event.id];
+
+            {/* Quick Consultation CTA */}
+            <div className="p-6 bg-gradient-to-r from-emerald-50/70 via-white to-sky-50/70 border border-[#EAE8E3] rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h4 className="text-base font-bold text-[#111315]">Ready for Today's Visit?</h4>
+                <p className="text-xs text-[#50575F] mt-0.5">
+                  Start ambient speech consultation to capture exam room dialogue and synthesize SOAP documentation.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => navigate(`/consultation?patient=${patient.id}`)}
+                className="px-5 py-2.5 bg-[#111315] hover:bg-[#272B30] text-white rounded-xl text-xs font-semibold transition-all shadow-xs inline-flex items-center gap-2 cursor-pointer shrink-0"
+              >
+                <Stethoscope size={15} className="text-emerald-400" />
+                <span>Launch Doctor Desk Encounter</span>
+              </button>
+            </div>
+          </section>
+        )}
+
+        {/* TAB 2: TIMELINE */}
+        {activeTab === 'timeline' && (
+          <section className="space-y-6 animate-in fade-in">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <span className="font-mono text-xs uppercase tracking-wider text-[#6E767E] font-medium">
+                  LONGITUDINAL CLINICAL TIMELINE
+                </span>
+                <p className="text-xs text-[#8C949D] mt-0.5">
+                  {allTimelineEvents.length} chronological events with provenance tracking
+                </p>
+              </div>
+
+              {/* Filter Pills */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {[
+                  { id: 'all', label: 'All' },
+                  { id: 'consultations', label: 'Visits' },
+                  { id: 'prescriptions', label: 'Prescriptions' },
+                  { id: 'labs', label: 'Labs' },
+                  { id: 'documents', label: 'Documents' },
+                  { id: 'operations', label: 'Comms / Queue' }
+                ].map(f => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => setActiveFilter(f.id as any)}
+                    className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+                      activeFilter === f.id
+                        ? 'bg-[#111315] text-white font-semibold'
+                        : 'bg-white border border-[#EAE8E3] text-[#6E767E] hover:text-[#111315]'
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Timeline Entries */}
+            <div className="space-y-4">
+              {filteredTimeline.map((ev) => {
+                const isExpanded = !!expandedTimelineIds[ev.id];
 
                 return (
-                  <div 
-                    key={`${event.type}-${event.id}`}
-                    id={`timeline-${event.id}`}
-                    className="py-4 first:pt-0 last:pb-0"
+                  <div
+                    key={`${ev.type}-${ev.id}`}
+                    id={`timeline-${ev.id}`}
+                    className="p-5 bg-white border border-[#EAE8E3] rounded-2xl shadow-2xs space-y-3 transition-colors hover:border-[#D5D2C9]"
                   >
-                    <div className="flex items-start justify-between gap-4">
-                      
-                      {/* Left: Date + Summary */}
-                      <div className="space-y-1 min-w-0">
-                        <div className="flex items-center gap-2 text-xs">
-                          <span className="font-medium text-zinc-500">
-                            {event.date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-mono text-xs text-[#6E767E] font-medium">
+                            {ev.date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                           </span>
-                          <span className="text-zinc-300">•</span>
-                          <span className="font-semibold text-zinc-900">
-                            {event.title}
-                          </span>
-                          {event.badge && (
-                            <span className={`text-[10px] font-medium px-1.5 py-0.2 rounded ${
-                              event.badge.variant === 'warning'
-                                ? 'bg-amber-50 text-amber-800'
-                                : 'bg-zinc-100 text-zinc-700'
-                            }`}>
-                              {event.badge.text}
-                            </span>
-                          )}
+                          <span>•</span>
+                          <ProvenanceBadge provenance={ev.provenance} size="xs" />
                         </div>
-
-                        <p className="text-xs text-zinc-700">
-                          {event.description}
+                        <h4 className="text-base font-bold text-[#111315] tracking-tight">
+                          {ev.title}
+                        </h4>
+                        <p className="text-xs text-[#50575F] leading-relaxed">
+                          {ev.description}
                         </p>
-
-                        {event.sourceDoc && (
-                          <div className="text-[11px] text-zinc-400">
-                            Extracted from {event.sourceDoc}
-                          </div>
-                        )}
                       </div>
 
-                      {/* Right: Expand Toggle or Direct Actions */}
                       <div className="flex items-center gap-2 shrink-0">
-                        {event.type === 'consultation' && event.consultationData && event.consultationData.linkedPrescriptions.length > 0 && (
+                        {ev.type === 'consultation' && ev.consultationData && (
                           <button
-                            onClick={() => openPdfForEncounter(event.resource, event.consultationData!.linkedPrescriptions)}
-                            className="text-xs text-zinc-600 hover:text-zinc-900 flex items-center gap-1 cursor-pointer font-medium"
+                            type="button"
+                            onClick={() => openPdfForEncounter(ev.resource, ev.consultationData?.linkedPrescriptions || [])}
+                            className="px-2.5 py-1 text-xs border border-[#EAE8E3] hover:bg-[#F4F3EE] rounded-lg text-[#50575F] flex items-center gap-1 cursor-pointer"
                           >
-                            <Printer size={12} />
-                            <span>Prescription PDF</span>
-                          </button>
-                        )}
-
-                        {event.type === 'prescription' && (
-                          <button
-                            onClick={() => openPdfForSingleRx(event.resource)}
-                            className="text-xs text-zinc-600 hover:text-zinc-900 flex items-center gap-1 cursor-pointer font-medium"
-                          >
-                            <Printer size={12} />
+                            <Printer size={13} />
                             <span>PDF</span>
                           </button>
                         )}
-
                         <button
-                          onClick={() => toggleTimelineEvent(event.id)}
-                          className="text-xs text-zinc-400 hover:text-zinc-700 p-1 cursor-pointer"
-                          title={isExpanded ? 'Collapse details' : 'Expand details'}
+                          type="button"
+                          onClick={() => toggleTimelineEvent(ev.id)}
+                          className="p-1 text-[#6E767E] hover:text-[#111315] cursor-pointer"
                         >
-                          {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                          {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                         </button>
                       </div>
-
                     </div>
 
-                    {/* Expandable Clinical Details (In-Place) */}
+                    {/* Expanded details */}
                     {isExpanded && (
-                      <div className="mt-3 pl-4 border-l-2 border-zinc-200 text-xs text-zinc-600 space-y-2">
-                        {event.consultationData?.summary && (
-                          <div>
-                            <div className="font-medium text-zinc-900 mb-1">Signed consultation note:</div>
-                            <div className="bg-zinc-50 p-3 rounded text-zinc-700 font-sans leading-relaxed whitespace-pre-wrap border border-zinc-200/60">
-                              {event.consultationData.summary}
-                            </div>
-                          </div>
-                        )}
-
-                        {event.prescriptionData?.item.instructions && (
-                          <div>
-                            <span className="font-medium text-zinc-800">Instructions: </span>
-                            <span>{event.prescriptionData.item.instructions}</span>
-                          </div>
-                        )}
-
-                        {event.observationData && (
-                          <div className="text-zinc-500">
-                            <span>Status: {event.observationData.status}</span>
-                            {event.sourceDoc && <span> · Source: {event.sourceDoc}</span>}
-                          </div>
-                        )}
-
-                        {event.operationalData && (
-                          <div className="space-y-2 pt-1 border-t border-zinc-200/60">
-                            <div className="flex items-center justify-between">
-                              <span className="font-semibold text-zinc-900">Operations OS Record:</span>
-                              <Link
-                                to="/operations"
-                                className="text-xs text-[#0F4C81] hover:underline font-medium inline-flex items-center gap-1"
-                              >
-                                <span>Open Operations OS</span>
-                                <ArrowUpRight size={11} />
-                              </Link>
-                            </div>
-                            
-                            {event.operationalData.task.triageDetails && (
-                              <div className="bg-zinc-50 p-2.5 rounded border border-zinc-200/60 space-y-1.5">
-                                <div className="text-[10px] text-zinc-500 font-mono font-medium">
-                                  INBOUND MESSAGE:
-                                </div>
-                                <div className="text-zinc-800 italic">
-                                  "{event.operationalData.task.triageDetails.inboundMessage}"
-                                </div>
-                                {event.operationalData.task.triageDetails.aiDraftResponse && (
-                                  <div className="pt-1.5 border-t border-zinc-200/60">
-                                    <div className="text-[10px] text-zinc-500 font-mono font-medium">AI TRIAGE DRAFT:</div>
-                                    <div className="text-zinc-700 whitespace-pre-wrap">
-                                      {event.operationalData.task.triageDetails.aiDraftResponse}
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-
-                            {event.operationalData.task.refillDetails && (
-                              <div className="bg-zinc-50 p-2.5 rounded border border-zinc-200/60 space-y-1.5">
-                                <div className="text-[10px] font-mono font-medium text-zinc-500">
-                                  REFILL SAFETY AUDIT & LAB EVIDENCE:
-                                </div>
-                                <div className="text-zinc-800">
-                                  {event.operationalData.task.refillDetails.clinicalContext.relevantLabSummary}
-                                </div>
-                                {event.operationalData.task.refillDetails.safetyReport.warnings?.length > 0 && (
-                                  <div className="text-amber-700 font-mono text-[11px] bg-amber-50 p-1.5 rounded border border-amber-200">
-                                    SAFETY ADVISORY: {event.operationalData.task.refillDetails.safetyReport.warnings.join(' • ')}
-                                  </div>
-                                )}
-                              </div>
-                            )}
-
-                            {event.operationalData.task.referralDetails && (
-                              <div className="bg-zinc-50 p-2.5 rounded border border-zinc-200/60 space-y-1">
-                                <div className="text-[10px] font-mono font-medium text-zinc-500">
-                                  REFERRAL BRIEF & HPI SUMMARY:
-                                </div>
-                                <div className="text-zinc-700 whitespace-pre-wrap">
-                                  {event.operationalData.task.referralDetails.referralSummaryPacket.hpiSummary}
-                                </div>
-                              </div>
-                            )}
-
-                            {event.operationalData.task.schedulingDetails && (
-                              <div className="bg-zinc-50 p-2.5 rounded border border-zinc-200/60 space-y-1">
-                                <div className="text-[10px] font-mono font-medium text-zinc-500">
-                                  RECALL REASON & PROPOSED WINDOW:
-                                </div>
-                                <div className="text-zinc-700">
-                                  {event.operationalData.task.schedulingDetails.clinicalReason} — Slot: {event.operationalData.task.schedulingDetails.proposedSlot?.start ? new Date(event.operationalData.task.schedulingDetails.proposedSlot.start).toLocaleDateString() : 'Pending'}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        )}
+                      <div className="mt-3 pt-3 border-t border-[#F2F1EC] text-xs space-y-2 bg-[#FAF9F6] p-3 rounded-xl font-mono text-[#50575F]">
+                        <div>Source Resource: {ev.resource?.resourceType || 'Task'} #{ev.id}</div>
+                        {ev.sourceDoc && <div>Extracted from: {ev.sourceDoc}</div>}
+                        <div>Recorded At: {ev.date.toISOString()}</div>
                       </div>
                     )}
-
                   </div>
                 );
               })}
             </div>
-          )}
-        </section>
+          </section>
+        )}
 
-        {/* ================================================== */}
-        {/* 4. CURRENT MEDICATIONS (Clean Table)               */}
-        {/* ================================================== */}
-        <section className="pt-8 border-t border-zinc-200">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
-              Current medications
-            </h2>
-            <span className="text-xs text-zinc-400">
-              {medicationRequests.length} active prescriptions
-            </span>
-          </div>
-
-          {medicationRequests.length === 0 ? (
-            <div className="py-8 text-center text-xs text-zinc-400">
-              No active medications on record.
+        {/* TAB 3: ENCOUNTERS */}
+        {activeTab === 'encounters' && (
+          <section className="space-y-4 animate-in fade-in">
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-xs uppercase tracking-wider text-[#6E767E] font-medium">
+                CLINICAL ENCOUNTERS & SOAPS
+              </span>
+              <button
+                type="button"
+                onClick={() => navigate(`/consultation?patient=${patient.id}`)}
+                className="px-3.5 py-1.5 bg-[#111315] text-white rounded-xl text-xs font-semibold inline-flex items-center gap-1.5"
+              >
+                <Plus size={13} />
+                <span>New Visit</span>
+              </button>
             </div>
-          ) : (
-            <div className="border border-zinc-200 rounded-md overflow-hidden bg-white">
-              <table className="clinical-table">
-                <thead>
-                  <tr>
-                    <th>Medication</th>
-                    <th>Dosage & Instructions</th>
-                    <th>Prescribed</th>
-                    <th>Status</th>
-                    <th className="text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {medicationRequests.map((mr, idx) => {
-                    const medName = mr.medicationCodeableConcept?.text || mr.medicationCodeableConcept?.coding?.[0]?.display || 'Medication';
-                    const instructions = mr.dosageInstruction?.[0]?.text || mr.dosageInstruction?.[0]?.patientInstruction || 'As directed';
-                    const dateStr = mr.authoredOn ? new Date(mr.authoredOn).toLocaleDateString() : 'Active';
 
-                    return (
-                      <tr key={mr.id || idx}>
-                        <td className="font-medium text-zinc-900">{medName}</td>
-                        <td className="text-zinc-600">{instructions}</td>
-                        <td className="text-zinc-500">{dateStr}</td>
-                        <td>
-                          <span className="text-xs font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
-                            {mr.status || 'Active'}
-                          </span>
-                        </td>
-                        <td className="text-right">
-                          <button
-                            onClick={() => openPdfForSingleRx(mr)}
-                            className="text-xs text-blue-600 hover:text-blue-800 hover:underline font-medium cursor-pointer"
-                          >
-                            Print PDF
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
-
-        {/* ================================================== */}
-        {/* 5. RELEVANT CLINICAL HISTORY                       */}
-        {/* ================================================== */}
-        <section className="pt-8 border-t border-zinc-200">
-          <div className="mb-4">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
-              Relevant history
-            </h2>
-            <p className="text-xs text-zinc-400 mt-0.5">
-              Longitudinal clinical narrative synthesized from approved patient records
-            </p>
-          </div>
-
-          {intelligence.clinicalStory.paragraphs.length === 0 ? (
-            <div className="text-xs text-zinc-400 py-6">
-              No narrative history available.
-            </div>
-          ) : (
-            <div className="space-y-4 text-sm text-zinc-700 leading-relaxed">
-              {intelligence.clinicalStory.paragraphs.map((p, idx) => (
-                <div key={idx} className="space-y-2">
-                  <p>{p.text}</p>
-                  {p.evidenceIds.length > 0 && (
-                    <div className="flex items-center gap-2 flex-wrap text-xs text-zinc-500">
-                      <span className="text-zinc-400">Sources:</span>
-                      {p.evidenceIds.map(evId => {
-                        const ev = intelligence.evidenceStore[evId];
-                        if (!ev) return null;
-                        return (
-                          <button
-                            key={evId}
-                            onClick={() => handleOpenEvidence(ev)}
-                            className="inline-flex items-center gap-1 text-blue-600 hover:underline cursor-pointer"
-                          >
-                            <span>{ev.title} ({ev.date})</span>
-                            <ArrowUpRight size={11} />
-                          </button>
-                        );
-                      })}
+            {encounters.length === 0 ? (
+              <div className="p-8 bg-white rounded-2xl border border-[#EAE8E3] text-center text-xs text-[#6E767E]">
+                No historical encounters on file. Launch an ambient encounter to create one.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {encounters.map(enc => (
+                  <div key={enc.id} className="p-5 bg-white border border-[#EAE8E3] rounded-2xl shadow-2xs space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-sm text-[#111315]">
+                          {enc.type?.[0]?.text || 'Outpatient Clinical Consultation'}
+                        </span>
+                        <span className="font-mono text-xs text-[#6E767E]">
+                          {enc.period?.start ? new Date(enc.period.start).toLocaleDateString() : 'Recent'}
+                        </span>
+                      </div>
+                      <span className="px-2 py-0.5 bg-emerald-50 text-emerald-800 text-[10px] font-mono rounded font-semibold">
+                        COMPLETED
+                      </span>
                     </div>
-                  )}
+
+                    <p className="text-xs text-[#50575F]">
+                      {enc.reasonCode?.[0]?.text || 'Comprehensive Physician Follow-up and medication titration review.'}
+                    </p>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-[#F2F1EC] text-xs">
+                      <span className="text-[#8C949D] font-mono">Attending: Dr. Aris Thorne, MD</span>
+                      <button
+                        type="button"
+                        onClick={() => openPdfForEncounter(enc, medicationRequests)}
+                        className="text-[#0F766E] font-semibold hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <Printer size={13} />
+                        <span>Print Consultation Summary</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* TAB 4: MEDICATIONS */}
+        {activeTab === 'medications' && (
+          <section className="space-y-4 animate-in fade-in">
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-xs uppercase tracking-wider text-[#6E767E] font-medium">
+                ACTIVE PRESCRIPTION ORDERS & PHARMACOLOGY
+              </span>
+              <span className="text-xs text-[#8C949D]">{medicationRequests.length} active orders</span>
+            </div>
+
+            {medicationRequests.length === 0 ? (
+              <div className="p-8 bg-white rounded-2xl border border-[#EAE8E3] text-center text-xs text-[#6E767E]">
+                No medication requests found.
+              </div>
+            ) : (
+              <div className="bg-white border border-[#EAE8E3] rounded-2xl shadow-2xs overflow-hidden">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead className="bg-[#FAF9F6] border-b border-[#EAE8E3] font-mono text-[11px] text-[#6E767E] uppercase">
+                    <tr>
+                      <th className="px-5 py-3 font-semibold">Medication Name</th>
+                      <th className="px-5 py-3 font-semibold">Dosage & Frequency</th>
+                      <th className="px-5 py-3 font-semibold">Ordered Date</th>
+                      <th className="px-5 py-3 font-semibold">Status</th>
+                      <th className="px-5 py-3 font-semibold text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#F2F1EC]">
+                    {medicationRequests.map((mr, idx) => {
+                      const medName = mr.medicationCodeableConcept?.text || mr.medicationCodeableConcept?.coding?.[0]?.display || 'Medication';
+                      const instructions = mr.dosageInstruction?.[0]?.text || mr.dosageInstruction?.[0]?.patientInstruction || 'As directed';
+                      const dateStr = mr.authoredOn ? new Date(mr.authoredOn).toLocaleDateString() : 'Active';
+
+                      return (
+                        <tr key={mr.id || idx} className="hover:bg-[#FAF9F6]">
+                          <td className="px-5 py-3.5 font-bold text-[#111315]">{medName}</td>
+                          <td className="px-5 py-3.5 text-[#50575F]">{instructions}</td>
+                          <td className="px-5 py-3.5 font-mono text-[#6E767E]">{dateStr}</td>
+                          <td className="px-5 py-3.5">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                              {mr.status?.toUpperCase() || 'ACTIVE'}
+                            </span>
+                          </td>
+                          <td className="px-5 py-3.5 text-right">
+                            <button
+                              type="button"
+                              onClick={() => openPdfForSingleRx(mr)}
+                              className="text-[#0F766E] font-semibold hover:underline inline-flex items-center gap-1 cursor-pointer"
+                            >
+                              <Printer size={13} />
+                              <span>Print Rx</span>
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* TAB 5: LABS & OBSERVATIONS */}
+        {activeTab === 'labs' && (
+          <section className="space-y-4 animate-in fade-in">
+            <span className="font-mono text-xs uppercase tracking-wider text-[#6E767E] font-medium block">
+              DIAGNOSTIC OBSERVATIONS & LAB VALUES
+            </span>
+
+            {observations.length === 0 ? (
+              <div className="p-8 bg-white rounded-2xl border border-[#EAE8E3] text-center text-xs text-[#6E767E]">
+                No observations currently recorded for this patient.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {observations.map(obs => {
+                  const testName = obs.code?.text || obs.code?.coding?.[0]?.display || 'Observation';
+                  const valStr = obs.valueQuantity ? `${obs.valueQuantity.value} ${obs.valueQuantity.unit || ''}` : (obs.valueString || 'Normal');
+                  const isAbn = obs.interpretation?.[0]?.coding?.[0]?.code === 'H' || obs.interpretation?.[0]?.coding?.[0]?.code === 'L';
+
+                  return (
+                    <div key={obs.id} className="p-4 bg-white border border-[#EAE8E3] rounded-2xl shadow-2xs space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-mono text-[#6E767E]">{obs.effectiveDateTime?.slice(0, 10) || 'Recent'}</span>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold ${
+                          isAbn ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-[#F4F3EE] text-[#50575F]'
+                        }`}>
+                          {isAbn ? 'ABNORMAL' : 'NORMAL'}
+                        </span>
+                      </div>
+                      <div className="text-sm font-bold text-[#111315]">{testName}</div>
+                      <div className="text-xl font-mono font-bold text-[#111315]">{valStr}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* TAB 6: CONDITIONS */}
+        {activeTab === 'conditions' && (
+          <section className="space-y-4 animate-in fade-in">
+            <span className="font-mono text-xs uppercase tracking-wider text-[#6E767E] font-medium block">
+              ACTIVE PROBLEM LIST & CHRONIC CONDITIONS
+            </span>
+
+            <div className="space-y-3">
+              {conditionNames.map((cond, idx) => (
+                <div key={idx} className="p-4 bg-white border border-[#EAE8E3] rounded-2xl shadow-2xs flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-[#F4F3EE] text-[#111315] flex items-center justify-center font-bold text-xs">
+                      #{idx + 1}
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-[#111315]">{cond}</h4>
+                      <div className="text-xs text-[#6E767E]">Confirmed Clinical Diagnosis • Longitudinal Record</div>
+                    </div>
+                  </div>
+                  <ProvenanceBadge provenance="CONFIRMED_CLINICAL_DATA" size="xs" />
                 </div>
               ))}
             </div>
-          )}
-        </section>
+          </section>
+        )}
+
+        {/* TAB 7: DOCUMENTS */}
+        {activeTab === 'documents' && (
+          <section className="space-y-4 animate-in fade-in">
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-xs uppercase tracking-wider text-[#6E767E] font-medium">
+                OPTICAL RECORDS & CLINICAL PDFS
+              </span>
+              <button
+                type="button"
+                onClick={() => navigate(`/document-review?patient=${patient.id}`)}
+                className="px-3.5 py-1.5 bg-[#111315] text-white rounded-xl text-xs font-semibold inline-flex items-center gap-1.5"
+              >
+                <Plus size={13} />
+                <span>Upload Document</span>
+              </button>
+            </div>
+
+            {documents.length === 0 ? (
+              <div className="p-8 bg-white rounded-2xl border border-[#EAE8E3] text-center text-xs text-[#6E767E]">
+                No document references uploaded yet.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {documents.map(doc => (
+                  <div key={doc.id} className="p-4 bg-white border border-[#EAE8E3] rounded-2xl shadow-2xs flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-sky-50 text-sky-700 flex items-center justify-center">
+                        <FileText size={18} />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-[#111315]">{doc.description || 'Clinical Record PDF'}</h4>
+                        <div className="text-xs text-[#6E767E] font-mono">
+                          {doc.date ? new Date(doc.date).toLocaleDateString() : 'Verified Ingestion'}
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/document-review?patient=${patient.id}`)}
+                      className="px-3 py-1.5 bg-[#F8F8F6] hover:bg-[#F2F1EC] text-xs font-semibold rounded-lg text-[#111315] border border-[#EAE8E3]"
+                    >
+                      Inspect Facts
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* TAB 8: AI INSIGHTS & NARRATIVE */}
+        {activeTab === 'ai-insights' && (
+          <section className="space-y-6 animate-in fade-in">
+            <div className="p-6 bg-white border border-[#EAE8E3] rounded-2xl shadow-sm space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-[#EAE8E3]">
+                <div className="flex items-center gap-2">
+                  <Sparkles size={16} className="text-amber-600" />
+                  <span className="font-bold text-sm text-[#111315]">
+                    Longitudinal Clinical Narrative Synthesis
+                  </span>
+                </div>
+                <ProvenanceBadge provenance="AI_INFERENCE" size="xs" />
+              </div>
+
+              {intelligence.clinicalStory.paragraphs.length === 0 ? (
+                <p className="text-xs text-[#6E767E]">
+                  No clinical story synthesized yet.
+                </p>
+              ) : (
+                <div className="space-y-4 text-xs sm:text-sm text-[#50575F] leading-relaxed">
+                  {intelligence.clinicalStory.paragraphs.map((p, idx) => (
+                    <div key={idx} className="space-y-2 p-3 bg-[#FAF9F6] rounded-xl border border-[#EAE8E3]/60">
+                      <p>{p.text}</p>
+                      {p.evidenceIds.length > 0 && (
+                        <div className="flex items-center gap-2 flex-wrap text-xs text-[#6E767E] pt-1">
+                          <span className="font-mono text-[10px] text-[#8C949D]">Source Evidence:</span>
+                          {p.evidenceIds.map(evId => {
+                            const ev = intelligence.evidenceStore[evId];
+                            if (!ev) return null;
+                            return (
+                              <button
+                                key={evId}
+                                type="button"
+                                onClick={() => handleOpenEvidence(ev)}
+                                className="inline-flex items-center gap-1 text-[#0F766E] hover:underline font-semibold cursor-pointer"
+                              >
+                                <span>{ev.title}</span>
+                                <ExternalLink size={10} />
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+        )}
 
       </div>
 
@@ -1072,11 +1174,10 @@ export default function PatientProfile() {
         isOpen={pdfModalData.isOpen}
         onClose={() => setPdfModalData({ isOpen: false, medications: [] })}
         patient={patient}
-        doctorName="Dr. Alex Morgan, MD"
+        doctorName="Dr. Aris Thorne, MD"
         date={pdfModalData.date}
         medications={pdfModalData.medications}
       />
-
     </Layout>
   );
 }

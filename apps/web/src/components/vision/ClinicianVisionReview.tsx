@@ -7,7 +7,9 @@ import {
   Shield,
   Loader2,
   Eye,
-  Info
+  Info,
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
 import {
   analyzeMedia,
@@ -20,6 +22,7 @@ import type {
   VisionAnalysisResult,
   ClinicianReviewRecord
 } from '../../types/vision';
+import ProvenanceBadge from '../ui/ProvenanceBadge';
 
 interface ClinicianVisionReviewProps {
   mediaId: string;
@@ -42,6 +45,7 @@ export default function ClinicianVisionReview({
   const [analyzing, setAnalyzing] = useState(false);
   const [submittingIndex, setSubmittingIndex] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isZoomed, setIsZoomed] = useState(false);
 
   // Modification state
   const [modifyingIndex, setModifyingIndex] = useState<number | null>(null);
@@ -56,13 +60,11 @@ export default function ClinicianVisionReview({
       setLoading(true);
       setError(null);
       try {
-        // 1. Try to fetch existing analysis for this media
         const existing = await getAnalysesForMedia(mediaId);
         if (existing.analyses && existing.analyses.length > 0) {
           const latest = existing.analyses[0];
           if (isMounted) {
             setAnalysis(latest);
-            // Fetch reviews for this analysis
             const reviewRes = await getVisionReviews(latest.analysisId);
             const reviewMap: Record<number, ClinicianReviewRecord> = {};
             for (const rev of reviewRes.reviews) {
@@ -71,7 +73,6 @@ export default function ClinicianVisionReview({
             setReviews(reviewMap);
           }
         } else {
-          // If none exists, run fresh analysis
           setAnalyzing(true);
           const fresh = await analyzeMedia({ mediaId, patientId, encounterId });
           if (isMounted) {
@@ -142,110 +143,125 @@ export default function ClinicianVisionReview({
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-2xl border border-[#e4e4e7] max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in duration-200">
-      {/* Header */}
-      <div className="px-6 py-4 border-b border-[#f4f4f5] flex items-center justify-between bg-[#fafafa]">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-[#8b5cf6]/10 text-[#8b5cf6] flex items-center justify-center font-bold">
+    <div className="bg-white rounded-2xl shadow-2xl border border-[#EAE8E3] max-w-5xl w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in duration-200">
+      
+      {/* ── TOP HEADER ── */}
+      <header className="px-6 py-4 border-b border-[#EAE8E3] flex items-center justify-between bg-[#FAF9F6]">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-violet-50 text-violet-700 flex items-center justify-center font-bold border border-violet-200/80">
             <Eye size={18} />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-base font-semibold text-[#09090b]">Clinical Image Intelligence & Review</h2>
-              <span className="text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full bg-[#fef3c7] text-[#92400e] border border-[#fde68a]">
-                Decision Support Only
-              </span>
+              <h2 className="text-base font-bold text-[#111315]">Clinical Vision Review</h2>
+              <ProvenanceBadge provenance="AI_SUGGESTION" size="xs" />
             </div>
-            <p className="text-xs text-[#71717a]">
-              Review AI-generated visual patterns. Only explicit clinician confirmation commits active clinical data.
+            <p className="text-xs text-[#6E767E]">
+              Multimodal pattern recognition • Clinician decision is authoritative and commits to FHIR record
             </p>
           </div>
         </div>
+
         {onClose && (
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[#71717a] hover:text-[#09090b] hover:bg-[#f4f4f5] transition-colors cursor-pointer"
+            className="p-1.5 rounded-xl text-[#6E767E] hover:text-[#111315] hover:bg-[#F2F1EC] transition-colors cursor-pointer"
+            aria-label="Close vision review modal"
           >
             ✕
           </button>
         )}
-      </div>
+      </header>
 
-      {/* Main Content Area */}
+      {/* ── MAIN REVIEW CANVAS ── */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
         {error && (
-          <div className="p-3.5 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2.5 text-xs text-red-800">
+          <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3 text-xs text-red-900">
             <AlertTriangle size={16} className="text-red-600 shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold">Review Error</p>
-              <p>{error}</p>
+              <p className="font-bold">Clinical Analysis Notice</p>
+              <p className="mt-0.5">{error}</p>
             </div>
           </div>
         )}
 
         {loading ? (
-          <div className="py-16 flex flex-col items-center justify-center space-y-3">
-            <Loader2 size={32} className="animate-spin text-[#8b5cf6]" />
-            <p className="text-xs font-medium text-[#71717a]">
-              {analyzing ? 'Evaluating photographic features via multimodal AI...' : 'Loading image findings...'}
+          <div className="py-20 flex flex-col items-center justify-center space-y-3">
+            <Loader2 size={32} className="animate-spin text-[#111315]" />
+            <p className="text-xs font-semibold text-[#50575F]">
+              {analyzing ? 'Evaluating high-resolution visual patterns via multimodal clinical AI...' : 'Retrieving structured image findings...'}
             </p>
           </div>
         ) : !analysis ? (
-          <div className="text-center py-12 text-[#71717a] text-xs">
+          <div className="text-center py-16 text-[#6E767E] text-xs">
             No image analysis available for this media asset.
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-            {/* Left: Image preview & metadata */}
-            <div className="md:col-span-5 space-y-4">
-              <div className="relative rounded-xl overflow-hidden border border-[#e4e4e7] bg-black aspect-4/3 flex items-center justify-center">
-                <img
-                  src={getMediaFileUrl(mediaId)}
-                  alt="Clinical capture"
-                  className="w-full h-full object-contain"
-                  onError={(e) => {
-                    (e.target as HTMLElement).style.display = 'none';
-                  }}
-                />
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            {/* LEFT 6 COLS: LARGE CLINICAL IMAGE VIEWPORT */}
+            <div className="lg:col-span-6 space-y-4">
+              <div className="relative rounded-2xl overflow-hidden border border-[#EAE8E3] bg-[#111315] group shadow-sm flex items-center justify-center">
+                <div className={`w-full transition-all duration-300 ${isZoomed ? 'aspect-square' : 'aspect-4/3'}`}>
+                  <img
+                    src={getMediaFileUrl(mediaId)}
+                    alt="Clinical dermatological inspection"
+                    className="w-full h-full object-contain"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = 'none';
+                    }}
+                  />
+                </div>
+
+                {/* Viewport Control Pill */}
+                <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full text-white text-[11px] font-mono">
+                  <button
+                    type="button"
+                    onClick={() => setIsZoomed(!isZoomed)}
+                    className="hover:text-emerald-300 flex items-center gap-1 cursor-pointer"
+                  >
+                    {isZoomed ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
+                    <span>{isZoomed ? 'Fit' : 'Zoom'}</span>
+                  </button>
+                </div>
               </div>
 
-              {/* Confidence & Model Meta */}
-              <div className="p-3.5 bg-[#fafafa] border border-[#f4f4f5] rounded-xl space-y-2.5 text-xs">
+              {/* Confidence & Model Meta Card */}
+              <div className="p-4 bg-[#F8F8F6] border border-[#EAE8E3] rounded-2xl space-y-3 text-xs">
                 <div className="flex items-center justify-between">
-                  <span className="text-[#71717a] font-medium">Confidence Score</span>
-                  <span className="font-semibold text-[#09090b]">
+                  <span className="text-[#6E767E] font-medium">Model Confidence Metric</span>
+                  <span className="font-mono font-bold text-[#111315]">
                     {(analysis.confidence * 100).toFixed(1)}%
                   </span>
                 </div>
-                <div className="w-full bg-[#e4e4e7] h-1.5 rounded-full overflow-hidden">
+                <div className="w-full bg-[#EAE8E3] h-2 rounded-full overflow-hidden">
                   <div
-                    className="bg-[#8b5cf6] h-full rounded-full"
+                    className="bg-[#0F766E] h-full rounded-full transition-all"
                     style={{ width: `${Math.min(100, Math.max(0, analysis.confidence * 100))}%` }}
                   />
                 </div>
-                <div className="flex items-center justify-between text-[11px] text-[#71717a] pt-1 border-t border-[#f4f4f5]">
-                  <span>Provider / Model</span>
-                  <span className="font-mono text-[#52525b]">
-                    {analysis.modelMetadata.provider} ({analysis.modelMetadata.model})
-                  </span>
-                </div>
-                {analysis.anatomicalLocation?.site && (
-                  <div className="flex items-center justify-between text-[11px] text-[#71717a]">
-                    <span>Anatomical Region</span>
-                    <span className="text-[#09090b] font-medium">
-                      {analysis.anatomicalLocation.site}
-                    </span>
+
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#EAE8E3] text-[11px] font-mono text-[#6E767E]">
+                  <div>
+                    <span className="block text-[#949CA4]">PROVIDER / ENGINE</span>
+                    <span className="text-[#111315] font-semibold">{analysis.modelMetadata.provider}</span>
                   </div>
-                )}
+                  {analysis.anatomicalLocation?.site && (
+                    <div>
+                      <span className="block text-[#949CA4]">ANATOMICAL SITE</span>
+                      <span className="text-[#111315] font-semibold">{analysis.anatomicalLocation.site}</span>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Limitations Notice */}
-              <div className="p-3 bg-amber-50/60 border border-amber-200/60 rounded-xl space-y-1.5 text-[11px] text-amber-900">
-                <div className="flex items-center gap-1.5 font-semibold text-amber-800">
-                  <Info size={13} />
-                  <span>AI Visual Limitations</span>
+              {/* Visual Limitations & Guardrail Notice */}
+              <div className="p-4 bg-amber-50/70 border border-amber-200/80 rounded-2xl space-y-1.5 text-xs text-amber-950">
+                <div className="flex items-center gap-1.5 font-bold text-amber-800">
+                  <Info size={14} />
+                  <span>Clinical Vision Limitations</span>
                 </div>
-                <ul className="list-disc pl-4 space-y-0.5 text-amber-800/90">
+                <ul className="list-disc pl-4 space-y-1 text-amber-900 leading-relaxed text-[11px]">
                   {analysis.limitations.map((limit, idx) => (
                     <li key={idx}>{limit}</li>
                   ))}
@@ -253,193 +269,236 @@ export default function ClinicianVisionReview({
               </div>
             </div>
 
-            {/* Right: Structured Findings & Clinician Review Actions */}
-            <div className="md:col-span-7 space-y-4">
+            {/* RIGHT 6 COLS: STRUCTURED FINDINGS & DOMINANT CLINICIAN DECISION CONTROLS */}
+            <div className="lg:col-span-6 space-y-5">
+              
               <div>
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-[#71717a] mb-2.5">
-                  AI Observations & Differentials
-                </h3>
+                <span className="font-mono text-xs uppercase tracking-wider text-[#6E767E] font-medium block">
+                  STRUCTURED FINDINGS & CLINICIAN ATTESTATION
+                </span>
+                <p className="text-xs text-[#8C949D] mt-0.5">
+                  Decisions made here commit confirmed conditions into the patient's FHIR record.
+                </p>
+              </div>
 
-                <div className="space-y-3">
-                  {analysis.observations.map((obs, idx) => {
-                    const review = reviews[idx];
-                    const isModifying = modifyingIndex === idx;
-                    const isSubmitting = submittingIndex === idx;
+              <div className="space-y-4">
+                {analysis.observations.map((obs, idx) => {
+                  const review = reviews[idx];
+                  const isModifying = modifyingIndex === idx;
+                  const isSubmitting = submittingIndex === idx;
 
-                    return (
-                      <div
-                        key={idx}
-                        className={`p-3.5 rounded-xl border transition-all ${
-                          review?.action === 'ACCEPT'
-                            ? 'bg-emerald-50/40 border-emerald-200'
-                            : review?.action === 'MODIFY'
-                            ? 'bg-blue-50/40 border-blue-200'
-                            : review?.action === 'REJECT'
-                            ? 'bg-zinc-50 border-zinc-200 opacity-60'
-                            : 'bg-white border-[#e4e4e7] hover:border-[#d4d4d8]'
-                        }`}
-                      >
-                        {/* Finding Header */}
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="space-y-0.5 flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-semibold text-[#09090b]">
-                                {obs.label}
-                              </span>
-                              {review && (
-                                <span
-                                  className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                                    review.action === 'ACCEPT'
-                                      ? 'bg-emerald-100 text-emerald-800'
-                                      : review.action === 'MODIFY'
-                                      ? 'bg-blue-100 text-blue-800'
-                                      : 'bg-zinc-200 text-zinc-700'
-                                  }`}
-                                >
-                                  {review.action === 'ACCEPT' && 'Confirmed Active'}
-                                  {review.action === 'MODIFY' && 'Modified & Confirmed'}
-                                  {review.action === 'REJECT' && 'Rejected'}
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-xs text-[#52525b]">
-                              {obs.description}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* If Clinician Modified */}
-                        {review?.action === 'MODIFY' && review.clinicianModification && (
-                          <div className="mt-2.5 p-2.5 bg-blue-50/80 border border-blue-100 rounded-lg text-xs space-y-1">
-                            <span className="text-[10px] font-bold text-blue-800 uppercase tracking-wider">
-                              Clinician Modified Assessment:
+                  return (
+                    <div
+                      key={idx}
+                      className={`p-5 rounded-2xl border transition-all space-y-4 ${
+                        review?.action === 'ACCEPT'
+                          ? 'bg-emerald-50/50 border-emerald-300 ring-1 ring-emerald-300'
+                          : review?.action === 'MODIFY'
+                          ? 'bg-sky-50/50 border-sky-300 ring-1 ring-sky-300'
+                          : review?.action === 'REJECT'
+                          ? 'bg-zinc-50 border-zinc-200 opacity-60'
+                          : 'bg-white border-[#EAE8E3] shadow-sm hover:border-[#D5D2C9]'
+                      }`}
+                    >
+                      {/* Finding Title & Confidence */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-bold text-sm text-[#111315]">
+                              {obs.label}
                             </span>
-                            <p className="font-semibold text-blue-950">
-                              {typeof review.clinicianModification === 'string'
-                                ? review.clinicianModification
-                                : JSON.stringify(review.clinicianModification)}
-                            </p>
-                            {review.clinicianNotes && (
-                              <p className="text-[11px] text-blue-800/80 italic">
-                                Note: {review.clinicianNotes}
-                              </p>
+                            {review && (
+                              <span
+                                className={`text-[9.5px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                                  review.action === 'ACCEPT'
+                                    ? 'bg-emerald-100 text-emerald-800'
+                                    : review.action === 'MODIFY'
+                                    ? 'bg-sky-100 text-sky-800'
+                                    : 'bg-zinc-200 text-zinc-700'
+                                }`}
+                              >
+                                {review.action === 'ACCEPT' && 'Confirmed by Clinician'}
+                                {review.action === 'MODIFY' && 'Modified & Confirmed'}
+                                {review.action === 'REJECT' && 'Rejected'}
+                              </span>
                             )}
                           </div>
-                        )}
-
-                        {/* Inline Modifier Editor */}
-                        {isModifying && (
-                          <div className="mt-3 p-3 bg-[#fafafa] border border-[#e4e4e7] rounded-xl space-y-2.5">
-                            <div>
-                              <label className="text-[11px] font-semibold text-[#52525b] block mb-1">
-                                Modified Condition / Finding Name:
-                              </label>
-                              <input
-                                type="text"
-                                value={modificationText}
-                                onChange={(e) => setModificationText(e.target.value)}
-                                placeholder="e.g. Nummular eczema (coin-shaped)"
-                                className="w-full text-xs px-3 py-2 bg-white border border-[#d4d4d8] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#8b5cf6]"
-                              />
-                            </div>
-                            <div>
-                              <label className="text-[11px] font-semibold text-[#52525b] block mb-1">
-                                Clinical Rationale / Attestation Notes:
-                              </label>
-                              <input
-                                type="text"
-                                value={clinicianNotes}
-                                onChange={(e) => setClinicianNotes(e.target.value)}
-                                placeholder="Optional clinical note"
-                                className="w-full text-xs px-3 py-2 bg-white border border-[#d4d4d8] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#8b5cf6]"
-                              />
-                            </div>
-                            <div className="flex items-center justify-end gap-2 pt-1">
-                              <button
-                                type="button"
-                                onClick={() => setModifyingIndex(null)}
-                                className="px-3 py-1.5 text-xs text-[#71717a] hover:text-[#09090b] cursor-pointer"
-                              >
-                                Cancel
-                              </button>
-                              <button
-                                type="button"
-                                disabled={!modificationText.trim() || isSubmitting}
-                                onClick={() => handleAction(idx, 'MODIFY')}
-                                className="px-3 py-1.5 text-xs font-semibold text-white bg-[#0284c7] hover:bg-[#0369a1] rounded-lg cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
-                              >
-                                {isSubmitting ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
-                                Confirm Modified Finding
-                              </button>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Review Action Controls */}
-                        {!isModifying && (
-                          <div className="mt-3 pt-2.5 border-t border-[#f4f4f5] flex items-center justify-between">
-                            <span className="text-[10px] text-[#a1a1aa] font-medium">
-                              Attending Physician Action
-                            </span>
-                            <div className="flex items-center gap-1.5">
-                              <button
-                                type="button"
-                                disabled={isSubmitting}
-                                onClick={() => handleAction(idx, 'ACCEPT')}
-                                className="px-2.5 py-1 text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors cursor-pointer flex items-center gap-1 disabled:opacity-50"
-                                title="Accept this finding and commit as active confirmed condition"
-                              >
-                                <CheckCircle2 size={12} />
-                                <span>Accept</span>
-                              </button>
-
-                              <button
-                                type="button"
-                                disabled={isSubmitting}
-                                onClick={() => startModify(idx, obs.label)}
-                                className="px-2.5 py-1 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors cursor-pointer flex items-center gap-1 disabled:opacity-50"
-                                title="Modify this finding before confirming"
-                              >
-                                <Edit3 size={12} />
-                                <span>Modify</span>
-                              </button>
-
-                              <button
-                                type="button"
-                                disabled={isSubmitting}
-                                onClick={() => handleAction(idx, 'REJECT')}
-                                className="px-2.5 py-1 text-xs font-medium text-zinc-700 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 rounded-lg transition-colors cursor-pointer flex items-center gap-1 disabled:opacity-50"
-                                title="Reject this finding"
-                              >
-                                <XCircle size={12} />
-                                <span>Reject</span>
-                              </button>
-                            </div>
-                          </div>
-                        )}
+                          <p className="text-xs text-[#50575F] leading-relaxed">
+                            {obs.description}
+                          </p>
+                        </div>
                       </div>
-                    );
-                  })}
-                </div>
+
+                      {/* Differential Suggestions from Model */}
+                      {analysis.differentialSuggestions && analysis.differentialSuggestions.length > 0 && (
+                        <div className="p-3 bg-[#FAF9F6] rounded-xl border border-[#EAE8E3] text-xs space-y-1">
+                          <span className="font-mono text-[9px] uppercase tracking-wider text-[#8C949D] font-semibold block">
+                            DIFFERENTIAL CONSIDERATIONS
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {analysis.differentialSuggestions.map((diff, dIdx) => (
+                                <span
+                                  key={dIdx}
+                                  className="px-2 py-0.5 rounded-md bg-white border border-[#EAE8E3] text-[#50575F] text-[11px]"
+                                >
+                                  {diff.condition} {diff.likelihood ? `(${diff.likelihood})` : ''}
+                                </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* If Clinician Modified */}
+                      {review?.action === 'MODIFY' && review.clinicianModification && (
+                        <div className="p-3 bg-sky-50 border border-sky-200 rounded-xl text-xs space-y-1">
+                          <span className="font-mono text-[10px] font-bold text-sky-800 uppercase tracking-wider block">
+                            Clinician Attestation Override:
+                          </span>
+                          <p className="font-semibold text-sky-950">
+                            {typeof review.clinicianModification === 'string'
+                              ? review.clinicianModification
+                              : JSON.stringify(review.clinicianModification)}
+                          </p>
+                          {review.clinicianNotes && (
+                            <p className="text-[11px] text-sky-800 italic">
+                              Note: {review.clinicianNotes}
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Inline Modifier Editor */}
+                      {isModifying && (
+                        <div className="p-4 bg-[#FAF9F6] border border-[#EAE8E3] rounded-xl space-y-3 text-xs">
+                          <div>
+                            <label className="text-[11px] font-semibold text-[#50575F] block mb-1">
+                              Modified Diagnosis / Finding Name:
+                            </label>
+                            <input
+                              type="text"
+                              value={modificationText}
+                              onChange={(e) => setModificationText(e.target.value)}
+                              placeholder="e.g. Nummular eczema (coin-shaped, scaling active)"
+                              className="w-full text-xs px-3.5 py-2 bg-white border border-[#D5D2C9] rounded-xl focus:outline-none focus:border-[#111315]"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-semibold text-[#50575F] block mb-1">
+                              Clinical Rationale / Evidence Note:
+                            </label>
+                            <input
+                              type="text"
+                              value={clinicianNotes}
+                              onChange={(e) => setClinicianNotes(e.target.value)}
+                              placeholder="Attending clinical observation notes"
+                              className="w-full text-xs px-3.5 py-2 bg-white border border-[#D5D2C9] rounded-xl focus:outline-none focus:border-[#111315]"
+                            />
+                          </div>
+                          <div className="flex items-center justify-end gap-2 pt-1">
+                            <button
+                              type="button"
+                              onClick={() => setModifyingIndex(null)}
+                              className="px-3 py-1.5 text-xs text-[#6E767E] hover:text-[#111315] cursor-pointer"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              disabled={!modificationText.trim() || isSubmitting}
+                              onClick={() => handleAction(idx, 'MODIFY')}
+                              className="px-4 py-2 text-xs font-semibold text-white bg-[#0F766E] hover:bg-[#0B5C56] rounded-xl cursor-pointer flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+                            >
+                              {isSubmitting ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
+                              <span>Confirm Modified Finding</span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* ── VISUALLY DOMINANT CLINICIAN DECISION CONTROLS ── */}
+                      {!isModifying && (
+                        <div className="pt-3 border-t border-[#F2F1EC] space-y-2">
+                          <span className="font-mono text-[9.5px] uppercase tracking-wider text-[#8C949D] font-medium block">
+                            CLINICIAN DECISION
+                          </span>
+                          
+                          <div className="grid grid-cols-3 gap-2">
+                            {/* 1. ACCEPT (Dominant Green) */}
+                            <button
+                              type="button"
+                              disabled={isSubmitting}
+                              onClick={() => handleAction(idx, 'ACCEPT')}
+                              className={`py-2.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs ${
+                                review?.action === 'ACCEPT'
+                                  ? 'bg-emerald-600 text-white'
+                                  : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-600 hover:text-white border border-emerald-200'
+                              } disabled:opacity-50`}
+                              title="Accept AI finding and commit as confirmed clinical fact"
+                            >
+                              <CheckCircle2 size={14} />
+                              <span>Accept</span>
+                            </button>
+
+                            {/* 2. MODIFY (Dominant Blue) */}
+                            <button
+                              type="button"
+                              disabled={isSubmitting}
+                              onClick={() => startModify(idx, obs.label)}
+                              className={`py-2.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs ${
+                                review?.action === 'MODIFY'
+                                  ? 'bg-sky-600 text-white'
+                                  : 'bg-sky-50 text-sky-800 hover:bg-sky-600 hover:text-white border border-sky-200'
+                              } disabled:opacity-50`}
+                              title="Modify finding before confirming"
+                            >
+                              <Edit3 size={14} />
+                              <span>Modify</span>
+                            </button>
+
+                            {/* 3. REJECT (Neutral Red Border) */}
+                            <button
+                              type="button"
+                              disabled={isSubmitting}
+                              onClick={() => handleAction(idx, 'REJECT')}
+                              className={`py-2.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs ${
+                                review?.action === 'REJECT'
+                                  ? 'bg-red-600 text-white'
+                                  : 'bg-white text-[#6E767E] hover:text-red-700 hover:bg-red-50 border border-[#EAE8E3]'
+                              } disabled:opacity-50`}
+                              title="Reject this finding"
+                            >
+                              <XCircle size={14} />
+                              <span>Reject</span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                    </div>
+                  );
+                })}
               </div>
+
             </div>
+
           </div>
         )}
       </div>
 
-      {/* Footer */}
-      <div className="px-6 py-3 border-t border-[#f4f4f5] bg-[#fafafa] flex items-center justify-between text-xs text-[#71717a]">
+      {/* ── FOOTER ── */}
+      <footer className="px-6 py-4 border-t border-[#EAE8E3] bg-[#FAF9F6] flex items-center justify-between text-xs text-[#6E767E]">
         <div className="flex items-center gap-2">
-          <Shield size={14} className="text-[#8b5cf6]" />
-          <span>All accepted/modified findings create immutable FHIR Provenance and SHA-256 audit events.</span>
+          <Shield size={14} className="text-[#0F766E]" />
+          <span>All accepted decisions generate cryptographic FHIR R4 Provenance audit trails.</span>
         </div>
         <button
+          type="button"
           onClick={onClose}
-          className="px-4 py-1.5 rounded-lg bg-[#18181b] hover:bg-[#27272a] text-white font-medium text-xs cursor-pointer transition-colors"
+          className="px-5 py-2 rounded-xl bg-[#111315] hover:bg-[#272B30] text-white font-semibold text-xs cursor-pointer transition-colors shadow-xs"
         >
-          Done Reviewing
+          Complete Review
         </button>
-      </div>
+      </footer>
     </div>
   );
 }
