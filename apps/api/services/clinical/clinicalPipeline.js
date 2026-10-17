@@ -317,6 +317,16 @@ class ClinicalPipeline {
 
         // INVARIANT: Unconfirmed AI suggestions cannot create active FHIR resources.
         // Only explicitly confirmed conditions and signed prescriptions are committed.
+        const actorRole = validated.actor?.actorRole || validated.actor?.role;
+        if (actorRole && !['physician', 'practitioner', 'system'].includes(actorRole)) {
+          throw new ClinicalPipelineError(
+            'FHIR_TRANSACTION',
+            'CLINICIAN_AUTHORIZATION_REQUIRED',
+            `Actor with role '${actorRole}' is not authorized to commit clinical resources to FHIR. Attending physician authorization required.`,
+            { status: 403 }
+          );
+        }
+
         fhirResult = await this.commitFhirTransaction({
           patientId: validated.patientId,
           practitionerId: validated.practitionerId,

@@ -30,6 +30,7 @@ class ClinicianConfirmationService {
     this.fhir = options.fhirService || fhirService;
     this.safety = options.safetyService || safetyService;
     this.audit = options.auditService || auditService;
+    this._confirmationRegistry = new Map();
   }
 
   /**
@@ -90,6 +91,17 @@ class ClinicianConfirmationService {
 
     if (!conditionDisplay) {
       throw new ClinicianConfirmationError('DIAGNOSIS_REQUIRED', 'Valid diagnosis details required.', 400);
+    }
+
+    // Idempotency: Prevent duplicate Condition resources on network retry or double-click
+    const dedupKey = `${tenantId}:${cleanPatientId}:${encounterId || 'encounter-global'}:diag:${conditionDisplay}:${cleanAction}`;
+    if (this._confirmationRegistry.has(dedupKey)) {
+      const existing = this._confirmationRegistry.get(dedupKey);
+      return {
+        ...existing,
+        isDuplicate: true,
+        status: 'IDEMPOTENT_CONFIRMATION'
+      };
     }
 
     let fhirCondition = null;
@@ -195,7 +207,7 @@ class ClinicianConfirmationService {
       tenantId
     });
 
-    return {
+    const responsePayload = {
       success: true,
       action: cleanAction,
       patientId: cleanPatientId,
@@ -208,6 +220,9 @@ class ClinicianConfirmationService {
         currentHash: auditRecord.currentHash
       }
     };
+
+    this._confirmationRegistry.set(dedupKey, responsePayload);
+    return responsePayload;
   }
 
   /**
@@ -252,6 +267,17 @@ class ClinicianConfirmationService {
 
     if (!medName) {
       throw new ClinicianConfirmationError('MEDICATION_NAME_REQUIRED', 'medication name is required.', 400);
+    }
+
+    // Idempotency: Prevent duplicate MedicationRequest resources on network retry or double-click
+    const dedupKey = `${tenantId}:${cleanPatientId}:${encounterId || 'encounter-global'}:med:${medName}:${cleanAction}`;
+    if (this._confirmationRegistry.has(dedupKey)) {
+      const existing = this._confirmationRegistry.get(dedupKey);
+      return {
+        ...existing,
+        isDuplicate: true,
+        status: 'IDEMPOTENT_CONFIRMATION'
+      };
     }
 
     let fhirMedicationRequest = null;
@@ -354,7 +380,7 @@ class ClinicianConfirmationService {
       tenantId
     });
 
-    return {
+    const responsePayload = {
       success: true,
       action: cleanAction,
       patientId: cleanPatientId,
@@ -367,6 +393,9 @@ class ClinicianConfirmationService {
         currentHash: auditRecord.currentHash
       }
     };
+
+    this._confirmationRegistry.set(dedupKey, responsePayload);
+    return responsePayload;
   }
 }
 

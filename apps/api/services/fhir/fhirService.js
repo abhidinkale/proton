@@ -132,11 +132,25 @@ class FhirService {
       staging.push(res);
     }
 
-    // Atomically commit all verified staged resources
+    // Atomically commit all verified staged resources with rollback on failure
     const persistedEntries = [];
-    for (const res of staging) {
-      const persistRes = await this.adapter.persistResource(res);
-      persistedEntries.push(persistRes);
+    const writtenKeys = [];
+    try {
+      for (const res of staging) {
+        const persistRes = await this.adapter.persistResource(res);
+        if (persistRes?.meta?.storeKey) {
+          writtenKeys.push(persistRes.meta.storeKey);
+        }
+        persistedEntries.push(persistRes);
+      }
+    } catch (writeErr) {
+      // Atomic rollback: remove partially committed resources
+      if (this.adapter.syntheticStore && typeof this.adapter.syntheticStore.delete === 'function') {
+        for (const key of writtenKeys) {
+          this.adapter.syntheticStore.delete(key);
+        }
+      }
+      throw writeErr;
     }
 
     return {

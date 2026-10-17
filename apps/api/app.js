@@ -726,6 +726,13 @@ app.post('/api/clinical/pipeline', upload.single('audio'), async (req, res) => {
       inputPayload.commitToFhir = inputPayload.commitToFhir === 'true';
     }
 
+    if (inputPayload.commitToFhir && req.actor && !['physician', 'practitioner', 'system'].includes(req.actor.actorRole || req.actor.role)) {
+      return res.status(403).json({
+        error: 'CLINICIAN_AUTHORIZATION_REQUIRED',
+        message: `Forbidden: Role '${req.actor.actorRole || req.actor.role}' cannot commit clinical records to FHIR. Attending physician authorization required.`
+      });
+    }
+
     const options = {};
     const streamId = req.body.streamId || req.headers['x-stream-id'];
     if (streamId) {
@@ -1718,11 +1725,21 @@ app.get(['/api/pilot/feedback', '/pilot/feedback'], (req, res) => {
 });
 
 
-// Safe Express error handling
+// Safe Express error handling with internal path and secret scrubbing
 app.use((err, req, res, next) => {
   if (err) {
     const status = err.message?.includes('CORS') ? 403 : (err.status || 400);
-    res.status(status).json({ error: err.message || 'Request could not be processed.' });
+    let msg = typeof err.message === 'string' ? err.message : 'Request could not be processed.';
+    // Scrub filesystem paths
+    msg = msg.replace(/\/Users\/[^\s:]+/g, '[internal_path]');
+    msg = msg.replace(/[A-Za-z]:\\[^\s:]+/g, '[internal_path]');
+    // Scrub potential API keys or tokens
+    msg = msg.replace(/AIza[0-9A-Za-z-_]{20,}/g, '[REDACTED_API_KEY]');
+    msg = msg.replace(/(?:key|token|secret)[:=]\s*['"]?[a-zA-Z0-9_\-\.]{16,}['"]?/gi, '[REDACTED]');
+    res.status(status).json({
+      error: msg,
+      code: err.code || undefined
+    });
   } else {
     next();
   }
