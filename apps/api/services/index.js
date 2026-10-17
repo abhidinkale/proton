@@ -12,6 +12,23 @@ const { ClinicalPipeline, clinicalPipeline, ClinicalPipelineError } = require('.
 const { IntakeService, intakeService, IntakeValidationError, branchingEngine, escalationEngine, contextMapper } = require('./intake');
 const { captureSessionService, CaptureSessionService, CaptureSessionError, VALID_TRANSITIONS, tokenManager, TokenManager, sessionStore, SessionStore, imageQualityValidator, ImageQualityValidator, ImageQualityError, PAIRING_TTL_MS, ACTIVE_TTL_MS, UPLOAD_TTL_MS } = require('./capture');
 const { storageService, StorageAdapter, LocalStorageAdapter } = require('./storage');
+const {
+  visionService,
+  VisionService,
+  VisionServiceError,
+  validateVisionOutput,
+  VisionValidationError,
+  visionSafety,
+  VisionSafety,
+  VisionSafetyError,
+  visionAudit,
+  VisionAudit,
+  getVisionProvider,
+  DemoVisionProvider,
+  GeminiVisionProvider,
+  VisionProvider,
+  VisionProviderError
+} = require('./vision');
 
 module.exports = {
   // Media
@@ -68,5 +85,22 @@ module.exports = {
   // Storage
   storageService,
   StorageAdapter,
-  LocalStorageAdapter
+  LocalStorageAdapter,
+
+  // Vision Intelligence (M2C-1)
+  visionService,
+  VisionService,
+  VisionServiceError,
+  validateVisionOutput,
+  VisionValidationError,
+  visionSafety,
+  VisionSafety,
+  VisionSafetyError,
+  visionAudit,
+  VisionAudit,
+  getVisionProvider,
+  DemoVisionProvider,
+  GeminiVisionProvider,
+  VisionProvider,
+  VisionProviderError
 };

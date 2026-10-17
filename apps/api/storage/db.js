@@ -322,6 +322,35 @@ function runMigrations(db) {
         CREATE INDEX IF NOT EXISTS idx_media_patient ON capture_media(patient_id);
         CREATE INDEX IF NOT EXISTS idx_media_tenant ON capture_media(tenant_id);
       `
+    },
+    {
+      version: 5,
+      name: 'clinical_vision_analyses',
+      sql: `
+        -- 12. Clinical Vision Analyses Registry
+        CREATE TABLE IF NOT EXISTS vision_analyses (
+          id TEXT PRIMARY KEY,
+          tenant_id TEXT NOT NULL DEFAULT 'org-default',
+          media_id TEXT NOT NULL,
+          session_id TEXT,
+          patient_id TEXT NOT NULL,
+          encounter_id TEXT,
+          provider TEXT NOT NULL,
+          model TEXT NOT NULL,
+          status TEXT NOT NULL CHECK (status IN ('PENDING', 'COMPLETED', 'FAILED', 'REJECTED')),
+          confidence REAL,
+          findings_json TEXT NOT NULL,
+          fhir_observation_id TEXT,
+          fhir_provenance_id TEXT,
+          created_at TEXT NOT NULL,
+          completed_at TEXT,
+          error_code TEXT,
+          error_message TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_vision_tenant ON vision_analyses(tenant_id);
+        CREATE INDEX IF NOT EXISTS idx_vision_media ON vision_analyses(media_id);
+        CREATE INDEX IF NOT EXISTS idx_vision_patient ON vision_analyses(patient_id);
+      `
     }
   ];
 

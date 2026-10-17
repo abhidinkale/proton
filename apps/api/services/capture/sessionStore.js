@@ -253,15 +253,121 @@ class SessionStore {
     return this.getMediaById(id, tenantId);
   }
 
-  getMediaById(mediaId, tenantId) {
+  getMediaById(mediaId, tenantId = null) {
     const db = getDatabase();
+    if (tenantId) {
+      const row = db.prepare(`
+        SELECT * FROM capture_media
+        WHERE (id = ? OR fhir_media_id = ?) AND tenant_id = ?;
+      `).get(mediaId, mediaId, tenantId);
+
+      if (!row) return null;
+      return this._formatMediaRow(row);
+    }
+
     const row = db.prepare(`
       SELECT * FROM capture_media
-      WHERE id = ? AND tenant_id = ?;
-    `).get(mediaId, tenantId);
+      WHERE id = ? OR fhir_media_id = ?;
+    `).get(mediaId, mediaId);
 
     if (!row) return null;
     return this._formatMediaRow(row);
+  }
+
+  recordVisionAnalysis({
+    id,
+    tenantId = 'org-default',
+    mediaId,
+    sessionId = null,
+    patientId,
+    encounterId = null,
+    provider,
+    model,
+    status = 'COMPLETED',
+    confidence = null,
+    findings,
+    fhirObservationId = null,
+    fhirProvenanceId = null,
+    createdAt = new Date().toISOString(),
+    completedAt = null,
+    errorCode = null,
+    errorMessage = null
+  }) {
+    const db = getDatabase();
+    const findingsJson = typeof findings === 'string' ? findings : JSON.stringify(findings || {});
+
+    const stmt = db.prepare(`
+      INSERT INTO vision_analyses (
+        id, tenant_id, media_id, session_id, patient_id, encounter_id,
+        provider, model, status, confidence, findings_json,
+        fhir_observation_id, fhir_provenance_id, created_at, completed_at,
+        error_code, error_message
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    `);
+
+    stmt.run(
+      id, tenantId, mediaId, sessionId, patientId, encounterId,
+      provider, model, status, confidence, findingsJson,
+      fhirObservationId, fhirProvenanceId, createdAt, completedAt,
+      errorCode, errorMessage
+    );
+
+    return this.getVisionAnalysis(id, tenantId);
+  }
+
+  getVisionAnalysis(id, tenantId = null) {
+    const db = getDatabase();
+    if (tenantId) {
+      const row = db.prepare(`
+        SELECT * FROM vision_analyses
+        WHERE id = ? AND tenant_id = ?;
+      `).get(id, tenantId);
+      if (!row) return null;
+      return this._formatVisionRow(row);
+    }
+    const row = db.prepare(`
+      SELECT * FROM vision_analyses
+      WHERE id = ?;
+    `).get(id);
+    if (!row) return null;
+    return this._formatVisionRow(row);
+  }
+
+  getVisionAnalysesForMedia(mediaId, tenantId) {
+    const db = getDatabase();
+    const rows = db.prepare(`
+      SELECT * FROM vision_analyses
+      WHERE media_id = ? AND tenant_id = ?
+      ORDER BY created_at DESC;
+    `).all(mediaId, tenantId);
+    return rows.map(r => this._formatVisionRow(r));
+  }
+
+  _formatVisionRow(row) {
+    let findings = {};
+    try {
+      findings = JSON.parse(row.findings_json || '{}');
+    } catch {}
+
+    return {
+      id: row.id,
+      tenantId: row.tenant_id,
+      mediaId: row.media_id,
+      sessionId: row.session_id,
+      patientId: row.patient_id,
+      encounterId: row.encounter_id,
+      provider: row.provider,
+      model: row.model,
+      status: row.status,
+      confidence: row.confidence,
+      findings,
+      fhirObservationId: row.fhir_observation_id,
+      fhirProvenanceId: row.fhir_provenance_id,
+      createdAt: row.created_at,
+      completedAt: row.completed_at,
+      errorCode: row.error_code,
+      errorMessage: row.error_message
+    };
   }
 
   getMediaForSession(sessionId, tenantId) {

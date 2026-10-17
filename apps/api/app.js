@@ -771,6 +771,46 @@ app.get('/api/capture/sessions/:id/media', resolveActorMiddleware, (req, res) =>
   }
 });
 
+// ==========================================
+// PROTON CLINICAL VISION INTELLIGENCE (V2 M2C-1)
+// ==========================================
+const { visionService } = require('./services');
+
+// Evaluate clinical image asset for unconfirmed decision support
+app.post('/api/vision/analyze', resolveActorMiddleware, requireRole(['physician', 'operations_staff', 'system']), async (req, res) => {
+  try {
+    const { mediaId, patientId, encounterId, timeoutMs, prompt } = req.body;
+    const result = await visionService.analyzeMedia({
+      mediaId,
+      patientId,
+      encounterId,
+      actor: req.actor,
+      timeoutMs,
+      prompt
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(err.status || 400).json({
+      error: err.code || 'VISION_ERROR',
+      message: err.message,
+      details: err.details || null
+    });
+  }
+});
+
+// Retrieve past vision analyses for a media asset
+app.get('/api/vision/analyses/:mediaId', resolveActorMiddleware, (req, res) => {
+  try {
+    const analyses = visionService.getAnalysesForMedia(req.params.mediaId, req.actor);
+    res.json({ analyses });
+  } catch (err) {
+    res.status(err.status || 400).json({
+      error: err.code || 'VISION_ERROR',
+      message: err.message
+    });
+  }
+});
+
 // Get high-level summary of active operational tasks
 app.get(['/api/operations/summary', '/operations/summary'], (req, res) => {
   const tenantId = req.query.tenantId || req.actor?.tenantId || 'org-default';
