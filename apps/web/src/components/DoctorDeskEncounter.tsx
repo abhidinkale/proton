@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, type FormEvent, type KeyboardEvent } from 
 import { 
   ArrowLeft, Mic, Square, Check, Loader2, AlertCircle, AlertTriangle, 
   Pill, FileText, Activity, Send, Plus, CheckCircle2, Copy,
-  ClipboardList, Sparkles, RefreshCw, X, Printer, Play, ClipboardCheck, Smartphone
+  ClipboardList, Sparkles, RefreshCw, X, Printer, Play, ClipboardCheck, Smartphone, Eye
 } from 'lucide-react';
 import { RealAIService, sendClinicalChat, type ChatMessage } from '../services/ai';
 import { RealSpeechService } from '../services/speech';
@@ -10,6 +10,7 @@ import PrescriptionPDFModal from './PrescriptionPDFModal';
 import IntakeReview from './intake/IntakeReview';
 import DynamicIntake from './intake/DynamicIntake';
 import CaptureSessionPanel from './capture/CaptureSessionPanel';
+import ClinicianVisionReview from './vision/ClinicianVisionReview';
 import type { PrescriptionItem } from '../types/prescription';
 import type { Patient } from '@medplum/fhirtypes';
 
@@ -64,6 +65,9 @@ export default function DoctorDeskEncounter({ patient, onCloseMeeting, onBackToD
   const [showPdfModal, setShowPdfModal] = useState(false);
   const [showIntakeModal, setShowIntakeModal] = useState(false);
   const [showCaptureModal, setShowCaptureModal] = useState(false);
+  const [showVisionModal, setShowVisionModal] = useState(false);
+  const [activeVisionMediaId, setActiveVisionMediaId] = useState<string | null>(null);
+  const [capturedMediaList, setCapturedMediaList] = useState<any[]>([]);
 
   const getInitialTranscript = (pid: string) => {
     if (pid.includes('arthur')) {
@@ -634,6 +638,20 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
               </button>
 
               <button
+                onClick={() => {
+                  if (capturedMediaList.length > 0) {
+                    setActiveVisionMediaId(capturedMediaList[0].id || capturedMediaList[0].mediaId);
+                  }
+                  setShowVisionModal(true);
+                }}
+                title="Review AI visual intelligence findings and clinical captures"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-[#52525b] hover:text-[#09090b] bg-[#f4f4f5] hover:bg-[#e4e4e7] border border-[#e4e4e7] transition-colors cursor-pointer"
+              >
+                <Eye size={12} className="text-[#8b5cf6]" />
+                <span>Visual AI Review {capturedMediaList.length > 0 ? `(${capturedMediaList.length})` : ''}</span>
+              </button>
+
+              <button
                 onClick={toggleRecording}
                 className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                   isRecording
@@ -1158,6 +1176,30 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
             patientId={patient.id}
             encounterId="enc-active"
             onClose={() => setShowCaptureModal(false)}
+            onMediaCaptured={(media) => {
+              setCapturedMediaList(media);
+              if (media && media.length > 0) {
+                setActiveVisionMediaId(media[0].id);
+              }
+            }}
+          />
+        </div>
+      )}
+
+      {/* CLINICIAN VISION REVIEW MODAL (M2C-2) */}
+      {showVisionModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <ClinicianVisionReview
+            mediaId={activeVisionMediaId || (capturedMediaList[0]?.id) || 'med-sample-capture'}
+            patientId={patient.id}
+            encounterId="enc-active"
+            onClose={() => setShowVisionModal(false)}
+            onConditionConfirmed={(conditionText) => {
+              setNote(prev => ({
+                ...prev,
+                assessment: `${prev.assessment}\n• Confirmed Visual Finding: ${conditionText}`
+              }));
+            }}
           />
         </div>
       )}

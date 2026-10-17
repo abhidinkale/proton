@@ -38,11 +38,22 @@ const {
   visionAudit
 } = require('./visionAudit');
 
+const {
+  VisionReviewService,
+  visionReviewService,
+  VisionReviewError
+} = require('./visionReviewService');
+
 module.exports = {
   // Service
   VisionService,
   visionService,
   VisionServiceError,
+
+  // Clinician Review (M2C-2)
+  VisionReviewService,
+  visionReviewService,
+  VisionReviewError,
 
   // Providers
   VisionProvider,

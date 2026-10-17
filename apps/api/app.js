@@ -771,10 +771,31 @@ app.get('/api/capture/sessions/:id/media', resolveActorMiddleware, (req, res) =>
   }
 });
 
+// Retrieve media binary file (Desktop Clinician)
+app.get('/api/capture/media/:id/file', resolveActorMiddleware, async (req, res) => {
+  try {
+    const media = sessionStore.getMediaById(req.params.id);
+    if (!media) {
+      return res.status(404).json({ error: 'MEDIA_NOT_FOUND', message: 'Media not found' });
+    }
+    const tenantId = req.actor?.tenantId || 'org-default';
+    if (media.tenantId !== tenantId) {
+      return res.status(403).json({ error: 'CROSS_TENANT_ACCESS_DENIED', message: 'Access denied' });
+    }
+    const asset = await storageService.retrieve(media.storageKey, media.tenantId);
+    res.setHeader('Content-Type', media.mimeType);
+    res.setHeader('Content-Length', asset.size);
+    res.setHeader('Cache-Control', 'private, max-age=3600');
+    res.send(asset.buffer);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: 'MEDIA_ERROR', message: err.message });
+  }
+});
+
 // ==========================================
-// PROTON CLINICAL VISION INTELLIGENCE (V2 M2C-1)
+// PROTON CLINICAL VISION INTELLIGENCE (V2 M2C-1 & M2C-2)
 // ==========================================
-const { visionService } = require('./services');
+const { visionService, visionReviewService } = require('./services');
 
 // Evaluate clinical image asset for unconfirmed decision support
 app.post('/api/vision/analyze', resolveActorMiddleware, requireRole(['physician', 'operations_staff', 'system']), async (req, res) => {
@@ -806,6 +827,47 @@ app.get('/api/vision/analyses/:mediaId', resolveActorMiddleware, (req, res) => {
   } catch (err) {
     res.status(err.status || 400).json({
       error: err.code || 'VISION_ERROR',
+      message: err.message
+    });
+  }
+});
+
+// Submit clinician review (Accept, Reject, Modify) for an AI finding (M2C-2)
+app.post('/api/vision/reviews', resolveActorMiddleware, requireRole(['physician']), async (req, res) => {
+  try {
+    const { analysisId, findingIndex, targetType, action, modification, notes, patientId, encounterId } = req.body;
+    const result = await visionReviewService.reviewFinding({
+      analysisId,
+      findingIndex,
+      targetType,
+      action,
+      modification,
+      notes,
+      actor: req.actor,
+      patientId,
+      encounterId
+    });
+    res.status(201).json(result);
+  } catch (err) {
+    res.status(err.status || 400).json({
+      error: err.code || 'VISION_REVIEW_ERROR',
+      message: err.message,
+      details: err.details || null
+    });
+  }
+});
+
+// Retrieve clinician reviews for a vision analysis (M2C-2)
+app.get('/api/vision/reviews/:analysisId', resolveActorMiddleware, (req, res) => {
+  try {
+    const reviews = visionReviewService.getReviewsForAnalysis({
+      analysisId: req.params.analysisId,
+      actor: req.actor
+    });
+    res.json({ reviews });
+  } catch (err) {
+    res.status(err.status || 400).json({
+      error: err.code || 'VISION_REVIEW_ERROR',
       message: err.message
     });
   }

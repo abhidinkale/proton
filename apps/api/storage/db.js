@@ -351,6 +351,38 @@ function runMigrations(db) {
         CREATE INDEX IF NOT EXISTS idx_vision_media ON vision_analyses(media_id);
         CREATE INDEX IF NOT EXISTS idx_vision_patient ON vision_analyses(patient_id);
       `
+    },
+    {
+      version: 6,
+      name: 'clinical_vision_reviews',
+      sql: `
+        -- 13. Clinical Vision Reviews Registry (M2C-2)
+        CREATE TABLE IF NOT EXISTS clinical_vision_reviews (
+          id TEXT PRIMARY KEY,
+          tenant_id TEXT NOT NULL DEFAULT 'org-default',
+          analysis_id TEXT NOT NULL REFERENCES vision_analyses(id),
+          media_id TEXT NOT NULL,
+          patient_id TEXT NOT NULL,
+          encounter_id TEXT,
+          actor_id TEXT NOT NULL,
+          actor_role TEXT NOT NULL,
+          actor_name TEXT NOT NULL,
+          action TEXT NOT NULL CHECK (action IN ('ACCEPT', 'REJECT', 'MODIFY')),
+          finding_index INTEGER NOT NULL,
+          original_finding_json TEXT NOT NULL,
+          clinician_modification_json TEXT,
+          clinician_notes TEXT,
+          fhir_condition_id TEXT,
+          fhir_observation_id TEXT,
+          fhir_provenance_id TEXT,
+          reviewed_at TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_v_review_tenant ON clinical_vision_reviews(tenant_id);
+        CREATE INDEX IF NOT EXISTS idx_v_review_analysis ON clinical_vision_reviews(analysis_id);
+        CREATE INDEX IF NOT EXISTS idx_v_review_patient ON clinical_vision_reviews(patient_id);
+        CREATE INDEX IF NOT EXISTS idx_v_review_actor ON clinical_vision_reviews(actor_id);
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_v_review_unique_finding ON clinical_vision_reviews(analysis_id, finding_index);
+      `
     }
   ];
 

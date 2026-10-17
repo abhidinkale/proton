@@ -370,6 +370,134 @@ class SessionStore {
     };
   }
 
+  recordVisionReview({
+    id,
+    tenantId = 'org-default',
+    analysisId,
+    mediaId,
+    patientId,
+    encounterId = null,
+    actorId,
+    actorRole,
+    actorName,
+    action,
+    findingIndex,
+    originalFinding,
+    clinicianModification = null,
+    clinicianNotes = null,
+    fhirConditionId = null,
+    fhirObservationId = null,
+    fhirProvenanceId = null,
+    reviewedAt = new Date().toISOString()
+  }) {
+    const db = getDatabase();
+    const origJson = typeof originalFinding === 'string' ? originalFinding : JSON.stringify(originalFinding || {});
+    const modJson = clinicianModification ? (typeof clinicianModification === 'string' ? clinicianModification : JSON.stringify(clinicianModification)) : null;
+
+    const stmt = db.prepare(`
+      INSERT INTO clinical_vision_reviews (
+        id, tenant_id, analysis_id, media_id, patient_id, encounter_id,
+        actor_id, actor_role, actor_name, action, finding_index,
+        original_finding_json, clinician_modification_json, clinician_notes,
+        fhir_condition_id, fhir_observation_id, fhir_provenance_id, reviewed_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(analysis_id, finding_index) DO UPDATE SET
+        action = excluded.action,
+        clinician_modification_json = excluded.clinician_modification_json,
+        clinician_notes = excluded.clinician_notes,
+        fhir_condition_id = COALESCE(excluded.fhir_condition_id, clinical_vision_reviews.fhir_condition_id),
+        fhir_observation_id = COALESCE(excluded.fhir_observation_id, clinical_vision_reviews.fhir_observation_id),
+        fhir_provenance_id = COALESCE(excluded.fhir_provenance_id, clinical_vision_reviews.fhir_provenance_id),
+        reviewed_at = excluded.reviewed_at;
+    `);
+
+    stmt.run(
+      id, tenantId, analysisId, mediaId, patientId, encounterId,
+      actorId, actorRole, actorName, action, findingIndex,
+      origJson, modJson, clinicianNotes,
+      fhirConditionId, fhirObservationId, fhirProvenanceId, reviewedAt
+    );
+
+    return this.getVisionReviewForFinding(analysisId, findingIndex, tenantId);
+  }
+
+  getVisionReviewById(id, tenantId = null) {
+    const db = getDatabase();
+    if (tenantId) {
+      const row = db.prepare(`
+        SELECT * FROM clinical_vision_reviews
+        WHERE id = ? AND tenant_id = ?;
+      `).get(id, tenantId);
+      if (!row) return null;
+      return this._formatReviewRow(row);
+    }
+    const row = db.prepare(`
+      SELECT * FROM clinical_vision_reviews
+      WHERE id = ?;
+    `).get(id);
+    if (!row) return null;
+    return this._formatReviewRow(row);
+  }
+
+  getVisionReviewForFinding(analysisId, findingIndex, tenantId = null) {
+    const db = getDatabase();
+    if (tenantId) {
+      const row = db.prepare(`
+        SELECT * FROM clinical_vision_reviews
+        WHERE analysis_id = ? AND finding_index = ? AND tenant_id = ?;
+      `).get(analysisId, findingIndex, tenantId);
+      if (!row) return null;
+      return this._formatReviewRow(row);
+    }
+    const row = db.prepare(`
+      SELECT * FROM clinical_vision_reviews
+      WHERE analysis_id = ? AND finding_index = ?;
+    `).get(analysisId, findingIndex);
+    if (!row) return null;
+    return this._formatReviewRow(row);
+  }
+
+  getVisionReviewsForAnalysis(analysisId, tenantId) {
+    const db = getDatabase();
+    const rows = db.prepare(`
+      SELECT * FROM clinical_vision_reviews
+      WHERE analysis_id = ? AND tenant_id = ?
+      ORDER BY reviewed_at ASC;
+    `).all(analysisId, tenantId);
+    return rows.map(r => this._formatReviewRow(r));
+  }
+
+  _formatReviewRow(row) {
+    let originalFinding = {};
+    try { originalFinding = JSON.parse(row.original_finding_json || '{}'); } catch {}
+
+    let clinicianModification = null;
+    if (row.clinician_modification_json) {
+      try { clinicianModification = JSON.parse(row.clinician_modification_json); } catch {}
+    }
+
+    return {
+      id: row.id,
+      tenantId: row.tenant_id,
+      analysisId: row.analysis_id,
+      mediaId: row.media_id,
+      patientId: row.patient_id,
+      encounterId: row.encounter_id,
+      actorId: row.actor_id,
+      actorRole: row.actor_role,
+      actorName: row.actor_name,
+      action: row.action,
+      findingIndex: row.finding_index,
+      originalFinding,
+      clinicianModification,
+      clinicianNotes: row.clinician_notes,
+      fhirConditionId: row.fhir_condition_id,
+      fhirObservationId: row.fhir_observation_id,
+      fhirProvenanceId: row.fhir_provenance_id,
+      reviewedAt: row.reviewed_at
+    };
+  }
+
   getMediaForSession(sessionId, tenantId) {
     const db = getDatabase();
     const rows = db.prepare(`

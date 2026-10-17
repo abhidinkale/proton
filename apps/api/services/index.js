@@ -27,7 +27,10 @@ const {
   DemoVisionProvider,
   GeminiVisionProvider,
   VisionProvider,
-  VisionProviderError
+  VisionProviderError,
+  visionReviewService,
+  VisionReviewService,
+  VisionReviewError
 } = require('./vision');
 
 module.exports = {
@@ -102,5 +105,10 @@ module.exports = {
   DemoVisionProvider,
   GeminiVisionProvider,
   VisionProvider,
-  VisionProviderError
+  VisionProviderError,
+
+  // Clinician Review (M2C-2)
+  visionReviewService,
+  VisionReviewService,
+  VisionReviewError
 };
