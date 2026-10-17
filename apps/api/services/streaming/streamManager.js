@@ -289,6 +289,26 @@ class StreamManager {
     };
   }
 
+  /**
+   * Retrieves buffered events recorded after a given sequence number or event ID.
+   *
+   * @param {string} streamId
+   * @param {number|string} sequenceOrEventId
+   * @returns {Array<Object>}
+   */
+  getEventsAfter(streamId, sequenceOrEventId) {
+    const stream = this._streams.get(streamId);
+    if (!stream) return [];
+    if (typeof sequenceOrEventId === 'number') {
+      return stream.events.filter(e => e.sequence > sequenceOrEventId);
+    }
+    const idx = stream.events.findIndex(e => e.eventId === sequenceOrEventId);
+    if (idx >= 0) {
+      return stream.events.slice(idx + 1);
+    }
+    return [];
+  }
+
   // --- INTERNAL HELPERS ---
 
   _startHeartbeat(stream) {

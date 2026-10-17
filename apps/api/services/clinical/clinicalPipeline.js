@@ -1,9 +1,9 @@
 /**
  * Proton Canonical Clinical Pipeline
- * 
+ *
  * Enforces the canonical 8-stage clinical execution flow with strict physician authority,
  * patient isolation, deterministic safety gates, and tamper-evident audit provenance:
- * 
+ *
  * 1. INPUT           - Raw patient/encounter data, audio streams, or typed dialogue
  * 2. VALIDATION      - Strict payload validation, format checks, patient ID matching, actor checks
  * 3. CLINICAL CONTEXT- Strictly patient-bound retrieval of FHIR records (Conditions, Meds, Allergies)
@@ -19,6 +19,8 @@ const { aiService } = require('../ai/aiService');
 const { safetyService } = require('../safety/safetyService');
 const { fhirService } = require('../fhir/fhirService');
 const { auditService } = require('../audit/auditService');
+const { multimodalContextService } = require('./multimodalContextService');
+const { evidenceService } = require('../evidence/evidenceService');
 
 class ClinicalPipelineError extends Error {
   constructor(stage, code, message, details = {}) {
@@ -93,12 +95,87 @@ class ClinicalPipeline {
       // Stage 3: CLINICAL CONTEXT (Strict patient binding & tenant isolation)
       currentStage = 'CLINICAL_CONTEXT';
       stagesExecuted.push('CLINICAL_CONTEXT');
+
+      emit('MULTIMODAL_CONTEXT_STARTED', {
+        patientId: validated.patientId,
+        hasAudio: Boolean(validated.audioBuffer),
+        hasTranscript: Boolean(validated.transcript),
+        hasIntake: Boolean(validated.intakeContext),
+        hasDocuments: Boolean(validated.documents?.length),
+        hasVision: Boolean(validated.visionFindings?.length)
+      });
+
       const clinicalContext = await this.retrieveClinicalContext(validated.patientId, validated.tenantId);
+
+      emit('FHIR_CONTEXT_READY', {
+        conditionsCount: clinicalContext.conditions?.length || 0,
+        medicationsCount: clinicalContext.medications?.length || 0,
+        allergiesCount: clinicalContext.allergies?.length || 0
+      });
+
+      if (validated.intakeContext) {
+        emit('INTAKE_CONTEXT_READY', {
+          questionnaireId: validated.intakeContext.questionnaireId || 'dynamic-intake'
+        });
+      }
+
+      if (validated.documents?.length > 0) {
+        emit('DOCUMENT_CONTEXT_READY', {
+          count: validated.documents.length
+        });
+      }
+
+      if (validated.visionFindings?.length > 0) {
+        emit('VISION_CONTEXT_READY', {
+          count: validated.visionFindings.length
+        });
+      }
+
+      if (validated.transcript) {
+        emit('TRANSCRIPT_CONTEXT_READY', {
+          length: validated.transcript.length
+        });
+      }
+
+      // Evidence Retrieval
+      emit('EVIDENCE_RETRIEVAL_STARTED', {
+        patientId: validated.patientId
+      });
+
+      const evidence = await evidenceService.retrieveEvidence({
+        patientId: validated.patientId,
+        tenantId: validated.tenantId,
+        query: validated.transcript || '',
+        conditions: clinicalContext.conditions,
+        medications: clinicalContext.medications,
+        documents: validated.documents
+      });
+
+      emit('EVIDENCE_RETRIEVAL_COMPLETE', {
+        count: evidence.length,
+        items: evidence.map(e => ({ sourceId: e.sourceId, title: e.title, sourceType: e.sourceType }))
+      });
+
+      // Assemble normalized multimodal context
+      const multimodalContext = await multimodalContextService.assembleContext({
+        patientId: validated.patientId,
+        tenantId: validated.tenantId,
+        encounterId: validated.encounterId,
+        actor: validated.actor,
+        transcript: validated.transcript,
+        intakeContext: validated.intakeContext,
+        documents: validated.documents,
+        visionFindings: validated.visionFindings,
+        evidence
+      });
 
       emit('CLINICAL_CONTEXT_READY', {
         conditionsCount: clinicalContext.conditions?.length || 0,
         medicationsCount: clinicalContext.medications?.length || 0,
-        allergiesCount: clinicalContext.allergies?.length || 0
+        allergiesCount: clinicalContext.allergies?.length || 0,
+        documentsCount: validated.documents?.length || 0,
+        visionCount: validated.visionFindings?.length || 0,
+        evidenceCount: evidence.length
       });
 
       // Stage 3.5: Pre-AI Intake Red-Flag & Escalation Check
@@ -136,7 +213,8 @@ class ClinicalPipeline {
         audioMimeType: validated.audioMimeType,
         template: validated.template,
         clinicalContext,
-        intakeContext: validated.intakeContext
+        intakeContext: validated.intakeContext,
+        multimodalContext
       });
 
       emit('AI_ANALYSIS_COMPLETE', {
@@ -217,7 +295,8 @@ class ClinicalPipeline {
         aiAnalysisResult,
         safetyReport,
         prescriptions: proposedPrescriptions,
-        intakeContext: validated.intakeContext
+        intakeContext: validated.intakeContext,
+        multimodalContext
       });
 
       emit('CLINICAL_OUTPUT_READY', {
@@ -288,6 +367,7 @@ class ClinicalPipeline {
         patientId: validated.patientId,
         practitionerId: validated.practitionerId,
         actor: validated.actor,
+        multimodalContext,
         aiAnalysis: aiAnalysisResult,
         safety: safetyReport,
         output: structuredOutput,
@@ -401,12 +481,61 @@ class ClinicalPipeline {
       }
     }
 
-    // Input Audio / Text validation
-    if (!input.transcript && !input.audioBuffer) {
+    // Patient & Tenant Context Isolation: Document validation
+    const effectiveTenant = input.actor?.tenantId || input.tenantId || 'org-default';
+    if (Array.isArray(input.documents)) {
+      for (const doc of input.documents) {
+        if (!doc) continue;
+        if (doc.patientId && String(doc.patientId).replace(/^Patient\//, '').trim() !== cleanPatientId) {
+          throw new ClinicalPipelineError(
+            'VALIDATION',
+            'CROSS_PATIENT_ACCESS_DENIED',
+            `Document '${doc.id || doc.name || 'unnamed'}' targets a different patient.`,
+            { status: 403 }
+          );
+        }
+        if (doc.tenantId && doc.tenantId !== effectiveTenant) {
+          throw new ClinicalPipelineError(
+            'VALIDATION',
+            'CROSS_TENANT_ACCESS_DENIED',
+            `Document '${doc.id || doc.name || 'unnamed'}' belongs to a different tenant.`,
+            { status: 403 }
+          );
+        }
+      }
+    }
+
+    // Patient & Tenant Context Isolation: Vision findings validation
+    if (Array.isArray(input.visionFindings)) {
+      for (const vf of input.visionFindings) {
+        if (!vf) continue;
+        if (vf.patientId && String(vf.patientId).replace(/^Patient\//, '').trim() !== cleanPatientId) {
+          throw new ClinicalPipelineError(
+            'VALIDATION',
+            'CROSS_PATIENT_ACCESS_DENIED',
+            `Vision finding targets a different patient.`,
+            { status: 403 }
+          );
+        }
+        if (vf.tenantId && vf.tenantId !== effectiveTenant) {
+          throw new ClinicalPipelineError(
+            'VALIDATION',
+            'CROSS_TENANT_ACCESS_DENIED',
+            `Vision finding belongs to a different tenant.`,
+            { status: 403 }
+          );
+        }
+      }
+    }
+
+    // Input Audio / Text / Multimodal validation
+    const hasDocuments = Array.isArray(input.documents) && input.documents.length > 0;
+    const hasVision = Array.isArray(input.visionFindings) && input.visionFindings.length > 0;
+    if (!input.transcript && !input.audioBuffer && !hasDocuments && !hasVision) {
       throw new ClinicalPipelineError(
         'VALIDATION',
         'NO_CLINICAL_INPUT',
-        'Either audioBuffer or text transcript must be provided to initiate the clinical encounter.'
+        'Either audioBuffer, text transcript, documents, or vision findings must be provided to initiate the clinical encounter.'
       );
     }
 
@@ -416,8 +545,8 @@ class ClinicalPipeline {
 
     // Actor context
     const actor = input.actor || null;
-    const practitionerId = actor?.actorId 
-      ? `Practitioner/${actor.actorId}` 
+    const practitionerId = actor?.actorId
+      ? `Practitioner/${actor.actorId}`
       : (input.practitionerId || 'Practitioner/practitioner-default');
 
     // Physician Directive & Override Validation
@@ -458,6 +587,8 @@ class ClinicalPipeline {
       prescriptions: Array.isArray(input.prescriptions) ? input.prescriptions : [],
       confirmedPrescriptions: Array.isArray(input.confirmedPrescriptions) ? input.confirmedPrescriptions : [],
       confirmedConditions: Array.isArray(input.confirmedConditions) ? input.confirmedConditions : [],
+      documents: Array.isArray(input.documents) ? input.documents : [],
+      visionFindings: Array.isArray(input.visionFindings) ? input.visionFindings : [],
       commitToFhir: Boolean(input.commitToFhir),
       physicianDirective,
       intakeContext: input.intakeContext || null,
@@ -478,7 +609,7 @@ class ClinicalPipeline {
     }
   }
 
-  async runAiAnalysis({ transcript, audioBuffer, audioMimeType, template, clinicalContext, intakeContext = null }) {
+  async runAiAnalysis({ transcript, audioBuffer, audioMimeType, template, clinicalContext, intakeContext = null, multimodalContext = null }) {
     let effectiveTranscript = transcript;
 
     // 1. Transcribe audio if provided
@@ -487,25 +618,37 @@ class ClinicalPipeline {
       effectiveTranscript = transcriptionResult.text;
     }
 
+    if (!effectiveTranscript && multimodalContext?.dialogueContext?.transcript) {
+      effectiveTranscript = multimodalContext.dialogueContext.transcript;
+    }
+
+    if (!effectiveTranscript && multimodalContext?.unifiedNarrative) {
+      effectiveTranscript = multimodalContext.unifiedNarrative;
+    }
+
     if (!effectiveTranscript || !effectiveTranscript.trim()) {
       throw new TranscriptionInputError("No speech could be recognized from the consultation input.");
     }
 
     // 2. Format clinical context strictly bound to patient
-    const patientName = clinicalContext.patient?.name?.[0]?.given?.join(' ') + ' ' + (clinicalContext.patient?.name?.[0]?.family || '');
-    const contextItems = [
-      `Patient: ${patientName || clinicalContext.patientId}`,
-      `DOB: ${clinicalContext.patient?.birthDate || 'Unknown'}`,
-      `Active Diagnoses: ${clinicalContext.conditions.map(c => c.code?.text || c.code?.coding?.[0]?.display || 'Unknown').join(', ') || 'None'}`,
-      `Active Medications: ${clinicalContext.medications.map(m => m.medicationCodeableConcept?.text || m.medicationCodeableConcept?.coding?.[0]?.display || 'Unknown').join(', ') || 'None'}`,
-      `Known Allergies: ${clinicalContext.allergies.map(a => a.code?.text || a.code?.coding?.[0]?.display || 'Unknown').join(', ') || 'None'}`
-    ];
+    let contextString = '';
+    if (multimodalContext?.unifiedNarrative) {
+      contextString = multimodalContext.unifiedNarrative;
+    } else {
+      const patientName = clinicalContext.patient?.name?.[0]?.given?.join(' ') + ' ' + (clinicalContext.patient?.name?.[0]?.family || '');
+      const contextItems = [
+        `Patient: ${patientName || clinicalContext.patientId}`,
+        `DOB: ${clinicalContext.patient?.birthDate || 'Unknown'}`,
+        `Active Diagnoses: ${clinicalContext.conditions.map(c => c.code?.text || c.code?.coding?.[0]?.display || 'Unknown').join(', ') || 'None'}`,
+        `Active Medications: ${clinicalContext.medications.map(m => m.medicationCodeableConcept?.text || m.medicationCodeableConcept?.coding?.[0]?.display || 'Unknown').join(', ') || 'None'}`,
+        `Known Allergies: ${clinicalContext.allergies.map(a => a.code?.text || a.code?.coding?.[0]?.display || 'Unknown').join(', ') || 'None'}`
+      ];
 
-    if (intakeContext && intakeContext.clinicalNarrative) {
-      contextItems.push(`\n${intakeContext.clinicalNarrative}`);
+      if (intakeContext && intakeContext.clinicalNarrative) {
+        contextItems.push(`\n${intakeContext.clinicalNarrative}`);
+      }
+      contextString = contextItems.join('\n');
     }
-
-    const contextString = contextItems.join('\n');
 
     // 3. Generate structured note
     const aiNoteResult = await aiService.generateClinicalNote(effectiveTranscript, contextString, template);
@@ -538,14 +681,14 @@ class ClinicalPipeline {
     });
   }
 
-  buildStructuredOutput({ aiAnalysisResult, safetyReport, prescriptions, intakeContext = null }) {
+  buildStructuredOutput({ aiAnalysisResult, safetyReport, prescriptions, intakeContext = null, multimodalContext = null }) {
     const rawNote = aiAnalysisResult.note || {};
-    
+
     // Extract assessment / diagnoses as AI suggestions ONLY (marked unconfirmed)
     let suggestedDiagnoses = [];
     if (rawNote.assessment) {
-      suggestedDiagnoses = Array.isArray(rawNote.assessment) 
-        ? rawNote.assessment 
+      suggestedDiagnoses = Array.isArray(rawNote.assessment)
+        ? rawNote.assessment
         : String(rawNote.assessment).split('\n').map(s => s.replace(/^\d+[\.\)]\s*/, '').trim()).filter(Boolean);
     }
 
@@ -553,6 +696,16 @@ class ClinicalPipeline {
     if (intakeContext?.clinicalNarrative && !subjective.includes('PATIENT-REPORTED INTAKE')) {
       subjective = `${subjective ? subjective + '\n\n' : ''}${intakeContext.clinicalNarrative}`;
     }
+
+    // Differentials: Unconfirmed AI suggestions (including image intelligence differentials)
+    const differential = [
+      ...suggestedDiagnoses.map(d => ({
+        condition: typeof d === 'string' ? d : (d.name || d.condition || 'Diagnosis'),
+        status: 'unconfirmed',
+        sourceAttribution: 'AI_INFERRED'
+      })),
+      ...(multimodalContext?.visionContext?.findings?.flatMap(f => f.differential || []) || [])
+    ];
 
     return {
       soapNote: {
@@ -568,12 +721,15 @@ class ClinicalPipeline {
         status: 'PROPOSED_BY_AI',
         clinicianConfirmed: false
       })),
+      differential,
       prescriptions: prescriptions.map(rx => ({
         ...rx,
-        safetyStatus: safetyReport.contraindications.some(c => c.medication.toLowerCase() === (rx.name || '').toLowerCase()) 
-          ? 'CONTRAINDICATED' 
+        safetyStatus: safetyReport.contraindications.some(c => c.medication.toLowerCase() === (rx.name || '').toLowerCase())
+          ? 'CONTRAINDICATED'
           : 'VERIFIED'
-      }))
+      })),
+      evidenceReferences: multimodalContext?.evidenceContext?.items || [],
+      multimodalContext
     };
   }
 

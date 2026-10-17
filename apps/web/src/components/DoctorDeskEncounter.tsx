@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, type FormEvent, type KeyboardEvent } from 'react';
-import { 
-  ArrowLeft, Mic, Square, Check, Loader2, AlertCircle, AlertTriangle, 
+import {
+  ArrowLeft, Mic, Square, Check, Loader2, AlertCircle, AlertTriangle,
   Pill, FileText, Activity, Send, Plus, CheckCircle2, Copy,
   ClipboardList, Sparkles, RefreshCw, X, Printer, Play, ClipboardCheck, Smartphone, Eye
 } from 'lucide-react';
@@ -391,7 +391,23 @@ Active Note Plan: ${note.plan}
         }))
       }, {
         onEvent: (event) => {
-          if (event.type === 'AI_ANALYSIS_STARTED') {
+          if (event.type === 'MULTIMODAL_CONTEXT_STARTED') {
+            setStreamProgress({ stage: event.type, message: 'Assembling multimodal clinical context...', isStreaming: true });
+          } else if (event.type === 'FHIR_CONTEXT_READY') {
+            setStreamProgress({ stage: event.type, message: 'FHIR longitudinal history synchronized', isStreaming: true });
+          } else if (event.type === 'INTAKE_CONTEXT_READY') {
+            setStreamProgress({ stage: event.type, message: 'Patient intake responses loaded', isStreaming: true });
+          } else if (event.type === 'DOCUMENT_CONTEXT_READY') {
+            setStreamProgress({ stage: event.type, message: 'Clinical document facts loaded', isStreaming: true });
+          } else if (event.type === 'VISION_CONTEXT_READY') {
+            setStreamProgress({ stage: event.type, message: 'Clinical image findings synchronized', isStreaming: true });
+          } else if (event.type === 'EVIDENCE_RETRIEVAL_STARTED') {
+            setStreamProgress({ stage: event.type, message: 'Retrieving evidence & clinical guidelines...', isStreaming: true });
+          } else if (event.type === 'EVIDENCE_RETRIEVAL_COMPLETE') {
+            setStreamProgress({ stage: event.type, message: 'Clinical evidence matched', isStreaming: true });
+          } else if (event.type === 'CLINICAL_CONTEXT_READY') {
+            setStreamProgress({ stage: event.type, message: 'Multimodal clinical context ready', isStreaming: true });
+          } else if (event.type === 'AI_ANALYSIS_STARTED') {
             setStreamProgress({ stage: event.type, message: 'AI clinical reasoning & note synthesis...', isStreaming: true });
           } else if (event.type === 'AI_ANALYSIS_COMPLETE') {
             setStreamProgress({ stage: event.type, message: 'AI note draft synthesized', isStreaming: true });
@@ -399,6 +415,10 @@ Active Note Plan: ${note.plan}
             setStreamProgress({ stage: event.type, message: 'Deterministic safety check...', isStreaming: true });
           } else if (event.type === 'SAFETY_WARNING') {
             setStreamProgress({ stage: event.type, message: 'Safety review warnings detected', isStreaming: true });
+          } else if (event.type === 'EMERGENCY_DETECTED') {
+            setStreamProgress({ stage: event.type, message: 'Emergency triage red-flag detected', isStreaming: true });
+          } else if (event.type === 'SAFETY_LOCKED') {
+            setStreamProgress({ stage: event.type, message: 'Safety locked: contraindication detected', isStreaming: false });
           } else if (event.type === 'CLINICAL_OUTPUT_READY') {
             setStreamProgress({ stage: event.type, message: 'Clinical output ready', isStreaming: true });
           }
@@ -467,7 +487,7 @@ Active Note Plan: ${note.plan}
       setChatMessages([...newMsgs, { role: 'assistant', content: reply }]);
     } catch (err: any) {
       setChatMessages([
-        ...newMsgs, 
+        ...newMsgs,
         { role: 'assistant', content: `Error: ${err?.message || 'Unable to reach clinical copilot.'}` }
       ]);
     } finally {
@@ -1180,7 +1200,7 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
 
             <div className="space-y-3 text-xs text-[#3f3f46]">
               <p>Sign off on encounter for <strong>{patient.name}</strong> ({patient.mrn})?</p>
-              
+
               <div className="rounded-2xl border border-[#e4e4e7] bg-[#fafaf9] p-4 space-y-2.5">
                 <div className="flex items-center justify-between text-[#52525b]">
                   <span>Clinical SOAP Note:</span>

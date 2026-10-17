@@ -70,7 +70,7 @@ const defaultLocalOrigins = [
   'http://127.0.0.1:5173'
 ];
 
-const configuredOrigins = process.env.CORS_ALLOWED_ORIGINS 
+const configuredOrigins = process.env.CORS_ALLOWED_ORIGINS
   ? process.env.CORS_ALLOWED_ORIGINS.split(',').map(o => o.trim()).filter(Boolean)
   : [];
 
@@ -171,7 +171,7 @@ app.get(['/health/ai', '/api/health/ai'], async (req, res) => {
   });
 });
 
-const upload = multer({ 
+const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024, files: 5 }, // 10MB limit per file, max 5 files
   fileFilter: (req, file, cb) => {
@@ -543,9 +543,16 @@ app.use(['/api/operations', '/operations', '/api/clinical'], resolveActorMiddlew
 // ==========================================
 // PROTON CANONICAL CLINICAL PIPELINE (V2)
 // ==========================================
-// PROTON CANONICAL CLINICAL PIPELINE (V2) & SSE STREAMING (M2C-3)
-// ==========================================
-const { clinicalPipeline, streamManager, StreamSecurityError } = require('./services');
+const {
+  clinicalPipeline,
+  streamManager,
+  StreamSecurityError,
+  clinicianConfirmationService,
+  longitudinalService,
+  documentService,
+  voiceService,
+  multimodalContextService
+} = require('./services');
 
 // Create an opaque clinical streaming session (M2C-3)
 app.post('/api/clinical/streams', resolveActorMiddleware, (req, res) => {
@@ -1040,6 +1047,72 @@ app.get('/api/vision/reviews/:analysisId', resolveActorMiddleware, (req, res) =>
   } catch (err) {
     res.status(err.status || 400).json({
       error: err.code || 'VISION_REVIEW_ERROR',
+      message: err.message
+    });
+  }
+});
+
+// Submit clinician confirmation (Accept, Reject, Modify) for an AI diagnosis
+app.post('/api/clinical/confirm/diagnosis', resolveActorMiddleware, requireRole(['physician']), async (req, res) => {
+  try {
+    const { encounterId, patientId, action, diagnosis, modification, notes, aiDraftId } = req.body;
+    const result = await clinicianConfirmationService.confirmDiagnosis({
+      encounterId,
+      patientId,
+      actor: req.actor,
+      action,
+      diagnosis,
+      modification,
+      notes,
+      aiDraftId
+    });
+    res.status(201).json(result);
+  } catch (err) {
+    res.status(err.status || 400).json({
+      error: err.code || 'CONFIRMATION_ERROR',
+      message: err.message,
+      details: err.details || null
+    });
+  }
+});
+
+// Submit clinician confirmation (Confirm, Reject, Modify) for an AI medication order
+app.post('/api/clinical/confirm/medication', resolveActorMiddleware, requireRole(['physician']), async (req, res) => {
+  try {
+    const { encounterId, patientId, action, medication, modification, notes, aiDraftId, physicianDirective } = req.body;
+    const result = await clinicianConfirmationService.confirmMedication({
+      encounterId,
+      patientId,
+      actor: req.actor,
+      action,
+      medication,
+      modification,
+      notes,
+      aiDraftId,
+      physicianDirective
+    });
+    res.status(201).json(result);
+  } catch (err) {
+    res.status(err.status || 400).json({
+      error: err.code || 'CONFIRMATION_ERROR',
+      message: err.message,
+      details: err.details || null
+    });
+  }
+});
+
+// Retrieve longitudinal clinical trajectory for a patient
+app.get('/api/clinical/trajectory/:patientId', resolveActorMiddleware, async (req, res) => {
+  try {
+    const tenantId = req.actor?.tenantId || req.query.tenantId || 'org-default';
+    const result = await longitudinalService.getPatientTrajectory({
+      patientId: req.params.patientId,
+      tenantId
+    });
+    res.json(result);
+  } catch (err) {
+    res.status(err.status || 400).json({
+      error: err.code || 'TRAJECTORY_ERROR',
       message: err.message
     });
   }

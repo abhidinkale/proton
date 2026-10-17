@@ -44,6 +44,41 @@ const {
   sanitizePayload,
   StreamSecurityError
 } = require('./streaming');
+const {
+  multimodalContextService,
+  MultimodalContextService,
+  MultimodalContextError,
+  SOURCE_ATTRIBUTIONS
+} = require('./clinical/multimodalContextService');
+const {
+  documentService,
+  DocumentService,
+  DocumentServiceError,
+  ALLOWED_MIME_TYPES,
+  MAX_DOCUMENT_SIZE
+} = require('./document');
+const {
+  voiceService,
+  VoiceService,
+  VoiceServiceError,
+  WhisperProvider
+} = require('./voice');
+const {
+  evidenceService,
+  EvidenceService,
+  EvidenceServiceError,
+  CLINICAL_GUIDELINES
+} = require('./evidence');
+const {
+  longitudinalService,
+  LongitudinalService,
+  LongitudinalServiceError
+} = require('./clinical/longitudinalService');
+const {
+  clinicianConfirmationService,
+  ClinicianConfirmationService,
+  ClinicianConfirmationError
+} = require('./clinical/clinicianConfirmationService');
 
 module.exports = {
   // Media
@@ -134,5 +169,40 @@ module.exports = {
   validateStreamAccess,
   scrubError,
   sanitizePayload,
-  StreamSecurityError
+  StreamSecurityError,
+
+  // Multimodal Context & Clinical Intelligence
+  multimodalContextService,
+  MultimodalContextService,
+  MultimodalContextError,
+  SOURCE_ATTRIBUTIONS,
+
+  // Document Intelligence
+  documentService,
+  DocumentService,
+  DocumentServiceError,
+  ALLOWED_MIME_TYPES,
+  MAX_DOCUMENT_SIZE,
+
+  // Voice & Speech
+  voiceService,
+  VoiceService,
+  VoiceServiceError,
+  WhisperProvider,
+
+  // Evidence & Guidelines
+  evidenceService,
+  EvidenceService,
+  EvidenceServiceError,
+  CLINICAL_GUIDELINES,
+
+  // Longitudinal Intelligence
+  longitudinalService,
+  LongitudinalService,
+  LongitudinalServiceError,
+
+  // Clinician Confirmation
+  clinicianConfirmationService,
+  ClinicianConfirmationService,
+  ClinicianConfirmationError
 };
