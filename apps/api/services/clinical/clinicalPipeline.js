@@ -48,30 +48,69 @@ class ClinicalPipeline {
    * @param {boolean} [input.commitToFhir] - Whether to atomically commit the encounter to FHIR
    * @param {string} [input.physicianDirective] - Clinician directive / override rationale
    * @param {string} [input.tenantId] - Multi-tenant ID
+   * @param {Object} [options]
+   * @param {Function} [options.onEvent] - Callback for streaming events: (type, payload) => void
    * @returns {Promise<Object>} Complete pipeline result with provenance
    */
-  async execute(input) {
+  async execute(input, options = {}) {
     const pipelineRunId = `pipe-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
     const startTime = Date.now();
     const stagesExecuted = [];
     let currentStage = 'INPUT';
     let validated = null;
 
+    const emit = (type, payload = {}) => {
+      if (typeof options.onEvent === 'function') {
+        try {
+          options.onEvent(type, payload);
+        } catch (evtErr) {
+          console.error(`[ClinicalPipeline] Error in onEvent handler for ${type}:`, evtErr.message);
+        }
+      }
+    };
+
     try {
       // Stage 1 & 2: INPUT & VALIDATION
+      emit('INPUT_RECEIVED', {
+        patientId: input?.patientId || null,
+        hasAudio: Boolean(input?.audioBuffer),
+        hasTranscript: Boolean(input?.transcript),
+        template: input?.template || 'General Consultation'
+      });
+
       currentStage = 'VALIDATION';
       stagesExecuted.push('INPUT');
       stagesExecuted.push('VALIDATION');
       validated = this.validateInput(input);
+
+      emit('VALIDATION_COMPLETE', {
+        patientId: validated.patientId,
+        practitionerId: validated.practitionerId,
+        commitToFhir: validated.commitToFhir,
+        hasIntake: Boolean(validated.intakeContext)
+      });
 
       // Stage 3: CLINICAL CONTEXT (Strict patient binding & tenant isolation)
       currentStage = 'CLINICAL_CONTEXT';
       stagesExecuted.push('CLINICAL_CONTEXT');
       const clinicalContext = await this.retrieveClinicalContext(validated.patientId, validated.tenantId);
 
+      emit('CLINICAL_CONTEXT_READY', {
+        conditionsCount: clinicalContext.conditions?.length || 0,
+        medicationsCount: clinicalContext.medications?.length || 0,
+        allergiesCount: clinicalContext.allergies?.length || 0
+      });
+
       // Stage 3.5: Pre-AI Intake Red-Flag & Escalation Check
       if (validated.intakeContext?.escalation?.requiresEscalation) {
         stagesExecuted.push('INTAKE_ESCALATION');
+        emit('EMERGENCY_DETECTED', {
+          source: 'INTAKE_RED_FLAG',
+          escalationLevel: validated.intakeContext.escalation.escalationLevel,
+          triageCategory: validated.intakeContext.escalation.triageCategory,
+          clinicalAction: validated.intakeContext.escalation.clinicalAction
+        });
+
         auditService.recordPipelineStage({
           stage: 'INTAKE_RED_FLAG_ESCALATION',
           patientId: validated.patientId,
@@ -86,6 +125,11 @@ class ClinicalPipeline {
       // Stage 4: AI ANALYSIS (Speech & Clinical Note Synthesis with Schema Validation)
       currentStage = 'AI_ANALYSIS';
       stagesExecuted.push('AI_ANALYSIS');
+      emit('AI_ANALYSIS_STARTED', {
+        model: 'gemini-1.5-flash',
+        hasAudio: Boolean(validated.audioBuffer)
+      });
+
       const aiAnalysisResult = await this.runAiAnalysis({
         transcript: validated.transcript,
         audioBuffer: validated.audioBuffer,
@@ -95,12 +139,21 @@ class ClinicalPipeline {
         intakeContext: validated.intakeContext
       });
 
+      emit('AI_ANALYSIS_COMPLETE', {
+        model: aiAnalysisResult.model,
+        usage: aiAnalysisResult.usage
+      });
+
       // Proposed prescriptions (either from request or extracted from consultation)
       const proposedPrescriptions = validated.prescriptions || [];
 
       // Stage 5: SAFETY CHECK (Deterministic verification BEFORE persistence)
       currentStage = 'SAFETY_CHECK';
       stagesExecuted.push('SAFETY_CHECK');
+      emit('SAFETY_CHECK_STARTED', {
+        prescriptionCount: proposedPrescriptions.length
+      });
+
       const safetyReport = this.runSafetyCheck({
         prescriptions: proposedPrescriptions,
         clinicalContext
@@ -113,10 +166,27 @@ class ClinicalPipeline {
         safetyReport.intakeEscalation = validated.intakeContext.escalation;
       }
 
+      if ((safetyReport.warnings && safetyReport.warnings.length > 0) || (safetyReport.contraindications && safetyReport.contraindications.length > 0)) {
+        emit('SAFETY_WARNING', {
+          contraindications: safetyReport.contraindications || [],
+          warnings: safetyReport.warnings || [],
+          hardStop: Boolean(safetyReport.hardStop)
+        });
+      }
+
       // Hard Stop on Critical Safety Failures
       if (safetyReport.hardStop) {
+        emit('EMERGENCY_DETECTED', {
+          source: 'CONTRAINDICATION_HARD_STOP',
+          contraindications: safetyReport.contraindications
+        });
+
         // Enforce physician authority: only verified clinician can provide directive override
         if (!validated.physicianDirective) {
+          emit('SAFETY_LOCKED', {
+            reason: 'Prescription violates critical safety contraindications. Clinician directive required to override.',
+            contraindications: safetyReport.contraindications
+          });
           throw new ClinicalPipelineError(
             'SAFETY_CHECK',
             'CONTRAINDICATION_HARD_STOP',
@@ -127,6 +197,10 @@ class ClinicalPipeline {
 
         // Validate that directive was issued by an authorized physician
         if (!validated.actor || !['physician', 'practitioner'].includes(validated.actor.actorRole)) {
+          emit('SAFETY_LOCKED', {
+            reason: 'Safety override rejected: only an authenticated physician/practitioner may issue clinical overrides.',
+            contraindications: safetyReport.contraindications
+          });
           throw new ClinicalPipelineError(
             'SAFETY_CHECK',
             'UNAUTHORIZED_PHYSICIAN_OVERRIDE',
@@ -146,11 +220,21 @@ class ClinicalPipeline {
         intakeContext: validated.intakeContext
       });
 
+      emit('CLINICAL_OUTPUT_READY', {
+        suggestedDiagnosesCount: structuredOutput.suggestedDiagnoses?.length || 0,
+        prescriptionCount: structuredOutput.prescriptions?.length || 0
+      });
+
       // Stage 7: FHIR TRANSACTION (Atomic Bundle Persistence)
       let fhirResult = null;
       if (validated.commitToFhir) {
         currentStage = 'FHIR_TRANSACTION';
         stagesExecuted.push('FHIR_TRANSACTION');
+
+        emit('FHIR_COMMIT_STARTED', {
+          patientId: validated.patientId,
+          encounterId: validated.encounterId
+        });
 
         // INVARIANT: Unconfirmed AI suggestions cannot create active FHIR resources.
         // Only explicitly confirmed conditions and signed prescriptions are committed.
@@ -162,6 +246,11 @@ class ClinicalPipeline {
           confirmedConditions: validated.confirmedConditions,
           confirmedPrescriptions: validated.confirmedPrescriptions,
           tenantId: validated.tenantId
+        });
+
+        emit('FHIR_COMMIT_COMPLETE', {
+          committed: true,
+          encounterId: validated.encounterId
         });
       }
 
@@ -179,6 +268,16 @@ class ClinicalPipeline {
         physicianDirective: validated.physicianDirective,
         resultingState: 'ENCOUNTER_FINALIZED',
         tenantId: validated.tenantId
+      });
+
+      emit('AUDIT_COMPLETE', {
+        auditId: auditRecord.eventId || auditRecord.id,
+        currentHash: auditRecord.currentHash
+      });
+
+      emit('STREAM_COMPLETE', {
+        pipelineRunId,
+        durationMs: Date.now() - startTime
       });
 
       return {
@@ -220,6 +319,13 @@ class ClinicalPipeline {
       } catch (auditErr) {
         console.error('[ClinicalPipeline] Emergency audit failure logging failed:', auditErr.message);
       }
+
+      emit('STREAM_ERROR', {
+        stage: failureStage,
+        code: err.code || 'PIPELINE_ERROR',
+        message: err.message,
+        status: err.status || 500
+      });
 
       throw err;
     }

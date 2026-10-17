@@ -543,8 +543,156 @@ app.use(['/api/operations', '/operations', '/api/clinical'], resolveActorMiddlew
 // ==========================================
 // PROTON CANONICAL CLINICAL PIPELINE (V2)
 // ==========================================
-const { clinicalPipeline } = require('./services');
+// PROTON CANONICAL CLINICAL PIPELINE (V2) & SSE STREAMING (M2C-3)
+// ==========================================
+const { clinicalPipeline, streamManager, StreamSecurityError } = require('./services');
 
+// Create an opaque clinical streaming session (M2C-3)
+app.post('/api/clinical/streams', resolveActorMiddleware, (req, res) => {
+  try {
+    if (!req.actor) {
+      return res.status(401).json({ error: 'Authenticated actor required.', code: 'UNAUTHENTICATED' });
+    }
+    const { patientId, encounterId, operation } = req.body || {};
+    if (!patientId) {
+      return res.status(400).json({ error: 'patientId is required to initialize a clinical stream.', code: 'PATIENT_ID_REQUIRED' });
+    }
+
+    const cleanPatientId = String(patientId).replace(/^Patient\//, '').trim();
+
+    // Patient isolation check: patient actor cannot create stream for other patients
+    const actorRole = req.actor.actorRole || req.actor.role || '';
+    if (actorRole === 'patient') {
+      const actorPatientId = String(req.actor.actorId || req.actor.patientId || '').replace(/^Patient\//, '').trim();
+      if (cleanPatientId !== actorPatientId) {
+        return res.status(403).json({
+          error: 'Forbidden: Patients can only create streams for their own records.',
+          code: 'CROSS_PATIENT_ACCESS_DENIED'
+        });
+      }
+    }
+
+    const stream = streamManager.createStream({
+      patientId: cleanPatientId,
+      encounterId,
+      actor: req.actor,
+      operation: operation || 'CLINICAL_PIPELINE'
+    });
+
+    res.status(201).json(stream);
+  } catch (err) {
+    res.status(err.status || 400).json({
+      error: err.code || 'STREAM_CREATE_ERROR',
+      message: err.message
+    });
+  }
+});
+
+// Connect SSE transport socket to an active stream (M2C-3)
+app.get('/api/clinical/streams/:id', resolveActorMiddleware, (req, res) => {
+  try {
+    if (!req.actor) {
+      return res.status(401).json({ error: 'Authenticated actor required.', code: 'UNAUTHENTICATED' });
+    }
+    streamManager.attachResponse(req.params.id, res, req, {
+      lastEventId: req.headers['last-event-id']
+    });
+  } catch (err) {
+    if (!res.headersSent) {
+      res.status(err.status || 400).json({
+        error: err.code || 'STREAM_CONNECT_ERROR',
+        message: err.message
+      });
+    }
+  }
+});
+
+// Direct Streaming Clinical Pipeline execution (SSE transport) (M2C-3)
+app.post('/api/clinical/pipeline/stream', resolveActorMiddleware, upload.single('audio'), async (req, res) => {
+  let streamMeta = null;
+  try {
+    if (!req.actor) {
+      return res.status(401).json({ error: 'Authenticated actor required.', code: 'UNAUTHENTICATED' });
+    }
+
+    // RBAC: Only clinical roles can execute clinical pipeline
+    const allowedRoles = ['physician', 'practitioner', 'operations_staff', 'system'];
+    const actorRole = req.actor.actorRole || req.actor.role || '';
+    if (!allowedRoles.includes(actorRole)) {
+      return res.status(403).json({
+        error: `Forbidden: Role '${actorRole}' is not authorized to execute clinical pipelines.`,
+        code: 'UNAUTHORIZED_ROLE'
+      });
+    }
+
+    const inputPayload = {
+      ...req.body,
+      actor: req.actor,
+      tenantId: req.actor.tenantId || req.body.tenantId || 'org-default'
+    };
+
+    if (req.file) {
+      inputPayload.audioBuffer = req.file.buffer;
+      inputPayload.audioMimeType = req.file.mimetype;
+    }
+
+    if (typeof inputPayload.prescriptions === 'string') {
+      try { inputPayload.prescriptions = JSON.parse(inputPayload.prescriptions); } catch {}
+    }
+    if (typeof inputPayload.confirmedPrescriptions === 'string') {
+      try { inputPayload.confirmedPrescriptions = JSON.parse(inputPayload.confirmedPrescriptions); } catch {}
+    }
+    if (typeof inputPayload.confirmedConditions === 'string') {
+      try { inputPayload.confirmedConditions = JSON.parse(inputPayload.confirmedConditions); } catch {}
+    }
+    if (typeof inputPayload.commitToFhir === 'string') {
+      inputPayload.commitToFhir = inputPayload.commitToFhir === 'true';
+    }
+
+    if (!inputPayload.patientId) {
+      return res.status(400).json({ error: 'Encounter must be bound to a valid patientId.', code: 'PATIENT_ID_REQUIRED' });
+    }
+
+    // Initialize stream
+    streamMeta = streamManager.createStream({
+      patientId: inputPayload.patientId,
+      encounterId: inputPayload.encounterId,
+      actor: req.actor,
+      operation: 'PIPELINE_STREAM'
+    });
+
+    // Attach SSE transport
+    streamManager.attachResponse(streamMeta.streamId, res, req);
+
+    // Execute pipeline with real-time event streaming
+    try {
+      const result = await clinicalPipeline.execute(inputPayload, {
+        onEvent: (type, payload) => {
+          streamManager.publishEvent(streamMeta.streamId, type, payload);
+        }
+      });
+      streamManager.closeStream(streamMeta.streamId, 'STREAM_COMPLETE', {
+        pipelineRunId: result.pipelineRunId,
+        durationMs: result.durationMs,
+        output: result.output,
+        provenance: result.provenance
+      });
+    } catch (pipelineErr) {
+      streamManager.abortStream(streamMeta.streamId, pipelineErr);
+    }
+  } catch (err) {
+    if (streamMeta) {
+      streamManager.abortStream(streamMeta.streamId, err);
+    } else if (!res.headersSent) {
+      res.status(err.status || 400).json({
+        error: err.code || 'STREAM_INIT_ERROR',
+        message: err.message
+      });
+    }
+  }
+});
+
+// Standard unary clinical pipeline endpoint with optional streamId forwarding
 app.post('/api/clinical/pipeline', upload.single('audio'), async (req, res) => {
   try {
     const inputPayload = {
@@ -571,8 +719,32 @@ app.post('/api/clinical/pipeline', upload.single('audio'), async (req, res) => {
       inputPayload.commitToFhir = inputPayload.commitToFhir === 'true';
     }
 
-    const result = await clinicalPipeline.execute(inputPayload);
-    res.json(result);
+    const options = {};
+    const streamId = req.body.streamId || req.headers['x-stream-id'];
+    if (streamId) {
+      const streamRecord = streamManager.getStream(streamId);
+      if (streamRecord && streamRecord.tenantId === inputPayload.tenantId) {
+        options.onEvent = (type, payload) => {
+          streamManager.publishEvent(streamId, type, payload);
+        };
+      }
+    }
+
+    try {
+      const result = await clinicalPipeline.execute(inputPayload, options);
+      if (streamId) {
+        streamManager.closeStream(streamId, 'STREAM_COMPLETE', {
+          pipelineRunId: result.pipelineRunId,
+          durationMs: result.durationMs
+        });
+      }
+      res.json(result);
+    } catch (pipelineErr) {
+      if (streamId) {
+        streamManager.abortStream(streamId, pipelineErr);
+      }
+      throw pipelineErr;
+    }
   } catch (err) {
     const status = err.status || 400;
     res.status(status).json({

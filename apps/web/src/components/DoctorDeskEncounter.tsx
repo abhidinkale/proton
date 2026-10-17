@@ -11,6 +11,7 @@ import IntakeReview from './intake/IntakeReview';
 import DynamicIntake from './intake/DynamicIntake';
 import CaptureSessionPanel from './capture/CaptureSessionPanel';
 import ClinicianVisionReview from './vision/ClinicianVisionReview';
+import { streamClinicalPipeline } from '../services/streamService';
 import type { PrescriptionItem } from '../types/prescription';
 import type { Patient } from '@medplum/fhirtypes';
 
@@ -194,6 +195,13 @@ export default function DoctorDeskEncounter({ patient, onCloseMeeting, onBackToD
   const [copySuccess, setCopySuccess] = useState<string | null>(null);
   const [deskShortcutFeedback, setDeskShortcutFeedback] = useState<string | null>(null);
 
+  // SSE Stream Progress State (M2C-3)
+  const [streamProgress, setStreamProgress] = useState<{
+    stage: string;
+    message: string;
+    isStreaming: boolean;
+  }>({ stage: '', message: '', isStreaming: false });
+
   // Audio Recording references
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -367,19 +375,79 @@ Active Note Plan: ${note.plan}
     const text = textToUse || transcript;
     if (!text.trim()) return;
     setIsGeneratingNote(true);
+    setStreamProgress({ stage: 'INPUT_RECEIVED', message: 'Initiating real-time clinical stream...', isStreaming: true });
+
     try {
-      const aiService = new RealAIService();
-      const result = await aiService.generateNote(text, chartContext, 'SOAP');
-      if (result) {
-        setNote({
-          subjective: result.subjective || note.subjective,
-          objective: result.objective || note.objective,
-          assessment: result.assessment || note.assessment,
-          plan: result.plan || note.plan
-        });
+      // Execute streaming clinical pipeline (M2C-3)
+      await streamClinicalPipeline({
+        patientId: patient.id,
+        transcript: text,
+        template: 'SOAP',
+        prescriptions: prescriptions.map(p => ({
+          name: p.name,
+          dosage: p.dose,
+          route: 'oral',
+          frequency: p.freq
+        }))
+      }, {
+        onEvent: (event) => {
+          if (event.type === 'AI_ANALYSIS_STARTED') {
+            setStreamProgress({ stage: event.type, message: 'AI clinical reasoning & note synthesis...', isStreaming: true });
+          } else if (event.type === 'AI_ANALYSIS_COMPLETE') {
+            setStreamProgress({ stage: event.type, message: 'AI note draft synthesized', isStreaming: true });
+          } else if (event.type === 'SAFETY_CHECK_STARTED') {
+            setStreamProgress({ stage: event.type, message: 'Deterministic safety check...', isStreaming: true });
+          } else if (event.type === 'SAFETY_WARNING') {
+            setStreamProgress({ stage: event.type, message: 'Safety review warnings detected', isStreaming: true });
+          } else if (event.type === 'CLINICAL_OUTPUT_READY') {
+            setStreamProgress({ stage: event.type, message: 'Clinical output ready', isStreaming: true });
+          }
+        },
+        onComplete: (terminalEvent) => {
+          if (terminalEvent.payload?.output?.soapNote) {
+            const noteData = terminalEvent.payload.output.soapNote;
+            setNote({
+              subjective: noteData.subjective || note.subjective,
+              objective: noteData.objective || note.objective,
+              assessment: noteData.assessment || note.assessment,
+              plan: noteData.plan || note.plan
+            });
+          }
+          setStreamProgress({ stage: 'STREAM_COMPLETE', message: 'Real-time sync complete', isStreaming: false });
+          setTimeout(() => setStreamProgress(prev => ({ ...prev, message: '' })), 3000);
+        },
+        onError: async (err) => {
+          console.warn('[DoctorDesk] SSE streaming fallback to unary AI note:', err.message);
+          const aiService = new RealAIService();
+          const result = await aiService.generateNote(text, chartContext, 'SOAP');
+          if (result) {
+            setNote({
+              subjective: result.subjective || note.subjective,
+              objective: result.objective || note.objective,
+              assessment: result.assessment || note.assessment,
+              plan: result.plan || note.plan
+            });
+          }
+          setStreamProgress({ stage: 'FALLBACK', message: '', isStreaming: false });
+        }
+      });
+    } catch (err: any) {
+      console.error('Failed to generate note via streaming, falling back to unary:', err);
+      try {
+        const aiService = new RealAIService();
+        const result = await aiService.generateNote(text, chartContext, 'SOAP');
+        if (result) {
+          setNote({
+            subjective: result.subjective || note.subjective,
+            objective: result.objective || note.objective,
+            assessment: result.assessment || note.assessment,
+            plan: result.plan || note.plan
+          });
+        }
+      } catch (unaryErr) {
+        console.error('Unary note fallback also failed:', unaryErr);
       }
-    } catch (err) {
-      console.error('Failed to generate note:', err);
+      setStreamProgress({ stage: '', message: '', isStreaming: false });
     } finally {
       setIsGeneratingNote(false);
     }
@@ -692,14 +760,27 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
                       Ambient Clinical Dialogue
                     </span>
                   </div>
-                  <button
-                    onClick={() => generateNoteFromTranscript()}
-                    disabled={isGeneratingNote}
-                    className="flex items-center gap-1.5 text-xs text-[#0284c7] hover:text-[#0369a1] font-semibold bg-[#eff6ff] hover:bg-[#dbeafe] px-3 py-1 rounded-lg border border-[#bfdbfe] transition-colors cursor-pointer"
-                  >
-                    <RefreshCw size={12} className={isGeneratingNote ? 'animate-spin' : ''} />
-                    {isGeneratingNote ? 'Synthesizing...' : 'Regenerate Note'}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {streamProgress.isStreaming && (
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-full bg-blue-50 text-blue-700 border border-blue-200 animate-pulse">
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-ping" />
+                        <span>{streamProgress.message || 'Streaming clinical pipeline...'}</span>
+                      </div>
+                    )}
+                    {streamProgress.message && !streamProgress.isStreaming && (
+                      <span className="text-[11px] text-emerald-600 font-medium">
+                        {streamProgress.message}
+                      </span>
+                    )}
+                    <button
+                      onClick={() => generateNoteFromTranscript()}
+                      disabled={isGeneratingNote}
+                      className="flex items-center gap-1.5 text-xs text-[#0284c7] hover:text-[#0369a1] font-semibold bg-[#eff6ff] hover:bg-[#dbeafe] px-3 py-1 rounded-lg border border-[#bfdbfe] transition-colors cursor-pointer"
+                    >
+                      <RefreshCw size={12} className={isGeneratingNote ? 'animate-spin' : ''} />
+                      {isGeneratingNote ? 'Synthesizing...' : 'Regenerate Note'}
+                    </button>
+                  </div>
                 </div>
                 <p className="text-xs text-[#52525b] leading-relaxed max-h-32 overflow-y-auto whitespace-pre-wrap font-mono bg-[#fafaf9] p-3.5 rounded-xl border border-[#e4e4e7]">
                   {transcript}

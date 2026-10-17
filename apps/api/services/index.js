@@ -32,6 +32,18 @@ const {
   VisionReviewService,
   VisionReviewError
 } = require('./vision');
+const {
+  streamManager,
+  StreamManager,
+  createEvent,
+  formatSseMessage,
+  CONTRACT_VERSION,
+  CANONICAL_EVENT_TYPES,
+  validateStreamAccess,
+  scrubError,
+  sanitizePayload,
+  StreamSecurityError
+} = require('./streaming');
 
 module.exports = {
   // Media
@@ -110,5 +122,17 @@ module.exports = {
   // Clinician Review (M2C-2)
   visionReviewService,
   VisionReviewService,
-  VisionReviewError
+  VisionReviewError,
+
+  // Clinical Streaming (M2C-3)
+  streamManager,
+  StreamManager,
+  createEvent,
+  formatSseMessage,
+  CONTRACT_VERSION,
+  CANONICAL_EVENT_TYPES,
+  validateStreamAccess,
+  scrubError,
+  sanitizePayload,
+  StreamSecurityError
 };
