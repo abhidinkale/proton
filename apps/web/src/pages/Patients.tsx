@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useMedplum } from '@medplum/react';
 import type { Patient } from '@medplum/fhirtypes';
-import { Search, UserPlus, FileText, Users, ChevronRight, LoaderCircle, Sparkles, AlertCircle } from 'lucide-react';
+import { Search, UserPlus, Users, ChevronRight, LoaderCircle, AlertCircle } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 
@@ -35,25 +35,6 @@ export default function Patients() {
     return () => { active = false; };
   }, [medplum, search, loadAttempt]);
 
-  const handleCreateDemoPatient = async () => {
-    setCreating(true);
-    setCreateError('');
-    try {
-      const newPatient = await medplum.createResource<Patient>({
-        resourceType: 'Patient',
-        name: [{ given: ['Demo'], family: 'Patient' }],
-        gender: 'unknown',
-        birthDate: '1980-01-01'
-      });
-      navigate(`/patients/${newPatient.id}`);
-    } catch (err) {
-      console.error('Failed to create demo patient:', err);
-      setCreateError('Could not create patient. Please check connection and try again.');
-    } finally {
-      setCreating(false);
-    }
-  };
-
   const handleCreateClinicalBrainPatient = async () => {
     setCreating(true);
     setCreateError('');
@@ -62,23 +43,8 @@ export default function Patients() {
       const newPatient = await createClinicalBrainDemoPatient(medplum);
       navigate(`/patients/${newPatient.id}`);
     } catch (err) {
-      console.error('Failed to create sample patient:', err);
-      setCreateError('Could not create sample patient. Please check connection and try again.');
-    } finally {
-      setCreating(false);
-    }
-  };
-
-  const handleCreateConflictingHistoryPatient = async () => {
-    setCreating(true);
-    setCreateError('');
-    try {
-      const { createConflictingHistoryDemoPatient } = await import('../services/demoPatient');
-      const newPatient = await createConflictingHistoryDemoPatient(medplum);
-      navigate(`/patients/${newPatient.id}`);
-    } catch (err) {
-      console.error('Failed to create Conflicting History demo patient:', err);
-      setCreateError('Could not create sample patient. Please check connection and try again.');
+      console.error('Failed to create patient:', err);
+      setCreateError('Could not create patient. Please check connection and try again.');
     } finally {
       setCreating(false);
     }
@@ -96,48 +62,27 @@ export default function Patients() {
     <Layout>
       <div className="space-y-6 animate-in fade-in">
         
-        {/* Header & Cohort Actions */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-2 border-b border-[#EAE8E3]">
+        {/* Clean Header & Actions */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#EAE8E3]">
           <div>
-            <span className="font-mono text-xs uppercase tracking-wider text-[#6E767E] font-medium">
-              LONGITUDINAL CLINICAL COHORTS
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#111315] mt-0.5">
-              Patient Panel
-            </h2>
-            <p className="text-xs sm:text-sm text-[#6E767E] mt-1">
-              Active patient panel connected to FHIR R4 records and temporal intelligence.
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#111315]">
+              Patients
+            </h1>
+            <p className="text-xs sm:text-sm text-[#6E767E] mt-0.5">
+              Longitudinal patient directory and clinical records.
             </p>
           </div>
 
-          {/* Quick Synthetic Generators */}
-          <div className="flex items-center gap-2 flex-wrap">
+          {/* Action button */}
+          <div className="flex items-center gap-2">
             <button 
               type="button"
               onClick={handleCreateClinicalBrainPatient}
               disabled={creating}
-              className="px-3 py-2 bg-[#111315] hover:bg-[#272B30] text-white rounded-xl text-xs font-semibold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
+              className="px-4 py-2.5 bg-[#111315] hover:bg-[#272B30] text-white rounded-xl text-xs font-semibold transition-all shadow-xs flex items-center gap-2 cursor-pointer disabled:opacity-60"
             >
-              <Sparkles size={13} className="text-amber-400" />
-              <span>{creating ? 'Generating...' : '+ Eleanor Vance (68F)'}</span>
-            </button>
-            <button 
-              type="button"
-              onClick={handleCreateConflictingHistoryPatient}
-              disabled={creating}
-              className="px-3 py-2 bg-white hover:bg-[#F4F3EE] text-[#111315] border border-[#EAE8E3] rounded-xl text-xs font-semibold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
-            >
-              <FileText size={13} className="text-violet-600" />
-              <span>{creating ? 'Generating...' : '+ Arthur Pendelton (74M)'}</span>
-            </button>
-            <button 
-              type="button"
-              onClick={handleCreateDemoPatient}
-              disabled={creating}
-              className="px-3 py-2 bg-white hover:bg-[#F4F3EE] text-[#6E767E] hover:text-[#111315] border border-[#EAE8E3] rounded-xl text-xs font-medium transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
-            >
-              <UserPlus size={13} />
-              <span>Blank Record</span>
+              <UserPlus size={14} />
+              <span>{creating ? 'Adding Patient...' : '+ New Patient'}</span>
             </button>
           </div>
         </div>
@@ -210,20 +155,19 @@ export default function Patients() {
                   type="button"
                   onClick={handleCreateClinicalBrainPatient}
                   disabled={creating}
-                  className="px-4 py-2.5 bg-[#111315] hover:bg-[#272B30] text-white text-xs font-semibold rounded-xl transition-all shadow-xs inline-flex items-center gap-1.5 cursor-pointer"
+                  className="px-4 py-2.5 bg-[#111315] hover:bg-[#272B30] text-white text-xs font-semibold rounded-xl transition-all shadow-xs inline-flex items-center gap-2 cursor-pointer"
                 >
-                  <Sparkles size={14} className="text-amber-400" />
-                  <span>Create Eleanor Vance (68F)</span>
+                  <UserPlus size={14} />
+                  <span>Create Primary Patient</span>
                 </button>
               </div>
             ) : (
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-[#EAE8E3] bg-[#FAF9F6] text-[11px] font-mono uppercase text-[#6E767E]">
-                    <th className="px-6 py-3 font-semibold">Patient Name</th>
+                    <th className="px-6 py-3 font-semibold">Patient</th>
                     <th className="px-6 py-3 font-semibold">Age / Sex</th>
                     <th className="px-6 py-3 font-semibold">Date of Birth</th>
-                    <th className="px-6 py-3 font-semibold">FHIR ID</th>
                     <th className="px-6 py-3 font-semibold">Last Updated</th>
                     <th className="px-6 py-3 font-semibold text-right">Action</th>
                   </tr>
@@ -255,7 +199,7 @@ export default function Patients() {
                               >
                                 {displayName}
                               </Link>
-                              <div className="font-mono text-[10px] text-[#8C949D]">Verified Record</div>
+                              <div className="text-[11px] text-[#8C949D]">Verified Record</div>
                             </div>
                           </div>
                         </td>
@@ -264,7 +208,6 @@ export default function Patients() {
                           <span className="text-[#8C949D] ml-1 capitalize">({p.gender || '—'})</span>
                         </td>
                         <td className="px-6 py-4 font-mono text-[#50575F]">{p.birthDate || '—'}</td>
-                        <td className="px-6 py-4 font-mono text-[#8C949D] text-[11px]">#{p.id?.slice(0, 8)}</td>
                         <td className="px-6 py-4 font-mono text-[#8C949D] text-[11px]">{date}</td>
                         <td className="px-6 py-4 text-right">
                           <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#0F766E] opacity-0 group-hover:opacity-100 transition-opacity">

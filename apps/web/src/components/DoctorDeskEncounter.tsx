@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect, type FormEvent, type KeyboardEvent } from 'react';
 import {
-  ArrowLeft, Mic, Square, Check, Loader2, AlertCircle, AlertTriangle,
-  Pill, FileText, Activity, Send, Plus, CheckCircle2, Copy,
-  ClipboardList, Sparkles, RefreshCw, X, Printer, Play, ClipboardCheck, Smartphone, Eye, ShieldCheck
+  ArrowLeft, ArrowUp, Mic, Square, Check, Loader2, AlertCircle, AlertTriangle,
+  Pill, FileText, Activity, Plus, CheckCircle2, Copy,
+  ClipboardList, Sparkles, RefreshCw, X, Printer, ClipboardCheck, Smartphone, Eye, ShieldCheck
 } from 'lucide-react';
 import { RealAIService, sendClinicalChat, type ChatMessage } from '../services/ai';
 import { RealSpeechService } from '../services/speech';
@@ -14,7 +14,6 @@ import ClinicianVisionReview from './vision/ClinicianVisionReview';
 import { streamClinicalPipeline } from '../services/streamService';
 import type { PrescriptionItem } from '../types/prescription';
 import type { Patient } from '@medplum/fhirtypes';
-import ProvenanceBadge from './ui/ProvenanceBadge';
 
 export interface DoctorDeskPatient {
   id: string;
@@ -582,65 +581,88 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
   return (
     <div className="flex h-screen w-full flex-col bg-[#fafaf9] text-[#18181b] overflow-hidden font-sans antialiased">
       {/* TOP DESK HEADER */}
-      <header className="h-16 shrink-0 border-b border-[#e4e4e7] bg-white px-6 flex items-center justify-between shadow-[0_1px_2px_rgba(0,0,0,0.03)] z-10">
+      <header className="h-16 shrink-0 border-b border-[#e4e4e7] bg-white px-6 flex items-center justify-between shadow-2xs z-10">
         <div className="flex items-center gap-4">
           <button
             onClick={onBackToDesk}
-            className="flex items-center gap-1.5 text-xs font-semibold text-[#52525b] hover:text-[#09090b] transition-colors bg-[#f4f4f5] hover:bg-[#e4e4e7] px-3.5 py-2 rounded-xl border border-[#e4e4e7] cursor-pointer"
+            className="flex items-center gap-1.5 text-xs font-semibold text-[#52525b] hover:text-[#09090b] transition-colors p-2 rounded-xl hover:bg-[#f4f4f5] cursor-pointer"
+            title="Back to queue"
           >
-            <ArrowLeft size={14} />
-            Back to Queue
+            <ArrowLeft size={16} />
+            <span className="hidden sm:inline">Back</span>
           </button>
-          <div className="h-5 w-[1px] bg-[#e4e4e7]" />
+          <div className="h-4 w-[1px] bg-[#e4e4e7]" />
           <div>
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2">
               <h1 className="text-base font-bold text-[#09090b] tracking-tight">{patient.name}</h1>
-              <span className="text-xs text-[#71717a] font-mono">({patient.age}y, {patient.gender})</span>
-              <span className="text-xs text-[#a1a1aa] font-mono">MRN: {patient.mrn}</span>
+              <span className="text-xs text-[#71717a]">({patient.age}y, {patient.gender})</span>
+              {patient.allergies.length > 0 && (
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-red-700 bg-red-50 border border-red-200/70 px-2 py-0.5 rounded-full ml-1">
+                  <AlertTriangle size={11} className="shrink-0" />
+                  Allergy: {patient.allergies.join(', ')}
+                </span>
+              )}
             </div>
-            <div className="flex items-center gap-3 text-xs text-[#52525b] mt-0.5">
-              <span>BP <strong className="text-[#09090b] font-mono">{patient.vitals.bp}</strong></span>
+            <div className="flex items-center gap-2.5 text-xs text-[#52525b] mt-0.5">
+              <span>BP <strong className="text-[#09090b]">{patient.vitals.bp}</strong></span>
               <span>•</span>
-              <span>HR <strong className="text-[#09090b] font-mono">{patient.vitals.hr}</strong></span>
+              <span>HR <strong className="text-[#09090b]">{patient.vitals.hr}</strong></span>
               <span>•</span>
-              <span>SpO2 <strong className="text-[#09090b] font-mono">{patient.vitals.spo2}</strong></span>
+              <span>SpO2 <strong className="text-[#09090b]">{patient.vitals.spo2}</strong></span>
               <span>•</span>
-              <span>BMI <strong className="text-[#09090b] font-mono">{patient.vitals.bmi}</strong></span>
+              <span>BMI <strong className="text-[#09090b]">{patient.vitals.bmi}</strong></span>
             </div>
           </div>
         </div>
 
-        {/* ALERTS & ACTIONS */}
-        <div className="flex items-center gap-3">
-          {patient.allergies.length > 0 && (
-            <div className="flex items-center gap-1.5 bg-[#fef2f2] border border-[#fecaca] text-[#dc2626] px-3 py-1.5 rounded-xl text-xs font-bold">
-              <AlertTriangle size={13} className="shrink-0" />
-              <span>Allergy: {patient.allergies.join(', ')}</span>
-            </div>
-          )}
-
+        {/* ACTIONS */}
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setShowPdfModal(true)}
-            className="flex items-center gap-1.5 bg-white hover:bg-[#f4f4f5] text-[#3f3f46] text-xs font-semibold px-3.5 py-2 rounded-xl border border-[#e4e4e7] shadow-xs transition-all cursor-pointer"
+            className="flex items-center gap-1.5 bg-white hover:bg-[#f4f4f5] text-[#3f3f46] text-xs font-medium px-3 py-2 rounded-xl border border-[#e4e4e7] transition-all cursor-pointer"
+            title="Export Prescription PDF"
           >
-            <Printer size={14} />
-            <span>Prescription PDF</span>
+            <Printer size={13} />
+            <span className="hidden md:inline">Prescription PDF</span>
+          </button>
+
+          <button
+            onClick={() => setShowCaptureModal(true)}
+            className="flex items-center gap-1.5 bg-white hover:bg-[#f4f4f5] text-[#3f3f46] text-xs font-medium px-3 py-2 rounded-xl border border-[#e4e4e7] transition-all cursor-pointer"
+            title="Mobile QR capture"
+          >
+            <Smartphone size={13} />
+            <span className="hidden md:inline">Mobile QR</span>
+          </button>
+
+          <button
+            onClick={() => {
+              if (capturedMediaList.length > 0) {
+                setActiveVisionMediaId(capturedMediaList[0].id || capturedMediaList[0].mediaId);
+              }
+              setShowVisionModal(true);
+            }}
+            className="flex items-center gap-1.5 bg-white hover:bg-[#f4f4f5] text-[#3f3f46] text-xs font-medium px-3 py-2 rounded-xl border border-[#e4e4e7] transition-all cursor-pointer"
+            title="Review visual AI images"
+          >
+            <Eye size={13} />
+            <span className="hidden md:inline">Visual AI {capturedMediaList.length > 0 ? `(${capturedMediaList.length})` : ''}</span>
           </button>
 
           {deskShortcutFeedback && (
-            <div className="flex items-center gap-1.5 bg-[#18181b] text-white px-3 py-1.5 rounded-xl text-xs font-medium shadow-md">
-              <CheckCircle2 size={13} className="text-emerald-400" />
+            <div className="flex items-center gap-1.5 bg-[#18181b] text-white px-2.5 py-1.5 rounded-xl text-xs font-medium shadow-md">
+              <CheckCircle2 size={12} className="text-emerald-400" />
               <span>{deskShortcutFeedback}</span>
             </div>
           )}
 
           <button
             onClick={() => setIsCloseModalOpen(true)}
-            className="flex items-center gap-2 bg-[#16a34a] hover:bg-[#15803d] text-white font-semibold text-xs px-4 py-2 rounded-xl shadow-xs transition-all transform active:scale-95 cursor-pointer"
+            className="flex items-center gap-1.5 bg-[#111315] hover:bg-[#272B30] text-white font-semibold text-xs px-4 py-2 rounded-xl shadow-xs transition-all cursor-pointer ml-1"
           >
-            <Check size={15} strokeWidth={2.5} />
-            <span>Close Meeting & Sign Off</span>
-            <span className="text-[10px] opacity-80 font-mono bg-[#15803d] px-1.5 py-0.5 rounded ml-0.5">⌘↵</span>
+            <Check size={14} strokeWidth={2.5} className="text-emerald-400" />
+            <span>Sign Off</span>
+            <span className="text-[10px] opacity-60 font-mono hidden sm:inline">⌘↵</span>
           </button>
         </div>
       </header>
@@ -649,121 +671,67 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
       <div className="flex flex-1 min-h-0 w-full overflow-hidden">
         {/* LEFT PANEL: CLINICAL WORKSPACE (65%) */}
         <section className="flex flex-col flex-1 min-w-0 border-r border-[#e4e4e7] bg-[#fbfbfa]">
-          {/* TAB BAR */}
+          {/* TAB BAR & AMBIENT CONTROLS */}
           <div className="h-12 border-b border-[#e4e4e7] bg-white px-6 flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => setActiveTab('note')}
-                className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
-                  activeTab === 'note'
-                    ? 'bg-[#18181b] text-white shadow-xs'
-                    : 'text-[#71717a] hover:text-[#09090b] hover:bg-[#f4f4f5]'
-                }`}
-              >
-                <ClipboardList size={14} />
-                Consultation Note & Scribe
-              </button>
-              <button
-                onClick={() => setActiveTab('chart')}
-                className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
-                  activeTab === 'chart'
-                    ? 'bg-[#18181b] text-white shadow-xs'
-                    : 'text-[#71717a] hover:text-[#09090b] hover:bg-[#f4f4f5]'
-                }`}
-              >
-                <Activity size={14} />
-                Patient Chart & Reports
-                {patient.recentLabs.some(l => l.status === 'high') && (
-                  <span className="bg-[#fee2e2] text-[#dc2626] text-[10px] font-bold px-1.5 py-0.2 rounded-full border border-[#fecaca]">
-                    Alert
-                  </span>
-                )}
-              </button>
-              <button
-                onClick={() => setActiveTab('orders')}
-                className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
-                  activeTab === 'orders'
-                    ? 'bg-[#18181b] text-white shadow-xs'
-                    : 'text-[#71717a] hover:text-[#09090b] hover:bg-[#f4f4f5]'
-                }`}
-              >
-                <Pill size={14} />
-                Prescriptions & Orders
-                <span className="text-[10px] text-[#52525b] bg-[#f4f4f5] border border-[#e4e4e7] px-1.5 rounded font-mono">
-                  {prescriptions.length}
-                </span>
-              </button>
-              <button
-                onClick={() => setActiveTab('intake')}
-                className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
-                  activeTab === 'intake'
-                    ? 'bg-[#18181b] text-white shadow-xs'
-                    : 'text-[#71717a] hover:text-[#09090b] hover:bg-[#f4f4f5]'
-                }`}
-              >
-                <ClipboardCheck size={14} />
-                Patient Intake (FHIR)
-              </button>
+            <div className="flex items-center gap-2">
+              {[
+                { id: 'note', label: 'Consultation Note', icon: ClipboardList },
+                { id: 'chart', label: 'Chart & Labs', icon: Activity },
+                { id: 'orders', label: `Orders (${prescriptions.length})`, icon: Pill },
+                { id: 'intake', label: 'Intake (FHIR)', icon: ClipboardCheck }
+              ].map(tab => {
+                const active = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as any)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors cursor-pointer ${
+                      active
+                        ? 'bg-[#18181b] text-white shadow-2xs font-semibold'
+                        : 'text-[#71717a] hover:text-[#09090b] hover:bg-[#f4f4f5]'
+                    }`}
+                  >
+                    <tab.icon size={13} />
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
             </div>
 
             {/* Ambient Mic & Audio Test Controls */}
             <div className="flex items-center gap-2">
               <button
                 onClick={testSampleAudioDialogue}
-                title="Simulate ambient clinical dialogue without microphone"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-[#52525b] hover:text-[#09090b] bg-[#f4f4f5] hover:bg-[#e4e4e7] border border-[#e4e4e7] transition-colors cursor-pointer"
+                className="text-[11px] text-[#71717a] hover:text-[#09090b] px-2 py-1 hover:bg-[#f4f4f5] rounded-md transition-colors cursor-pointer"
+                title="Load sample dialogue"
               >
-                <Play size={11} className="text-[#0284c7]" />
-                <span>Test Audio Sample</span>
-              </button>
-
-              <button
-                onClick={() => setShowCaptureModal(true)}
-                title="Pair mobile device for secure multimodal capture"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-[#52525b] hover:text-[#09090b] bg-[#f4f4f5] hover:bg-[#e4e4e7] border border-[#e4e4e7] transition-colors cursor-pointer"
-              >
-                <Smartphone size={12} className="text-[#8b5cf6]" />
-                <span>Mobile Capture (QR)</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  if (capturedMediaList.length > 0) {
-                    setActiveVisionMediaId(capturedMediaList[0].id || capturedMediaList[0].mediaId);
-                  }
-                  setShowVisionModal(true);
-                }}
-                title="Review AI visual intelligence findings and clinical captures"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-[#52525b] hover:text-[#09090b] bg-[#f4f4f5] hover:bg-[#e4e4e7] border border-[#e4e4e7] transition-colors cursor-pointer"
-              >
-                <Eye size={12} className="text-[#8b5cf6]" />
-                <span>Visual AI Review {capturedMediaList.length > 0 ? `(${capturedMediaList.length})` : ''}</span>
+                Sample Dialogue
               </button>
 
               <button
                 onClick={toggleRecording}
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                   isRecording
-                    ? 'bg-[#dc2626] text-white animate-pulse shadow-md shadow-red-500/20'
-                    : 'bg-[#18181b] hover:bg-[#27272a] text-white shadow-xs'
+                    ? 'bg-red-600 text-white animate-pulse shadow-xs'
+                    : 'bg-[#18181b] hover:bg-[#27272a] text-white shadow-2xs'
                 }`}
               >
                 {isRecording ? (
                   <>
-                    <Square size={12} className="fill-white" />
-                    <span>Stop Recording ({formatSeconds(recordingSeconds)})</span>
+                    <Square size={11} className="fill-white" />
+                    <span>Recording ({formatSeconds(recordingSeconds)})</span>
                   </>
                 ) : (
                   <>
-                    <Mic size={13} className="text-emerald-400" />
+                    <Mic size={12} className="text-emerald-400" />
                     <span>Capture Dialogue</span>
                   </>
                 )}
               </button>
               {isTranscribing && (
-                <span className="flex items-center gap-1.5 text-xs text-[#0284c7] font-medium">
+                <span className="flex items-center gap-1 text-xs text-[#0284c7]">
                   <Loader2 size={12} className="animate-spin" />
-                  Transcribing...
+                  <span>Transcribing...</span>
                 </span>
               )}
             </div>
@@ -771,39 +739,33 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
 
           {/* TAB 1: CONSULTATION NOTE & SCRIBE */}
           {activeTab === 'note' && (
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div className="flex-1 overflow-y-auto p-6 space-y-5">
               {/* Transcript Box */}
-              <div className="rounded-2xl border border-[#e4e4e7] bg-white p-4 shadow-xs">
-                <div className="flex items-center justify-between mb-2">
+              <div className="rounded-2xl border border-[#e4e4e7] bg-white p-4 shadow-2xs space-y-2">
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Mic size={14} className="text-[#0284c7]" />
-                    <span className="text-xs font-bold text-[#52525b] uppercase tracking-wider">
-                      Ambient Clinical Dialogue
+                    <Mic size={13} className="text-[#0284c7]" />
+                    <span className="text-xs font-bold text-[#52525b]">
+                      Ambient Dialogue
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
                     {streamProgress.isStreaming && (
-                      <div className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-full bg-blue-50 text-blue-700 border border-blue-200 animate-pulse">
-                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-ping" />
-                        <span>{streamProgress.message || 'Streaming clinical pipeline...'}</span>
-                      </div>
-                    )}
-                    {streamProgress.message && !streamProgress.isStreaming && (
-                      <span className="text-[11px] text-emerald-600 font-medium">
-                        {streamProgress.message}
+                      <span className="text-[11px] text-blue-600 animate-pulse font-medium">
+                        {streamProgress.message || 'Synthesizing...'}
                       </span>
                     )}
                     <button
                       onClick={() => generateNoteFromTranscript()}
                       disabled={isGeneratingNote}
-                      className="flex items-center gap-1.5 text-xs text-[#0284c7] hover:text-[#0369a1] font-semibold bg-[#eff6ff] hover:bg-[#dbeafe] px-3 py-1 rounded-lg border border-[#bfdbfe] transition-colors cursor-pointer"
+                      className="flex items-center gap-1 text-xs text-[#09090b] hover:text-[#0284c7] font-medium px-2 py-1 rounded-md hover:bg-[#f4f4f5] transition-colors cursor-pointer"
                     >
-                      <RefreshCw size={12} className={isGeneratingNote ? 'animate-spin' : ''} />
-                      {isGeneratingNote ? 'Synthesizing...' : 'Regenerate Note'}
+                      <RefreshCw size={11} className={isGeneratingNote ? 'animate-spin' : ''} />
+                      <span>{isGeneratingNote ? 'Synthesizing...' : 'Regenerate Note'}</span>
                     </button>
                   </div>
                 </div>
-                <p className="text-xs text-[#52525b] leading-relaxed max-h-32 overflow-y-auto whitespace-pre-wrap font-mono bg-[#fafaf9] p-3.5 rounded-xl border border-[#e4e4e7]">
+                <p className="text-xs text-[#52525b] leading-relaxed max-h-24 overflow-y-auto whitespace-pre-wrap font-mono bg-[#fafaf9] p-3 rounded-xl border border-[#e4e4e7]/60">
                   {transcript}
                 </p>
               </div>
@@ -811,34 +773,33 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
               {/* Structured Note (SOAP) */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-bold text-[#09090b] tracking-tight flex items-center gap-2">
-                    <FileText size={16} className="text-[#16a34a]" />
-                    Structured Clinical Note (SOAP)
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-[#52525b]">
+                    Clinical Note (SOAP)
                   </h3>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     {copySuccess && (
-                      <span className="text-xs text-[#16a34a] font-semibold animate-in fade-in">
+                      <span className="text-xs text-emerald-600 font-medium animate-in fade-in">
                         {copySuccess}
                       </span>
                     )}
                     <button
                       onClick={copyNoteForEhr}
-                      className="flex items-center gap-1.5 text-xs font-semibold text-[#09090b] hover:bg-[#f4f4f5] bg-white px-3 py-1.5 rounded-lg border border-[#e4e4e7] shadow-2xs transition-colors cursor-pointer"
+                      className="flex items-center gap-1 text-xs font-medium text-[#52525b] hover:text-[#09090b] px-2.5 py-1 rounded-lg border border-[#e4e4e7] bg-white hover:bg-[#f4f4f5] transition-colors cursor-pointer"
                     >
-                      <Copy size={13} />
-                      Copy Note for EHR
+                      <Copy size={12} />
+                      <span>Copy for EHR</span>
                     </button>
                   </div>
                 </div>
 
                 {/* S - Subjective */}
-                <div className="rounded-2xl border border-[#EAE8E3] bg-white p-4 focus-within:border-[#111315] transition-colors shadow-2xs space-y-2">
+                <div className="rounded-2xl border border-[#e4e4e7] bg-white p-4 focus-within:border-[#111315] transition-colors shadow-2xs space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="w-5 h-5 rounded-md bg-[#111315] text-white font-bold text-[10px] flex items-center justify-center font-mono">S</span>
-                      <span className="text-xs font-bold text-[#111315]">Subjective (Patient Narrative & HPI)</span>
+                      <span className="w-5 h-5 rounded bg-[#111315] text-white font-bold text-[10px] flex items-center justify-center font-mono">S</span>
+                      <span className="text-xs font-bold text-[#111315]">Subjective</span>
                     </div>
-                    <ProvenanceBadge provenance="PATIENT_REPORTED" size="xs" />
+                    <span className="text-[10px] text-[#71717a] font-medium">Patient Reported</span>
                   </div>
                   <textarea
                     rows={3}
@@ -850,13 +811,13 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
                 </div>
 
                 {/* O - Objective */}
-                <div className="rounded-2xl border border-[#EAE8E3] bg-white p-4 focus-within:border-[#111315] transition-colors shadow-2xs space-y-2">
+                <div className="rounded-2xl border border-[#e4e4e7] bg-white p-4 focus-within:border-[#111315] transition-colors shadow-2xs space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="w-5 h-5 rounded-md bg-[#111315] text-white font-bold text-[10px] flex items-center justify-center font-mono">O</span>
-                      <span className="text-xs font-bold text-[#111315]">Objective (Vitals, Physical Exam & Confirmed Diagnostics)</span>
+                      <span className="w-5 h-5 rounded bg-[#111315] text-white font-bold text-[10px] flex items-center justify-center font-mono">O</span>
+                      <span className="text-xs font-bold text-[#111315]">Objective</span>
                     </div>
-                    <ProvenanceBadge provenance="CONFIRMED_CLINICAL_DATA" size="xs" />
+                    <span className="text-[10px] text-[#71717a] font-medium">Vitals & Labs</span>
                   </div>
                   <textarea
                     rows={3}
@@ -868,16 +829,13 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
                 </div>
 
                 {/* A - Assessment */}
-                <div className="rounded-2xl border border-amber-200/80 bg-amber-50/30 p-4 focus-within:border-amber-400 transition-colors shadow-2xs space-y-2">
+                <div className="rounded-2xl border border-[#e4e4e7] bg-white p-4 focus-within:border-[#111315] transition-colors shadow-2xs space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="w-5 h-5 rounded-md bg-amber-700 text-white font-bold text-[10px] flex items-center justify-center font-mono">A</span>
-                      <span className="text-xs font-bold text-[#111315]">Assessment (Differential & AI Advisory Hypothesis)</span>
+                      <span className="w-5 h-5 rounded bg-[#111315] text-white font-bold text-[10px] flex items-center justify-center font-mono">A</span>
+                      <span className="text-xs font-bold text-[#111315]">Assessment</span>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-mono text-amber-800 hidden sm:inline">Advisory only</span>
-                      <ProvenanceBadge provenance="AI_SUGGESTION" size="xs" />
-                    </div>
+                    <span className="text-[10px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full font-medium">AI Advisory</span>
                   </div>
                   <textarea
                     rows={3}
@@ -886,19 +844,16 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
                     className="w-full bg-transparent text-xs text-[#111315] leading-relaxed resize-y outline-none"
                     placeholder="Clinical impression and differential diagnoses..."
                   />
-                  <div className="text-[10px] text-amber-800/80 font-mono pt-1 border-t border-amber-200/50">
-                    * AI clinical suggestions are advisory hypotheses and must be explicitly reviewed and attested by attending clinician.
-                  </div>
                 </div>
 
                 {/* P - Plan */}
-                <div className="rounded-2xl border border-[#EAE8E3] bg-white p-4 focus-within:border-[#111315] transition-colors shadow-2xs space-y-2">
+                <div className="rounded-2xl border border-[#e4e4e7] bg-white p-4 focus-within:border-[#111315] transition-colors shadow-2xs space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="w-5 h-5 rounded-md bg-[#111315] text-white font-bold text-[10px] flex items-center justify-center font-mono">P</span>
-                      <span className="text-xs font-bold text-[#111315]">Plan (Orders, Prescriptions, Referrals & Follow-Up)</span>
+                      <span className="w-5 h-5 rounded bg-[#111315] text-white font-bold text-[10px] flex items-center justify-center font-mono">P</span>
+                      <span className="text-xs font-bold text-[#111315]">Plan</span>
                     </div>
-                    <ProvenanceBadge provenance="CLINICIAN_FACT" size="xs" />
+                    <span className="text-[10px] text-emerald-700 font-medium">Clinician Orders</span>
                   </div>
                   <textarea
                     rows={4}
@@ -1176,22 +1131,23 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
           </div>
 
           {/* CHAT INPUT FORM */}
-          <div className="p-3.5 border-t border-[#e4e4e7] bg-white">
-            <form onSubmit={e => { e.preventDefault(); void handleSendChat(); }} className="flex gap-2">
+          <div className="p-3 border-t border-[#e4e4e7] bg-white">
+            <form onSubmit={e => { e.preventDefault(); void handleSendChat(); }} className="relative flex items-end bg-[#f4f4f5] rounded-2xl p-2 border border-[#e4e4e7] focus-within:border-[#18181b] transition-colors">
               <textarea
                 rows={2}
-                placeholder={`Ask about ${patient.name}'s chart, labs, or therapy...`}
+                placeholder={`Ask Copilot about ${patient.name}...`}
                 value={chatInput}
                 onChange={e => setChatInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="flex-1 bg-[#fafaf9] border border-[#e4e4e7] rounded-xl p-3 text-xs text-[#09090b] placeholder-[#a1a1aa] outline-none focus:border-[#18181b] resize-none transition-colors"
+                className="flex-1 bg-transparent px-2.5 py-1 text-xs text-[#09090b] placeholder-[#a1a1aa] outline-none resize-none"
               />
               <button
                 type="submit"
                 disabled={!chatInput.trim() || isChatSending}
-                className="bg-[#18181b] hover:bg-[#27272a] disabled:opacity-40 text-white p-3 rounded-xl shrink-0 flex items-center justify-center transition-colors cursor-pointer shadow-xs"
+                className="w-8 h-8 rounded-xl bg-[#18181b] hover:bg-[#27272a] disabled:opacity-30 text-white flex items-center justify-center shrink-0 transition-all cursor-pointer shadow-2xs"
+                title="Send message"
               >
-                <Send size={15} />
+                <ArrowUp size={15} />
               </button>
             </form>
           </div>
