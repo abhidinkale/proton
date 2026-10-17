@@ -655,7 +655,7 @@ app.get('/api/intake/responses/:id', async (req, res) => {
 // ==========================================
 // PROTON SECURE CAPTURE SESSIONS (V2 M2B-1)
 // ==========================================
-const { captureSessionService } = require('./services');
+const { captureSessionService, sessionStore, storageService } = require('./services');
 
 // Create a new capture session (Desktop Clinician)
 app.post('/api/capture/sessions', resolveActorMiddleware, requireRole(['physician', 'operations_staff', 'system']), (req, res) => {
