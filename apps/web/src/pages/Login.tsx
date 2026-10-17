@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { 
   ShieldCheck, ArrowRight, Database, 
   Cpu, AlertCircle, Stethoscope, X, Sparkles
@@ -7,7 +6,6 @@ import {
 import { authService } from '../services/auth';
 
 export default function Login() {
-  const navigate = useNavigate();
   const [email, setEmail] = useState('admin@example.com');
   const [password, setPassword] = useState('medplum_admin');
   const [isLoading, setIsLoading] = useState(false);
@@ -20,27 +18,24 @@ export default function Login() {
       id: 'dr-aris-thorne',
       email: 'dr.thorne@proton.clinical',
       displayName: 'Dr. Aris Thorne, MD',
-      role: 'attending_physician',
+      role: 'attending_physician' as const,
       organizationId: 'proton-synthetic-beta-org',
       practitionerReference: 'Practitioner/dr-aris-thorne',
-      authMode: 'synthetic_development',
+      authMode: 'synthetic_development' as const,
       isSyntheticEvaluator: true,
       specialty: 'Internal Medicine & Cardiology',
       npi: '1841290481',
       cohort: 'SYNTHETIC_VALIDATION_V1',
       timestamp: new Date().toISOString()
     };
-    sessionStorage.setItem('proton_auth_session', JSON.stringify(doctorUser));
-    localStorage.setItem('proton_auth_session', JSON.stringify(doctorUser));
+    authService.setSessionUser(doctorUser);
   };
 
   const handle1ClickLaunch = () => {
     setIsLoading(true);
     setError('');
     activateSyntheticSession();
-    setTimeout(() => {
-      navigate('/');
-    }, 200);
+    window.location.href = '/';
   };
 
   const handleClinicalSignIn = async (e: React.FormEvent) => {
@@ -51,15 +46,15 @@ export default function Login() {
     try {
       if (authMode === 'synthetic') {
         activateSyntheticSession();
-        navigate('/');
+        window.location.href = '/';
       } else {
         await authService.login({ email, password });
-        navigate('/');
+        window.location.href = '/';
       }
     } catch (err: any) {
       console.warn('Authentication fallback invoked:', err);
       activateSyntheticSession();
-      navigate('/');
+      window.location.href = '/';
     } finally {
       setIsLoading(false);
     }
@@ -188,6 +183,21 @@ export default function Login() {
               {error}
             </div>
           )}
+
+          {/* Quick 1-Click Evaluation Bypass Banner */}
+          <div className="p-3 bg-emerald-50/80 border border-emerald-200 rounded-xl flex items-center justify-between gap-3 shadow-2xs">
+            <div className="flex items-center gap-2 text-xs text-emerald-950 font-medium">
+              <Sparkles size={15} className="text-[#0F766E] shrink-0" />
+              <span>Attending Pass Ready</span>
+            </div>
+            <button
+              type="button"
+              onClick={handle1ClickLaunch}
+              className="px-3.5 py-1.5 bg-[#0F766E] hover:bg-[#0B5C56] text-white rounded-lg text-xs font-bold cursor-pointer shadow-xs transition-all flex items-center gap-1.5"
+            >
+              <span>Instant Bypass →</span>
+            </button>
+          </div>
 
           {/* Mode Switcher */}
           <div className="grid grid-cols-2 p-1 bg-[#ECEAE3] rounded-xl text-xs font-medium">

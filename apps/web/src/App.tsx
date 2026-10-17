@@ -24,8 +24,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const [timedOut, setTimedOut] = useState(false);
 
   useEffect(() => {
-    // If medplum stays in loading state for more than 2.5 seconds (e.g. unreachable local Medplum on Vercel),
-    // stop blocking and redirect unauthenticated users to login or let session auth take over
     const timer = setTimeout(() => {
       setTimedOut(true);
     }, 2500);
@@ -34,19 +32,21 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   
   if (medplum.isLoading() && !user && !timedOut) {
     return (
-      <div className="min-h-screen bg-[var(--color-surface-raised)] flex items-center justify-center">
+      <div className="min-h-screen bg-[#F8F8F6] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <span className="text-xl font-semibold tracking-tight text-[var(--color-text-primary)]">proton</span>
+          <span className="text-xl font-bold tracking-tight text-[#111315]">proton</span>
           <div className="text-center">
-            <p className="text-sm font-medium text-[var(--color-text-primary)]">Verifying clinical credentials</p>
-            <p className="text-xs text-[var(--color-text-tertiary)] mt-1">Loading your workspace</p>
+            <p className="text-sm font-medium text-[#111315]">Verifying clinical credentials</p>
+            <p className="text-xs text-[#6E767E] mt-1">Loading your workspace</p>
           </div>
         </div>
       </div>
     );
   }
 
-  if (!profile && !user) {
+  const activeUser = user || authService.getCurrentUser();
+
+  if (!profile && !activeUser) {
     return <Navigate to="/login" replace />;
   }
   

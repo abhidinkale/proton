@@ -48,6 +48,7 @@ export interface IAuthenticationService {
   login(credentials: LoginCredentials): Promise<ProtonDoctorUser>;
   logout(): Promise<void>;
   getCurrentUser(): ProtonDoctorUser | null;
+  setSessionUser(user: ProtonDoctorUser): void;
   isAuthenticated(): boolean;
   getAuthMode(): AuthMode;
 }
@@ -59,14 +60,26 @@ class ProtonAuthenticationService implements IAuthenticationService {
     this.restoreSession();
   }
 
-  private restoreSession(): void {
+  private restoreSession(): ProtonDoctorUser | null {
     try {
-      const stored = sessionStorage.getItem('proton_auth_session');
+      const stored = sessionStorage.getItem('proton_auth_session') || localStorage.getItem('proton_auth_session');
       if (stored) {
         this.currentUser = JSON.parse(stored);
+        return this.currentUser;
       }
     } catch {
       this.currentUser = null;
+    }
+    return null;
+  }
+
+  public setSessionUser(user: ProtonDoctorUser): void {
+    this.currentUser = user;
+    try {
+      sessionStorage.setItem('proton_auth_session', JSON.stringify(user));
+      localStorage.setItem('proton_auth_session', JSON.stringify(user));
+    } catch {
+      // storage unavailable
     }
   }
 
@@ -78,11 +91,14 @@ class ProtonAuthenticationService implements IAuthenticationService {
   }
 
   public isAuthenticated(): boolean {
-    return !!this.currentUser || !!medplum.getProfile();
+    return !!this.getCurrentUser() || !!medplum.getProfile();
   }
 
   public getCurrentUser(): ProtonDoctorUser | null {
     if (this.currentUser) return this.currentUser;
+
+    const restored = this.restoreSession();
+    if (restored) return restored;
 
     const medplumProfile = medplum.getProfile();
     if (medplumProfile) {
@@ -103,6 +119,7 @@ class ProtonAuthenticationService implements IAuthenticationService {
       };
       this.currentUser = syntheticUser;
       sessionStorage.setItem('proton_auth_session', JSON.stringify(syntheticUser));
+      localStorage.setItem('proton_auth_session', JSON.stringify(syntheticUser));
       return syntheticUser;
     }
 
@@ -207,6 +224,7 @@ class ProtonAuthenticationService implements IAuthenticationService {
     telemetry.track('physician_logout', { status: 'success' });
     this.currentUser = null;
     sessionStorage.removeItem('proton_auth_session');
+    localStorage.removeItem('proton_auth_session');
     await medplum.signOut();
   }
 }
