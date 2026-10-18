@@ -19,6 +19,14 @@ import {
 import Layout from '../components/Layout';
 import { scheduleService } from '../services/scheduleService';
 import type { Appointment } from '../domain/schedule/types';
+import { 
+  PageHeader, 
+  Card, 
+  Button, 
+  Badge, 
+  Tabs, 
+  AIStatus 
+} from '../design-system';
 
 interface DashboardPatient {
   id: string;
@@ -125,6 +133,42 @@ export default function Dashboard() {
   const [selectedPatient, setSelectedPatient] = useState<DashboardPatient>(DASHBOARD_PATIENTS[0]);
   const [patientListFilter, setPatientListFilter] = useState<'Waiting' | 'In Consultation' | 'Ready for Review' | 'Completed' | 'All'>('Waiting');
   const [timelineFilter, setTimelineFilter] = useState<'All' | 'In clinic' | 'Online'>('All');
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+
+  useEffect(() => {
+    let mounted = true;
+    scheduleService.getTodayAppointments().then(items => {
+      if (mounted) {
+        setAppointments(items);
+      }
+    }).catch(err => {
+      console.warn('Could not load appointments from schedule service', err);
+    });
+    return () => { mounted = false; };
+  }, []);
+
+  const waitingCount = appointments.filter(a => a.queueCategory === 'WAITING').length || 4;
+  const inRoomCount = appointments.filter(a => a.queueCategory === 'IN_CONSULTATION').length || 1;
+  const reviewCount = appointments.filter(a => a.queueCategory === 'READY_FOR_REVIEW').length || 2;
+  const completedCount = appointments.filter(a => a.queueCategory === 'COMPLETED').length || 3;
+
+  const nextAppointment = appointments.find(a => a.queueCategory === 'IN_CONSULTATION' || a.queueCategory === 'WAITING') || null;
+
+  const heroPatient = nextAppointment ? {
+    id: nextAppointment.patientId,
+    name: nextAppointment.patientName,
+    ageGender: `${nextAppointment.patientAge} years • ${nextAppointment.patientGender.charAt(0).toUpperCase() + nextAppointment.patientGender.slice(1)} • MRN: ${nextAppointment.mrn}`,
+    roomTime: `${nextAppointment.roomOrVirtual} • ${nextAppointment.time}`,
+    complaint: nextAppointment.chiefComplaint,
+    criticalAllergy: nextAppointment.criticalAllergies?.[0] || null
+  } : {
+    id: 'demo-scenario-b-eleanor',
+    name: 'Eleanor Vance',
+    ageGender: '68 years • Female • MRN: EV-94021',
+    roomTime: 'Exam Room 102 • 08:30 AM',
+    complaint: 'Type 2 Diabetes Glycemic Review & Afternoon Fatigue',
+    criticalAllergy: 'Penicillin Anaphylaxis'
+  };
 
   const filteredPatients = patientListFilter === 'All'
     ? DASHBOARD_PATIENTS
@@ -140,27 +184,30 @@ export default function Dashboard() {
     <Layout>
       <div className="space-y-6 animate-in fade-in pb-12">
         
-        {/* ── HEADER GREETING (Inspired by Reference 1) ── */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#151719]">
-              Good morning, Dr.Olivia
-            </h1>
-            <p className="text-xs sm:text-sm text-[#575D65] mt-1 max-w-2xl leading-relaxed">
-              Proton wishes you a good and productive day. 45 patients waiting for your treatment today. You also have one live event in your calendar today.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => navigate('/patients')}
-              className="text-xs font-semibold text-[#575D65] hover:text-[#151719] hover:underline cursor-pointer"
-            >
-              Show all ..
-            </button>
-          </div>
-        </div>
+        {/* ── HEADER GREETING VIA DESIGN SYSTEM PAGEHEADER ── */}
+        <PageHeader
+          title="Good morning, Dr. Olivia"
+          subtitle="Proton wishes you a calm and productive clinical day. 45 patients queued across departments. 1 scheduled live multidisciplinary case conference today."
+          statusBadge={<AIStatus status="ready" modelName="Proton Jev 2.0 Active" />}
+          actions={
+            <div className="flex items-center gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => navigate('/patients')}
+              >
+                Patients Directory
+              </Button>
+              <Button
+                variant="rose"
+                size="sm"
+                onClick={() => navigate('/consultation?patient=demo-scenario-b-eleanor')}
+              >
+                Resume Active Encounter
+              </Button>
+            </div>
+          }
+        />
 
         {/* ── MASTER 2-COLUMN VIEWPORT (Center Workspace + Right Schedule Rail) ── */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -168,31 +215,35 @@ export default function Dashboard() {
           {/* ── LEFT & CENTER WORKSPACE (8 Columns) ── */}
           <div className="lg:col-span-8 space-y-6">
 
-            {/* ── CLINICAL PRIORITY & ATTENTION BAR (Directive Sections 16 & 19) ── */}
+            {/* ── CLINICAL PRIORITY & ATTENTION BAR ── */}
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
               {/* Who do I see next? Hero Card */}
-              <div className="md:col-span-7 bg-white rounded-3xl border border-[#E8E5DC] p-5 shadow-xs flex flex-col justify-between">
+              <Card variant="white" className="md:col-span-7 flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between pb-2 border-b border-[#F0ECE1]">
                     <div className="flex items-center gap-2">
                       <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
                       <span className="text-xs font-bold uppercase tracking-wider text-[#151719]">Who you see next</span>
                     </div>
-                    <span className="text-[11px] font-mono text-[#88909A]">Exam Room 102 • 08:30 AM</span>
+                    <span className="text-[11px] font-mono text-[#88909A]">{heroPatient.roomTime}</span>
                   </div>
 
                   <div className="mt-3 flex items-start justify-between gap-3">
                     <div>
-                      <h3 className="text-base font-bold text-[#151719]">Eleanor Vance</h3>
-                      <p className="text-xs text-[#575D65]">68 years • Female • MRN: EV-94021</p>
+                      <h3 className="text-base font-bold text-[#151719]">{heroPatient.name}</h3>
+                      <p className="text-xs text-[#575D65]">{heroPatient.ageGender}</p>
                       <p className="text-xs text-[#151719] font-medium mt-1">
-                        Type 2 Diabetes Glycemic Review & Afternoon Fatigue
+                        {heroPatient.complaint}
                       </p>
                     </div>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FEF2F2] text-[#991B1B] border border-[#FECACA] flex items-center gap-1 shrink-0">
-                      <AlertTriangle size={10} />
-                      Penicillin Anaphylaxis
-                    </span>
+                    {heroPatient.criticalAllergy && (
+                      <Badge
+                        variant="critical"
+                        label={heroPatient.criticalAllergy}
+                        size="xs"
+                        dot
+                      />
+                    )}
                   </div>
 
                   <div className="mt-3 flex items-center gap-3 px-3 py-1.5 rounded-xl bg-[#FAF9F6] border border-[#E8E5DC] text-xs font-mono text-[#575D65]">
@@ -206,19 +257,19 @@ export default function Dashboard() {
 
                 <div className="mt-4 pt-3 border-t border-[#F0ECE1] flex items-center justify-between">
                   <span className="text-[11px] text-[#575D65]">Nurse Rooming Complete</span>
-                  <button
-                    type="button"
-                    onClick={() => navigate('/consultation?patient=demo-scenario-b-eleanor')}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#151619] hover:bg-[#202227] text-white text-xs font-bold transition-all shadow-xs cursor-pointer hover:scale-[1.02] active:scale-95"
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    iconRight={<ArrowRight size={13} />}
+                    onClick={() => navigate(`/consultation?patient=${heroPatient.id}`)}
                   >
-                    <span>Start Consultation</span>
-                    <ArrowRight size={13} />
-                  </button>
+                    Start Consultation
+                  </Button>
                 </div>
-              </div>
+              </Card>
 
               {/* Clinical Attention Panel */}
-              <div className="md:col-span-5 bg-[#FAF9F6] rounded-3xl border border-[#E8E5DC] p-5 shadow-xs flex flex-col justify-between">
+              <Card variant="subtle" className="md:col-span-5 flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between pb-2 border-b border-[#E8E5DC]">
                     <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#151719]">
@@ -275,7 +326,7 @@ export default function Dashboard() {
                 >
                   View All Clinical Items →
                 </button>
-              </div>
+              </Card>
             </div>
 
             {/* 2x2 PASTEL METRIC CARDS GRID (Reference 1) */}
@@ -450,27 +501,18 @@ export default function Dashboard() {
                     <span className="text-[11px] font-mono text-[#88909A]">{filteredPatients.length} queued</span>
                   </div>
 
-                  <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
-                    {[
-                      { id: 'Waiting', label: 'Waiting', count: 4 },
-                      { id: 'In Consultation', label: 'In Room', count: 1 },
-                      { id: 'Ready for Review', label: 'Review', count: 2 },
-                      { id: 'Completed', label: 'Done', count: 3 }
-                    ].map(tab => (
-                      <button
-                        key={tab.id}
-                        type="button"
-                        onClick={() => setPatientListFilter(tab.id as any)}
-                        className={`px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap transition-colors cursor-pointer ${
-                          patientListFilter === tab.id
-                            ? 'bg-[#151619] text-white shadow-xs'
-                            : 'bg-white border border-[#E8E5DC] text-[#575D65] hover:text-[#151719] hover:bg-[#F9F8F5]'
-                        }`}
-                      >
-                        {tab.label} <span className="opacity-70 text-[9px]">({tab.count})</span>
-                      </button>
-                    ))}
-                  </div>
+                  <Tabs
+                    variant="pill"
+                    size="sm"
+                    activeTab={patientListFilter}
+                    onChange={(id) => setPatientListFilter(id as any)}
+                    tabs={[
+                      { id: 'Waiting', label: 'Waiting', count: waitingCount },
+                      { id: 'In Consultation', label: 'In Room', count: inRoomCount },
+                      { id: 'Ready for Review', label: 'Review', count: reviewCount },
+                      { id: 'Completed', label: 'Done', count: completedCount }
+                    ]}
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -586,14 +628,14 @@ export default function Dashboard() {
                     <span className="text-[10px] font-semibold text-[#575D65]">
                       FHIR Encounter Active
                     </span>
-                    <button
-                      type="button"
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      iconRight={<ArrowUpRight size={14} />}
                       onClick={() => navigate(`/consultation?patient=${selectedPatient.id}`)}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold bg-[#151619] hover:bg-[#252830] text-white shadow-xs transition-colors cursor-pointer"
                     >
-                      <span>Open Full Consultation</span>
-                      <ArrowUpRight size={14} />
-                    </button>
+                      Open Full Consultation
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -686,26 +728,27 @@ export default function Dashboard() {
 
                 {/* Action Buttons: Add event pill + icon buttons */}
                 <div className="flex items-center gap-2 mt-4 pt-3 border-t border-[#F0ECE1]">
-                  <button
-                    type="button"
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    icon={<Plus size={14} />}
+                    className="flex-1"
                     onClick={() => navigate('/schedule')}
-                    className="flex-1 py-2 px-3 rounded-full bg-[#151619] hover:bg-[#252830] text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
                   >
-                    <Plus size={14} />
-                    <span>Add event</span>
-                  </button>
+                    Add event
+                  </Button>
 
                   <button
                     type="button"
                     onClick={() => navigate('/schedule')}
-                    className="p-2 rounded-full border border-[#E8E5DC] text-[#575D65] hover:text-[#151719] hover:bg-[#F9F8F5]"
+                    className="p-2 rounded-full border border-[#E8E5DC] text-[#575D65] hover:text-[#151719] hover:bg-[#F9F8F5] cursor-pointer"
                     title="Refresh schedule"
                   >
                     <RefreshCw size={14} />
                   </button>
                   <button
                     type="button"
-                    className="p-2 rounded-full border border-[#E8E5DC] text-[#575D65] hover:text-[#151719] hover:bg-[#F9F8F5]"
+                    className="p-2 rounded-full border border-[#E8E5DC] text-[#575D65] hover:text-[#151719] hover:bg-[#F9F8F5] cursor-pointer"
                     title="Export timeline"
                   >
                     <Share2 size={14} />
@@ -801,13 +844,14 @@ export default function Dashboard() {
 
                 {/* View all details Button */}
                 <div className="pt-3 border-t border-[#F0ECE1]">
-                  <button
-                    type="button"
+                  <Button
+                    variant="primary"
+                    size="md"
+                    fullWidth
                     onClick={() => navigate('/schedule')}
-                    className="w-full py-2.5 rounded-full bg-[#151619] hover:bg-[#252830] text-white text-xs font-semibold text-center transition-colors cursor-pointer shadow-xs"
                   >
                     View all details
-                  </button>
+                  </Button>
                 </div>
               </div>
 
