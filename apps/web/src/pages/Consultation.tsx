@@ -32,12 +32,15 @@ export default function Consultation() {
   }
 
   return (
-    <div className="relative">
-      <div className="bg-[#121824] border-b border-[#1c2433] px-6 py-2 flex items-center justify-between text-xs text-[#8ea3b7]">
-        <span>Encounter Mode: <strong className="text-white">Physician Workspace & Scribe</strong></span>
+    <div className="relative min-h-screen bg-[#F9F8F5]">
+      <div className="bg-[#151619] border-b border-[#23252B] px-6 py-2.5 flex items-center justify-between text-xs text-[#A0A5AD]">
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span>Encounter Mode: <strong className="text-white">Physician Workspace & Ambient Scribe</strong></span>
+        </div>
         <button
           onClick={() => setViewMode('legacy')}
-          className="text-[#64748b] hover:text-[#8ea3b7] underline cursor-pointer"
+          className="text-[#88909A] hover:text-white underline cursor-pointer text-[11px]"
         >
           Switch to Legacy Verification View →
         </button>

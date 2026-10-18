@@ -21,6 +21,9 @@ const { fhirService } = require('../fhir/fhirService');
 const { auditService } = require('../audit/auditService');
 const { multimodalContextService } = require('./multimodalContextService');
 const { evidenceService } = require('../evidence/evidenceService');
+const { clinicalContextEngine } = require('./clinicalContextEngine');
+const { safetyGate } = require('../safety/safetyGate');
+const { provenanceSystem } = require('./provenanceSystem');
 
 class ClinicalPipelineError extends Error {
   constructor(stage, code, message, details = {}) {
@@ -105,7 +108,11 @@ class ClinicalPipeline {
         hasVision: Boolean(validated.visionFindings?.length)
       });
 
-      const clinicalContext = await this.retrieveClinicalContext(validated.patientId, validated.tenantId);
+      const clinicalContext = await this.retrieveClinicalContext(validated.patientId, validated.tenantId, {
+        template: validated.template,
+        transcript: validated.transcript,
+        encounterId: validated.encounterId
+      });
 
       emit('FHIR_CONTEXT_READY', {
         conditionsCount: clinicalContext.conditions?.length || 0,
@@ -234,7 +241,9 @@ class ClinicalPipeline {
 
       const safetyReport = this.runSafetyCheck({
         prescriptions: proposedPrescriptions,
-        clinicalContext
+        clinicalContext,
+        actor: validated.actor,
+        physicianDirective: validated.physicianDirective
       });
 
       // Annotate safety report with deterministic intake escalation / triage findings
@@ -298,6 +307,21 @@ class ClinicalPipeline {
         intakeContext: validated.intakeContext,
         multimodalContext
       });
+
+      const aiProvenance = provenanceSystem.createEnvelope({
+        agentId: 'proton-clinical-pipeline',
+        specialty: validated.template || 'General',
+        modelId: aiAnalysisResult.model || 'gemini-1.5-flash',
+        inputContext: {
+          patientId: validated.patientId,
+          transcript: validated.transcript,
+          template: validated.template
+        },
+        sources: clinicalContext.sources || [],
+        draftPayload: structuredOutput,
+        tenantId: validated.tenantId
+      });
+      structuredOutput.aiProvenance = aiProvenance;
 
       emit('CLINICAL_OUTPUT_READY', {
         suggestedDiagnosesCount: structuredOutput.suggestedDiagnoses?.length || 0,
@@ -385,6 +409,7 @@ class ClinicalPipeline {
         provenance: {
           auditId: auditRecord.eventId || auditRecord.id,
           currentHash: auditRecord.currentHash,
+          aiProvenance,
           timestamp: new Date().toISOString()
         }
       };
@@ -606,9 +631,15 @@ class ClinicalPipeline {
     };
   }
 
-  async retrieveClinicalContext(patientId, tenantId) {
+  async retrieveClinicalContext(patientId, tenantId, options = {}) {
     try {
-      return await fhirService.getPatientClinicalContext(patientId, tenantId);
+      return await clinicalContextEngine.buildContext({
+        patientId,
+        tenantId,
+        specialty: options.template,
+        clinicalQuery: options.transcript,
+        encounterId: options.encounterId
+      });
     } catch (err) {
       throw new ClinicalPipelineError(
         'CLINICAL_CONTEXT',
@@ -683,11 +714,16 @@ class ClinicalPipeline {
     };
   }
 
-  runSafetyCheck({ prescriptions, clinicalContext }) {
-    return safetyService.evaluatePrescriptionSafety({
+  runSafetyCheck({ prescriptions, clinicalContext, actor = null, physicianDirective = null }) {
+    return safetyGate.verifyMedicationGate({
       prescriptions,
-      allergies: clinicalContext.allergies,
-      activeMedications: clinicalContext.medications
+      patientProfile: {
+        allergies: clinicalContext.allergies || clinicalContext.rawAllergies || [],
+        medications: clinicalContext.medications || clinicalContext.rawMedications || clinicalContext.activeMedications || [],
+        age: clinicalContext.age || 45
+      },
+      actor,
+      physicianDirective
     });
   }
 

@@ -46,13 +46,34 @@
   --color-clinical-info: #2563eb;
   --color-clinical-info-bg: #eff6ff;
 
-  /* ── Border Radius (Restrained, Editorial) ── */
+  /* ── Proton Design System Tokens (PDS-1 Reference-Driven) ── */
+  --color-proton-canvas: #F9F8F5;
+  --color-proton-rail: #151619;
+  --color-proton-rail-border: #23252B;
+  --color-proton-card: #FFFFFF;
+  --color-proton-border: #E8E5DC;
+  --color-proton-border-subtle: #F0ECE1;
+  --color-proton-border-strong: #D6D2C4;
+
+  --color-proton-canary: #FEF08A;
+  --color-proton-canary-text: #854D0E;
+  --color-proton-rose: #FCE7F3;
+  --color-proton-rose-text: #9D174D;
+  --color-proton-olive: #DCFCE7;
+  --color-proton-olive-text: #166534;
+  --color-proton-periwinkle: #E0E7FF;
+  --color-proton-periwinkle-text: #1E40AF;
+  --color-proton-ai: #18191D;
+  --color-proton-ai-accent: #F472B6;
+
+  /* ── Border Radius (Refined Rounded-3xl Geometry) ── */
   --radius-sm: 0.25rem;
   --radius-md: 0.375rem;
   --radius-lg: 0.5rem;
   --radius-xl: 0.75rem;
-  --radius-2xl: 0.75rem;
-  --radius-3xl: 1rem;
+  --radius-2xl: 1rem;
+  --radius-3xl: 1.5rem;
+  --radius-pill: 9999px;
 
   /* ── Transitions ── */
   --ease-butter: cubic-bezier(0.16, 1, 0.3, 1);

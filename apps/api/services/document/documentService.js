@@ -14,12 +14,13 @@
  */
 
 const crypto = require('crypto');
+const path = require('path');
 const { getProvider } = require('../../providers/factory');
 const { auditService } = require('../audit/auditService');
 
 class DocumentServiceError extends Error {
   constructor(code, message, status = 400, details = null) {
-    super(message);
+    super(`[DocumentService:${code}] ${message}`);
     this.name = 'DocumentServiceError';
     this.code = code;
     this.status = status;
@@ -101,6 +102,21 @@ class DocumentService {
       );
     }
 
+    // Filename path traversal and executable extension checks
+    if (filename) {
+      if (filename.includes('..') || filename.includes('/') || filename.includes('\\') || filename.includes('\0')) {
+        throw new DocumentServiceError('PATH_TRAVERSAL_DETECTED', 'Filename contains prohibited path traversal sequences.', 400);
+      }
+
+      const lowerName = filename.toLowerCase();
+      const dangerousExtensions = ['.exe', '.bat', '.cmd', '.sh', '.php', '.pl', '.py', '.js', '.vbs', '.scr', '.msi', '.dll', '.com'];
+      for (const ext of dangerousExtensions) {
+        if (lowerName.endsWith(ext)) {
+          throw new DocumentServiceError('EXECUTABLE_CONTENT_PROHIBITED', `Executable file extension '${ext}' is strictly prohibited.`, 400);
+        }
+      }
+    }
+
     // Binary magic byte validation
     if (cleanMime === 'application/pdf') {
       const header = buffer.slice(0, 5).toString('ascii');
@@ -117,7 +133,22 @@ class DocumentService {
       }
     }
 
+    // Polyglot and active script injection defense across all clinical document uploads
+    const textPreview = buffer.slice(0, 4096).toString('utf8').toLowerCase();
+    if (textPreview.includes('<script') || textPreview.includes('javascript:') || textPreview.includes('<svg/onload') || textPreview.includes('onload=')) {
+      throw new DocumentServiceError('MALICIOUS_SCRIPT_DETECTED', 'Embedded executable scripts or active HTML injection in clinical documents are strictly prohibited.', 400);
+    }
+
     return true;
+  }
+
+  /**
+   * Sanitizes filenames to eliminate dangerous filesystem characters.
+   */
+  sanitizeFilename(rawFilename) {
+    if (!rawFilename || typeof rawFilename !== 'string') return 'document';
+    const base = path.basename(rawFilename);
+    return base.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 100);
   }
 
   /**

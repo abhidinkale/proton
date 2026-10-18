@@ -15,6 +15,7 @@
  */
 
 const crypto = require('crypto');
+const { distributedStateManager } = require('../services/distributed/distributedStateManager');
 
 function getAuthSecret() {
   return process.env.PROTON_AUTH_SECRET || 'proton-private-beta-auth-secret-change-in-prod-2026';
@@ -120,7 +121,7 @@ function verifySessionToken(token, options = {}) {
     const sessionKey = payloadData.jti || payloadData.sub;
 
     // 2. Revocation check via jti
-    if (payloadData.jti && revokedTokens.has(payloadData.jti)) {
+    if (payloadData.jti && isSessionRevoked(payloadData.jti)) {
       return { valid: false, error: 'Session token has been revoked', code: 'SESSION_REVOKED' };
     }
 
@@ -177,6 +178,7 @@ function verifySessionToken(token, options = {}) {
 function revokeSession(tokenOrJti, reason = 'manual_logout') {
   if (!tokenOrJti) return false;
   revokedTokens.add(tokenOrJti);
+  distributedStateManager.addToSet('revoked_tokens', tokenOrJti);
 
   if (tokenOrJti.includes('.')) {
     try {
@@ -184,6 +186,7 @@ function revokeSession(tokenOrJti, reason = 'manual_logout') {
       const payloadData = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
       if (payloadData.jti) {
         revokedTokens.add(payloadData.jti);
+        distributedStateManager.addToSet('revoked_tokens', payloadData.jti);
         const record = activeSessions.get(payloadData.jti);
         if (record) record.revoked = true;
       }
@@ -201,7 +204,9 @@ function revokeSession(tokenOrJti, reason = 'manual_logout') {
  * Checks if a session or token has been revoked.
  */
 function isSessionRevoked(tokenOrJti) {
+  if (!tokenOrJti) return false;
   if (revokedTokens.has(tokenOrJti)) return true;
+  if (distributedStateManager._sets.get('revoked_tokens')?.has(String(tokenOrJti))) return true;
   const record = activeSessions.get(tokenOrJti);
   return record ? record.revoked : false;
 }
@@ -246,15 +251,116 @@ function verifyMfaChallenge(actorId, challengeInput = {}) {
   return { verified: false, error: 'Invalid or missing MFA challenge credentials', code: 'MFA_CHALLENGE_FAILED' };
 }
 
-/**
- * Resets the in-memory session store (used for test isolation).
- */
+const AUTHENTICATED_ACCOUNTS = [
+  {
+    email: 'dr.lin@proton.health',
+    passwordHash: crypto.createHash('sha256').update('valid_password_2026!').digest('hex'),
+    actorId: 'usr-md-lin-01',
+    actorRole: 'physician',
+    actorName: 'Dr. Sarah Lin, MD',
+    tenantId: 'org-default',
+    npi: '1928374650'
+  },
+  {
+    email: 'dr.morgan@proton.health',
+    passwordHash: crypto.createHash('sha256').update('valid_password_2026!').digest('hex'),
+    actorId: 'usr-md-morgan-02',
+    actorRole: 'physician',
+    actorName: 'Dr. Alex Morgan, MD',
+    tenantId: 'org-default',
+    npi: '1092837461'
+  },
+  {
+    email: 'marcus.ops@proton.health',
+    passwordHash: crypto.createHash('sha256').update('valid_password_2026!').digest('hex'),
+    actorId: 'usr-ops-marcus-01',
+    actorRole: 'operations_staff',
+    actorName: 'Marcus Vance (Triage Coordinator)',
+    tenantId: 'org-default'
+  },
+  {
+    email: 'dr.ext@external-hospital.org',
+    passwordHash: crypto.createHash('sha256').update('valid_password_2026!').digest('hex'),
+    actorId: 'usr-md-ext-99',
+    actorRole: 'physician',
+    actorName: 'Dr. External Physician, MD',
+    tenantId: 'org-external-hospital',
+    npi: '9988776655'
+  },
+  {
+    email: 'admin@proton.health',
+    passwordHash: crypto.createHash('sha256').update('valid_password_2026!').digest('hex'),
+    actorId: 'usr-admin-01',
+    actorRole: 'admin',
+    actorName: 'System Administrator',
+    tenantId: 'org-default'
+  }
+];
+
+function authenticateCredentials(email, password, options = {}) {
+  if (!email || !password) {
+    return { success: false, error: 'Email and password are required', code: 'CREDENTIALS_REQUIRED' };
+  }
+
+  const cleanEmail = String(email).trim().toLowerCase();
+  const inputHash = crypto.createHash('sha256').update(String(password)).digest('hex');
+
+  const account = AUTHENTICATED_ACCOUNTS.find(a => a.email.toLowerCase() === cleanEmail);
+  if (!account) {
+    return { success: false, error: 'Invalid credentials or user not found', code: 'INVALID_CREDENTIALS' };
+  }
+
+  const expectedBuffer = Buffer.from(account.passwordHash);
+  const inputBuffer = Buffer.from(inputHash);
+
+  if (expectedBuffer.length !== inputBuffer.length || !crypto.timingSafeEqual(expectedBuffer, inputBuffer)) {
+    return { success: false, error: 'Invalid credentials or password mismatch', code: 'INVALID_CREDENTIALS' };
+  }
+
+  // Generate session token
+  const token = createSessionToken(account, 24, options);
+
+  return {
+    success: true,
+    token,
+    actor: {
+      actorId: account.actorId,
+      actorRole: account.actorRole,
+      actorName: account.actorName,
+      tenantId: account.tenantId,
+      npi: account.npi || null
+    },
+    expiresInSeconds: 24 * 3600
+  };
+}
+
+function rotateSessionToken(oldToken) {
+  const verification = verifySessionToken(oldToken);
+  if (!verification.valid) {
+    return { success: false, error: verification.error, code: verification.code };
+  }
+
+  // Revoke old token
+  revokeSession(oldToken, 'session_rotation');
+
+  // Issue new token with fresh jti
+  const newToken = createSessionToken(verification.actor, 24, {
+    mfaVerified: verification.actor.mfaVerified
+  });
+
+  return {
+    success: true,
+    token: newToken,
+    actor: verification.actor,
+    expiresInSeconds: 24 * 3600
+  };
+}
+
 function resetSessionStore() {
   activeSessions.clear();
   revokedTokens.clear();
 }
 
-// Pre-seeded beta tokens generated with the current secret for testing/bootstrapping
 const PRESEEDED_BETA_TOKENS = {
   physicianLin: createSessionToken({
     actorId: 'usr-md-lin-01',
@@ -287,6 +393,9 @@ module.exports = {
   verifyMfaChallenge,
   resetSessionStore,
   getAuthSecret,
+  authenticateCredentials,
+  rotateSessionToken,
   DEFAULT_INACTIVITY_TIMEOUT_SECONDS,
-  PRESEEDED_BETA_TOKENS
+  PRESEEDED_BETA_TOKENS,
+  AUTHENTICATED_ACCOUNTS
 };

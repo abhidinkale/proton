@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-16T20:31:59.209Z",
+  "timestamp": "2026-10-17T20:01:53.681Z",
   "validationVersion": "1.6",
   "status": "GO",
   "overallMetrics": {
@@ -17,7 +17,7 @@
     "totalFactsChecked": 12,
     "factsWithValidProvenance": 11,
     "provenanceCompletenessRate": 100,
-    "auditEventsLogged": 976,
+    "auditEventsLogged": 5872,
     "auditHashChainValid": true,
     "silentFailures": 0,
     "humanApprovalCheckpointsPassed": 6,
@@ -28,7 +28,7 @@
       "scenarioNumber": 1,
       "name": "Routine Follow-Up",
       "status": "PASS",
-      "latencyMs": 11273
+      "latencyMs": 1943
     },
     {
       "scenarioNumber": 2,
@@ -52,55 +52,55 @@
       "scenarioNumber": 5,
       "name": "Failed FHIR Reconciliation",
       "status": "PASS",
-      "latencyMs": 14
+      "latencyMs": 18
     },
     {
       "scenarioNumber": 6,
       "name": "Operations Handoff",
       "status": "PASS",
-      "latencyMs": 6
+      "latencyMs": 8
     },
     {
       "scenarioNumber": 7,
       "name": "Physician Authority",
       "status": "PASS",
-      "latencyMs": 5
+      "latencyMs": 4
     },
     {
       "scenarioNumber": 8,
       "name": "Complete Patient Journey",
       "status": "PASS",
-      "latencyMs": 275
+      "latencyMs": 282
     }
   ],
   "stageLatenciesMs": {
-    "note_generation": 11248,
-    "stage_1": 17,
+    "note_generation": 1896,
+    "stage_1": 16,
     "stage_2": 16,
     "stage_3": 16,
     "stage_4": 16,
     "stage_5": 16,
     "stage_6": 16,
     "stage_7": 16,
-    "stage_8": 16,
-    "stage_9": 16,
-    "stage_10": 16,
+    "stage_8": 17,
+    "stage_9": 21,
+    "stage_10": 19,
     "stage_11": 16,
-    "stage_12": 17,
+    "stage_12": 16,
     "stage_13": 16,
-    "stage_14": 16,
-    "stage_15": 17,
+    "stage_14": 15,
+    "stage_15": 16,
     "stage_16": 16,
-    "stage_17": 16
+    "stage_17": 17
   },
   "aiGenerationMetrics": {
     "provider": "gemini",
     "model": "gemini-3.5-flash-lite",
-    "latencyMs": 11248,
+    "latencyMs": 1896,
     "tokenUsage": {
       "promptTokenCount": 410,
-      "candidatesTokenCount": 233,
-      "totalTokenCount": 643,
+      "candidatesTokenCount": 243,
+      "totalTokenCount": 653,
       "promptTokensDetails": [
         {
           "modality": "TEXT",

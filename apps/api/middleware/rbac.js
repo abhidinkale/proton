@@ -155,9 +155,78 @@ function requireTenantMatch(extractTargetTenantFn) {
   };
 }
 
+/**
+ * Validates that the active request does not attempt cross-patient parameter tampering
+ * or cross-tenant leakage between route parameters, query strings, and body payload.
+ */
+function validatePatientAndTenantContext(req, res, next) {
+  if (!req.actor) {
+    return res.status(401).json({ error: 'Unauthorized: Actor identity unverified.', code: 'ACTOR_UNVERIFIED' });
+  }
+
+  const actorTenant = req.actor.tenantId || 'org-default';
+  const targetTenant = req.params.tenantId || req.query.tenantId || req.body?.tenantId || actorTenant;
+
+  if (targetTenant !== actorTenant) {
+    return res.status(403).json({
+      error: `Forbidden: Cross-tenant access denied. Actor tenant: '${actorTenant}', Target tenant: '${targetTenant}'.`,
+      code: 'CROSS_TENANT_ACCESS_DENIED'
+    });
+  }
+
+  // Cross-patient parameter tampering check
+  const urlPatientId = req.params.patientId ? String(req.params.patientId).replace(/^Patient\//, '').trim() : null;
+  const bodyPatientId = req.body?.patientId ? String(req.body.patientId).replace(/^Patient\//, '').trim() : null;
+  const queryPatientId = req.query.patientId ? String(req.query.patientId).replace(/^Patient\//, '').trim() : null;
+
+  if (urlPatientId && bodyPatientId && urlPatientId !== bodyPatientId) {
+    return res.status(409).json({
+      error: `Conflict: Patient ID mismatch detected. URL declares '${urlPatientId}' but request body contains '${bodyPatientId}'. Cross-patient context tampering is strictly blocked.`,
+      code: 'PATIENT_ID_MISMATCH'
+    });
+  }
+
+  if (urlPatientId && queryPatientId && urlPatientId !== queryPatientId) {
+    return res.status(409).json({
+      error: `Conflict: Patient ID mismatch detected. URL declares '${urlPatientId}' but query parameter contains '${queryPatientId}'.`,
+      code: 'PATIENT_ID_MISMATCH'
+    });
+  }
+
+  next();
+}
+
+/**
+ * Strict Authentication Gate: Requires authoritative signed Bearer token in ALL environments (disables dev persona fallback).
+ */
+function requireStrictAuth(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({
+      error: 'Unauthorized: Valid authenticated session token required.',
+      code: 'AUTHENTICATION_REQUIRED'
+    });
+  }
+
+  const token = authHeader.slice(7).trim();
+  const verification = verifySessionToken(token);
+
+  if (!verification.valid) {
+    return res.status(401).json({
+      error: `Unauthorized: ${verification.error}`,
+      code: verification.code
+    });
+  }
+
+  req.actor = verification.actor;
+  next();
+}
+
 module.exports = {
   resolveActorMiddleware,
   requireRole,
   requireTenantMatch,
+  validatePatientAndTenantContext,
+  requireStrictAuth,
   CONTROLLED_DEV_PERSONAS
 };

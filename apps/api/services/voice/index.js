@@ -10,6 +10,11 @@ const {
   MediaValidationError
 } = require('./voiceService');
 const { WhisperProvider } = require('./whisperProvider');
+const {
+  PatientVoiceAgentService,
+  patientVoiceAgentService,
+  OUTREACH_PROTOCOLS
+} = require('./patientVoiceAgentService');
 
 module.exports = {
   VoiceService,
@@ -17,5 +22,8 @@ module.exports = {
   VoiceServiceError,
   WhisperProvider,
   TranscriptionInputError,
-  MediaValidationError
+  MediaValidationError,
+  PatientVoiceAgentService,
+  patientVoiceAgentService,
+  OUTREACH_PROTOCOLS
 };

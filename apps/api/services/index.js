@@ -11,7 +11,7 @@ const { AIService, aiService } = require('./ai/aiService');
 const { ClinicalPipeline, clinicalPipeline, ClinicalPipelineError } = require('./clinical/clinicalPipeline');
 const { IntakeService, intakeService, IntakeValidationError, branchingEngine, escalationEngine, contextMapper } = require('./intake');
 const { captureSessionService, CaptureSessionService, CaptureSessionError, VALID_TRANSITIONS, tokenManager, TokenManager, sessionStore, SessionStore, imageQualityValidator, ImageQualityValidator, ImageQualityError, PAIRING_TTL_MS, ACTIVE_TTL_MS, UPLOAD_TTL_MS } = require('./capture');
-const { storageService, StorageAdapter, LocalStorageAdapter } = require('./storage');
+const { storageService, StorageAdapter, LocalStorageAdapter, S3StorageAdapter } = require('./storage');
 const {
   visionService,
   VisionService,
@@ -30,7 +30,9 @@ const {
   VisionProviderError,
   visionReviewService,
   VisionReviewService,
-  VisionReviewError
+  VisionReviewError,
+  acuteTriageService,
+  AcuteTriageService
 } = require('./vision');
 const {
   streamManager,
@@ -61,7 +63,10 @@ const {
   voiceService,
   VoiceService,
   VoiceServiceError,
-  WhisperProvider
+  WhisperProvider,
+  patientVoiceAgentService,
+  PatientVoiceAgentService,
+  OUTREACH_PROTOCOLS
 } = require('./voice');
 const {
   evidenceService,
@@ -69,6 +74,15 @@ const {
   EvidenceServiceError,
   CLINICAL_GUIDELINES
 } = require('./evidence');
+const {
+  billingCodingService,
+  BillingCodingService,
+  BillingServiceError,
+  CPT_BENCHMARKS,
+  ICD10_MAPPINGS,
+  priorAuthService,
+  PriorAuthService
+} = require('./billing');
 const {
   longitudinalService,
   LongitudinalService,
@@ -79,8 +93,68 @@ const {
   ClinicianConfirmationService,
   ClinicianConfirmationError
 } = require('./clinical/clinicianConfirmationService');
+const {
+  clinicalTrialService,
+  ClinicalTrialService,
+  CANONICAL_CLINICAL_TRIALS
+} = require('./clinical/clinicalTrialService');
+const {
+  nurseRoomingService,
+  NurseRoomingService
+} = require('./clinical/nurseRoomingService');
+const {
+  dischargeSummaryService,
+  DischargeSummaryService
+} = require('./clinical/dischargeSummaryService');
+const {
+  openTargetsService,
+  OpenTargetsService
+} = require('./clinical/openTargetsService');
+const {
+  jevSafetyGuardrailService,
+  JevSafetyGuardrailService
+} = require('./clinical/jevSafetyGuardrailService');
+const {
+  medicationSuggestionAgent,
+  MedicationSuggestionAgent
+} = require('../agents/medicationSuggestionAgent');
+const {
+  distributedStateManager,
+  DistributedStateManager
+} = require('./distributed/distributedStateManager');
+const {
+  smartAuthService,
+  SmartAuthService
+} = require('./fhir/smartAuthService');
+const {
+  jobQueueService,
+  JobQueueService
+} = require('./jobs/jobQueueService');
+const {
+  postgresAdapter,
+  PostgresAdapter
+} = require('../storage/postgresAdapter');
 
 module.exports = {
+  // Patient After-Care & Discharge Summary (Epic MyChart / Abridge)
+  dischargeSummaryService,
+  DischargeSummaryService,
+  // Nurse & Rooming Care Team (Abridge Nurse / Epic Art)
+  nurseRoomingService,
+  NurseRoomingService,
+  // Clinical Trials & Precision Medicine (Tempus / OpenEvidence)
+  clinicalTrialService,
+  ClinicalTrialService,
+  CANONICAL_CLINICAL_TRIALS,
+  // Billing & RCM
+  billingCodingService,
+  BillingCodingService,
+  BillingServiceError,
+  CPT_BENCHMARKS,
+  ICD10_MAPPINGS,
+  priorAuthService,
+  PriorAuthService,
+
   // Media
   MediaService,
   mediaService,
@@ -136,6 +210,7 @@ module.exports = {
   storageService,
   StorageAdapter,
   LocalStorageAdapter,
+  S3StorageAdapter,
 
   // Vision Intelligence (M2C-1)
   visionService,
@@ -158,6 +233,10 @@ module.exports = {
   visionReviewService,
   VisionReviewService,
   VisionReviewError,
+
+  // Acute Diagnostic Imaging Triage
+  acuteTriageService,
+  AcuteTriageService,
 
   // Clinical Streaming (M2C-3)
   streamManager,
@@ -189,6 +268,9 @@ module.exports = {
   VoiceService,
   VoiceServiceError,
   WhisperProvider,
+  patientVoiceAgentService,
+  PatientVoiceAgentService,
+  OUTREACH_PROTOCOLS,
 
   // Evidence & Guidelines
   evidenceService,
@@ -204,5 +286,51 @@ module.exports = {
   // Clinician Confirmation
   clinicianConfirmationService,
   ClinicianConfirmationService,
-  ClinicianConfirmationError
+  ClinicianConfirmationError,
+
+  // Distributed State & Pub/Sub
+  distributedStateManager,
+  DistributedStateManager,
+
+  // Production SMART on FHIR
+  smartAuthService,
+  SmartAuthService,
+
+  // Background Job Queue
+  jobQueueService,
+  JobQueueService,
+
+  // Enterprise Relational Persistence
+  postgresAdapter,
+  PostgresAdapter,
+
+  // Open Targets & Jev Safety Guardrail Medication Intelligence
+  openTargetsService,
+  OpenTargetsService,
+  jevSafetyGuardrailService,
+  JevSafetyGuardrailService,
+  medicationSuggestionAgent,
+  MedicationSuggestionAgent,
+
+  // Milestone 1: Core AI Architecture & Safety Foundations
+  modelGateway: require('./ai/modelGateway').modelGateway,
+  ModelGateway: require('./ai/modelGateway').ModelGateway,
+  ModelGatewayError: require('./ai/modelGateway').ModelGatewayError,
+  jevAdapter: require('./ai/jevAdapter').jevAdapter,
+  JevAdapter: require('./ai/jevAdapter').JevAdapter,
+  JevError: require('./ai/jevAdapter').JevError,
+  clinicalContextEngine: require('./clinical/clinicalContextEngine').clinicalContextEngine,
+  ClinicalContextEngine: require('./clinical/clinicalContextEngine').ClinicalContextEngine,
+  ClinicalContextError: require('./clinical/clinicalContextEngine').ClinicalContextError,
+  provenanceSystem: require('./clinical/provenanceSystem').provenanceSystem,
+  ProvenanceSystem: require('./clinical/provenanceSystem').ProvenanceSystem,
+  ProvenanceError: require('./clinical/provenanceSystem').ProvenanceError,
+  safetyGate: require('./safety/safetyGate').safetyGate,
+  SafetyGate: require('./safety/safetyGate').SafetyGate,
+  SafetyGateError: require('./safety/safetyGate').SafetyGateError,
+  specialistAgentRegistry: require('../agents/registry/specialistAgentRegistry').specialistAgentRegistry,
+  SpecialistAgentRegistry: require('../agents/registry/specialistAgentRegistry').SpecialistAgentRegistry,
+  agentOrchestrator: require('../agents/registry/agentOrchestrator').agentOrchestrator,
+  AgentOrchestrator: require('../agents/registry/agentOrchestrator').AgentOrchestrator
 };
+

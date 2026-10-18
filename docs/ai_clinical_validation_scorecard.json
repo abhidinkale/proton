@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-16T22:55:46.453Z",
+  "timestamp": "2026-10-17T19:20:58.930Z",
   "provider": "gemini",
   "model": "gemini-3.5-flash-lite",
   "isLive": true,
@@ -14,8 +14,8 @@
     "passed": 9,
     "failed": 1,
     "factualAccuracyRate": 90,
-    "negativesPreserved": 11,
-    "negativesFailed": 18,
+    "negativesPreserved": 8,
+    "negativesFailed": 21,
     "unsupportedClaims": 0
   },
   "hallucinationProbes": {
@@ -112,34 +112,34 @@
   },
   "latency": {
     "noteLatencies": [
-      1496,
-      2068,
-      1301,
-      1739,
-      1230,
-      1536,
-      3273,
-      1329,
-      3661,
-      1529
+      1862,
+      1017,
+      1503,
+      927,
+      1010,
+      1018,
+      1303,
+      1584,
+      1088,
+      1086
     ],
     "docLatencies": [
-      3947,
-      5778,
-      3483,
-      4533,
-      3319
+      3337,
+      3068,
+      3558,
+      3526,
+      3282
     ],
-    "min": 1230,
-    "max": 5778,
-    "avg": 2681,
-    "median": 2068
+    "min": 927,
+    "max": 3558,
+    "avg": 1945,
+    "median": 1503
   },
   "costUsage": {
     "totalPromptTokens": 2951,
-    "totalCandidateTokens": 1338,
-    "totalTokens": 4289,
-    "estimatedCostUSD": 0.00125
+    "totalCandidateTokens": 1401,
+    "totalTokens": 4352,
+    "estimatedCostUSD": 0.00128
   },
   "failureModes": {
     "testsRun": 5,

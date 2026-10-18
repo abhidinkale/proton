@@ -44,11 +44,20 @@ const {
   VisionReviewError
 } = require('./visionReviewService');
 
+const {
+  AcuteTriageService,
+  acuteTriageService
+} = require('./acuteTriageService');
+
 module.exports = {
   // Service
   VisionService,
   visionService,
   VisionServiceError,
+
+  // Acute Diagnostic Imaging Triage
+  AcuteTriageService,
+  acuteTriageService,
 
   // Clinician Review (M2C-2)
   VisionReviewService,

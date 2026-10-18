@@ -11,7 +11,10 @@ import {
   ChevronRight, 
   X,
   Stethoscope,
-  ShieldCheck
+  ShieldCheck,
+  Calendar,
+  BookOpen,
+  DollarSign
 } from 'lucide-react';
 
 interface CommandPaletteProps {
@@ -89,6 +92,42 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
         icon: <LayoutDashboard size={16} className="text-brand-600" />,
         onSelect: () => {
           navigate('/');
+          onClose();
+        }
+      },
+      {
+        id: 'act-schedule',
+        category: 'NAVIGATION',
+        title: 'Open Clinic Schedule',
+        subtitle: 'Multi-provider timetable and room assignments',
+        shortcut: 'G S',
+        icon: <Calendar size={16} className="text-[#151719]" />,
+        onSelect: () => {
+          navigate('/schedule');
+          onClose();
+        }
+      },
+      {
+        id: 'act-education',
+        category: 'NAVIGATION',
+        title: 'Clinical Knowledge & Education',
+        subtitle: 'Live CME, clinical guidelines & research updates',
+        shortcut: 'G E',
+        icon: <BookOpen size={16} className="text-[#9D174D]" />,
+        onSelect: () => {
+          navigate('/education');
+          onClose();
+        }
+      },
+      {
+        id: 'act-billing',
+        category: 'NAVIGATION',
+        title: 'Patient Billing & Invoices',
+        subtitle: 'Claims ledger, E/M coding attribution & payouts',
+        shortcut: 'G B',
+        icon: <DollarSign size={16} className="text-[#1E40AF]" />,
+        onSelect: () => {
+          navigate('/billing');
           onClose();
         }
       },

@@ -11,7 +11,11 @@ import DocumentReview from './pages/DocumentReview';
 import Assistant from './pages/Assistant';
 import Operations from './pages/Operations';
 import Settings from './pages/Settings';
+import Schedule from './pages/Schedule';
+import Education from './pages/Education';
+import Billing from './pages/Billing';
 import MobileCapturePage from './pages/MobileCapturePage';
+import SmartLaunch from './pages/SmartLaunch';
 import { authService } from './services/auth';
 
 // Lazy-load the landing page since it's only for unauthenticated visitors
@@ -68,14 +72,19 @@ export default function App() {
       <Route path="/landing" element={<Navigate to="/welcome" replace />} />
       <Route path="/login" element={<Login />} />
       <Route path="/capture" element={<MobileCapturePage />} />
+      <Route path="/launch" element={<SmartLaunch />} />
       <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/schedule" element={<ProtectedRoute><Schedule /></ProtectedRoute>} />
       <Route path="/patients" element={<ProtectedRoute><Patients /></ProtectedRoute>} />
       <Route path="/patients/:id" element={<ProtectedRoute><PatientProfile /></ProtectedRoute>} />
       <Route path="/consultation" element={<ProtectedRoute><Consultation /></ProtectedRoute>} />
       <Route path="/consultations/*" element={<ProtectedRoute><Consultation /></ProtectedRoute>} />
       <Route path="/document-review" element={<ProtectedRoute><DocumentReview /></ProtectedRoute>} />
       <Route path="/documents" element={<ProtectedRoute><DocumentReview /></ProtectedRoute>} />
+      <Route path="/education" element={<ProtectedRoute><Education /></ProtectedRoute>} />
+      <Route path="/knowledge" element={<ProtectedRoute><Education /></ProtectedRoute>} />
+      <Route path="/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
       <Route path="/assistant" element={<ProtectedRoute><Assistant /></ProtectedRoute>} />
       <Route path="/operations" element={<ProtectedRoute><Operations /></ProtectedRoute>} />
       <Route path="/documents/review" element={<ProtectedRoute><DocumentReview /></ProtectedRoute>} />

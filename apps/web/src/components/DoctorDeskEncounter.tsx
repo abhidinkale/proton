@@ -1,19 +1,37 @@
-import { useState, useRef, useEffect, type FormEvent, type KeyboardEvent } from 'react';
+import { useState, useRef, useEffect, type KeyboardEvent } from 'react';
 import {
   ArrowLeft, ArrowUp, Mic, Square, Check, Loader2, AlertCircle, AlertTriangle,
   Pill, FileText, Activity, Plus, CheckCircle2, Copy,
-  ClipboardList, Sparkles, RefreshCw, X, Printer, ClipboardCheck, Smartphone, Eye, ShieldCheck
+  ClipboardList, RefreshCw, X, Printer, ClipboardCheck, Smartphone, Eye,
+  DollarSign, BookOpen, PhoneCall, Pause, Play, ThumbsUp, ThumbsDown, Tag, Sliders, CheckCheck
 } from 'lucide-react';
-import { RealAIService, sendClinicalChat, type ChatMessage } from '../services/ai';
+import {
+  RealAIService, sendClinicalChat, fetchNoteTemplates, generateConsultationLabel,
+  submitEncounterFeedback, type ChatMessage, type NoteTemplateDefinition
+} from '../services/ai';
 import { RealSpeechService } from '../services/speech';
+import { AudioLevelMeter } from './voice/AudioLevelMeter';
 import PrescriptionPDFModal from './PrescriptionPDFModal';
 import IntakeReview from './intake/IntakeReview';
+import { NurseRoomingWorkspace } from './intake/NurseRoomingWorkspace';
 import DynamicIntake from './intake/DynamicIntake';
 import CaptureSessionPanel from './capture/CaptureSessionPanel';
 import ClinicianVisionReview from './vision/ClinicianVisionReview';
+import BillingCodingAdvisor from './billing/BillingCodingAdvisor';
+import EvidenceGroundingPanel from './evidence/EvidenceGroundingPanel';
+import PatientVoiceOutreachModal from './voice/PatientVoiceOutreachModal';
+import AfterVisitSummaryModal from './discharge/AfterVisitSummaryModal';
+import EncounterEhrSyncModal from './fhir/EncounterEhrSyncModal';
+import MedicationSuggestionModal from './medications/MedicationSuggestionModal';
 import { streamClinicalPipeline } from '../services/streamService';
 import type { PrescriptionItem } from '../types/prescription';
 import type { Patient } from '@medplum/fhirtypes';
+import ClinicalPerspectivesPanel from './workstation/ClinicalPerspectivesPanel';
+import StructuredTreatmentPlan, { type StructuredPlanState } from './workstation/StructuredTreatmentPlan';
+import SafetyInterventionBanner from './workstation/SafetyInterventionBanner';
+import PhysicianSignOffModal from './workstation/PhysicianSignOffModal';
+import PatientHandoffView from './workstation/PatientHandoffView';
+import EncounterCompletionSummary from './workstation/EncounterCompletionSummary';
 
 export interface DoctorDeskPatient {
   id: string;
@@ -47,6 +65,31 @@ export interface DoctorDeskPatient {
     type: string;
     summary: string;
   }>;
+  visitType?: string;
+  status?: 'ready' | 'waiting' | 'completed';
+  preparationState?: string;
+  scenarioKey?: string;
+  patientPhone?: string;
+  contraindicationAlert?: {
+    allergen: string;
+    offendingDrug: string;
+    severity: string;
+    risk: string;
+  };
+  specialistConflict?: {
+    specialists: string[];
+    differingPerspectives: Array<{ specialist: string; perspective: string }>;
+    suggestedQuestions: string[];
+    consensus: string[];
+  };
+  // Milestone 5 Extended Case Schema
+  encounterId?: string;
+  clinicalHistory?: string[];
+  availableObservations?: Record<string, string>;
+  missingInformation?: string[];
+  consultationTranscript?: string;
+  expectedEvidence?: string[];
+  knownRiskConditions?: string[];
 }
 
 interface DoctorDeskEncounterProps {
@@ -56,21 +99,38 @@ interface DoctorDeskEncounterProps {
 }
 
 export default function DoctorDeskEncounter({ patient, onCloseMeeting, onBackToDesk }: DoctorDeskEncounterProps) {
-  const [activeTab, setActiveTab] = useState<'note' | 'chart' | 'orders' | 'intake'>('note');
+  const [activeTab, setActiveTab] = useState<'note' | 'billing' | 'evidence' | 'chart' | 'orders' | 'intake'>('note');
+  const [intakeSubTab, setIntakeSubTab] = useState<'rooming' | 'questionnaire'>('rooming');
 
   // Ambient Scribe & Note states
   const [isRecording, setIsRecording] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [audioStream, setAudioStream] = useState<MediaStream | null>(null);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isGeneratingNote, setIsGeneratingNote] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('SOAP');
+  const [availableTemplates, setAvailableTemplates] = useState<NoteTemplateDefinition[]>([]);
+  const [triageLabel, setTriageLabel] = useState<string>('');
+  const [feedbackRating, setFeedbackRating] = useState<number | null>(null);
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState<boolean>(false);
   const [showPdfModal, setShowPdfModal] = useState(false);
+  const [showMedSuggestionModal, setShowMedSuggestionModal] = useState(false);
   const [showIntakeModal, setShowIntakeModal] = useState(false);
   const [showCaptureModal, setShowCaptureModal] = useState(false);
   const [showVisionModal, setShowVisionModal] = useState(false);
   const [activeVisionMediaId, setActiveVisionMediaId] = useState<string | null>(null);
   const [capturedMediaList, setCapturedMediaList] = useState<any[]>([]);
+  const [showVoiceOutreachModal, setShowVoiceOutreachModal] = useState(false);
+  const [showAvsModal, setShowAvsModal] = useState(false);
 
-  const getInitialTranscript = (pid: string) => {
+  const getPatientId = (ptOrId: DoctorDeskPatient | string): string => {
+    return typeof ptOrId === 'string' ? ptOrId : ptOrId.id;
+  };
+
+  const getInitialTranscript = (ptOrId: DoctorDeskPatient | string) => {
+    if (typeof ptOrId !== 'string' && ptOrId.consultationTranscript) return ptOrId.consultationTranscript;
+    const pid = getPatientId(ptOrId).toLowerCase();
     if (pid.includes('arthur')) {
       return "Doctor: Hello Arthur, what brings you into clinic today?\n" +
         "Patient: I have had this tight, squeezing sensation in my chest whenever I walk up two flights of stairs for the past two weeks. It goes away after resting for 5 minutes.\n" +
@@ -90,6 +150,23 @@ export default function DoctorDeskEncounter({ patient, onCloseMeeting, onBackToD
         "Patient: Everything has been good overall Doctor. My right knee acts up on rainy mornings for about 10 minutes, but meloxicam helps.\n" +
         "Doctor: Your vitals look great today. We'll check your annual fasting metabolic panel and review exercises for your knee.";
     }
+    if (pid.includes('primary') || pid.includes('sarah')) {
+      return "Doctor: Good morning Sarah, glad to see you for your annual preventive review.\n" +
+        "Patient: Good morning Doctor. I feel great overall, exercising three times a week. Just here to review my annual bloodwork and ensure my cholesterol is stable.\n" +
+        "Doctor: Your vitals look excellent today. BP 120/78, BMI 24.2. Your lipid panel is mostly stable with LDL at 128. We will continue lifestyle management and schedule routine surveillance.\n" +
+        "Patient: Perfect, that is very reassuring. Thank you Doctor.";
+    }
+    if (pid.includes('endo') || pid.includes('harold')) {
+      return "Doctor: Good morning Harold, what symptoms have you noticed recently?\n" +
+        "Patient: Doctor, I have been dealing with persistent cold intolerance, sluggishness, and dry skin for the last three months despite taking my thyroid pill every morning on an empty stomach.\n" +
+        "Doctor: Your recent lab panel shows your TSH is elevated at 7.8 mIU/L with a low-normal Free T4 of 0.8 ng/dL. This indicates your current Levothyroxine 50mcg dose is insufficient. I recommend titrating to 75mcg daily and re-checking thyroid labs in 6 weeks.\n" +
+        "Patient: Thank you, I was hoping we could adjust the dose.";
+    }
+    if (pid.includes('conflict') || pid.includes('beatrice')) {
+      return "Doctor: Hello Beatrice, how has your breathing and ankle swelling been?\n" +
+        "Patient: My ankles are clear this week Doctor, but I get short of breath when walking up the driveway. I brought records from my previous cardiologist who said my heart pump was at 35%, but the scan I had here last month said it was 55%.\n" +
+        "Doctor: That is a critical discrepancy between your historical record and recent echocardiogram. The outside note classified this as heart failure with reduced ejection fraction (HFrEF at 35%), but your latest echo demonstrates heart failure with preserved ejection fraction (HFpEF at 55%). This changes our guideline-directed medical therapy. We will reconcile both reports with repeat imaging and review your SGLT2 inhibitor indication.";
+    }
     return "Doctor: Good morning Eleanor, how have you been feeling with your blood sugar lately?\n" +
       "Patient: Honestly Doctor, I have been feeling quite fatigued in the afternoons, and I noticed my morning glucose readings have been creeping up to 150-160.\n" +
       "Doctor: I reviewed your recent bloodwork. Your HbA1c is now 8.2%, up from 7.1% two months ago. You are currently taking Metformin 500mg twice daily, correct?\n" +
@@ -99,7 +176,8 @@ export default function DoctorDeskEncounter({ patient, onCloseMeeting, onBackToD
       "Doctor: Absolutely, strict no-penicillin on your chart.";
   };
 
-  const getInitialNote = (pid: string) => {
+  const getInitialNote = (ptOrId: DoctorDeskPatient | string) => {
+    const pid = getPatientId(ptOrId).toLowerCase();
     if (pid.includes('arthur')) {
       return {
         subjective: "58-year-old male presents with 2-week history of exertional sub-sternal chest tightness triggered by stair climbing, relieved within 5 minutes of rest. Denies radiation, syncope, or rest dyspnea. Family history of premature CAD (father MI at 65). Allergy: Sulfa drugs.",
@@ -124,6 +202,38 @@ export default function DoctorDeskEncounter({ patient, onCloseMeeting, onBackToD
         plan: "1. Intensive lifestyle guidance and medical nutrition therapy for pre-diabetes.\n2. Continue Meloxicam 7.5 mg PO PRN for knee discomfort.\n3. Physical therapy referral for quadriceps strengthening.\n4. Annual influenza vaccine administered."
       };
     }
+    if (pid.includes('primary') || pid.includes('sarah')) {
+      return {
+        subjective: "48-year-old female presents for annual wellness examination. Reports excellent functional status, regular aerobic exercise, no chest pain, dyspnea, or palpitations.",
+        objective: `Vitals: BP ${patient.vitals.bp}, HR ${patient.vitals.hr}, SpO2 ${patient.vitals.spo2}, BMI ${patient.vitals.bmi}.\nPhysical Exam: Well-nourished, well-developed female in no acute distress. Heart: Regular rate and rhythm, normal S1/S2. Lungs: Clear to auscultation bilaterally. Abdomen soft, non-tender.\nRecent Labs: Total Cholesterol 210 mg/dL, HDL 58 mg/dL, LDL 128 mg/dL (borderline).`,
+        assessment: "1. Annual Preventive Wellness Examination (Z00.00).\n2. Borderline Hyperlipidemia — Well managed on diet and lifestyle.",
+        plan: "1. Continue regular aerobic exercise (150 min/week) and Mediterranean dietary pattern.\n2. Repeat fasting lipid profile in 12 months.\n3. Routine preventive health maintenance up to date."
+      };
+    }
+    if (pid.includes('endo') || pid.includes('harold')) {
+      return {
+        subjective: "54-year-old male presents with 3-month history of worsening fatigue, cold intolerance, and sluggishness. Complies with morning fasting Levothyroxine 50 mcg regimen.",
+        objective: `Vitals: BP ${patient.vitals.bp}, HR ${patient.vitals.hr}, SpO2 ${patient.vitals.spo2}, BMI ${patient.vitals.bmi}.\nPhysical Exam: Heart: Mild bradycardia at 60 bpm, regular rhythm. Thyroid: Diffuse mild enlargement without discrete nodularity. Skin: Mild xerosis.\nRecent Labs: TSH 7.8 mIU/L (elevated), Free T4 0.8 ng/dL (borderline low).`,
+        assessment: "1. Under-replaced Primary Hypothyroidism (E03.9) — Elevated TSH indicates subtherapeutic levothyroxine dosage.\n2. Metabolic Syndrome (E88.81).",
+        plan: "1. Titrate Levothyroxine from 50 mcg to 75 mcg PO Once Daily in morning on empty stomach with water.\n2. Recheck TSH and Free T4 in 6 weeks for dosage optimization.\n3. Lifestyle and nutritional counseling for metabolic syndrome."
+      };
+    }
+    if (pid.includes('conflict') || pid.includes('beatrice')) {
+      return {
+        subjective: "71-year-old female presents for heart failure follow-up. Reports mild exertional dyspnea when walking uphill; denies orthopnea or PND. Notes historical records stated EF 35% while recent echo showed EF 55%.",
+        objective: `Vitals: BP ${patient.vitals.bp}, HR ${patient.vitals.hr}, SpO2 ${patient.vitals.spo2}, BMI ${patient.vitals.bmi}.\nExam: JVP 7 cm H2O. Lungs clear bilaterally. Trace bilateral pedal edema.\nRecent Labs: NT-proBNP 480 pg/mL (mildly elevated), K+ 4.4 mEq/L, Creatinine 1.0 mg/dL.\nEcho Discrepancy: Outside note (2025) diagnosed HFrEF (EF 35%); Recent in-house echo (2026) demonstrates preserved systolic function with EF 55% and Grade II diastolic dysfunction (HFpEF).`,
+        assessment: "1. Heart Failure with Preserved Ejection Fraction (HFpEF, I50.30) — Phenotypic discrepancy noted against outside chart; recent objective echo confirms preserved EF with diastolic impairment.\n2. Essential Hypertension — Controlled.\n3. Type 2 Diabetes Mellitus.",
+        plan: "1. Maintain Furosemide 20 mg PO QD for volume management.\n2. Continue Lisinopril 10 mg QD and Metoprolol Succinate 25 mg QD.\n3. Order repeat surveillance echocardiogram in 6 months to establish longitudinal stability.\n4. Re-check BMP and renal panel in 3 months."
+      };
+    }
+    if (pid.includes('allergy') || pid.includes('hayes')) {
+      return {
+        subjective: "52-year-old male presents with 10 days of severe facial pressure, purulent yellow-green nasal discharge, and frontal headache unresponsive to OTC analgesics. Confirmed severe Penicillin anaphylaxis history requiring epinephrine.",
+        objective: `Vitals: BP ${patient.vitals.bp}, HR ${patient.vitals.hr}, SpO2 ${patient.vitals.spo2}, Temp ${patient.vitals.temp}, BMI ${patient.vitals.bmi}.\nExam: Moderate bilateral maxillary sinus tenderness to percussion. Purulent drainage visible in middle meatus. Oropharynx clear.\nRecent Labs: WBC 11.2 K/uL (mild leukocytosis).`,
+        assessment: "1. Acute Bacterial Maxillary Sinusitis (J01.00) — Clinical criteria met (>10 days of purulent discharge and facial pain).\n2. Documented Severe Penicillin Anaphylaxis — Beta-lactam contraindicated (Hard Stop).",
+        plan: "1. Doxycycline 100 mg PO Twice Daily x 7 days (non-beta-lactam first-line alternative).\n2. Saline nasal irrigation BID.\n3. Fluticasone nasal spray 1 spray each nostril daily.\n4. Avoid all beta-lactam antibiotics; return if high fever or visual changes develop."
+      };
+    }
     return {
       subjective: "68-year-old female presents for glycemic follow-up. Reports worsening afternoon fatigue and home fasting glucose readings averaging 150-160 mg/dL. Reports good gastrointestinal tolerance of current Metformin 500 mg BID regimen. Confirmed severe Penicillin allergy (anaphylaxis history).",
       objective: `Vitals: BP ${patient.vitals.bp}, HR ${patient.vitals.hr}, SpO2 ${patient.vitals.spo2}, BMI ${patient.vitals.bmi}.\nPhysical Exam: Well-appearing, alert, oriented x4. Regular rate and rhythm. Clear lungs bilaterally. Diabetic foot inspection negative for ulcers or skin breakdown.\nRecent Labs: HbA1c 8.2% (elevated from 7.1%), eGFR 68 mL/min/1.73m², Fasting Glucose 158 mg/dL.`,
@@ -132,7 +242,8 @@ export default function DoctorDeskEncounter({ patient, onCloseMeeting, onBackToD
     };
   };
 
-  const getInitialPrescriptions = (pid: string) => {
+  const getInitialPrescriptions = (ptOrId: DoctorDeskPatient | string) => {
+    const pid = getPatientId(ptOrId).toLowerCase();
     if (pid.includes('arthur')) {
       return [
         { id: 'p-a1', name: 'Amlodipine', dose: '5 mg', freq: 'Oral Once daily', duration: 'Current', status: 'active' as const },
@@ -153,6 +264,29 @@ export default function DoctorDeskEncounter({ patient, onCloseMeeting, onBackToD
         { id: 'p-m2', name: 'Vitamin D3 (Cholecalciferol)', dose: '2000 IU', freq: 'Oral Once daily', duration: 'Current', status: 'active' as const }
       ];
     }
+    if (pid.includes('allergy') || pid.includes('hayes')) {
+      return [
+        { id: 'p-allergy-1', name: 'Amoxicillin-Clavulanate (Augmentin)', dose: '875/125 mg', freq: 'Oral Twice daily with food', duration: '10 days', status: 'new' as const },
+        { id: 'p-allergy-2', name: 'Fluticasone Propionate Nasal Spray', dose: '50 mcg/actuation', freq: '1-2 sprays daily', duration: '30 days', status: 'active' as const }
+      ];
+    }
+    if (pid.includes('primary') || pid.includes('sarah')) {
+      return [
+        { id: 'p-s1', name: 'Multivitamin Formula', dose: '1 tablet', freq: 'Oral Once daily', duration: 'Current', status: 'active' as const }
+      ];
+    }
+    if (pid.includes('endo') || pid.includes('harold')) {
+      return [
+        { id: 'p-h1', name: 'Levothyroxine', dose: '75 mcg', freq: 'Oral Once daily in morning', duration: '90 days', status: 'new' as const }
+      ];
+    }
+    if (pid.includes('conflict') || pid.includes('beatrice')) {
+      return [
+        { id: 'p-b1', name: 'Furosemide', dose: '20 mg', freq: 'Oral Once daily in morning', duration: 'Current', status: 'active' as const },
+        { id: 'p-b2', name: 'Lisinopril', dose: '10 mg', freq: 'Oral Once daily', duration: 'Current', status: 'active' as const },
+        { id: 'p-b3', name: 'Metoprolol Succinate', dose: '25 mg', freq: 'Oral Once daily', duration: 'Current', status: 'active' as const }
+      ];
+    }
     return [
       { id: 'p1', name: 'Metformin', dose: '1000 mg', freq: 'Oral Twice daily with meals', duration: '90 days', status: 'new' as const },
       { id: 'p2', name: 'Empagliflozin', dose: '10 mg', freq: 'Oral Once daily in morning', duration: '90 days', status: 'new' as const },
@@ -160,14 +294,94 @@ export default function DoctorDeskEncounter({ patient, onCloseMeeting, onBackToD
     ];
   };
 
-  const [transcript, setTranscript] = useState(() => getInitialTranscript(patient.id));
-  const [note, setNote] = useState(() => getInitialNote(patient.id));
-  const [prescriptions, setPrescriptions] = useState(() => getInitialPrescriptions(patient.id));
+  const getInitialStructuredPlan = (ptOrId: DoctorDeskPatient | string, meds: any[]): StructuredPlanState => {
+    const pid = getPatientId(ptOrId).toLowerCase();
+    return {
+      medications: meds.map(m => ({
+        id: m.id,
+        name: m.name,
+        dose: m.dose,
+        route: 'Oral',
+        frequency: m.freq,
+        duration: m.duration,
+        indication: 'Clinical indication',
+        status: m.status === 'active' ? 'approved' : 'draft',
+        isEdited: false
+      })),
+      investigations: pid.includes('arthur') ? [
+        { id: 'inv-1', testName: 'Outpatient Stress Echocardiogram with Myocardial Perfusion', category: 'Diagnostic Imaging', urgency: 'Routine', indication: 'Exertional angina rule-out', status: 'draft' }
+      ] : pid.includes('eleanor') ? [
+        { id: 'inv-2', testName: 'Comprehensive Metabolic Panel & HbA1c (Repeat at 3 Months)', category: 'Laboratory', urgency: 'Routine', indication: 'T2DM & CKD surveillance', status: 'draft' },
+        { id: 'inv-3', testName: 'Spot Urinary Microalbumin/Creatinine Ratio', category: 'Laboratory', urgency: 'Routine', indication: 'Diabetic nephropathy baseline', status: 'draft' }
+      ] : pid.includes('endo') || pid.includes('harold') ? [
+        { id: 'inv-h1', testName: 'Repeat TSH & Free T4 Panel (in 6 Weeks)', category: 'Laboratory', urgency: 'Routine', indication: 'Levothyroxine dose titration surveillance', status: 'draft' }
+      ] : pid.includes('conflict') || pid.includes('beatrice') ? [
+        { id: 'inv-b1', testName: 'Surveillance Transthoracic Echocardiogram (in 6 Months)', category: 'Diagnostic Imaging', urgency: 'Routine', indication: 'Longitudinal EF reconciliation & diastolic staging', status: 'draft' }
+      ] : [],
+      followUp: {
+        timeframe: pid.includes('arthur') ? '2 weeks for stress echo review' : pid.includes('endo') ? '6 weeks for repeat thyroid labs' : pid.includes('conflict') ? '1 month for clinical stability review' : '3 months for routine follow-up',
+        specialty: 'Internal Medicine Outpatient Clinic',
+        instructions: 'Return earlier if acute chest pain, lightheadedness, or shortness of breath occurs.',
+        status: 'draft'
+      },
+      patientInstructions: {
+        text: pid.includes('eleanor') 
+          ? '1. Take Metformin 1000 mg twice daily with morning and evening meals.\n2. Take Empagliflozin 10 mg once daily every morning with water.\n3. Monitor home fasting blood glucose and keep a written log.\n4. Strict Penicillin avoidance confirmed.\n5. Call clinic immediately if experiencing fever, severe fatigue, or nausea.'
+          : pid.includes('endo')
+          ? '1. Take Levothyroxine 75 mcg every morning on an empty stomach with a full glass of water.\n2. Wait at least 30 to 60 minutes before breakfast or coffee for proper absorption.\n3. Repeat blood test in 6 weeks.'
+          : '1. Take all prescribed medications as scheduled.\n2. Keep your follow-up appointment in clinic.\n3. Call 911 immediately if you experience severe chest pain, shortness of breath, or syncope.',
+        status: 'draft'
+      }
+    };
+  };
+
+  const [transcript, setTranscript] = useState(() => getInitialTranscript(patient));
+  const [note, setNote] = useState(() => getInitialNote(patient));
+  const [prescriptions, setPrescriptions] = useState(() => getInitialPrescriptions(patient));
+  const [structuredPlan, setStructuredPlan] = useState<StructuredPlanState>(() => getInitialStructuredPlan(patient, getInitialPrescriptions(patient)));
+  const [encounterPhase, setEncounterPhase] = useState<'consultation' | 'completed' | 'handoff'>('consultation');
+  const [rightPanelMode, setRightPanelMode] = useState<'perspectives' | 'copilot'>('perspectives');
+  const [isTranscriptCollapsed, setIsTranscriptCollapsed] = useState(true);
+  const [overrideDirective, setOverrideDirective] = useState('');
+  const [isSignOffModalOpen, setIsSignOffModalOpen] = useState(false);
+  const [completedSummaryData, setCompletedSummaryData] = useState<any>(null);
+  const encounterStartTimeRef = useRef(Date.now());
+
+  const hasContraindication = Boolean(
+    patient.contraindicationAlert ||
+    (
+      patient.allergies?.some(a => a.toLowerCase().includes('penicillin')) &&
+      structuredPlan.medications.some(m => {
+        const lower = m.name.toLowerCase();
+        return lower.includes('amox') || lower.includes('augmentin') || lower.includes('penicillin') || lower.includes('ampicillin');
+      })
+    )
+  );
 
   useEffect(() => {
-    setTranscript(getInitialTranscript(patient.id));
+    void fetchNoteTemplates().then(templates => {
+      if (templates && templates.length > 0) {
+        setAvailableTemplates(templates);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    const initialTranscript = getInitialTranscript(patient.id);
+    const initialMeds = getInitialPrescriptions(patient.id);
+    setTranscript(initialTranscript);
     setNote(getInitialNote(patient.id));
-    setPrescriptions(getInitialPrescriptions(patient.id));
+    setPrescriptions(initialMeds);
+    setStructuredPlan(getInitialStructuredPlan(patient.id, initialMeds));
+    setEncounterPhase('consultation');
+    setRightPanelMode('perspectives');
+    setOverrideDirective('');
+    setFeedbackRating(null);
+    setFeedbackSubmitted(false);
+    encounterStartTimeRef.current = Date.now();
+    void generateConsultationLabel(initialTranscript, patient.name).then(lbl => {
+      if (lbl) setTriageLabel(lbl);
+    });
     setChatMessages([
       {
         role: 'assistant',
@@ -175,9 +389,6 @@ export default function DoctorDeskEncounter({ patient, onCloseMeeting, onBackToD
       }
     ]);
   }, [patient.id]);
-
-  const [newMedName, setNewMedName] = useState('');
-  const [newMedDose, setNewMedDose] = useState('');
 
   // Copilot Chat state
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
@@ -216,6 +427,7 @@ export default function DoctorDeskEncounter({ patient, onCloseMeeting, onBackToD
     const handleGlobalKeyDown = (e: globalThis.KeyboardEvent) => {
       // 1. Esc to close open modals
       if (e.key === 'Escape') {
+        if (isSignOffModalOpen) setIsSignOffModalOpen(false);
         if (isCloseModalOpen) setIsCloseModalOpen(false);
         if (showPdfModal) setShowPdfModal(false);
         return;
@@ -224,9 +436,18 @@ export default function DoctorDeskEncounter({ patient, onCloseMeeting, onBackToD
       // 2. Cmd/Ctrl + Enter: Open sign-off modal
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
         e.preventDefault();
-        setIsCloseModalOpen(true);
+        setIsSignOffModalOpen(true);
         setDeskShortcutFeedback('Ready to sign off (⌘↵)');
         setTimeout(() => setDeskShortcutFeedback(null), 2500);
+        return;
+      }
+
+      // Cmd/Ctrl + T: Toggle ambient transcript drawer
+      if ((e.metaKey || e.ctrlKey) && (e.key === 't' || e.key === 'T')) {
+        e.preventDefault();
+        setIsTranscriptCollapsed(prev => !prev);
+        setDeskShortcutFeedback(isTranscriptCollapsed ? 'Transcript opened (⌘T)' : 'Transcript hidden (⌘T)');
+        setTimeout(() => setDeskShortcutFeedback(null), 2000);
         return;
       }
 
@@ -265,6 +486,16 @@ export default function DoctorDeskEncounter({ patient, onCloseMeeting, onBackToD
       if ((e.metaKey || e.ctrlKey) && e.key === '4') {
         e.preventDefault();
         setActiveTab('intake');
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === '5') {
+        e.preventDefault();
+        setActiveTab('billing');
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === '6') {
+        e.preventDefault();
+        setActiveTab('evidence');
         return;
       }
 
@@ -309,9 +540,15 @@ Active Note Plan: ${note.plan}
       }
       clearInterval(timerIntervalRef.current);
       setIsRecording(false);
+      setIsPaused(false);
+      if (audioStream) {
+        audioStream.getTracks().forEach(t => t.stop());
+        setAudioStream(null);
+      }
     } else {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        setAudioStream(stream);
         const mediaRecorder = new MediaRecorder(stream);
         mediaRecorderRef.current = mediaRecorder;
         audioChunksRef.current = [];
@@ -323,11 +560,13 @@ Active Note Plan: ${note.plan}
         mediaRecorder.onstop = async () => {
           const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
           stream.getTracks().forEach(t => t.stop());
+          setAudioStream(null);
           await processCapturedAudio(audioBlob);
         };
 
-        mediaRecorder.start();
+        mediaRecorder.start(250);
         setIsRecording(true);
+        setIsPaused(false);
         setRecordingSeconds(0);
         timerIntervalRef.current = setInterval(() => {
           setRecordingSeconds(s => s + 1);
@@ -337,6 +576,36 @@ Active Note Plan: ${note.plan}
         alert('Could not access microphone. Please ensure microphone permissions are granted in your browser.');
       }
     }
+  };
+
+  const togglePauseRecording = () => {
+    if (!mediaRecorderRef.current) return;
+    if (isPaused) {
+      mediaRecorderRef.current.resume();
+      setIsPaused(false);
+      timerIntervalRef.current = setInterval(() => {
+        setRecordingSeconds(s => s + 1);
+      }, 1000);
+    } else {
+      mediaRecorderRef.current.pause();
+      setIsPaused(true);
+      clearInterval(timerIntervalRef.current);
+    }
+  };
+
+  const handleFeedback = async (rating: number, status: string) => {
+    setFeedbackRating(rating);
+    setFeedbackSubmitted(true);
+    await submitEncounterFeedback({
+      encounterId: `enc-${patient.id}`,
+      patientId: patient.id,
+      overallRating: rating,
+      noteDraftStatus: status,
+      encounterDurationMinutes: Math.max(1, Math.round(recordingSeconds / 60))
+    });
+    setTimeout(() => {
+      setFeedbackSubmitted(false);
+    }, 4000);
   };
 
   const processCapturedAudio = async (blob: Blob) => {
@@ -364,25 +633,63 @@ Active Note Plan: ${note.plan}
       const sample = getInitialTranscript(patient.id);
       setTranscript(sample);
       await generateNoteFromTranscript(sample);
-      setCopySuccess('Loaded sample audio & updated SOAP note');
+      setCopySuccess('Loaded sample audio & updated clinical note');
       setTimeout(() => setCopySuccess(null), 2500);
     } finally {
       setIsTranscribing(false);
     }
   };
 
-  const generateNoteFromTranscript = async (textToUse?: string) => {
+  const applyTemplateOutputToNote = (result: any, template: string) => {
+    if (!result) return;
+    if (template === 'SOAP') {
+      setNote({
+        subjective: result.subjective || note.subjective,
+        objective: result.objective || note.objective,
+        assessment: result.assessment || note.assessment,
+        plan: result.plan || note.plan
+      });
+    } else if (template === 'HANDOVER') {
+      setNote({
+        subjective: `SITUATION: ${result.situation || 'Patient under review'}`,
+        objective: `BACKGROUND: ${result.background || 'History available in chart'}`,
+        assessment: `ASSESSMENT: ${result.assessment || 'Stable'}`,
+        plan: `RECOMMENDATION / CONTINGENCY: ${result.recommendation || 'Standard care'}`
+      });
+    } else if (template === 'PSYCH') {
+      setNote({
+        subjective: `PRESENTING ILLNESS:\n${result.historyOfPresentingIllness || 'None reported'}\n\nPAST PSYCH HX:\n${result.pastMedicalHistory || 'Non-contributory'}`,
+        objective: `MENTAL STATUS EXAM (MSE):\n${result.mentalStatusExam || 'Normal examination'}\n\nCURRENT MEDICATIONS:\n${result.medications || 'None'}`,
+        assessment: `DIAGNOSTIC IMPRESSION:\n${result.impressionAndPlan || 'Under evaluation'}`,
+        plan: `SAFETY ASSESSMENT & PLAN:\n${result.impressionAndPlan || 'Safety precautions confirmed'}`
+      });
+    } else {
+      setNote({
+        subjective: `CHIEF COMPLAINT: ${result.chiefComplaint || 'None'}\n\nHPI: ${result.historyOfPresentIllness || 'None'}`,
+        objective: `EXAM: ${result.examinationFindings || 'None'}\n\nINVESTIGATIONS: ${(result.investigations || []).join(', ')}`,
+        assessment: result.assessment || note.assessment,
+        plan: `${result.plan || ''}\n\nFOLLOW UP: ${result.followUp || ''}`
+      });
+    }
+  };
+
+  const generateNoteFromTranscript = async (textToUse?: string, templateOverride?: string) => {
     const text = textToUse || transcript;
+    const templateToUse = templateOverride || selectedTemplate;
     if (!text.trim()) return;
     setIsGeneratingNote(true);
     setStreamProgress({ stage: 'INPUT_RECEIVED', message: 'Initiating real-time clinical stream...', isStreaming: true });
+
+    void generateConsultationLabel(text, patient.name).then(lbl => {
+      if (lbl) setTriageLabel(lbl);
+    });
 
     try {
       // Execute streaming clinical pipeline (M2C-3)
       await streamClinicalPipeline({
         patientId: patient.id,
         transcript: text,
-        template: 'SOAP',
+        template: templateToUse,
         prescriptions: prescriptions.map(p => ({
           name: p.name,
           dosage: p.dose,
@@ -425,13 +732,7 @@ Active Note Plan: ${note.plan}
         },
         onComplete: (terminalEvent) => {
           if (terminalEvent.payload?.output?.soapNote) {
-            const noteData = terminalEvent.payload.output.soapNote;
-            setNote({
-              subjective: noteData.subjective || note.subjective,
-              objective: noteData.objective || note.objective,
-              assessment: noteData.assessment || note.assessment,
-              plan: noteData.plan || note.plan
-            });
+            applyTemplateOutputToNote(terminalEvent.payload.output.soapNote, templateToUse);
           }
           setStreamProgress({ stage: 'STREAM_COMPLETE', message: 'Real-time sync complete', isStreaming: false });
           setTimeout(() => setStreamProgress(prev => ({ ...prev, message: '' })), 3000);
@@ -439,14 +740,9 @@ Active Note Plan: ${note.plan}
         onError: async (err) => {
           console.warn('[DoctorDesk] SSE streaming fallback to unary AI note:', err.message);
           const aiService = new RealAIService();
-          const result = await aiService.generateNote(text, chartContext, 'SOAP');
+          const result = await aiService.generateNote(text, chartContext, templateToUse);
           if (result) {
-            setNote({
-              subjective: result.subjective || note.subjective,
-              objective: result.objective || note.objective,
-              assessment: result.assessment || note.assessment,
-              plan: result.plan || note.plan
-            });
+            applyTemplateOutputToNote(result, templateToUse);
           }
           setStreamProgress({ stage: 'FALLBACK', message: '', isStreaming: false });
         }
@@ -455,14 +751,9 @@ Active Note Plan: ${note.plan}
       console.error('Failed to generate note via streaming, falling back to unary:', err);
       try {
         const aiService = new RealAIService();
-        const result = await aiService.generateNote(text, chartContext, 'SOAP');
+        const result = await aiService.generateNote(text, chartContext, templateToUse);
         if (result) {
-          setNote({
-            subjective: result.subjective || note.subjective,
-            objective: result.objective || note.objective,
-            assessment: result.assessment || note.assessment,
-            plan: result.plan || note.plan
-          });
+          applyTemplateOutputToNote(result, templateToUse);
         }
       } catch (unaryErr) {
         console.error('Unary note fallback also failed:', unaryErr);
@@ -535,24 +826,6 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
     setTimeout(() => setCopySuccess(null), 2500);
   };
 
-  const handleAddMedication = (e: FormEvent) => {
-    e.preventDefault();
-    if (!newMedName.trim()) return;
-    setPrescriptions(prev => [
-      ...prev,
-      {
-        id: `rx-${Date.now()}`,
-        name: newMedName.trim(),
-        dose: newMedDose.trim() || 'Standard Dose',
-        freq: 'Once daily',
-        duration: '90 days',
-        status: 'new'
-      }
-    ]);
-    setNewMedName('');
-    setNewMedDose('');
-  };
-
   const formatSeconds = (sec: number) => {
     const m = Math.floor(sec / 60);
     const s = sec % 60;
@@ -577,6 +850,33 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
     birthDate: patient.dob,
     gender: patient.gender.toLowerCase() as any
   };
+
+  if (encounterPhase === 'completed') {
+    const elapsedSeconds = Math.round((Date.now() - encounterStartTimeRef.current) / 1000);
+    return (
+      <div className="min-h-screen bg-[#fafaf9] p-6 lg:p-12 flex items-center justify-center font-sans">
+        <EncounterCompletionSummary
+          patient={patient}
+          durationSeconds={completedSummaryData?.durationSeconds || elapsedSeconds}
+          timeSavedMinutes={completedSummaryData?.timeSavedMinutes || 11}
+          onViewPatientHandoff={() => setEncounterPhase('handoff')}
+          onReturnToSchedule={onBackToDesk}
+        />
+      </div>
+    );
+  }
+
+  if (encounterPhase === 'handoff') {
+    return (
+      <div className="min-h-screen bg-[#fafaf9] p-6 lg:p-12 flex items-center justify-center font-sans">
+        <PatientHandoffView
+          patient={patient}
+          plan={structuredPlan}
+          onFinish={onBackToDesk}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen w-full flex-col bg-[#fafaf9] text-[#18181b] overflow-hidden font-sans antialiased">
@@ -649,6 +949,24 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
             <span className="hidden md:inline">Visual AI {capturedMediaList.length > 0 ? `(${capturedMediaList.length})` : ''}</span>
           </button>
 
+          <button
+            onClick={() => setShowVoiceOutreachModal(true)}
+            className="flex items-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold px-3 py-2 rounded-xl border border-indigo-200 transition-all cursor-pointer"
+            title="Launch Autonomous Patient Voice Outreach"
+          >
+            <PhoneCall size={13} className="text-indigo-600" />
+            <span className="hidden md:inline">Voice Outreach</span>
+          </button>
+
+          <button
+            onClick={() => setShowAvsModal(true)}
+            className="flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold px-3 py-2 rounded-xl border border-emerald-200 transition-all cursor-pointer"
+            title="Patient After-Visit Summary & Discharge Instructions"
+          >
+            <FileText size={13} className="text-emerald-600" />
+            <span className="hidden md:inline">After-Care AVS</span>
+          </button>
+
           {deskShortcutFeedback && (
             <div className="flex items-center gap-1.5 bg-[#18181b] text-white px-2.5 py-1.5 rounded-xl text-xs font-medium shadow-md">
               <CheckCircle2 size={12} className="text-emerald-400" />
@@ -657,7 +975,7 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
           )}
 
           <button
-            onClick={() => setIsCloseModalOpen(true)}
+            onClick={() => setIsSignOffModalOpen(true)}
             className="flex items-center gap-1.5 bg-[#111315] hover:bg-[#272B30] text-white font-semibold text-xs px-4 py-2 rounded-xl shadow-xs transition-all cursor-pointer ml-1"
           >
             <Check size={14} strokeWidth={2.5} className="text-emerald-400" />
@@ -673,25 +991,29 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
         <section className="flex flex-col flex-1 min-w-0 border-r border-[#e4e4e7] bg-[#fbfbfa]">
           {/* TAB BAR & AMBIENT CONTROLS */}
           <div className="h-12 border-b border-[#e4e4e7] bg-white px-6 flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 overflow-x-auto">
               {[
                 { id: 'note', label: 'Consultation Note', icon: ClipboardList },
+                { id: 'billing', label: 'Billing & RCM (4.0× ROI)', icon: DollarSign, badge: '4.0× ROI' },
+                { id: 'evidence', label: 'Evidence (PubMed RAG)', icon: BookOpen },
                 { id: 'chart', label: 'Chart & Labs', icon: Activity },
                 { id: 'orders', label: `Orders (${prescriptions.length})`, icon: Pill },
-                { id: 'intake', label: 'Intake (FHIR)', icon: ClipboardCheck }
+                { id: 'intake', label: 'Rooming & Intake', icon: ClipboardCheck }
               ].map(tab => {
                 const active = activeTab === tab.id;
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id as any)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors cursor-pointer ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors cursor-pointer shrink-0 ${
                       active
                         ? 'bg-[#18181b] text-white shadow-2xs font-semibold'
+                        : tab.id === 'billing'
+                        ? 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100 hover:text-emerald-800'
                         : 'text-[#71717a] hover:text-[#09090b] hover:bg-[#f4f4f5]'
                     }`}
                   >
-                    <tab.icon size={13} />
+                    <tab.icon size={13} className={tab.id === 'billing' && !active ? 'text-emerald-600' : ''} />
                     <span>{tab.label}</span>
                   </button>
                 );
@@ -700,6 +1022,83 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
 
             {/* Ambient Mic & Audio Test Controls */}
             <div className="flex items-center gap-2">
+              {isRecording && (
+                <AudioLevelMeter
+                  stream={audioStream}
+                  isRecording={isRecording}
+                  isPaused={isPaused}
+                />
+              )}
+              {/* Scribe State Indicator (Section 20: LISTENING, PAUSED, PROCESSING, READY, ERROR, OFFLINE) */}
+              {(() => {
+                const isOffline = patient.scenarioKey === 'scenario-f';
+                let scribeState: string = 'READY';
+                if (isOffline) {
+                  scribeState = 'OFFLINE';
+                } else if (isTranscribing || isGeneratingNote) {
+                  scribeState = 'PROCESSING';
+                } else if (isRecording) {
+                  scribeState = isPaused ? 'PAUSED' : 'LISTENING';
+                }
+
+                return (
+                  <div 
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-all ${
+                      scribeState === 'LISTENING'
+                        ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                        : scribeState === 'PAUSED'
+                        ? 'bg-amber-50 border-amber-200 text-amber-800'
+                        : scribeState === 'PROCESSING'
+                        ? 'bg-sky-50 border-sky-200 text-sky-800'
+                        : scribeState === 'OFFLINE'
+                        ? 'bg-slate-100 border-slate-200 text-slate-700'
+                        : scribeState === 'ERROR'
+                        ? 'bg-rose-50 border-rose-200 text-rose-800'
+                        : 'bg-[#fafaf9] border-[#e4e4e7] text-[#52525b]'
+                    }`}
+                    role="status"
+                    aria-label={`Ambient Scribe Status: ${scribeState}`}
+                  >
+                    {scribeState === 'LISTENING' && (
+                      <>
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        <span>LISTENING ({formatSeconds(recordingSeconds)})</span>
+                      </>
+                    )}
+                    {scribeState === 'PAUSED' && (
+                      <>
+                        <span className="w-2 h-2 rounded-full bg-amber-500" />
+                        <span>PAUSED ({formatSeconds(recordingSeconds)})</span>
+                      </>
+                    )}
+                    {scribeState === 'PROCESSING' && (
+                      <>
+                        <Loader2 size={11} className="animate-spin text-sky-600" />
+                        <span>PROCESSING</span>
+                      </>
+                    )}
+                    {scribeState === 'READY' && (
+                      <>
+                        <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                        <span>READY (⌥Space)</span>
+                      </>
+                    )}
+                    {scribeState === 'OFFLINE' && (
+                      <>
+                        <span className="w-2 h-2 rounded-full bg-slate-400" />
+                        <span>OFFLINE</span>
+                      </>
+                    )}
+                    {scribeState === 'ERROR' && (
+                      <>
+                        <span className="w-2 h-2 rounded-full bg-rose-500" />
+                        <span>ERROR</span>
+                      </>
+                    )}
+                  </div>
+                );
+              })()}
+
               <button
                 onClick={testSampleAudioDialogue}
                 className="text-[11px] text-[#71717a] hover:text-[#09090b] px-2 py-1 hover:bg-[#f4f4f5] rounded-md transition-colors cursor-pointer"
@@ -708,18 +1107,40 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
                 Sample Dialogue
               </button>
 
+              {isRecording && (
+                <button
+                  onClick={togglePauseRecording}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  title={isPaused ? "Resume recording" : "Pause recording"}
+                >
+                  {isPaused ? (
+                    <>
+                      <Play size={11} className="fill-emerald-600 text-emerald-600" />
+                      <span className="text-emerald-700 dark:text-emerald-400 font-semibold">Resume</span>
+                    </>
+                  ) : (
+                    <>
+                      <Pause size={11} className="fill-amber-600 text-amber-600" />
+                      <span className="text-amber-700 dark:text-amber-400 font-semibold">Pause</span>
+                    </>
+                  )}
+                </button>
+              )}
+
               <button
                 onClick={toggleRecording}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                   isRecording
-                    ? 'bg-red-600 text-white animate-pulse shadow-xs'
+                    ? isPaused
+                      ? 'bg-amber-600 text-white shadow-xs'
+                      : 'bg-red-600 text-white animate-pulse shadow-xs'
                     : 'bg-[#18181b] hover:bg-[#27272a] text-white shadow-2xs'
                 }`}
               >
                 {isRecording ? (
                   <>
                     <Square size={11} className="fill-white" />
-                    <span>Recording ({formatSeconds(recordingSeconds)})</span>
+                    <span>{isPaused ? `Paused (${formatSeconds(recordingSeconds)})` : `Stop (${formatSeconds(recordingSeconds)})`}</span>
                   </>
                 ) : (
                   <>
@@ -740,16 +1161,63 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
           {/* TAB 1: CONSULTATION NOTE & SCRIBE */}
           {activeTab === 'note' && (
             <div className="flex-1 overflow-y-auto p-6 space-y-5">
-              {/* Transcript Box */}
+              {/* SAFETY INTERVENTION HARD STOP BANNER (Section 21) */}
+              {hasContraindication && (
+                <SafetyInterventionBanner
+                  allergen={patient.contraindicationAlert?.allergen || patient.allergies[0] || 'Penicillin'}
+                  offendingDrug={patient.contraindicationAlert?.offendingDrug || structuredPlan.medications.find(m => m.name.toLowerCase().includes('amox') || m.name.toLowerCase().includes('augmentin'))?.name || 'Amoxicillin-Clavulanate (Augmentin)'}
+                  severity={patient.contraindicationAlert?.severity || 'Anaphylaxis (Hard Stop)'}
+                  riskDescription={patient.contraindicationAlert?.risk || 'Cross-reactive beta-lactam hypersensitivity shock risk. Use non-beta-lactam alternative.'}
+                  overrideDirective={overrideDirective}
+                  onOverrideChange={setOverrideDirective}
+                  onRemoveOffendingDrug={() => {
+                    const filtered = structuredPlan.medications.filter(m => !m.name.toLowerCase().includes('amox') && !m.name.toLowerCase().includes('augmentin'));
+                    setStructuredPlan({ ...structuredPlan, medications: filtered });
+                    setPrescriptions(filtered.map(m => ({ id: m.id, name: m.name, dose: m.dose, freq: m.frequency, duration: m.duration, status: 'new' as const })));
+                    setDeskShortcutFeedback('Contraindicated medication removed');
+                    setTimeout(() => setDeskShortcutFeedback(null), 2000);
+                  }}
+                />
+              )}
+
+              {/* OFFLINE / DEGRADED MODE ALERT BANNER (Section 30 & 31) */}
+              {patient.scenarioKey === 'scenario-f' && (
+                <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-300 text-amber-950 text-xs flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle size={15} className="text-amber-700 shrink-0" />
+                    <span>
+                      <strong>Degraded Mode Active:</strong> Primary AI reasoning service unavailable. Manual clinician documentation enabled without interruption.
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">
+                    MANUAL OVERRIDE
+                  </span>
+                </div>
+              )}
+
+              {/* Collapsible Transcript Drawer (Section 12) */}
               <div className="rounded-2xl border border-[#e4e4e7] bg-white p-4 shadow-2xs space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Mic size={13} className="text-[#0284c7]" />
                     <span className="text-xs font-bold text-[#52525b]">
-                      Ambient Dialogue
+                      Ambient Dialogue & Transcription
                     </span>
+                    {triageLabel && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-[10px] font-semibold">
+                        <Tag size={10} className="text-blue-500" />
+                        <span>{triageLabel}</span>
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsTranscriptCollapsed(!isTranscriptCollapsed)}
+                      className="text-xs font-semibold text-[#52525b] hover:text-[#09090b] px-2 py-1 rounded hover:bg-[#f4f4f5] transition-colors cursor-pointer"
+                    >
+                      {isTranscriptCollapsed ? 'Show Full Transcript (⌘T)' : 'Collapse (⌘T)'}
+                    </button>
                     {streamProgress.isStreaming && (
                       <span className="text-[11px] text-blue-600 animate-pulse font-medium">
                         {streamProgress.message || 'Synthesizing...'}
@@ -765,17 +1233,48 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
                     </button>
                   </div>
                 </div>
-                <p className="text-xs text-[#52525b] leading-relaxed max-h-24 overflow-y-auto whitespace-pre-wrap font-mono bg-[#fafaf9] p-3 rounded-xl border border-[#e4e4e7]/60">
-                  {transcript}
-                </p>
+                {!isTranscriptCollapsed ? (
+                  <p className="text-xs text-[#52525b] leading-relaxed max-h-36 overflow-y-auto whitespace-pre-wrap font-mono bg-[#fafaf9] p-3 rounded-xl border border-[#e4e4e7]/60">
+                    {transcript}
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-[#71717a] truncate font-mono bg-[#fafaf9] px-3 py-1.5 rounded-lg border border-[#e4e4e7]/60">
+                    {transcript.slice(0, 140)}...
+                  </p>
+                )}
               </div>
 
-              {/* Structured Note (SOAP) */}
+              {/* Structured Note with Dynamic Clinical Template */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-[#52525b]">
-                    Clinical Note (SOAP)
-                  </h3>
+                  <div className="flex items-center gap-2">
+                    <Sliders size={13} className="text-[#52525b]" />
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-[#52525b]">
+                      Clinical Note Format:
+                    </h3>
+                    <select
+                      value={selectedTemplate}
+                      onChange={e => {
+                        const t = e.target.value;
+                        setSelectedTemplate(t);
+                        void generateNoteFromTranscript(undefined, t);
+                      }}
+                      className="text-xs font-semibold bg-white border border-[#e4e4e7] rounded-lg px-2.5 py-1 text-[#111315] outline-none cursor-pointer hover:border-slate-400 shadow-2xs"
+                    >
+                      {availableTemplates.length > 0 ? (
+                        availableTemplates.map(tmpl => (
+                          <option key={tmpl.id} value={tmpl.id}>{tmpl.name}</option>
+                        ))
+                      ) : (
+                        <>
+                          <option value="SOAP">SOAP Note (Standard)</option>
+                          <option value="GENERAL">Comprehensive Consultation</option>
+                          <option value="HANDOVER">Emergency / Shift Handover (SBAR)</option>
+                          <option value="PSYCH">Psychiatric Evaluation (MSE)</option>
+                        </>
+                      )}
+                    </select>
+                  </div>
                   <div className="flex items-center gap-2">
                     {copySuccess && (
                       <span className="text-xs text-emerald-600 font-medium animate-in fade-in">
@@ -863,6 +1362,54 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
                     placeholder="Pharmacology, diagnostic orders, patient counseling..."
                   />
                 </div>
+
+                {/* Physician Pilot Feedback Bar (Berta AI Quality Feedback) */}
+                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900/60 p-3 flex flex-wrap items-center justify-between gap-3 text-xs shadow-2xs">
+                  <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                    <span className="font-semibold text-slate-900 dark:text-slate-100">AI Note Quality:</span>
+                    <div className="flex items-center gap-0.5">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => handleFeedback(star, 'minor_edit')}
+                          className={`px-1 text-sm transition-colors cursor-pointer ${
+                            feedbackRating !== null && feedbackRating >= star
+                              ? 'text-amber-500 font-bold'
+                              : 'text-slate-300 dark:text-slate-600 hover:text-amber-400'
+                          }`}
+                          title={`Rate ${star} star`}
+                        >
+                          ★
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleFeedback(5, 'accepted_unchanged')}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 font-medium transition-colors cursor-pointer"
+                    >
+                      <ThumbsUp size={12} />
+                      <span>Accurate</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleFeedback(2, 'major_edit')}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 font-medium transition-colors cursor-pointer"
+                    >
+                      <ThumbsDown size={12} />
+                      <span>Needs Revision</span>
+                    </button>
+                    {feedbackSubmitted && (
+                      <span className="text-emerald-600 dark:text-emerald-400 text-xs font-semibold flex items-center gap-1 animate-in fade-in">
+                        <CheckCheck size={13} />
+                        <span>Logged to Audit</span>
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -949,208 +1496,294 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
             </div>
           )}
 
-          {/* TAB 3: PRESCRIPTIONS & ORDERS */}
+          {/* TAB 3: STRUCTURED TREATMENT PLAN & ORDERS (Sections 20 & 23) */}
           {activeTab === 'orders' && (
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              <div className="rounded-2xl border border-[#e4e4e7] bg-white p-5 shadow-xs">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xs font-bold text-[#52525b] uppercase tracking-wider">
-                    Medication Orders for this Encounter
-                  </h3>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs text-[#71717a] font-medium">{prescriptions.length} items</span>
-                    <button
-                      onClick={() => setShowPdfModal(true)}
-                      className="flex items-center gap-1.5 text-xs text-[#09090b] hover:bg-[#f4f4f5] font-semibold bg-white px-3 py-1 rounded-lg border border-[#e4e4e7] shadow-2xs cursor-pointer"
-                    >
-                      <Printer size={13} />
-                      Print Rx
-                    </button>
-                  </div>
-                </div>
+              {/* SAFETY INTERVENTION HARD STOP BANNER IF ALLERGY CONFLICT */}
+              {hasContraindication && (
+                <SafetyInterventionBanner
+                  allergen={patient.contraindicationAlert?.allergen || patient.allergies[0] || 'Penicillin'}
+                  offendingDrug={patient.contraindicationAlert?.offendingDrug || structuredPlan.medications.find(m => m.name.toLowerCase().includes('amox') || m.name.toLowerCase().includes('augmentin'))?.name || 'Amoxicillin-Clavulanate'}
+                  severity={patient.contraindicationAlert?.severity || 'Anaphylaxis (Hard Stop)'}
+                  riskDescription={patient.contraindicationAlert?.risk || 'Cross-reactive beta-lactam hypersensitivity shock risk. Use non-beta-lactam alternative.'}
+                  overrideDirective={overrideDirective}
+                  onOverrideChange={setOverrideDirective}
+                  onRemoveOffendingDrug={() => {
+                    const filtered = structuredPlan.medications.filter(m => !m.name.toLowerCase().includes('amox') && !m.name.toLowerCase().includes('augmentin'));
+                    setStructuredPlan({ ...structuredPlan, medications: filtered });
+                    setPrescriptions(filtered.map(m => ({ id: m.id, name: m.name, dose: m.dose, freq: m.frequency, duration: m.duration, status: 'new' as const })));
+                    setDeskShortcutFeedback('Contraindicated medication removed');
+                    setTimeout(() => setDeskShortcutFeedback(null), 2000);
+                  }}
+                />
+              )}
 
-                <div className="space-y-2.5">
-                  {prescriptions.map(rx => (
-                    <div key={rx.id} className="p-3.5 rounded-xl border border-[#e4e4e7] bg-[#fafaf9] flex items-center justify-between">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-[#09090b]">{rx.name}</span>
-                          <span className="text-xs text-[#0284c7] font-mono font-semibold">{rx.dose}</span>
-                          {rx.status === 'new' && (
-                            <span className="bg-[#dcfce7] text-[#15803d] border border-[#bbf7d0] text-[10px] font-bold px-2 py-0.5 rounded">NEW ORDER</span>
-                          )}
-                        </div>
-                        <p className="text-xs text-[#71717a] mt-0.5">{rx.freq} • {rx.duration}</p>
-                      </div>
-                      <button
-                        onClick={() => setPrescriptions(prescriptions.filter(p => p.id !== rx.id))}
-                        className="text-xs text-[#a1a1aa] hover:text-[#dc2626] p-1.5 cursor-pointer"
-                        title="Remove medication"
-                      >
-                        <X size={15} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Quick Add Bar */}
-                <form onSubmit={handleAddMedication} className="mt-5 pt-4 border-t border-[#f4f4f5] flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="Medication name..."
-                    value={newMedName}
-                    onChange={e => setNewMedName(e.target.value)}
-                    className="flex-1 bg-white border border-[#e4e4e7] rounded-xl px-3.5 py-2 text-xs text-[#09090b] placeholder-[#a1a1aa] outline-none focus:border-[#18181b]"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Dose (e.g. 10mg)"
-                    value={newMedDose}
-                    onChange={e => setNewMedDose(e.target.value)}
-                    className="w-32 bg-white border border-[#e4e4e7] rounded-xl px-3.5 py-2 text-xs text-[#09090b] placeholder-[#a1a1aa] outline-none focus:border-[#18181b]"
-                  />
-                  <button
-                    type="submit"
-                    className="flex items-center gap-1.5 bg-[#18181b] hover:bg-[#27272a] text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-xs cursor-pointer"
-                  >
-                    <Plus size={14} />
-                    Add Order
-                  </button>
-                </form>
-              </div>
+              <StructuredTreatmentPlan
+                plan={structuredPlan}
+                onChange={(updated) => {
+                  setStructuredPlan(updated);
+                  setPrescriptions(updated.medications.map(m => ({
+                    id: m.id,
+                    name: m.name,
+                    dose: m.dose,
+                    freq: m.frequency,
+                    duration: m.duration,
+                    status: m.status === 'approved' ? 'active' : 'new'
+                  })));
+                }}
+                onProvenanceInvalidated={() => {
+                  setDeskShortcutFeedback('Draft updated (Requires New Provenance)');
+                  setTimeout(() => setDeskShortcutFeedback(null), 2000);
+                }}
+              />
             </div>
           )}
 
-          {/* TAB 4: PATIENT INTAKE (FHIR) */}
+          {/* TAB 4: NURSE ROOMING & PATIENT INTAKE */}
           {activeTab === 'intake' && (
             <div className="flex-1 overflow-hidden flex flex-col">
-              <IntakeReview
-                patientId={patient.id}
-                onLaunchNewIntake={() => setShowIntakeModal(true)}
+              <div className="bg-slate-900 border-b border-slate-800 px-6 py-2.5 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setIntakeSubTab('rooming')}
+                    className={`px-3 py-1 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
+                      intakeSubTab === 'rooming'
+                        ? 'bg-teal-600 text-white'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                    }`}
+                  >
+                    Nurse Rooming & Vitals (MA/RN)
+                  </button>
+                  <button
+                    onClick={() => setIntakeSubTab('questionnaire')}
+                    className={`px-3 py-1 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
+                      intakeSubTab === 'questionnaire'
+                        ? 'bg-teal-600 text-white'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                    }`}
+                  >
+                    FHIR Digital Questionnaire
+                  </button>
+                </div>
+                <span className="text-[11px] text-slate-400 font-mono">
+                  Rooming Handoff Protocol &bull; Standardized Protocol
+                </span>
+              </div>
+
+              {intakeSubTab === 'rooming' ? (
+                <NurseRoomingWorkspace
+                  patient={patient}
+                  onInsertNoteSnippet={(snippet) => {
+                    setNote(prev => ({
+                      ...prev,
+                      subjective: prev.subjective ? `${snippet}\n\n${prev.subjective}` : snippet
+                    }));
+                    setDeskShortcutFeedback('Rooming summary inserted into Subjective note');
+                    setTimeout(() => setDeskShortcutFeedback(null), 3500);
+                  }}
+                />
+              ) : (
+                <IntakeReview
+                  patientId={patient.id}
+                  onLaunchNewIntake={() => setShowIntakeModal(true)}
+                />
+              )}
+            </div>
+          )}
+
+          {/* TAB 5: BILLING & REVENUE INTEGRITY (4.0X ROI) */}
+          {activeTab === 'billing' && (
+            <div className="flex-1 overflow-y-auto p-6 bg-slate-950">
+              <BillingCodingAdvisor
+                note={note}
+                patient={patient}
+                prescriptions={prescriptions}
+              />
+            </div>
+          )}
+
+          {/* TAB 6: EVIDENCE GROUNDING & PUBMED RAG */}
+          {activeTab === 'evidence' && (
+            <div className="flex-1 overflow-y-auto p-6 bg-slate-950">
+              <EvidenceGroundingPanel
+                conditions={patient.conditions}
+                medications={patient.medications}
+                activeQuery={patient.chiefComplaint}
+                onInsertIntoPlan={(citationText) => {
+                  setNote(prev => ({
+                    ...prev,
+                    plan: `${prev.plan}${citationText}`
+                  }));
+                  setDeskShortcutFeedback('Citation inserted into Treatment Plan');
+                  setTimeout(() => setDeskShortcutFeedback(null), 2500);
+                }}
               />
             </div>
           )}
         </section>
 
-        {/* RIGHT PANEL: CLINICAL COPILOT SIDEBAR (35%) */}
-        <aside className="w-[420px] shrink-0 flex flex-col bg-white border-l border-zinc-200/80">
-          {/* COPILOT HEADER */}
-          <div className="h-12 border-b border-zinc-200/80 bg-white px-5 flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-2">
-              <Sparkles size={14} className="text-zinc-800" />
-              <span className="text-xs font-semibold text-zinc-900 tracking-tight">Clinical Copilot</span>
+        {/* RIGHT PANEL: CLINICAL PERSPECTIVES & COPILOT SIDEBAR (35%) */}
+        <aside className="w-[430px] shrink-0 flex flex-col bg-white border-l border-zinc-200/80">
+          {/* PERSPECTIVES vs CHAT MODE TOGGLE (Section 15 & 18) */}
+          <div className="h-12 border-b border-zinc-200/80 bg-white px-4 flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-1 bg-[#f4f4f5] p-0.5 rounded-lg border border-[#e4e4e7]">
+              <button
+                type="button"
+                onClick={() => setRightPanelMode('perspectives')}
+                className={`px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer ${
+                  rightPanelMode === 'perspectives'
+                    ? 'bg-white text-[#09090b] shadow-2xs'
+                    : 'text-[#71717a] hover:text-[#09090b]'
+                }`}
+              >
+                Specialist Perspectives
+              </button>
+              <button
+                type="button"
+                onClick={() => setRightPanelMode('copilot')}
+                className={`px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer ${
+                  rightPanelMode === 'copilot'
+                    ? 'bg-white text-[#09090b] shadow-2xs'
+                    : 'text-[#71717a] hover:text-[#09090b]'
+                }`}
+              >
+                Copilot Chat
+              </button>
             </div>
-            <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full text-[10px] text-emerald-700 font-medium">
+
+            <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full text-[10px] text-emerald-700 font-semibold">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Chart Context Active
+              Specialists Active
             </div>
           </div>
 
-          {/* COPILOT PROMPT CHIPS */}
-          <div className="p-3 border-b border-zinc-200/80 bg-zinc-50/60 space-y-1.5">
-            <div className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">Quick Clinical Prompts:</div>
-            <div className="flex flex-wrap gap-1.5">
-              <button
-                type="button"
-                onClick={() => handleSendChat("Are there any drug-drug interactions between current medications and new orders?")}
-                className="text-xs bg-white hover:bg-zinc-100 text-zinc-700 font-medium px-2.5 py-1 rounded-lg border border-zinc-200/80 shadow-2xs transition-colors cursor-pointer"
-              >
-                💊 Drug Interactions
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSendChat(`Summarize ${patient.name}'s metabolic and organ function trends.`)}
-                className="text-xs bg-white hover:bg-zinc-100 text-zinc-700 font-medium px-2.5 py-1 rounded-lg border border-zinc-200/80 shadow-2xs transition-colors cursor-pointer"
-              >
-                📈 Lab Trends
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSendChat(`Draft personalized patient discharge instructions for ${patient.name}.`)}
-                className="text-xs bg-white hover:bg-zinc-100 text-zinc-700 font-medium px-2.5 py-1 rounded-lg border border-zinc-200/80 shadow-2xs transition-colors cursor-pointer"
-              >
-                📝 Patient Instructions
-              </button>
+          {rightPanelMode === 'perspectives' ? (
+            <div className="flex-1 min-h-0 overflow-hidden">
+              <ClinicalPerspectivesPanel
+                patient={patient}
+                transcript={transcript}
+                onInsertIntoAssessment={(text) => {
+                  setNote(prev => ({
+                    ...prev,
+                    assessment: `${prev.assessment}\n• ${text}`
+                  }));
+                  setDeskShortcutFeedback('Inserted into Assessment');
+                  setTimeout(() => setDeskShortcutFeedback(null), 2000);
+                }}
+                onInsertIntoPlan={(text) => {
+                  insertIntoPlan(text);
+                }}
+              />
             </div>
-          </div>
-
-          {/* CHAT MESSAGES SCROLLER */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#fbfbfa]">
-            {chatMessages.map((msg, idx) => (
-              <div
-                key={idx}
-                className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
-              >
-                <span className="text-[10px] text-[#71717a] mb-1 font-mono font-medium">
-                  {msg.role === 'user' ? 'You' : 'Clinical Copilot'}
-                </span>
-                <div
-                  className={`text-xs leading-relaxed rounded-2xl p-3.5 max-w-[95%] whitespace-pre-wrap ${
-                    msg.role === 'user'
-                      ? 'bg-[#18181b] text-white shadow-xs'
-                      : 'bg-white text-[#18181b] border border-[#e4e4e7] shadow-[0_1px_2px_rgba(0,0,0,0.03)]'
-                  }`}
-                >
-                  {msg.content}
+          ) : (
+            <div className="flex flex-col flex-1 min-h-0">
+              {/* COPILOT PROMPT CHIPS */}
+              <div className="p-3 border-b border-zinc-200/80 bg-zinc-50/60 space-y-1.5">
+                <div className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">Quick Clinical Prompts:</div>
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => handleSendChat("Are there any drug-drug interactions between current medications and new orders?")}
+                    className="text-xs bg-white hover:bg-zinc-100 text-zinc-700 font-medium px-2.5 py-1 rounded-lg border border-zinc-200/80 shadow-2xs transition-colors cursor-pointer"
+                  >
+                    💊 Drug Interactions
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSendChat(`Summarize ${patient.name}'s metabolic and organ function trends.`)}
+                    className="text-xs bg-white hover:bg-zinc-100 text-zinc-700 font-medium px-2.5 py-1 rounded-lg border border-zinc-200/80 shadow-2xs transition-colors cursor-pointer"
+                  >
+                    📈 Lab Trends
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSendChat(`Draft personalized patient discharge instructions for ${patient.name}.`)}
+                    className="text-xs bg-white hover:bg-zinc-100 text-zinc-700 font-medium px-2.5 py-1 rounded-lg border border-zinc-200/80 shadow-2xs transition-colors cursor-pointer"
+                  >
+                    📝 Patient Instructions
+                  </button>
                 </div>
+              </div>
 
-                {msg.role === 'assistant' && idx > 0 && (
-                  <div className="flex items-center gap-2 mt-1.5 ml-1">
-                    <button
-                      type="button"
-                      onClick={() => insertIntoPlan(msg.content)}
-                      className="flex items-center gap-1 text-[11px] text-[#0284c7] hover:text-[#0369a1] font-semibold cursor-pointer"
+              {/* CHAT MESSAGES SCROLLER */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#fbfbfa]">
+                {chatMessages.map((msg, idx) => (
+                  <div
+                    key={idx}
+                    className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
+                  >
+                    <span className="text-[10px] text-[#71717a] mb-1 font-mono font-medium">
+                      {msg.role === 'user' ? 'You' : 'Clinical Copilot'}
+                    </span>
+                    <div
+                      className={`text-xs leading-relaxed rounded-2xl p-3.5 max-w-[95%] whitespace-pre-wrap ${
+                        msg.role === 'user'
+                          ? 'bg-[#18181b] text-white shadow-xs'
+                          : 'bg-white text-[#18181b] border border-[#e4e4e7] shadow-[0_1px_2px_rgba(0,0,0,0.03)]'
+                      }`}
                     >
-                      <Plus size={11} />
-                      Insert into Plan
-                    </button>
-                    <span className="text-[#d4d4d8]">•</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        navigator.clipboard.writeText(msg.content);
-                        setCopySuccess('Copied to clipboard');
-                        setTimeout(() => setCopySuccess(null), 2000);
-                      }}
-                      className="flex items-center gap-1 text-[11px] text-[#71717a] hover:text-[#09090b] cursor-pointer"
-                    >
-                      <Copy size={11} />
-                      Copy
-                    </button>
+                      {msg.content}
+                    </div>
+
+                    {msg.role === 'assistant' && idx > 0 && (
+                      <div className="flex items-center gap-2 mt-1.5 ml-1">
+                        <button
+                          type="button"
+                          onClick={() => insertIntoPlan(msg.content)}
+                          className="flex items-center gap-1 text-[11px] text-[#0284c7] hover:text-[#0369a1] font-semibold cursor-pointer"
+                        >
+                          <Plus size={11} />
+                          Insert into Plan
+                        </button>
+                        <span className="text-[#d4d4d8]">•</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(msg.content);
+                            setCopySuccess('Copied to clipboard');
+                            setTimeout(() => setCopySuccess(null), 2000);
+                          }}
+                          className="flex items-center gap-1 text-[11px] text-[#71717a] hover:text-[#09090b] cursor-pointer"
+                        >
+                          <Copy size={11} />
+                          Copy
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {isChatSending && (
+                  <div className="flex items-center gap-2 text-xs text-[#71717a] pl-1 font-medium">
+                    <Loader2 size={13} className="animate-spin text-[#0284c7]" />
+                    Analyzing clinical chart context...
                   </div>
                 )}
+                <div ref={chatBottomRef} />
               </div>
-            ))}
-            {isChatSending && (
-              <div className="flex items-center gap-2 text-xs text-[#71717a] pl-1 font-medium">
-                <Loader2 size={13} className="animate-spin text-[#0284c7]" />
-                Analyzing clinical chart context...
-              </div>
-            )}
-            <div ref={chatBottomRef} />
-          </div>
 
-          {/* CHAT INPUT FORM */}
-          <div className="p-3 border-t border-[#e4e4e7] bg-white">
-            <form onSubmit={e => { e.preventDefault(); void handleSendChat(); }} className="relative flex items-end bg-[#f4f4f5] rounded-2xl p-2 border border-[#e4e4e7] focus-within:border-[#18181b] transition-colors">
-              <textarea
-                rows={2}
-                placeholder={`Ask Copilot about ${patient.name}...`}
-                value={chatInput}
-                onChange={e => setChatInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                className="flex-1 bg-transparent px-2.5 py-1 text-xs text-[#09090b] placeholder-[#a1a1aa] outline-none resize-none"
-              />
-              <button
-                type="submit"
-                disabled={!chatInput.trim() || isChatSending}
-                className="w-8 h-8 rounded-xl bg-[#18181b] hover:bg-[#27272a] disabled:opacity-30 text-white flex items-center justify-center shrink-0 transition-all cursor-pointer shadow-2xs"
-                title="Send message"
-              >
-                <ArrowUp size={15} />
-              </button>
-            </form>
-          </div>
+              {/* CHAT INPUT FORM */}
+              <div className="p-3 border-t border-[#e4e4e7] bg-white">
+                <form onSubmit={e => { e.preventDefault(); void handleSendChat(); }} className="relative flex items-end bg-[#f4f4f5] rounded-2xl p-2 border border-[#e4e4e7] focus-within:border-[#18181b] transition-colors">
+                  <textarea
+                    rows={2}
+                    placeholder={`Ask Copilot about ${patient.name}...`}
+                    value={chatInput}
+                    onChange={e => setChatInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    className="flex-1 bg-transparent px-2.5 py-1 text-xs text-[#09090b] placeholder-[#a1a1aa] outline-none resize-none"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!chatInput.trim() || isChatSending}
+                    className="w-8 h-8 rounded-xl bg-[#18181b] hover:bg-[#27272a] disabled:opacity-30 text-white flex items-center justify-center shrink-0 transition-all cursor-pointer shadow-2xs"
+                    title="Send message"
+                  >
+                    <ArrowUp size={15} />
+                  </button>
+                </form>
+              </div>
+            </div>
+          )}
         </aside>
       </div>
 
@@ -1163,84 +1796,39 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
         medications={formattedPdfMeds}
       />
 
-      {/* CLOSE MEETING CONFIRMATION MODAL */}
+      {/* CLINICIAN CONFIRMATION & FHIR R4 EHR SYNCHRONIZATION MODAL */}
       {isCloseModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="w-full max-w-lg rounded-2xl border border-[#EAE8E3] bg-white p-6 shadow-2xl space-y-5">
-            <div className="flex items-center justify-between border-b border-[#EAE8E3] pb-3">
-              <div className="flex items-center gap-2">
-                <ShieldCheck size={18} className="text-[#0F766E]" />
-                <h3 className="text-sm font-bold text-[#111315]">Clinician Confirmation & Encounter Commit</h3>
-              </div>
-              <button 
-                onClick={() => setIsCloseModalOpen(false)} 
-                className="p-1 rounded-lg text-[#6E767E] hover:text-[#111315] hover:bg-[#F4F3EE] cursor-pointer"
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            <div className="space-y-3 text-xs text-[#50575F]">
-              <p>
-                Commit verified clinical documentation and orders for <strong className="text-[#111315]">{patient.name}</strong> ({patient.mrn}) into FHIR R4?
-              </p>
-
-              <div className="rounded-xl border border-[#EAE8E3] bg-[#FAF9F6] p-4 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[#6E767E]">Attending Physician:</span>
-                  <span className="text-[#111315] font-semibold">Dr. Aris Thorne, MD (NPI: 1841290481)</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[#6E767E]">Structured SOAP Note:</span>
-                  <span className="text-emerald-700 font-semibold flex items-center gap-1">
-                    <CheckCircle2 size={12} /> Confirmed by Clinician
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[#6E767E]">Active Medication Orders:</span>
-                  <span className="text-[#111315] font-semibold">{prescriptions.length} Orders (Allergy Matrix Passed)</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[#6E767E]">Cryptographic Provenance:</span>
-                  <span className="font-mono text-[10px] text-[#0F766E]">SHA-256 Chained Audit Trail</span>
-                </div>
-              </div>
-
-              <div className="p-3 bg-emerald-50/70 border border-emerald-200/80 rounded-xl text-[11px] text-emerald-900 flex items-start gap-2">
-                <CheckCircle2 size={14} className="text-emerald-700 shrink-0 mt-0.5" />
-                <span>
-                  <strong>Atomic Transaction:</strong> Writes Encounter, Condition, and MedicationRequest resources atomically to the FHIR store.
-                </span>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2.5 pt-2 border-t border-[#EAE8E3]">
-              <button
-                type="button"
-                onClick={() => setIsCloseModalOpen(false)}
-                className="px-4 py-2 text-xs font-semibold text-[#6E767E] hover:text-[#111315] bg-[#F4F3EE] rounded-xl transition-colors border border-[#EAE8E3] cursor-pointer"
-              >
-                Continue Editing
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsCloseModalOpen(false);
-                  onCloseMeeting({
-                    patientId: patient.id,
-                    note,
-                    prescriptions: prescriptions.map(p => `${p.name} ${p.dose} - ${p.freq}`)
-                  });
-                }}
-                className="px-5 py-2 text-xs font-bold text-white bg-[#0F766E] hover:bg-[#0B5C56] rounded-xl shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
-              >
-                <Check size={14} strokeWidth={2.5} />
-                <span>Sign Off & Commit Encounter</span>
-              </button>
-            </div>
-          </div>
-        </div>
+        <EncounterEhrSyncModal
+          patient={patient}
+          note={note}
+          prescriptions={prescriptions}
+          onClose={() => setIsCloseModalOpen(false)}
+          onCommitSuccess={(encounterData) => {
+            onCloseMeeting(encounterData);
+          }}
+        />
       )}
+
+      {/* PHYSICIAN REVIEW & CRYPTOGRAPHIC PROVENANCE SIGN-OFF MODAL (Section 22 & 23) */}
+      <PhysicianSignOffModal
+        isOpen={isSignOffModalOpen}
+        onClose={() => setIsSignOffModalOpen(false)}
+        patient={patient}
+        note={note}
+        plan={structuredPlan}
+        hasContraindication={hasContraindication}
+        overrideDirective={overrideDirective}
+        encounterDurationSeconds={Math.round((Date.now() - encounterStartTimeRef.current) / 1000)}
+        onSignOffSuccess={(summary) => {
+          setCompletedSummaryData(summary);
+          setEncounterPhase('completed');
+          onCloseMeeting({
+            patientId: patient.id,
+            note,
+            prescriptions: structuredPlan.medications.map(m => `${m.name} ${m.dose} - ${m.frequency}`)
+          });
+        }}
+      />
 
       {/* DYNAMIC PATIENT INTAKE MODAL */}
       {showIntakeModal && (
@@ -1301,6 +1889,47 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
             }}
           />
         </div>
+      )}
+
+      {/* PATIENT VOICE OUTREACH MODAL (HIPPOCRATIC AI COMPETITOR) */}
+      {showVoiceOutreachModal && (
+        <PatientVoiceOutreachModal
+          patient={patient}
+          onClose={() => setShowVoiceOutreachModal(false)}
+        />
+      )}
+
+      {/* PATIENT AFTER-CARE DISCHARGE SUMMARY MODAL (EPIC / ABRIDGE PARITY) */}
+      {showAvsModal && (
+        <AfterVisitSummaryModal
+          patient={patient}
+          note={note}
+          prescriptions={prescriptions}
+          onClose={() => setShowAvsModal(false)}
+        />
+      )}
+
+      {/* AUTONOMOUS MEDICATION SUGGESTION AGENT (OPEN TARGETS GENTROPY + JEV HARNESS) */}
+      {showMedSuggestionModal && (
+        <MedicationSuggestionModal
+          patient={patient}
+          currentDiagnosis={patient.conditions[0] || 'Type 2 Diabetes Mellitus'}
+          onClose={() => setShowMedSuggestionModal(false)}
+          onAdoptMedication={(newRx) => {
+            setPrescriptions(prev => [
+              ...prev,
+              {
+                id: `rx-${Date.now()}`,
+                name: newRx.name,
+                dose: newRx.dose,
+                freq: newRx.freq,
+                duration: newRx.duration,
+                status: 'new' as const
+              }
+            ]);
+            setShowMedSuggestionModal(false);
+          }}
+        />
       )}
     </div>
   );

@@ -21,8 +21,10 @@ import { RefillApprovalCard } from '../components/operations/RefillApprovalCard'
 import { SchedulingQueue } from '../components/operations/SchedulingQueue';
 import { ReferralPipeline } from '../components/operations/ReferralPipeline';
 import { OperationsAuditLog } from '../components/operations/OperationsAuditLog';
+import PracticeROIDashboard from '../components/operations/PracticeROIDashboard';
+import AcuteImagingTriageWorklist from '../components/operations/AcuteImagingTriageWorklist';
 
-type ActiveTab = 'all' | 'triage' | 'refill' | 'scheduling' | 'referral' | 'audit';
+type ActiveTab = 'all' | 'triage' | 'refill' | 'scheduling' | 'referral' | 'audit' | 'roi' | 'imaging_triage';
 
 export default function Operations() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('all');
@@ -405,7 +407,9 @@ export default function Operations() {
               { id: 'refill', label: 'Refill Approvals (Agent 3)', count: summary?.urgentRefillCount },
               { id: 'scheduling', label: 'Scheduling & Recalls (Agent 2)', count: summary?.schedulingCareGapCount },
               { id: 'referral', label: 'Specialist Referrals (Agent 3)', count: summary?.openReferralCount },
-              { id: 'audit', label: 'Authoritative Audit Log' }
+              { id: 'audit', label: 'Authoritative Audit Log' },
+              { id: 'roi', label: 'Practice ROI Scorecard (4.1×)', count: 'ROI' },
+              { id: 'imaging_triage', label: 'STAT Acute Imaging Triage', count: 'STAT' }
             ].map(tab => (
               <button
                 key={tab.id}
@@ -424,6 +428,13 @@ export default function Operations() {
                     {tab.count}
                   </span>
                 )}
+                {typeof tab.count === 'string' && (
+                  <span className={`px-1.5 py-0.2 rounded font-mono text-[9px] font-bold ${
+                    tab.id === 'imaging_triage' ? 'bg-rose-950 text-rose-300 border border-rose-800' : 'bg-emerald-950 text-emerald-300'
+                  }`}>
+                    {tab.count}
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -433,7 +444,7 @@ export default function Operations() {
         <div className="flex-1 flex overflow-hidden">
           
           {/* Left: Task Feed */}
-          {activeTab !== 'audit' && (
+          {activeTab !== 'audit' && activeTab !== 'roi' && activeTab !== 'imaging_triage' && (
             <div className="w-96 border-r border-zinc-200 bg-white flex flex-col shrink-0">
               <div className="p-3 border-b border-zinc-200/80 flex items-center justify-between bg-zinc-50/50">
                 <span className="text-xs font-semibold text-zinc-700">
@@ -568,7 +579,15 @@ export default function Operations() {
 
           {/* Right: Task Detail & Action Workspace */}
           <div className="flex-1 overflow-y-auto p-6 bg-[#FAF9F5]">
-            {activeTab === 'audit' ? (
+            {activeTab === 'imaging_triage' ? (
+              <div className="max-w-6xl mx-auto">
+                <AcuteImagingTriageWorklist />
+              </div>
+            ) : activeTab === 'roi' ? (
+              <div className="max-w-5xl mx-auto">
+                <PracticeROIDashboard />
+              </div>
+            ) : activeTab === 'audit' ? (
               <div className="max-w-4xl mx-auto">
                 <OperationsAuditLog />
               </div>

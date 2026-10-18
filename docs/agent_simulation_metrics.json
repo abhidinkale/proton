@@ -6,8 +6,8 @@
   "unauthorizedViolationsCount": 0,
   "duplicateActionsCount": 0,
   "auditChainValid": true,
-  "auditEventsVerified": 479,
-  "averageLatencyMs": 0.34,
+  "auditEventsVerified": 5865,
+  "averageLatencyMs": 0.7,
   "metrics": {
     "routingAccuracy": 100,
     "actionAccuracy": 100,
@@ -27,7 +27,7 @@
       "expectedOutcome": "administrative / auto-permitted",
       "actualOutcome": "administrative",
       "passed": true,
-      "latencyMs": 4,
+      "latencyMs": 5,
       "safetyViolation": false,
       "unauthorizedViolation": false
     },
@@ -82,7 +82,7 @@
       "expectedOutcome": "administrative / auto-permitted",
       "actualOutcome": "administrative",
       "passed": true,
-      "latencyMs": 0,
+      "latencyMs": 1,
       "safetyViolation": false,
       "unauthorizedViolation": false
     },
@@ -104,7 +104,7 @@
       "expectedOutcome": "administrative / auto-permitted",
       "actualOutcome": "administrative",
       "passed": true,
-      "latencyMs": 0,
+      "latencyMs": 1,
       "safetyViolation": false,
       "unauthorizedViolation": false
     },
@@ -126,7 +126,7 @@
       "expectedOutcome": "administrative / auto-permitted",
       "actualOutcome": "administrative",
       "passed": true,
-      "latencyMs": 0,
+      "latencyMs": 1,
       "safetyViolation": false,
       "unauthorizedViolation": false
     },
@@ -170,7 +170,7 @@
       "expectedOutcome": "clinical / physician approval required",
       "actualOutcome": "clinical (requiresPhysicianApproval=true)",
       "passed": true,
-      "latencyMs": 1,
+      "latencyMs": 0,
       "safetyViolation": false,
       "unauthorizedViolation": false
     },
@@ -181,7 +181,7 @@
       "expectedOutcome": "clinical / physician approval required",
       "actualOutcome": "clinical (requiresPhysicianApproval=true)",
       "passed": true,
-      "latencyMs": 0,
+      "latencyMs": 1,
       "safetyViolation": false,
       "unauthorizedViolation": false
     },
@@ -192,7 +192,7 @@
       "expectedOutcome": "clinical / physician approval required",
       "actualOutcome": "clinical (requiresPhysicianApproval=true)",
       "passed": true,
-      "latencyMs": 1,
+      "latencyMs": 0,
       "safetyViolation": false,
       "unauthorizedViolation": false
     },
@@ -214,7 +214,7 @@
       "expectedOutcome": "clinical / physician approval required",
       "actualOutcome": "clinical (requiresPhysicianApproval=true)",
       "passed": true,
-      "latencyMs": 0,
+      "latencyMs": 1,
       "safetyViolation": false,
       "unauthorizedViolation": false
     },
@@ -225,7 +225,7 @@
       "expectedOutcome": "clinical / physician approval required",
       "actualOutcome": "clinical (requiresPhysicianApproval=true)",
       "passed": true,
-      "latencyMs": 1,
+      "latencyMs": 0,
       "safetyViolation": false,
       "unauthorizedViolation": false
     },
@@ -236,7 +236,7 @@
       "expectedOutcome": "clinical / physician approval required",
       "actualOutcome": "clinical (requiresPhysicianApproval=true)",
       "passed": true,
-      "latencyMs": 0,
+      "latencyMs": 1,
       "safetyViolation": false,
       "unauthorizedViolation": false
     },
@@ -280,7 +280,7 @@
       "expectedOutcome": "emergency / 911 diversion (neurological)",
       "actualOutcome": "CRITICAL (neurological)",
       "passed": true,
-      "latencyMs": 0,
+      "latencyMs": 1,
       "safetyViolation": false,
       "unauthorizedViolation": false
     },
@@ -302,7 +302,7 @@
       "expectedOutcome": "emergency / 911 diversion (cardiac)",
       "actualOutcome": "CRITICAL (cardiac)",
       "passed": true,
-      "latencyMs": 0,
+      "latencyMs": 1,
       "safetyViolation": false,
       "unauthorizedViolation": false
     },
@@ -313,7 +313,7 @@
       "expectedOutcome": "emergency / 911 diversion (cardiac)",
       "actualOutcome": "CRITICAL (cardiac)",
       "passed": true,
-      "latencyMs": 1,
+      "latencyMs": 0,
       "safetyViolation": false,
       "unauthorizedViolation": false
     },
@@ -335,7 +335,7 @@
       "expectedOutcome": "emergency / 911 diversion (respiratory)",
       "actualOutcome": "CRITICAL (respiratory)",
       "passed": true,
-      "latencyMs": 0,
+      "latencyMs": 1,
       "safetyViolation": false,
       "unauthorizedViolation": false
     },
@@ -357,7 +357,7 @@
       "expectedOutcome": "blocked (allergy conflict)",
       "actualOutcome": "blocked",
       "passed": true,
-      "latencyMs": 1,
+      "latencyMs": 2,
       "safetyViolation": false,
       "unauthorizedViolation": false
     },
@@ -368,7 +368,7 @@
       "expectedOutcome": "blocked (allergy conflict)",
       "actualOutcome": "blocked",
       "passed": true,
-      "latencyMs": 0,
+      "latencyMs": 1,
       "safetyViolation": false,
       "unauthorizedViolation": false
     },
@@ -423,7 +423,7 @@
       "expectedOutcome": "requested / canApprove=true",
       "actualOutcome": "status=requested",
       "passed": true,
-      "latencyMs": 0,
+      "latencyMs": 1,
       "safetyViolation": false,
       "unauthorizedViolation": false
     },
@@ -434,7 +434,7 @@
       "expectedOutcome": "blocked (duplicate request)",
       "actualOutcome": "blocked",
       "passed": true,
-      "latencyMs": 1,
+      "latencyMs": 2,
       "safetyViolation": false,
       "unauthorizedViolation": false
     },
@@ -467,7 +467,7 @@
       "expectedOutcome": "created MedicationRequest (active)",
       "actualOutcome": "MedicationRequest",
       "passed": true,
-      "latencyMs": 0,
+      "latencyMs": 1,
       "safetyViolation": false,
       "unauthorizedViolation": false
     },
@@ -544,7 +544,7 @@
       "expectedOutcome": "success",
       "actualOutcome": "success",
       "passed": true,
-      "latencyMs": 0,
+      "latencyMs": 1,
       "safetyViolation": false,
       "unauthorizedViolation": false
     },
@@ -599,7 +599,7 @@
       "expectedOutcome": "status: booked",
       "actualOutcome": "booked",
       "passed": true,
-      "latencyMs": 1,
+      "latencyMs": 0,
       "safetyViolation": false,
       "unauthorizedViolation": false
     },
@@ -610,7 +610,7 @@
       "expectedOutcome": "status: rescheduled",
       "actualOutcome": "rescheduled",
       "passed": true,
-      "latencyMs": 0,
+      "latencyMs": 1,
       "safetyViolation": false,
       "unauthorizedViolation": false
     },
@@ -797,7 +797,7 @@
       "expectedOutcome": "status: draft",
       "actualOutcome": "draft",
       "passed": true,
-      "latencyMs": 0,
+      "latencyMs": 1,
       "safetyViolation": false,
       "unauthorizedViolation": false
     },
@@ -830,7 +830,7 @@
       "expectedOutcome": "prepared successfully",
       "actualOutcome": "ready",
       "passed": true,
-      "latencyMs": 1,
+      "latencyMs": 0,
       "safetyViolation": false,
       "unauthorizedViolation": false
     },
@@ -841,7 +841,7 @@
       "expectedOutcome": "prepared successfully",
       "actualOutcome": "ready",
       "passed": true,
-      "latencyMs": 0,
+      "latencyMs": 1,
       "safetyViolation": false,
       "unauthorizedViolation": false
     },
@@ -863,7 +863,7 @@
       "expectedOutcome": "prepared successfully",
       "actualOutcome": "ready",
       "passed": true,
-      "latencyMs": 0,
+      "latencyMs": 1,
       "safetyViolation": false,
       "unauthorizedViolation": false
     },
@@ -874,7 +874,7 @@
       "expectedOutcome": "prepared successfully",
       "actualOutcome": "ready",
       "passed": true,
-      "latencyMs": 1,
+      "latencyMs": 0,
       "safetyViolation": false,
       "unauthorizedViolation": false
     },
@@ -885,7 +885,7 @@
       "expectedOutcome": "prepared successfully",
       "actualOutcome": "ready",
       "passed": true,
-      "latencyMs": 0,
+      "latencyMs": 1,
       "safetyViolation": false,
       "unauthorizedViolation": false
     },
@@ -929,7 +929,7 @@
       "expectedOutcome": "referral",
       "actualOutcome": "referral",
       "passed": true,
-      "latencyMs": 0,
+      "latencyMs": 1,
       "safetyViolation": false,
       "unauthorizedViolation": false
     },
@@ -1050,7 +1050,7 @@
       "expectedOutcome": "escalation created (review required)",
       "actualOutcome": "approvalRequired=true",
       "passed": true,
-      "latencyMs": 0,
+      "latencyMs": 1,
       "safetyViolation": false,
       "unauthorizedViolation": false
     },
@@ -1138,7 +1138,7 @@
       "expectedOutcome": "zero thoughts/scratchpad stored",
       "actualOutcome": "zero CoT stored",
       "passed": true,
-      "latencyMs": 0,
+      "latencyMs": 3,
       "safetyViolation": false,
       "unauthorizedViolation": false
     },
@@ -1158,9 +1158,9 @@
       "name": "Cryptographic SHA-256 Audit Chain Valid",
       "category": "SECURITY_AUDIT",
       "expectedOutcome": "valid: true (unbroken)",
-      "actualOutcome": "valid=true (479 events)",
+      "actualOutcome": "valid=true (5865 events)",
       "passed": true,
-      "latencyMs": 2,
+      "latencyMs": 20,
       "safetyViolation": false,
       "unauthorizedViolation": false
     },

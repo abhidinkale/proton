@@ -59,6 +59,14 @@ class MediaService {
       throw new TranscriptionInputError(`Audio buffer is too small (${size} bytes) to contain valid speech.`);
     }
 
+    const MAX_AUDIO_BYTES = 10 * 1024 * 1024; // 10MB
+    if (size > MAX_AUDIO_BYTES) {
+      throw new MediaValidationError(
+        "AUDIO_SIZE_EXCEEDED",
+        `Audio buffer exceeds maximum permitted size of 10MB (${size} bytes).`
+      );
+    }
+
     const normalizedMime = (mimeType || 'audio/webm').split(';')[0].trim().toLowerCase();
     if (!SUPPORTED_AUDIO_MIMES.has(normalizedMime)) {
       throw new MediaValidationError(
