@@ -26,6 +26,10 @@ data class HomeUiState(
   val recentRecords: List<HealthRecordItem> = emptyList(),
   val checkInStatus: String? = null,
   val restingHeartRateBpm: Int = 72,
+  val todayAppointmentCount: Int = 0,
+  val todayDoseCount: Int = 0,
+  val takenDoseCount: Int = 0,
+  val skippedDoseCount: Int = 0,
   val isLoading: Boolean = false
 )
 
@@ -56,6 +60,12 @@ class HomeViewModel(
       recentRecords = records.take(3),
       checkInStatus = checkIn,
       restingHeartRateBpm = 72,
+      todayAppointmentCount = appointments.count { it.status.name != "Cancelled" },
+      todayDoseCount = doses.size,
+      takenDoseCount = doses.count {
+        it.state == MedicationDoseState.Taken || it.state == MedicationDoseState.Completed
+      },
+      skippedDoseCount = doses.count { it.state == MedicationDoseState.Skipped },
       isLoading = false
     )
   }.stateIn(

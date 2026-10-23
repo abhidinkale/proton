@@ -1,7 +1,9 @@
 package health.dork.app
 
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,9 +21,14 @@ class MainActivity : ComponentActivity() {
     // Initialize Dork singleton dependency container
     DorkApp.initialize(DefaultAppContainer())
 
-    enableEdgeToEdge()
+    // The product surface is a warm paper canvas: keep system chrome dark-on-light.
+    enableEdgeToEdge(
+      statusBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
+      navigationBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+    )
+
     setContent {
-      DorkTheme {
+      DorkTheme(darkTheme = false) {
         Surface(
           modifier = Modifier.fillMaxSize()
         ) {

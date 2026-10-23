@@ -33,39 +33,18 @@ fun DorkStatusBadge(
   modifier: Modifier = Modifier,
   leadingIcon: @Composable (() -> Unit)? = null
 ) {
-  val (bgColor, textColor, borderColor) = when (type) {
-    DorkStatusType.Success -> Triple(
-      DorkTheme.colors.successContainer,
-      DorkTheme.colors.success,
-      DorkTheme.colors.success.copy(alpha = 0.3f)
-    )
-    DorkStatusType.Warning -> Triple(
-      DorkTheme.colors.warningContainer,
-      DorkTheme.colors.warning,
-      DorkTheme.colors.warning.copy(alpha = 0.3f)
-    )
-    DorkStatusType.Critical -> Triple(
-      DorkTheme.colors.criticalContainer,
-      DorkTheme.colors.critical,
-      DorkTheme.colors.critical.copy(alpha = 0.3f)
-    )
-    DorkStatusType.Info -> Triple(
-      DorkTheme.colors.infoContainer,
-      DorkTheme.colors.info,
-      DorkTheme.colors.info.copy(alpha = 0.3f)
-    )
-    DorkStatusType.Neutral -> Triple(
-      DorkTheme.colors.surfaceSecondary,
-      DorkTheme.colors.textSecondary,
-      DorkTheme.colors.surfaceBorder
-    )
+  val (bgColor, textColor) = when (type) {
+    DorkStatusType.Success -> DorkTheme.colors.successContainer to DorkTheme.colors.success
+    DorkStatusType.Warning -> DorkTheme.colors.warningContainer to DorkTheme.colors.warning
+    DorkStatusType.Critical -> DorkTheme.colors.criticalContainer to DorkTheme.colors.critical
+    DorkStatusType.Info -> DorkTheme.colors.infoContainer to DorkTheme.colors.info
+    DorkStatusType.Neutral -> DorkTheme.colors.surfaceSecondary to DorkTheme.colors.textSecondary
   }
 
   Surface(
     modifier = modifier,
     shape = DorkShapes.pill,
-    color = bgColor,
-    border = BorderStroke(1.dp, borderColor)
+    color = bgColor
   ) {
     Row(
       modifier = Modifier.padding(horizontal = DorkSpacing.s, vertical = 4.dp),

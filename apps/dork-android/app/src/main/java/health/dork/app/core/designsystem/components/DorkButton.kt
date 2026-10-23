@@ -48,7 +48,7 @@ fun DorkButton(
 ) {
   val widthModifier = if (fullWidth) modifier.fillMaxWidth() else modifier
   val finalModifier = widthModifier.height(52.dp)
-  val shape = DorkShapes.medium
+  val shape = DorkShapes.pill
   val interactionSource = remember { MutableInteractionSource() }
 
   when (variant) {
@@ -76,7 +76,7 @@ fun DorkButton(
         modifier = finalModifier,
         enabled = enabled && !loading,
         shape = shape,
-        border = BorderStroke(1.dp, DorkTheme.colors.surfaceBorder),
+        border = BorderStroke(1.dp, Color.Transparent),
         colors = ButtonDefaults.outlinedButtonColors(
           containerColor = DorkTheme.colors.surfaceSecondary,
           contentColor = DorkTheme.colors.textPrimary,

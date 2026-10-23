@@ -5,10 +5,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -17,7 +16,6 @@ import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Person
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -26,9 +24,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import health.dork.app.core.designsystem.DorkSpacing
+import health.dork.app.core.designsystem.DorkShapes
 import health.dork.app.core.designsystem.DorkTheme
 
 enum class DorkNavDestination(
@@ -42,60 +43,63 @@ enum class DorkNavDestination(
   Profile("Profile", Icons.Rounded.Person)
 }
 
+/**
+ * Floating pill tab bar.
+ *
+ * Sits above the canvas as a single white capsule; the active destination
+ * becomes a dark pill that grows to reveal its label.
+ */
 @Composable
 fun DorkBottomNavigation(
   currentDestination: DorkNavDestination,
   onNavigate: (DorkNavDestination) -> Unit,
   modifier: Modifier = Modifier
 ) {
-  Surface(
-    modifier = modifier.fillMaxWidth(),
-    color = MaterialTheme.colorScheme.surface,
-    tonalElevation = 2.dp
+  Box(
+    modifier = modifier
+      .fillMaxWidth()
+      .navigationBarsPadding()
+      .padding(horizontal = 20.dp, vertical = 10.dp),
+    contentAlignment = Alignment.Center
   ) {
-    Column {
-      HorizontalDivider(
-        color = DorkTheme.colors.surfaceBorderSubtle,
-        thickness = 1.dp
-      )
+    Surface(
+      shape = DorkShapes.pill,
+      color = DorkTheme.colors.card,
+      border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x0F14140F))
+    ) {
       Row(
-        modifier = Modifier
-          .fillMaxWidth()
-          .height(DorkSpacing.bottomBarHeight)
-          .padding(horizontal = DorkSpacing.xs),
-        horizontalArrangement = Arrangement.SpaceAround,
+        modifier = Modifier.padding(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
         verticalAlignment = Alignment.CenterVertically
       ) {
         DorkNavDestination.entries.forEach { destination ->
           val selected = destination == currentDestination
-          val tint = if (selected) MaterialTheme.colorScheme.primary else DorkTheme.colors.textTertiary
 
-          Box(
+          Row(
             modifier = Modifier
-              .weight(1f)
-              .height(DorkSpacing.bottomBarHeight)
+              .clip(DorkShapes.pill)
               .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = { onNavigate(destination) }
-              ),
-            contentAlignment = Alignment.Center
-          ) {
-            Column(
-              horizontalAlignment = Alignment.CenterHorizontally,
-              verticalArrangement = Arrangement.Center
-            ) {
-              Icon(
-                imageVector = destination.icon,
-                contentDescription = destination.label,
-                tint = tint,
-                modifier = Modifier.size(24.dp)
               )
+              .background(if (selected) DorkTheme.colors.textPrimary else Color.Transparent)
+              .padding(horizontal = if (selected) 15.dp else 13.dp, vertical = 11.dp),
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Icon(
+              imageVector = destination.icon,
+              contentDescription = destination.label,
+              tint = if (selected) Color.White else DorkTheme.colors.textTertiary,
+              modifier = Modifier.size(19.dp)
+            )
+
+            if (selected) {
               Text(
                 text = destination.label,
-                style = MaterialTheme.typography.labelSmall,
-                color = tint,
-                modifier = Modifier.padding(top = 2.dp)
+                style = MaterialTheme.typography.labelMedium,
+                color = Color.White,
+                modifier = Modifier.padding(start = 7.dp)
               )
             }
           }

@@ -2,6 +2,7 @@ plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.compose.compiler)
   alias(libs.plugins.kotlin.serialization)
+  alias(libs.plugins.roborazzi)
 }
 
 android {
@@ -35,6 +36,12 @@ android {
     packaging {
       resources {
         excludes += "/META-INF/{AL2.0,LGPL2.1}"
+      }
+    }
+
+    testOptions {
+      unitTests {
+        isIncludeAndroidResources = true
       }
     }
 }
@@ -72,6 +79,11 @@ dependencies {
   // Local tests: jUnit, coroutines, Android runner
   testImplementation(libs.junit)
   testImplementation(libs.kotlinx.coroutines.test)
+  testImplementation(libs.robolectric)
+  testImplementation(libs.roborazzi)
+  testImplementation(libs.roborazzi.compose)
+  testImplementation(libs.androidx.compose.ui.test.junit4)
+  testImplementation(libs.androidx.compose.ui.test.manifest)
 
   // Instrumented tests: jUnit rules and runners
   androidTestImplementation(libs.androidx.test.core)

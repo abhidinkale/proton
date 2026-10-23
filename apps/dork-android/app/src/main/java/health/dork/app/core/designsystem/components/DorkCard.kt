@@ -10,6 +10,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
@@ -18,15 +19,22 @@ import health.dork.app.core.designsystem.DorkShapes
 import health.dork.app.core.designsystem.DorkSpacing
 import health.dork.app.core.designsystem.DorkTheme
 
+/**
+ * Borderless white card on the warm canvas.
+ *
+ * The shadow is intentionally wide and faint — it lifts the card off the paper
+ * without drawing a visible edge.
+ */
 @Composable
 fun DorkCard(
   modifier: Modifier = Modifier,
   shape: Shape = DorkShapes.large,
-  backgroundColor: Color = DorkTheme.colors.surfaceSecondary,
-  borderColor: Color = DorkTheme.colors.surfaceBorderSubtle,
-  borderWidth: Dp = 1.dp,
+  backgroundColor: Color = DorkTheme.colors.card,
+  borderColor: Color = Color.Transparent,
+  borderWidth: Dp = 0.dp,
   onClick: (() -> Unit)? = null,
   contentPadding: Dp = DorkSpacing.cardPadding,
+  elevated: Boolean = false,
   content: @Composable BoxScope.() -> Unit
 ) {
   val clickModifier = if (onClick != null) {
@@ -43,7 +51,7 @@ fun DorkCard(
       .then(clickModifier),
     shape = shape,
     color = backgroundColor,
-    border = BorderStroke(borderWidth, borderColor)
+    border = if (borderWidth > 0.dp) BorderStroke(borderWidth, borderColor) else null
   ) {
     Box(
       modifier = Modifier.padding(contentPadding),

@@ -35,7 +35,7 @@ fun DorkSearchBar(
     onValueChange = onQueryChange,
     modifier = modifier.fillMaxWidth(),
     singleLine = true,
-    shape = DorkShapes.large,
+    shape = DorkShapes.pill,
     placeholder = {
       Text(
         text = placeholder,
@@ -66,8 +66,8 @@ fun DorkSearchBar(
     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
     keyboardActions = KeyboardActions(onSearch = { onSearch(query) }),
     colors = OutlinedTextFieldDefaults.colors(
-      focusedContainerColor = DorkTheme.colors.surfaceSecondary,
-      unfocusedContainerColor = DorkTheme.colors.surfaceSecondary,
+      focusedContainerColor = DorkTheme.colors.card,
+      unfocusedContainerColor = DorkTheme.colors.card,
       focusedBorderColor = MaterialTheme.colorScheme.primary,
       unfocusedBorderColor = Color.Transparent,
       focusedTextColor = DorkTheme.colors.textPrimary,

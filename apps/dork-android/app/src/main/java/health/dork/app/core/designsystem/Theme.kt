@@ -12,6 +12,8 @@ import androidx.compose.ui.graphics.Color
 
 @Immutable
 data class DorkExtendedColors(
+  val canvas: Color,
+  val card: Color,
   val surfaceSecondary: Color,
   val surfaceBorder: Color,
   val surfaceBorderSubtle: Color,
@@ -29,19 +31,31 @@ data class DorkExtendedColors(
   val criticalContainer: Color,
   val info: Color,
   val infoContainer: Color,
-  val cardShadow: Color
+  val cardShadow: Color,
+  val lime: Color,
+  val limeInk: Color,
+  val pink: Color,
+  val pinkInk: Color,
+  val peach: Color,
+  val peachInk: Color,
+  val sage: Color,
+  val sageInk: Color,
+  val sky: Color,
+  val skyInk: Color
 )
 
 val LocalDorkExtendedColors = staticCompositionLocalOf {
   DorkExtendedColors(
+    canvas = DorkColors.LightBackground,
+    card = DorkColors.LightSurface,
     surfaceSecondary = DorkColors.LightSurfaceSecondary,
     surfaceBorder = DorkColors.LightSurfaceBorder,
     surfaceBorderSubtle = DorkColors.LightSurfaceBorderSubtle,
     textPrimary = DorkColors.TextPrimaryLight,
     textSecondary = DorkColors.TextSecondaryLight,
     textTertiary = DorkColors.TextTertiaryLight,
-    accentTeal = DorkColors.AccentTeal,
-    accentTealContainer = DorkColors.AccentTealLight,
+    accentTeal = DorkColors.AccentInk,
+    accentTealContainer = DorkColors.AccentNeutral,
     accentSlate = DorkColors.AccentSlate,
     success = DorkColors.Success,
     successContainer = DorkColors.SuccessLight,
@@ -51,17 +65,29 @@ val LocalDorkExtendedColors = staticCompositionLocalOf {
     criticalContainer = DorkColors.CriticalLight,
     info = DorkColors.Info,
     infoContainer = DorkColors.InfoLight,
-    cardShadow = DorkColors.CardShadowLight
+    cardShadow = DorkColors.CardShadowLight,
+    lime = DorkColors.Lime,
+    limeInk = DorkColors.LimeInk,
+    pink = DorkColors.Pink,
+    pinkInk = DorkColors.PinkInk,
+    peach = DorkColors.Peach,
+    peachInk = DorkColors.PeachInk,
+    sage = DorkColors.Sage,
+    sageInk = DorkColors.SageInk,
+    sky = DorkColors.Sky,
+    skyInk = DorkColors.SkyInk
   )
 }
 
 private val LightColorScheme = lightColorScheme(
-  primary = DorkColors.AccentTeal,
+  primary = DorkColors.AccentInk,
   onPrimary = Color.White,
-  primaryContainer = DorkColors.AccentTealLight,
-  onPrimaryContainer = DorkColors.AccentTeal,
-  secondary = DorkColors.AccentSlate,
-  onSecondary = Color.White,
+  primaryContainer = DorkColors.AccentNeutral,
+  onPrimaryContainer = DorkColors.AccentInk,
+  secondary = DorkColors.LimeInk,
+  onSecondary = DorkColors.Lime,
+  secondaryContainer = DorkColors.Lime,
+  onSecondaryContainer = DorkColors.LimeInk,
   background = DorkColors.LightBackground,
   onBackground = DorkColors.TextPrimaryLight,
   surface = DorkColors.LightSurface,
@@ -77,12 +103,12 @@ private val LightColorScheme = lightColorScheme(
 )
 
 private val DarkColorScheme = darkColorScheme(
-  primary = DorkColors.AccentTealDark,
+  primary = Color(0xFFF4F3F0),
   onPrimary = DorkColors.DarkBackground,
-  primaryContainer = DorkColors.AccentTealDarkSurface,
-  onPrimaryContainer = DorkColors.AccentTealDark,
-  secondary = DorkColors.AccentSlateDark,
-  onSecondary = DorkColors.DarkBackground,
+  primaryContainer = DorkColors.DarkSurfaceSecondary,
+  onPrimaryContainer = Color(0xFFF4F3F0),
+  secondary = DorkColors.Lime,
+  onSecondary = DorkColors.LimeInk,
   background = DorkColors.DarkBackground,
   onBackground = DorkColors.TextPrimaryDark,
   surface = DorkColors.DarkSurface,
@@ -115,35 +141,49 @@ fun DorkTheme(
 
   val extendedColors = if (darkTheme) {
     DorkExtendedColors(
+      canvas = DorkColors.DarkBackground,
+      card = DorkColors.DarkSurface,
       surfaceSecondary = DorkColors.DarkSurfaceSecondary,
       surfaceBorder = DorkColors.DarkSurfaceBorder,
       surfaceBorderSubtle = DorkColors.DarkSurfaceBorderSubtle,
       textPrimary = DorkColors.TextPrimaryDark,
       textSecondary = DorkColors.TextSecondaryDark,
       textTertiary = DorkColors.TextTertiaryDark,
-      accentTeal = DorkColors.AccentTealDark,
-      accentTealContainer = DorkColors.AccentTealDarkSurface,
+      accentTeal = Color(0xFFF4F3F0),
+      accentTealContainer = DorkColors.DarkSurfaceSecondary,
       accentSlate = DorkColors.AccentSlateDark,
       success = DorkColors.SuccessDark,
-      successContainer = DorkColors.Success,
+      successContainer = Color(0xFF1F2E1C),
       warning = DorkColors.WarningDark,
-      warningContainer = DorkColors.Warning,
+      warningContainer = Color(0xFF33280F),
       critical = DorkColors.CriticalDark,
-      criticalContainer = DorkColors.Critical,
+      criticalContainer = Color(0xFF341B22),
       info = DorkColors.InfoDark,
-      infoContainer = DorkColors.Info,
-      cardShadow = DorkColors.CardShadowDark
+      infoContainer = Color(0xFF172433),
+      cardShadow = DorkColors.CardShadowDark,
+      lime = DorkColors.Lime,
+      limeInk = DorkColors.LimeInk,
+      pink = Color(0xFF3A2229),
+      pinkInk = Color(0xFFF2A9B9),
+      peach = Color(0xFF33280F),
+      peachInk = Color(0xFFE9C28B),
+      sage = Color(0xFF1F2E1C),
+      sageInk = Color(0xFF9BC48C),
+      sky = Color(0xFF172433),
+      skyInk = Color(0xFF9EC0E2)
     )
   } else {
     DorkExtendedColors(
+      canvas = DorkColors.LightBackground,
+      card = DorkColors.LightSurface,
       surfaceSecondary = DorkColors.LightSurfaceSecondary,
       surfaceBorder = DorkColors.LightSurfaceBorder,
       surfaceBorderSubtle = DorkColors.LightSurfaceBorderSubtle,
       textPrimary = DorkColors.TextPrimaryLight,
       textSecondary = DorkColors.TextSecondaryLight,
       textTertiary = DorkColors.TextTertiaryLight,
-      accentTeal = DorkColors.AccentTeal,
-      accentTealContainer = DorkColors.AccentTealLight,
+      accentTeal = DorkColors.AccentInk,
+      accentTealContainer = DorkColors.AccentNeutral,
       accentSlate = DorkColors.AccentSlate,
       success = DorkColors.Success,
       successContainer = DorkColors.SuccessLight,
@@ -153,7 +193,17 @@ fun DorkTheme(
       criticalContainer = DorkColors.CriticalLight,
       info = DorkColors.Info,
       infoContainer = DorkColors.InfoLight,
-      cardShadow = DorkColors.CardShadowLight
+      cardShadow = DorkColors.CardShadowLight,
+      lime = DorkColors.Lime,
+      limeInk = DorkColors.LimeInk,
+      pink = DorkColors.Pink,
+      pinkInk = DorkColors.PinkInk,
+      peach = DorkColors.Peach,
+      peachInk = DorkColors.PeachInk,
+      sage = DorkColors.Sage,
+      sageInk = DorkColors.SageInk,
+      sky = DorkColors.Sky,
+      skyInk = DorkColors.SkyInk
     )
   }
 

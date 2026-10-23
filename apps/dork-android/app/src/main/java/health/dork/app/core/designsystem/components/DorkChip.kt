@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -28,31 +27,25 @@ fun DorkChip(
   leadingIcon: @Composable (() -> Unit)? = null
 ) {
   val backgroundColor = if (selected) {
-    MaterialTheme.colorScheme.primaryContainer
+    DorkTheme.colors.textPrimary
   } else {
-    DorkTheme.colors.surfaceSecondary
+    DorkTheme.colors.card
   }
 
   val contentColor = if (selected) {
-    MaterialTheme.colorScheme.primary
+    Color.White
   } else {
     DorkTheme.colors.textSecondary
-  }
-
-  val borderColor = if (selected) {
-    MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-  } else {
-    DorkTheme.colors.surfaceBorderSubtle
   }
 
   Surface(
     modifier = modifier.clickable(onClick = onClick),
     shape = DorkShapes.pill,
     color = backgroundColor,
-    border = BorderStroke(1.dp, borderColor)
+    border = if (selected) null else BorderStroke(1.dp, DorkTheme.colors.surfaceBorderSubtle)
   ) {
     Row(
-      modifier = Modifier.padding(horizontal = DorkSpacing.m, vertical = DorkSpacing.xs),
+      modifier = Modifier.padding(horizontal = DorkSpacing.m, vertical = 8.dp),
       verticalAlignment = Alignment.CenterVertically
     ) {
       if (leadingIcon != null) {
