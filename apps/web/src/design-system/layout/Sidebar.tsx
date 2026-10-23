@@ -1,4 +1,6 @@
 import { NavLink } from 'react-router-dom';
+import { motion } from 'motion/react';
+import { PROTON_SPRING, LiveDot } from '../motion/primitives';
 import {
   LayoutDashboard,
   Calendar,
@@ -60,8 +62,8 @@ export function Sidebar({
 }: SidebarProps) {
   return (
     <aside
-      className={`hidden lg:flex flex-col shrink-0 bg-[#151619] text-[#A0A5AD] transition-all duration-300 relative z-30 select-none ${
-        isCollapsed ? 'w-20' : 'w-64'
+      className={`hidden lg:flex flex-col shrink-0 bg-[#151619] text-[#A0A5AD] transition-all duration-300 relative z-30 select-none my-3.5 ml-3.5 rounded-[28px] shadow-lg border border-white/5 overflow-hidden ${
+        isCollapsed ? 'w-20' : 'w-60'
       } ${className}`}
       aria-label="Sidebar Navigation"
     >
@@ -112,19 +114,27 @@ export function Sidebar({
                 key={item.to}
                 to={item.to}
                 end={item.end}
-                className={`flex items-center gap-3.5 px-3 py-2.5 rounded-2xl text-xs font-semibold transition-all duration-150 ${
-                  active
-                    ? 'bg-white/10 text-white shadow-xs'
-                    : 'text-[#A0A5AD] hover:bg-white/5 hover:text-white'
+                className={`relative flex items-center gap-3.5 px-3 py-2.5 rounded-2xl text-xs font-semibold transition-colors duration-150 ${
+                  active ? 'text-white' : 'text-[#A0A5AD] hover:bg-white/5 hover:text-white'
                 } ${isCollapsed ? 'justify-center px-0' : ''}`}
                 title={isCollapsed ? item.label : undefined}
               >
+                {active && (
+                  <motion.span
+                    layoutId="proton-nav-active"
+                    className="absolute inset-0 rounded-2xl bg-white/10 shadow-xs"
+                    transition={PROTON_SPRING}
+                  />
+                )}
+                {active && !isCollapsed && (
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-full bg-[#F43F5E]" />
+                )}
                 <item.icon
                   size={18}
                   strokeWidth={active ? 2.2 : 1.8}
-                  className={active ? 'text-white' : 'text-[#88909A]'}
+                  className={`relative z-10 ${active ? 'text-white' : 'text-[#88909A]'}`}
                 />
-                {!isCollapsed && <span className="truncate">{item.label}</span>}
+                {!isCollapsed && <span className="relative z-10 truncate">{item.label}</span>}
               </NavLink>
             );
           })}
@@ -144,27 +154,43 @@ export function Sidebar({
               <NavLink
                 key={item.to}
                 to={item.to}
-                className={`flex items-center gap-3.5 px-3 py-2.5 rounded-2xl text-xs font-semibold transition-all duration-150 ${
-                  active
-                    ? 'bg-white/10 text-white shadow-xs'
-                    : 'text-[#A0A5AD] hover:bg-white/5 hover:text-white'
+                className={`relative flex items-center gap-3.5 px-3 py-2.5 rounded-2xl text-xs font-semibold transition-colors duration-150 ${
+                  active ? 'text-white' : 'text-[#A0A5AD] hover:bg-white/5 hover:text-white'
                 } ${isCollapsed ? 'justify-center px-0' : ''}`}
                 title={isCollapsed ? item.label : undefined}
               >
+                {active && (
+                  <motion.span
+                    layoutId="proton-nav-active"
+                    className="absolute inset-0 rounded-2xl bg-white/10 shadow-xs"
+                    transition={PROTON_SPRING}
+                  />
+                )}
+                {active && !isCollapsed && (
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-full bg-[#F43F5E]" />
+                )}
                 <item.icon
                   size={18}
                   strokeWidth={active ? 2.2 : 1.8}
-                  className={active ? 'text-white' : 'text-[#88909A]'}
+                  className={`relative z-10 ${active ? 'text-white' : 'text-[#88909A]'}`}
                 />
-                {!isCollapsed && <span className="truncate">{item.label}</span>}
+                {!isCollapsed && <span className="relative z-10 truncate">{item.label}</span>}
               </NavLink>
             );
           })}
         </div>
       </div>
 
-      {/* Bottom Shelf: Log out */}
-      <div className="p-4 border-t border-[#23252B]">
+      {/* Bottom Shelf: live system state + Log out */}
+      <div className="p-4 border-t border-[#23252B] space-y-2">
+        {!isCollapsed && (
+          <div className="flex items-center gap-2 px-2 py-1.5 rounded-xl bg-white/[0.03] border border-white/5">
+            <LiveDot size={7} />
+            <span className="text-[10px] font-semibold tracking-wide text-[#88909A]">
+              Ambient capture ready
+            </span>
+          </div>
+        )}
         <button
           type="button"
           onClick={onLogout}

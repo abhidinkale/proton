@@ -1,5 +1,7 @@
-import { Search, Menu, Bell, Settings, User, Sparkles } from 'lucide-react';
+import { Search, Menu, Bell, Settings, User, Sparkles, Plus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import ProtonStatusChip from '../../components/proton/ProtonStatusChip';
+import { LiveDot } from '../motion/primitives';
 
 export interface TopBarProps {
   doctorName?: string;
@@ -24,6 +26,7 @@ export function TopBar({
   onSelectSearchScope,
   className = ''
 }: TopBarProps) {
+  const navigate = useNavigate();
   return (
     <header className={`h-20 px-4 sm:px-8 flex items-center justify-between gap-4 shrink-0 z-20 ${className}`}>
       {/* Mobile menu toggle & Global Pill Search */}
@@ -38,20 +41,22 @@ export function TopBar({
         </button>
 
         {/* Pill Search with embedded scope chips */}
-        <div 
-          onClick={onOpenCommandPalette}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-full bg-white border border-[#E8E5DC] shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:border-[#D6D2C4] transition-all cursor-pointer group"
-        >
-          {/* Search Icon in Pink Pill Circle */}
-          <div className="w-7 h-7 rounded-full bg-[#FCE7F3] text-[#9D174D] flex items-center justify-center shrink-0">
-            <Search size={14} strokeWidth={2.5} />
-          </div>
+        <div className="w-full flex items-center gap-3 px-3 py-2 rounded-full bg-white border border-[#E8E5DC] shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:border-[#D6D2C4] focus-within:border-[#D6D2C4] focus-within:ring-2 focus-within:ring-[#F9A8D4]/40 transition-all">
+          <button
+            type="button"
+            onClick={onOpenCommandPalette}
+            aria-label="Open global search"
+            className="flex items-center gap-3 flex-1 min-w-0 text-left rounded-full focus-visible:outline-none"
+          >
+            {/* Search Icon in Pink Pill Circle */}
+            <span className="w-7 h-7 rounded-full bg-[#FCE7F3] text-[#9D174D] flex items-center justify-center shrink-0">
+              <Search size={14} strokeWidth={2.5} />
+            </span>
 
-          <div className="flex items-center gap-2 flex-1 min-w-0">
             <span className="text-xs text-[#151719] font-medium truncate">
               Search patient, prescription, or guideline...
             </span>
-          </div>
+          </button>
 
           {/* Scope filters right inside search bar */}
           <div className="hidden sm:flex items-center gap-1 shrink-0 text-[10px] text-[#575D65]">
@@ -80,17 +85,28 @@ export function TopBar({
             ⌘K
           </kbd>
         </div>
+
+        {/* Global 1-Click + New Patient Button */}
+        <button
+          type="button"
+          onClick={() => navigate('/consultation?action=new-patient')}
+          className="hidden sm:flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-[#151619] hover:bg-[#2D3139] text-white text-xs font-extrabold shadow-sm transition-transform active:scale-95 cursor-pointer shrink-0"
+          title="Start New Patient Consultation"
+        >
+          <Plus size={14} />
+          <span>+ New Patient</span>
+        </button>
       </div>
 
-      {/* Right Controls: Connectivity Chip, Notifications, Profile */}
-      <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+      {/* Right Controls: Connectivity Chip & Unified Dark Capsule (Reference Signature) */}
+      <div className="flex items-center gap-2.5 shrink-0">
         <ProtonStatusChip className="hidden sm:inline-flex" />
 
         {/* Copilot Quick Launcher Button */}
         <button
           type="button"
           onClick={onToggleCopilot}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-white border border-[#E8E5DC] text-[#151719] hover:bg-[#FCE7F3]/40 hover:border-[#FCE7F3] shadow-xs cursor-pointer text-xs font-semibold transition-colors"
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white border border-[#E8E5DC] text-[#151719] hover:bg-[#FCE7F3]/40 hover:border-[#FCE7F3] shadow-xs cursor-pointer text-xs font-semibold transition-colors"
           title="Toggle Proton Copilot (⌥A)"
         >
           <div className="w-4 h-4 rounded-full bg-[#FCE7F3] text-[#9D174D] flex items-center justify-center">
@@ -100,41 +116,38 @@ export function TopBar({
           <span className="text-[10px] font-mono text-[#88909A] px-1 py-0.2 rounded bg-[#F4F3EE] hidden xl:inline">⌥A</span>
         </button>
 
-        {/* Notification Bell with indicator */}
-        <button
-          type="button"
-          onClick={onOpenNotifications}
-          className="relative p-2.5 rounded-full bg-white border border-[#E8E5DC] text-[#575D65] hover:text-[#151719] hover:bg-[#F9F8F5] shadow-xs cursor-pointer"
-          title="Clinical notifications"
-          aria-label="Clinical notifications"
-        >
-          <Bell size={16} />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#E11D48] ring-2 ring-white" />
-        </button>
+        {/* Reference Signature 3-Icon Dark Capsule [User, Bell, Settings] */}
+        <div className="flex items-center gap-0.5 p-1 rounded-full bg-[#151619] text-white shadow-xs">
+          <button
+            type="button"
+            onClick={onNavigateSettings}
+            className="w-8 h-8 rounded-full hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer"
+            title={`Physician: ${doctorName}`}
+            aria-label="Physician Profile"
+          >
+            <User size={15} />
+          </button>
 
-        {/* Settings Gear */}
-        <button
-          type="button"
-          onClick={onNavigateSettings}
-          className="p-2.5 rounded-full bg-white border border-[#E8E5DC] text-[#575D65] hover:text-[#151719] hover:bg-[#F9F8F5] shadow-xs cursor-pointer"
-          title="Settings"
-          aria-label="Settings"
-        >
-          <Settings size={16} />
-        </button>
+          <button
+            type="button"
+            onClick={onOpenNotifications}
+            className="relative w-8 h-8 rounded-full hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer"
+            title="Clinical Notifications"
+            aria-label="Clinical Notifications"
+          >
+            <Bell size={15} />
+            <LiveDot size={8} color="#E11D48" className="absolute top-1.5 right-1.5" />
+          </button>
 
-        {/* Physician Profile Avatar Pill */}
-        <div 
-          onClick={onNavigateSettings}
-          className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full bg-white border border-[#E8E5DC] shadow-xs cursor-pointer hover:bg-[#F9F8F5] transition-colors"
-        >
-          <div className="w-7 h-7 rounded-full bg-[#151619] text-white flex items-center justify-center font-bold text-xs shrink-0">
-            <User size={14} />
-          </div>
-          <div className="hidden md:flex flex-col leading-tight">
-            <span className="text-xs font-bold text-[#151719] truncate">{doctorName}</span>
-            <span className="text-[10px] text-[#88909A]">Attending</span>
-          </div>
+          <button
+            type="button"
+            onClick={onNavigateSettings}
+            className="w-8 h-8 rounded-full hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer"
+            title="Settings"
+            aria-label="Settings"
+          >
+            <Settings size={15} />
+          </button>
         </div>
       </div>
     </header>

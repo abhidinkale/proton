@@ -1,16 +1,25 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AnimatePresence, motion } from 'motion/react';
 import { 
   ArrowRight, Database, 
   AlertTriangle, Sparkles, CheckCircle2, ShieldAlert, 
   ArrowUpRight
 } from 'lucide-react';
+import { CountUp, LiveDot, PROTON_EASE, Reveal, Stagger, StaggerItem } from '../design-system/motion/primitives';
 
 export default function LandingPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'brief' | 'safety' | 'fhir'>('brief');
   const [provenanceBadge, setProvenanceBadge] = useState<'draft' | 'edited'>('draft');
   const [isCommitted, setIsCommitted] = useState(false);
+
+  const tabMotion = {
+    initial: { opacity: 0, y: 6 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: -6 },
+    transition: { duration: 0.22, ease: PROTON_EASE }
+  };
 
   return (
     <div className="min-h-screen bg-[#F7F6F2] text-[#111315] flex flex-col selection:bg-[#EAE8E1]">
@@ -19,7 +28,7 @@ export default function LandingPage() {
       <div className="bg-[#0B0D10] text-[#E4E2DD] border-b border-[#222831] px-4 sm:px-8 py-2.5 flex flex-wrap items-center justify-between text-xs font-mono-clinical gap-2">
         <div className="flex items-center gap-3">
           <span className="inline-flex items-center gap-1.5 text-emerald-400">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <LiveDot size={8} color="#34D399" />
             <span>PROTON CLINICAL OS // v1.4</span>
           </span>
           <span className="text-[#5A6065] hidden sm:inline">•</span>
@@ -73,11 +82,20 @@ export default function LandingPage() {
       </header>
 
       {/* Hero Section */}
-      <main className="flex-1 max-w-7xl mx-auto px-6 py-12 lg:py-16 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+      <main className="relative flex-1">
+        {/* Ambient atmosphere — GPU-cheap, reduced-motion aware via .proton-drift */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+          <div className="proton-drift proton-drift-a absolute -top-40 -left-32 w-[38rem] h-[38rem] rounded-full blur-3xl" />
+          <div className="proton-drift proton-drift-b absolute top-16 -right-40 w-[34rem] h-[34rem] rounded-full blur-3xl" />
+          <div className="proton-drift proton-drift-c absolute bottom-0 left-1/3 w-[30rem] h-[30rem] rounded-full blur-3xl" />
+          <div className="proton-grain absolute inset-0" />
+        </div>
+
+        <div className="relative max-w-7xl mx-auto px-6 py-12 lg:py-16 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
         
         {/* LEFT 6 COLUMNS: Editorial Headline + Core Metrics */}
-        <div className="lg:col-span-6 space-y-8">
-          <div className="space-y-4">
+        <Stagger className="lg:col-span-6 space-y-8" stagger={0.09} delayChildren={0.05}>
+          <StaggerItem className="space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#EAE8E1] border border-[#D5D2C9] rounded font-mono-clinical text-xs text-[#0F4C81]">
               <Sparkles className="w-3.5 h-3.5 text-amber-600" />
               <span>AMBIENT INTELLIGENCE + DETERMINISTIC SAFETY</span>
@@ -90,57 +108,57 @@ export default function LandingPage() {
             <p className="text-base sm:text-lg text-[#5A6065] leading-relaxed max-w-xl">
               Proton generates deterministic situational briefs before patient visits, listens to clinical dialogues ambiently, and enforces hard pharmaceutical verification barriers—with zero unapproved changes committed to the permanent record.
             </p>
-          </div>
+          </StaggerItem>
 
           {/* Quantitative Proof Metrics Strip */}
-          <div className="grid grid-cols-3 gap-4 pt-2">
-            <div className="p-4 bg-white border border-[#D5D2C9] rounded-md shadow-2xs">
-              <div className="font-mono-clinical text-2xl font-bold text-[#111315]">10s</div>
+          <Stagger className="grid grid-cols-3 gap-4 pt-2" stagger={0.07}>
+            <StaggerItem className="p-4 bg-white border border-[#D5D2C9] rounded-md shadow-2xs transition-shadow hover:shadow-md">
+              <div className="font-mono-clinical text-2xl font-bold text-[#111315]"><CountUp value={10} suffix="s" /></div>
               <div className="font-mono-clinical text-[11px] text-[#5A6065] mt-0.5">Pre-Consult Brief</div>
               <div className="text-[11px] text-[#8A9199] mt-1">Instant longitudinal trend extraction</div>
-            </div>
+            </StaggerItem>
 
-            <div className="p-4 bg-white border border-[#D5D2C9] rounded-md shadow-2xs">
-              <div className="font-mono-clinical text-2xl font-bold text-[#0F4C81]">100%</div>
+            <StaggerItem className="p-4 bg-white border border-[#D5D2C9] rounded-md shadow-2xs transition-shadow hover:shadow-md">
+              <div className="font-mono-clinical text-2xl font-bold text-[#0F4C81]"><CountUp value={100} suffix="%" /></div>
               <div className="font-mono-clinical text-[11px] text-[#5A6065] mt-0.5">Deterministic Rx Gate</div>
               <div className="text-[11px] text-[#8A9199] mt-1">Cross-allergy & dose completeness</div>
-            </div>
+            </StaggerItem>
 
-            <div className="p-4 bg-white border border-[#D5D2C9] rounded-md shadow-2xs">
+            <StaggerItem className="p-4 bg-white border border-[#D5D2C9] rounded-md shadow-2xs transition-shadow hover:shadow-md">
               <div className="font-mono-clinical text-2xl font-bold text-emerald-700">FHIR R4</div>
               <div className="font-mono-clinical text-[11px] text-[#5A6065] mt-0.5">Atomic Persistence</div>
               <div className="text-[11px] text-[#8A9199] mt-1">Medplum batch execution & gating</div>
-            </div>
-          </div>
+            </StaggerItem>
+          </Stagger>
 
           {/* CTA Buttons */}
-          <div className="flex flex-wrap items-center gap-4 pt-2">
+          <StaggerItem className="flex flex-wrap items-center gap-4 pt-2">
             <button
               onClick={() => navigate('/login')}
-              className="px-6 py-3.5 bg-[#111315] text-white rounded text-sm font-mono-clinical font-semibold hover:bg-[#272B30] transition flex items-center gap-2 cursor-pointer shadow-xs"
+              className="group px-6 py-3.5 bg-[#111315] text-white rounded text-sm font-mono-clinical font-semibold hover:bg-[#272B30] hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center gap-2 cursor-pointer shadow-xs"
             >
               <span>Enter Synthetic Physician Desk</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
             </button>
             <button
               onClick={() => {
                 const el = document.getElementById('workbench-preview');
                 el?.scrollIntoView({ behavior: 'smooth' });
               }}
-              className="px-5 py-3.5 bg-white border border-[#D5D2C9] text-[#111315] rounded text-sm font-mono-clinical font-medium hover:bg-[#EAE8E1] transition cursor-pointer"
+              className="px-5 py-3.5 bg-white border border-[#D5D2C9] text-[#111315] rounded text-sm font-mono-clinical font-medium hover:bg-[#EAE8E1] hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer"
             >
               Interactive Workbench Preview ↓
             </button>
-          </div>
+          </StaggerItem>
 
-          <div className="text-xs font-mono-clinical text-[#5A6065] flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+          <StaggerItem className="text-xs font-mono-clinical text-[#5A6065] flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
             <span>Pre-configured with Eleanor Vance (68F) & Arthur Pendelton (74M) synthetic cohorts.</span>
-          </div>
-        </div>
+          </StaggerItem>
+        </Stagger>
 
         {/* RIGHT 6 COLUMNS: Interactive Live Clinical Workbench Preview */}
-        <div id="workbench-preview" className="lg:col-span-6">
+        <Reveal delay={0.28} className="lg:col-span-6" id="workbench-preview">
           <div className="bg-white border border-[#D5D2C9] rounded-md shadow-sm overflow-hidden">
             
             {/* Workbench Top Bar with 3 Tabs */}
@@ -182,9 +200,10 @@ export default function LandingPage() {
               </div>
             </div>
 
+            <AnimatePresence mode="wait" initial={false}>
             {/* TAB CONTENT 1: Pre-Consultation Situational Brief */}
             {activeTab === 'brief' && (
-              <div className="p-6 space-y-5 animate-in fade-in duration-200">
+              <motion.div key="brief" {...tabMotion} className="p-6 space-y-5">
                 <div className="flex items-start justify-between border-b border-[#E4E2DD] pb-4">
                   <div>
                     <span className="font-mono-clinical text-xs text-[#5A6065]">EXAM ROOM 3 • 09:00 AM</span>
@@ -249,12 +268,12 @@ export default function LandingPage() {
                     "Patient reports persistent morning lethargy and thirst. Metformin 1000mg BID continued without improvement."
                   </p>
                 </div>
-              </div>
+              </motion.div>
             )}
 
             {/* TAB CONTENT 2: Rx Safety Intercept */}
             {activeTab === 'safety' && (
-              <div className="p-6 space-y-5 animate-in fade-in duration-200">
+              <motion.div key="safety" {...tabMotion} className="p-6 space-y-5">
                 <div className="flex items-center justify-between border-b border-[#E4E2DD] pb-4">
                   <div className="flex items-center gap-2">
                     <ShieldAlert className="w-5 h-5 text-[#B91C1C]" />
@@ -294,12 +313,12 @@ export default function LandingPage() {
                     <div className="text-[#B91C1C] font-semibold">• Duration: MISSING (Requires 30d/90d specification)</div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             )}
 
             {/* TAB CONTENT 3: FHIR Memory Gating */}
             {activeTab === 'fhir' && (
-              <div className="p-6 space-y-5 animate-in fade-in duration-200">
+              <motion.div key="fhir" {...tabMotion} className="p-6 space-y-5">
                 <div className="flex items-center justify-between border-b border-[#E4E2DD] pb-4">
                   <div className="flex items-center gap-2">
                     <Database className="w-5 h-5 text-[#0F4C81]" />
@@ -355,8 +374,9 @@ export default function LandingPage() {
                     </span>
                   </button>
                 </div>
-              </div>
+              </motion.div>
             )}
+            </AnimatePresence>
 
             {/* Workbench Bottom Footer */}
             <div className="bg-[#F7F6F2] border-t border-[#E4E2DD] p-4 flex items-center justify-between">
@@ -374,6 +394,8 @@ export default function LandingPage() {
             </div>
 
           </div>
+        </Reveal>
+
         </div>
 
       </main>

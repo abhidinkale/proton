@@ -10,6 +10,8 @@ import ProtonShortcutsModal from '../../components/proton/ProtonShortcutsModal';
 import ProtonCopilot, { type CopilotMode } from '../../components/proton/ProtonCopilot';
 import { Bell, AlertTriangle, X, LogOut } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
+import { MotionConfig } from 'motion/react';
+import { PageTransition } from '../motion/primitives';
 import { DEFAULT_GENERAL_NAV, DEFAULT_TOOLS_NAV } from './Sidebar';
 
 export interface AppShellProps {
@@ -70,7 +72,8 @@ export function AppShell({
   };
 
   return (
-    <div className={`min-h-screen w-full bg-[#F9F8F5] text-[#151719] flex flex-col font-sans antialiased selection:bg-[#FCE7F3] selection:text-[#9D174D] ${className}`}>
+    <MotionConfig reducedMotion="user">
+      <div className={`min-h-screen w-full bg-[#F7F4EE] text-[#151719] flex flex-col font-sans antialiased selection:bg-[#FCE7F3] selection:text-[#9D174D] ${className}`}>
       
       {/* Desktop Main Application Frame */}
       <div className="flex-1 flex overflow-hidden min-h-screen">
@@ -101,7 +104,9 @@ export function AppShell({
           {/* Workspace Body */}
           <main className={`flex-1 overflow-y-auto px-4 sm:px-8 pb-12 ${fillCanvas ? 'p-0' : fullBleed ? 'p-2' : ''}`}>
             <div className="max-w-[1560px] mx-auto">
-              {children}
+              <PageTransition routeKey={location.pathname} className="w-full">
+                {children}
+              </PageTransition>
             </div>
           </main>
 
@@ -272,7 +277,8 @@ export function AppShell({
         isOpen={isShortcutsOpen}
         onClose={() => setIsShortcutsOpen(false)}
       />
-    </div>
+      </div>
+    </MotionConfig>
   );
 }
 

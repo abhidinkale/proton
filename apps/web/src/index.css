@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "../node_modules/@fontsource-variable/source-sans-3/index.css";
 
 @theme {
   /* ── Refined Clinical Palette ── */
@@ -15,9 +14,10 @@
   --color-brand-900: #151515;
   --color-brand-950: #111111;
 
-  /* ── Typography (Refined Modern Sans-Serif + Editorial Serif + Clinical Mono) ── */
-  --font-sans: 'Plus Jakarta Sans', 'Source Sans 3 Variable', sans-serif;
-  --font-display: 'Plus Jakarta Sans', 'Source Sans 3 Variable', sans-serif;
+  /* ── Typography (Modern Geometric Sans-Serif + Apple System + Clinical Mono) ── */
+  --font-sans: 'Outfit', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'SF Pro Display', 'SF Pro Text', system-ui, sans-serif;
+  --font-display: 'Outfit', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'SF Pro Display', system-ui, sans-serif;
+  --font-rounded: 'Outfit', 'SF Pro Rounded', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-editorial: 'Instrument Serif', Georgia, serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
 
@@ -91,7 +91,7 @@
   --radius-dialog: 0.75rem;
 }
 
-/* ── Base Styles (Swiss Clinical Workspace) ── */
+/* ── Base Styles (Modern Geometric Clinical Workspace) ── */
 html, body {
   background-color: #F7F6F2;
   color: #111315;
@@ -101,6 +101,16 @@ html, body {
   text-rendering: optimizeLegibility;
   font-kerning: normal;
   font-synthesis: none;
+  letter-spacing: -0.012em;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  letter-spacing: -0.022em;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
 }
 
 /* ── Swiss Clinical Typography & Utility Classes ── */
@@ -3531,5 +3541,69 @@ html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) :is(
   .proton-workspace-shell .proton-canvas-content {
     padding-right: var(--space-3);
     padding-left: var(--space-3);
+  }
+}
+
+/* ============================================================================
+   PROTON ATMOSPHERE
+   Ambient light + grain for editorial surfaces (landing, auth, empty states).
+   Purely decorative: every layer is pointer-events:none and aria-hidden.
+   ========================================================================== */
+
+@keyframes proton-drift-a {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50%      { transform: translate3d(3%, 5%, 0) scale(1.07); }
+}
+
+@keyframes proton-drift-b {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1.04); }
+  50%      { transform: translate3d(-4%, 3%, 0) scale(1); }
+}
+
+@keyframes proton-drift-c {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50%      { transform: translate3d(3%, -4%, 0) scale(1.09); }
+}
+
+.proton-drift {
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+}
+
+.proton-drift-a {
+  background: radial-gradient(circle at center, rgba(244, 63, 94, 0.12), rgba(244, 63, 94, 0) 68%);
+  animation: proton-drift-a 26s ease-in-out infinite;
+}
+
+.proton-drift-b {
+  background: radial-gradient(circle at center, rgba(15, 76, 129, 0.13), rgba(15, 76, 129, 0) 68%);
+  animation: proton-drift-b 32s ease-in-out infinite;
+}
+
+.proton-drift-c {
+  background: radial-gradient(circle at center, rgba(245, 158, 11, 0.10), rgba(245, 158, 11, 0) 68%);
+  animation: proton-drift-c 29s ease-in-out infinite;
+}
+
+.proton-grain {
+  pointer-events: none;
+  opacity: 0.035;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+}
+
+/* Reduced motion: freeze atmosphere, drop animation budgets to zero. */
+@media (prefers-reduced-motion: reduce) {
+  .proton-drift-a,
+  .proton-drift-b,
+  .proton-drift-c {
+    animation: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
   }
 }
