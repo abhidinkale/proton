@@ -1,55 +1,103 @@
 import { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import DoctorGuidedEncounter from '../components/DoctorGuidedEncounter';
 import DoctorDeskEncounter from '../components/DoctorDeskEncounter';
+import AmbientClinicalCockpit from '../components/AmbientClinicalCockpit';
 import LegacyEncounterWorkspace from '../components/LegacyEncounterWorkspace';
 import { TODAY_CLINIC_SCHEDULE } from '../data/clinicSchedule';
 
 /**
  * Consultation Route Container
  * 
- * Canonical modern implementation:
- * - DoctorDeskEncounter serves as the authoritative modern physician encounter workspace.
- * - LegacyEncounterWorkspace is preserved to retain all prior clinical verification,
- *   intelligence diffing, and PDF generation functionality without visual regression.
+ * Clinical Ergonomics:
+ * - Default: Ambient Clinical Cockpit (World-Class Tri-Pane Ambient Scribe & Autonomous DDx Engine)
+ * - Guided Mode (Simple linear 7-step doctor journey)
+ * - Multi-Tab Power Workstation (DoctorDeskEncounter)
+ * - Legacy Verification View
  */
 export default function Consultation() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const patientId = searchParams.get('patient');
-  const [viewMode, setViewMode] = useState<'desk' | 'legacy'>('desk');
+  const initialMode = (searchParams.get('mode') as any) || 'cockpit';
+  const [viewMode, setViewMode] = useState<'cockpit' | 'guided' | 'desk' | 'legacy'>(initialMode);
 
-  const selectedDeskPatient = TODAY_CLINIC_SCHEDULE.find(
-    p => p.id === patientId || p.id.includes(patientId || '')
-  ) || TODAY_CLINIC_SCHEDULE[0];
+  // Only match when a patient was actually requested: `id.includes('')` is always
+  // true and would silently lock every encounter to the first chart in the list.
+  const requestedPatient = patientId
+    ? TODAY_CLINIC_SCHEDULE.find(p => p.id === patientId || p.id.includes(patientId))
+    : undefined;
+
+  // The cockpit's synthetic capture is Arthur Pendelton's cardiometabolic case.
+  // Default to that chart so the header, transcript, and orders describe one patient.
+  const selectedDeskPatient = requestedPatient
+    || TODAY_CLINIC_SCHEDULE.find(p => p.id === 'demo-scenario-d-conflict')
+    || TODAY_CLINIC_SCHEDULE[0];
+
+  if (viewMode === 'cockpit') {
+    return (
+      <AmbientClinicalCockpit
+        patient={selectedDeskPatient}
+        onBackToDesk={() => navigate('/')}
+        onSwitchMode={(mode) => setViewMode(mode)}
+      />
+    );
+  }
 
   if (viewMode === 'legacy') {
     return (
       <LegacyEncounterWorkspace
         patientId={patientId}
-        onSwitchToDesk={() => setViewMode('desk')}
+        onSwitchToDesk={() => setViewMode('cockpit')}
       />
     );
   }
 
-  return (
-    <div className="relative min-h-screen bg-[#F9F8F5]">
-      <div className="bg-[#151619] border-b border-[#23252B] px-6 py-2.5 flex items-center justify-between text-xs text-[#A0A5AD]">
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span>Encounter Mode: <strong className="text-white">Physician Workspace & Ambient Scribe</strong></span>
+  if (viewMode === 'desk') {
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="proton-glass proton-specular flex flex-wrap items-center justify-between gap-3 rounded-full px-4 py-2">
+          <div className="flex items-center gap-2 text-[11px] text-[#6E757C]">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            <span className="font-semibold text-[#111315]">Power desk</span>
+            <span className="hidden sm:inline">· multi-tab encounter</span>
+          </div>
+          <div className="flex items-center gap-1 text-[11px]">
+            <button
+              onClick={() => setViewMode('cockpit')}
+              className="rounded-full px-3 py-1.5 font-medium text-[#6E757C] transition-colors hover:bg-white/70 hover:text-[#111315] cursor-pointer"
+            >
+              Cockpit
+            </button>
+            <button
+              onClick={() => setViewMode('guided')}
+              className="rounded-full px-3 py-1.5 font-medium text-[#6E757C] transition-colors hover:bg-white/70 hover:text-[#111315] cursor-pointer"
+            >
+              Guided
+            </button>
+            <button
+              onClick={() => setViewMode('legacy')}
+              className="rounded-full px-3 py-1.5 font-medium text-[#6E757C] transition-colors hover:bg-white/70 hover:text-[#111315] cursor-pointer"
+            >
+              Legacy
+            </button>
+          </div>
         </div>
-        <button
-          onClick={() => setViewMode('legacy')}
-          className="text-[#88909A] hover:text-white underline cursor-pointer text-[11px]"
-        >
-          Switch to Legacy Verification View →
-        </button>
+        <DoctorDeskEncounter
+          patient={selectedDeskPatient}
+          onCloseMeeting={() => navigate('/')}
+          onBackToDesk={() => navigate('/')}
+        />
       </div>
-      <DoctorDeskEncounter
-        patient={selectedDeskPatient}
-        onCloseMeeting={() => navigate('/')}
-        onBackToDesk={() => navigate('/')}
-      />
-    </div>
+    );
+  }
+
+  return (
+    <DoctorGuidedEncounter
+      initialPatientId={patientId}
+      initialAction={searchParams.get('action')}
+      onSwitchToPowerDesk={() => setViewMode('desk')}
+      onFinishEncounter={() => navigate('/')}
+    />
   );
 }

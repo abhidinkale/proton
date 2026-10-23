@@ -3736,3 +3736,23 @@ html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) :is(
     background: #f7f4ee;
   }
 }
+
+/* Live-capture waveform. Pure CSS so it never re-renders the transcript. */
+@keyframes proton-wave {
+  0%, 100% { transform: scaleY(0.32); }
+  50%      { transform: scaleY(1); }
+}
+
+.proton-wave-bar {
+  transform-origin: center;
+  animation-name: proton-wave;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .proton-wave-bar {
+    animation: none;
+    transform: scaleY(0.55);
+  }
+}
