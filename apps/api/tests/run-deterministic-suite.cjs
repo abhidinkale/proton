@@ -39,7 +39,11 @@ const EXCLUDED = new Set([
   'deepseek_live_smoke.cjs'
 ]);
 
-const REQUIRES_POSTGRES = new Set(['workflow_state_machine_validation.cjs', 'workflow_api_validation.cjs']);
+const REQUIRES_POSTGRES = new Set([
+  'workflow_state_machine_validation.cjs',
+  'workflow_api_validation.cjs',
+  'durable_booking_validation.cjs'
+]);
 
 const REQUIRE_POSTGRES = process.env.REQUIRE_POSTGRES === '1';
 

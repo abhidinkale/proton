@@ -153,6 +153,16 @@ async function listAppointments({ tenantId = 'org-default', from = null, to = nu
   return rows;
 }
 
+async function findAppointmentByIdempotencyKey({ tenantId = 'org-default', idempotencyKey, client = null, p = null }) {
+  if (!idempotencyKey) return null;
+  const q = client || pool(p);
+  const { rows } = await q.query(
+    `SELECT * FROM appointments WHERE tenant_id = $1 AND idempotency_key = $2;`,
+    [tenantId, idempotencyKey]
+  );
+  return rows[0] || null;
+}
+
 // ---------------------------------------------------------------------------
 // Encounters
 // ---------------------------------------------------------------------------
@@ -220,6 +230,20 @@ async function getEncounter({ tenantId = 'org-default', encounterId, client = nu
        JOIN patients p ON p.id = e.patient_id
       WHERE e.id = $1 AND e.tenant_id = $2;`,
     [encounterId, tenantId]
+  );
+  return rows[0] || null;
+}
+
+async function getEncounterByAppointment({ tenantId = 'org-default', appointmentId, client = null, p = null }) {
+  const q = client || pool(p);
+  const { rows } = await q.query(
+    `SELECT e.*, p.full_name AS patient_name, p.mrn
+       FROM encounters e
+       JOIN patients p ON p.id = e.patient_id
+      WHERE e.appointment_id = $1 AND e.tenant_id = $2
+      ORDER BY e.created_at ASC
+      LIMIT 1;`,
+    [appointmentId, tenantId]
   );
   return rows[0] || null;
 }
@@ -390,8 +414,10 @@ module.exports = {
   createAppointment,
   getAppointment,
   listAppointments,
+  findAppointmentByIdempotencyKey,
   createEncounter,
   getEncounter,
+  getEncounterByAppointment,
   listEncounters,
   listEncounterEvents,
   updateFhirEncounterId,

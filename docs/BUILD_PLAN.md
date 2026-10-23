@@ -1,6 +1,6 @@
 # Proton Build Plan — From Cockpit to Durable Clinical Loop
 
-**Status:** in progress — Phase 1 complete; Phase 2 token bridge shipped, codemod 19/23 files
+**Status:** in progress — Phase 1 complete; Phase 2 token bridge shipped (codemod 19/23); Phase 3 durable booking shipped
 **Baseline:** current `main` working tree (hardening pass applied)
 **Goal:** one durable, end-to-end, doctor-supervised encounter loop — booking → context → capture → note → diagnosis → prescription → patient app → report → follow-up — that survives a restart and works on real (non-fixture) data.
 
@@ -10,7 +10,7 @@
 | --- | --- | --- |
 | 1 — Persistence & durable orchestration | **done** | `docs/adr/0001`, `docs/adr/0002`, `workflow_state_machine_validation.cjs` (29 checks), `workflow_api_validation.cjs` (23 checks) |
 | 2 — One authenticated API client | **partial** | medplum→Proton exchange (`docs/adr/0003`, `medplum_session_exchange_validation.cjs`, 8 checks); `src/lib/api.ts`; 19/23 `fetch` files codemodded; 4 files deferred |
-| 3 — Real booking & patient context | not started | booking endpoint exists on the durable schema; the old stub and fixtures are still present |
+| 3 — Real booking & patient context | **partial** | durable patient booking (`services/scheduling/durableBooking.js`, `durable_booking_validation.cjs`, 9 checks); FHIR Appointment + fixture replacement still open |
 | 4–10 | not started | — |
 
 ---
@@ -156,13 +156,37 @@ Remaining before Phase 2 is done:
   cookie (tracked for Phase 10; role and tenant already come from the signed
   token server-side, so storage tampering cannot escalate privileges).
 
-### Phase 3 — Real booking and real patient context · 2–3 d
+### Phase 3 — Real booking and real patient context · 2–3 d · **PARTIAL**
 
-- Delete `/api/patient/appointment-booking` stub. Route booking through `schedulingAgentV2` and persist `Appointment` (DB + FHIR).
-- Intake creates `Patient` + `QuestionnaireResponse`, not a fixture object.
-- Replace `clinicSchedule.ts` / `DoctorDeskPatient` fixtures with queries. Keep fixtures only as seed data for demos.
-- Pre-consult summary reads from DB/FHIR; if a field is missing, it renders "not recorded" instead of inventing a value.
-- **Acceptance:** book → patient record exists → pre-visit brief cites real rows; no code path imports `clinicSchedule`.
+Shipped — durable booking:
+
+- Deleted the fabricated `/api/patient/appointment-booking` handler (it returned
+  `apt-${Date.now()}` and never wrote anything).
+- `services/scheduling/durableBooking.js`: one transaction creates the patient (if
+  self-registering), the appointment, and the encounter in `BOOKED`, with the
+  first event + workflow audit entry. Explicit future instant required; no
+  guessed "Tomorrow 10:00 AM". Unknown patients are rejected unless a name is
+  supplied. Idempotency key (header or deterministic fingerprint) makes retries
+  return the original booking.
+- If the workflow database is not configured the route returns
+  `503 DURABLE_BOOKING_UNAVAILABLE` instead of a fake confirmation.
+- `durable_booking_validation.cjs` — 9 checks: persistence, clinician schedule
+  visibility, encounter event trail, idempotent replay, and four rejection paths.
+
+Still open:
+
+- Persist the corresponding FHIR `Appointment` (DB row exists; `fhir_appointment_id`
+  is nullable and no Medplum write happens yet). Requires the Medplum service in
+  compose and a practitioner token exchange for server-side FHIR writes.
+- Route booking through `schedulingAgentV2` for slot search/recall/no-show flows;
+  the durable row is now the source of truth those flows can build on.
+- Intake still compiles in memory (`/api/patient/pre-visit-interview` returns a
+  fixture-shaped summary); it must create `QuestionnaireResponse` + update the
+  patient context.
+- `clinicSchedule.ts` / `DoctorDeskPatient` fixtures still feed the UI. Replacing
+  them is the next slice, and it is risky while the UI workstream is active.
+- **Acceptance not yet met:** booking is real, but the pre-visit brief still
+  reads fixtures and no code path is fully free of `clinicSchedule`.
 
 ### Phase 4 — Real ambient capture · 4–5 d
 

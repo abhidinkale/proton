@@ -3118,22 +3118,52 @@ app.post('/api/encounter/approve-and-sign', async (req, res) => {
 });
 
 // Phase 1: Smart Appointment Booking & Intake
+// Durable path: patient -> appointment row -> encounter(BOOKED) in one transaction.
+// The old handler returned a fabricated id and never persisted anything.
+const { bookAppointment, BookingError } = require('./services/scheduling/durableBooking');
+
 app.post('/api/patient/appointment-booking', async (req, res) => {
+  const body = req.body || {};
+
   try {
-    const { patientId = 'PAT-007', preferredDate, preferredTime, chiefComplaint } = req.body;
-    const appointmentId = `apt-${Date.now()}`;
-    res.json({
+    const result = await bookAppointment({
+      tenantId: body.tenantId || 'org-default',
+      patientId: body.patientId,
+      clinicianId: body.clinicianId,
+      scheduledFor: body.scheduledFor,
+      date: body.date || body.preferredDate,
+      time: body.time || body.preferredTime,
+      durationMinutes: body.durationMinutes,
+      reason: body.reason || body.chiefComplaint,
+      patient: body.patient,
+      patientName: body.patientName,
+      idempotencyKey: req.headers['idempotency-key'] || body.idempotencyKey,
+      source: 'patient-app'
+    });
+
+    res.status(result.idempotent ? 200 : 201).json({
       success: true,
-      appointmentId,
-      patientId,
-      status: 'CONFIRMED',
-      scheduledTime: `${preferredDate || 'Tomorrow'} ${preferredTime || '10:00 AM'}`,
-      chiefComplaint: chiefComplaint || 'Acute symptoms',
+      appointmentId: result.appointment.id,
+      encounterId: result.encounter?.id || null,
+      patientId: result.patient?.id || result.appointment.patient_id,
+      status: result.appointment.status,
+      scheduledFor: result.appointment.scheduled_for,
+      durationMinutes: result.appointment.duration_minutes,
+      chiefComplaint: result.appointment.reason,
+      idempotent: result.idempotent,
+      createdPatient: result.createdPatient,
       preVisitInterviewRequired: true,
-      nextStep: 'Complete 3-question OLDCARTS intake questionnaire prior to arrival.'
+      nextStep: 'Complete the pre-visit intake questionnaire before arrival.'
     });
   } catch (err) {
-    res.status(500).json({ error: err.message, code: 'APPOINTMENT_BOOKING_FAILED' });
+    if (err instanceof BookingError) {
+      return res.status(err.status).json({ error: err.message, code: err.code });
+    }
+    console.error('[booking] durable booking failed:', err.message);
+    return res.status(500).json({
+      error: 'The appointment could not be booked. No appointment was created.',
+      code: 'APPOINTMENT_BOOKING_FAILED'
+    });
   }
 });
 
