@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '../config';
+import { apiFetch } from '../lib/api';
 
 export interface SpeechToTextService {
   transcribe(audio: Blob): Promise<string>;
@@ -9,7 +10,7 @@ export class RealSpeechService implements SpeechToTextService {
     const formData = new FormData();
     formData.append('audio', audio, 'recording.webm');
     
-    const response = await fetch(`${API_BASE_URL}/api/transcribe`, {
+    const response = await apiFetch(`${API_BASE_URL}/api/transcribe`, {
       method: 'POST',
       body: formData,
     });

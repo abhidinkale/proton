@@ -1,6 +1,6 @@
 # Proton Build Plan — From Cockpit to Durable Clinical Loop
 
-**Status:** in progress — Phase 1 complete, Phase 2 next
+**Status:** in progress — Phase 1 complete; Phase 2 token bridge shipped, codemod 19/23 files
 **Baseline:** current `main` working tree (hardening pass applied)
 **Goal:** one durable, end-to-end, doctor-supervised encounter loop — booking → context → capture → note → diagnosis → prescription → patient app → report → follow-up — that survives a restart and works on real (non-fixture) data.
 
@@ -9,7 +9,7 @@
 | Phase | Status | Evidence |
 | --- | --- | --- |
 | 1 — Persistence & durable orchestration | **done** | `docs/adr/0001`, `docs/adr/0002`, `workflow_state_machine_validation.cjs` (29 checks), `workflow_api_validation.cjs` (23 checks) |
-| 2 — One authenticated API client | not started | — |
+| 2 — One authenticated API client | **partial** | medplum→Proton exchange (`docs/adr/0003`, `medplum_session_exchange_validation.cjs`, 8 checks); `src/lib/api.ts`; 19/23 `fetch` files codemodded; 4 files deferred |
 | 3 — Real booking & patient context | not started | booking endpoint exists on the durable schema; the old stub and fixtures are still present |
 | 4–10 | not started | — |
 
@@ -43,19 +43,23 @@
 
 ```
 Browser (React)
-  └─ one apiFetch()  ── Bearer(Medplum JWT) ──┐
-                                              ▼
-                                     Express API (routers)
-                                              │
-                    ┌─────────────────────────┼──────────────────────────┐
-                    ▼                         ▼                          ▼
-             Postgres (system of record)   Medplum FHIR            Workers (pg-boss)
-             patients, encounters,         Patient, Encounter,     follow-up, reminders,
-             events, jobs, audit,          Observation,            outbox delivery,
-             appointments, outbox          MedicationRequest       OCR/ASR jobs
-                    │
-                    └─ pgvector: guideline corpus, embeddings, evidence cache
+  └─ one apiFetch()  ── Bearer(Proton session) ──┐
+                                                 ▼
+                                       Express API (routers)
+                                                 │
+                       ┌─────────────────────────┼──────────────────────────┐
+                       ▼                         ▼                          ▼
+                Postgres (system of record)   Medplum FHIR            Workers (pg-boss)
+                patients, encounters,         Patient, Encounter,     follow-up, reminders,
+                events, jobs, audit,          Observation,            outbox delivery,
+                appointments, outbox          MedicationRequest       OCR/ASR jobs
+                       │
+                       └─ pgvector: guideline corpus, embeddings, evidence cache
 ```
+
+The browser's Bearer is a **Proton** session token obtained by exchanging its
+Medplum access token at `POST /api/auth/exchange` (ADR 0003). Medplum's JWT is
+never sent to ordinary API routes.
 
 **Decision:** Postgres is the system of record for *workflow state*; Medplum/FHIR is the system of record for *clinical resources*. The encounter state machine references FHIR resource IDs. This keeps the loop durable without fighting FHIR's lack of workflow semantics.
 
@@ -101,15 +105,56 @@ Not done in this phase, carried forward:
 - Multi-process worker behaviour is designed for (`SKIP LOCKED`) but only
   single-process tested.
 
-### Phase 2 — One authenticated API client · 2–3 d
+### Phase 2 — One authenticated API client · 2–3 d · **PARTIAL**
 
-Closes the P0 gap that strict mode currently exposes.
+Closes the P0 gap that strict mode exposes.
 
-- Server: `POST /api/auth/exchange` accepts a Medplum access token, validates it (JWKS or introspection — whichever the deployment supports), maps `Practitioner` → Proton actor + tenant, and issues a short-lived Proton session token.
-- Delete the hardcoded demo accounts from the request path. Keep them only behind `NODE_ENV=e2e`.
-- Client: `src/lib/api.ts` with `apiFetch()` that attaches the token, refreshes on 401, and retries once. Codemod all 72 `fetch` call sites; ban raw `fetch` with an oxlint rule.
-- Remove identity from `localStorage`; rely on the Medplum session + server-verified actor.
-- **Acceptance:** in strict mode (`PROTON_SYNTHETIC_MODE=false`), a real login completes booking → sign-off with zero 401s; a persisted XSS cannot escalate role (role comes from the server, never storage).
+Shipped:
+
+- **Server exchange.** `POST /api/auth/exchange` (ADR 0003) accepts a Medplum
+  access token, verifies it against `${MEDPLUM_BASE_URL}/auth/me`, maps a
+  `Practitioner` to a Proton actor (`usr-medplum-<id>`, role `physician`, tenant,
+  NPI), and issues a 12-hour Proton session. `Patient`, inactive practitioners,
+  expired tokens, and an unreachable IdP all fail closed. MFA is recorded as
+  `false` — the API does not claim an assurance level it cannot prove.
+- **Rate limiting.** The exchange shares the 10/minute login limiter.
+- **Client credential.** `src/lib/sessionToken.ts` owns the Proton token;
+  `authService` performs the exchange at login and heals pre-existing Medplum
+  sessions via `ensureProtonSession()`.
+- **One API client.** `src/lib/api.ts` provides `apiFetch` / `apiJson`: attaches
+  the Bearer token, normalises `/api/...` against `VITE_API_URL` when the web and
+  API are on different origins, and turns an authenticated 401 into exactly one
+  `proton:session-expired` event. The shell reacts once (logout + redirect)
+  instead of every panel racing to redirect.
+- **Codemod.** 19 of 23 web files that called `fetch` now use `apiFetch`
+  (64 call sites). `npm run check:api-client` guards the invariant with an
+  explicit allowlist.
+- **Tests.** `medplum_session_exchange_validation.cjs` — 8 checks against a stub
+  Medplum, including that the access token is never echoed and that the issued
+  token authenticates a protected route with synthetic mode off.
+
+Deliberately different from the original sketch:
+
+- **No 401 refresh-and-retry.** Replaying a clinician's signed write after a
+  silent refresh is worse than making them re-authenticate. The client ends the
+  session once; the server remains the only place a role is decided.
+- **No oxlint rule for raw `fetch`.** oxlint does not support project-local rules;
+  the standalone `check:api-client` script provides the same gate without a
+  plugin dependency.
+
+Remaining before Phase 2 is done:
+
+- Codemod the 4 deferred files (actively edited by the UI workstream):
+  `AmbientClinicalCockpit.tsx`, `DoctorGuidedEncounter.tsx`,
+  `MDSpecialistBoardPanel.tsx`, `DocumentReview.tsx`.
+- Remove the hardcoded demo accounts from the request path entirely (currently
+  behind `resolveSyntheticMode()` + `PROTON_ALLOW_DEMO_ACCOUNTS`).
+- Prove the acceptance path against a running Medplum instance: strict-mode login
+  → booking → sign-off with zero 401s. The exchange itself is tested; the
+  end-to-end browser run is not yet possible locally (Medplum is not in compose).
+- Move the doctor profile / token out of `localStorage` into an httpOnly session
+  cookie (tracked for Phase 10; role and tenant already come from the signed
+  token server-side, so storage tampering cannot escalate privileges).
 
 ### Phase 3 — Real booking and real patient context · 2–3 d
 

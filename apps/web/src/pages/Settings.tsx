@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { ShieldCheck, Cpu, User, Keyboard, AlertTriangle, CheckCircle2, LayoutTemplate } from 'lucide-react';
 import Layout from '../components/Layout';
 import { API_BASE_URL } from '../config';
+import { apiFetch } from '../lib/api';
 
 interface AIHealthStatus {
   provider: string;
@@ -16,7 +17,7 @@ export default function Settings() {
   const [aiStatusState, setAiStatusState] = useState<'loading' | 'ready' | 'unavailable'>('loading');
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/health/ai`)
+    apiFetch(`${API_BASE_URL}/health/ai`)
       .then(res => {
         if (!res.ok) throw new Error(`AI status request failed (${res.status})`);
         return res.json();

@@ -13,6 +13,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { API_BASE_URL } from '../../config';
+import { apiFetch } from '../../lib/api';
 
 interface AfterVisitSummaryModalProps {
   patient: {
@@ -46,7 +47,7 @@ export default function AfterVisitSummaryModal({
     const fetchSummary = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`${API_BASE_URL}/api/clinical/discharge/generate`, {
+        const res = await apiFetch(`${API_BASE_URL}/api/clinical/discharge/generate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

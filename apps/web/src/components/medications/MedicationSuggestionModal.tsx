@@ -11,6 +11,7 @@ import {
   Check
 } from 'lucide-react';
 import { API_BASE_URL } from '../../config';
+import { apiFetch } from '../../lib/api';
 
 interface MedicationSuggestionModalProps {
   patient: {
@@ -47,7 +48,7 @@ export default function MedicationSuggestionModal({
     setAdopted(false);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/clinical/medications/suggest`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/clinical/medications/suggest`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

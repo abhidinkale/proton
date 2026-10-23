@@ -12,6 +12,7 @@ import {
   ClipboardList
 } from 'lucide-react';
 import { API_BASE_URL } from '../../config';
+import { apiFetch } from '../../lib/api';
 
 interface NurseRoomingWorkspaceProps {
   patient: {
@@ -76,7 +77,7 @@ export const NurseRoomingWorkspace: React.FC<NurseRoomingWorkspaceProps> = ({
 
   // Load existing rooming if available
   useEffect(() => {
-    fetch(`${API_BASE_URL}/api/clinical/rooming/${patient.id}`)
+    apiFetch(`${API_BASE_URL}/api/clinical/rooming/${patient.id}`)
       .then(res => res.json())
       .then(data => {
         if (data.rooming) {
@@ -115,7 +116,7 @@ export const NurseRoomingWorkspace: React.FC<NurseRoomingWorkspaceProps> = ({
         }
       };
 
-      const res = await fetch(`${API_BASE_URL}/api/clinical/rooming/save`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/clinical/rooming/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

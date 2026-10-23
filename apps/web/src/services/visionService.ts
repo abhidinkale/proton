@@ -7,6 +7,7 @@ import type {
   ClinicianReviewRecord,
   SubmitVisionReviewParams
 } from '../types/vision';
+import { apiFetch } from '../lib/api';
 
 const API_BASE = '/api/vision';
 
@@ -16,7 +17,7 @@ export async function analyzeMedia(params: {
   encounterId?: string;
   prompt?: string;
 }): Promise<VisionAnalysisResult> {
-  const res = await fetch(`${API_BASE}/analyze`, {
+  const res = await apiFetch(`${API_BASE}/analyze`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params)
@@ -31,7 +32,7 @@ export async function analyzeMedia(params: {
 }
 
 export async function getAnalysesForMedia(mediaId: string): Promise<{ analyses: VisionAnalysisResult[] }> {
-  const res = await fetch(`${API_BASE}/analyses/${encodeURIComponent(mediaId)}`);
+  const res = await apiFetch(`${API_BASE}/analyses/${encodeURIComponent(mediaId)}`);
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
     throw new Error(errorData.message || errorData.error || `Failed to fetch analyses (${res.status})`);
@@ -40,7 +41,7 @@ export async function getAnalysesForMedia(mediaId: string): Promise<{ analyses: 
 }
 
 export async function submitVisionReview(params: SubmitVisionReviewParams): Promise<ClinicianReviewRecord & { success: boolean; isDuplicate?: boolean }> {
-  const res = await fetch(`${API_BASE}/reviews`, {
+  const res = await apiFetch(`${API_BASE}/reviews`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params)
@@ -55,7 +56,7 @@ export async function submitVisionReview(params: SubmitVisionReviewParams): Prom
 }
 
 export async function getVisionReviews(analysisId: string): Promise<{ reviews: ClinicianReviewRecord[] }> {
-  const res = await fetch(`${API_BASE}/reviews/${encodeURIComponent(analysisId)}`);
+  const res = await apiFetch(`${API_BASE}/reviews/${encodeURIComponent(analysisId)}`);
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
     throw new Error(errorData.message || errorData.error || `Failed to fetch clinician reviews (${res.status})`);

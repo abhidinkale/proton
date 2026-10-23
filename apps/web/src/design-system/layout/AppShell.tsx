@@ -12,6 +12,7 @@ import { Bell, AlertTriangle, X, LogOut } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { MotionConfig } from 'motion/react';
 import { PageTransition } from '../motion/primitives';
+import { SESSION_EXPIRED_EVENT } from '../../lib/api';
 import { DEFAULT_GENERAL_NAV, DEFAULT_TOOLS_NAV } from './Sidebar';
 
 export interface AppShellProps {
@@ -65,6 +66,21 @@ export function AppShell({
     setIsMobileMenuOpen(false);
     setIsNotificationsOpen(false);
   }, [location.pathname]);
+
+  // Heal sessions that predate the Proton token bridge (or arrive tokenless in a new tab).
+  useEffect(() => {
+    void authService.ensureProtonSession();
+  }, []);
+
+  // One authoritative reaction to an expired credential, instead of every panel racing to redirect.
+  useEffect(() => {
+    const handleExpired = () => {
+      authService.logout().catch(() => undefined);
+      navigate('/login?reason=session_expired', { replace: true });
+    };
+    window.addEventListener(SESSION_EXPIRED_EVENT, handleExpired);
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, handleExpired);
+  }, [navigate]);
 
   const handleLogout = () => {
     authService.logout();

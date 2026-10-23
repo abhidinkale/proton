@@ -11,6 +11,7 @@ import {
   X
 } from 'lucide-react';
 import { API_BASE_URL } from '../../config';
+import { apiFetch } from '../../lib/api';
 
 interface ImagingStudy {
   id: string;
@@ -44,7 +45,7 @@ export default function AcuteImagingTriageWorklist() {
   const fetchWorklist = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/vision/acute-worklist`);
+      const res = await apiFetch(`${API_BASE_URL}/api/vision/acute-worklist`);
       if (res.ok) {
         const data = await res.json();
         setWorklist(data.worklist || []);
@@ -63,7 +64,7 @@ export default function AcuteImagingTriageWorklist() {
   const handleAcknowledge = async (caseId: string, action: string) => {
     setSubmittingAction(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/vision/acute-worklist/acknowledge`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/vision/acute-worklist/acknowledge`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

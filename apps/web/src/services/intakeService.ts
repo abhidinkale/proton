@@ -4,6 +4,7 @@
  */
 
 import type { Questionnaire, QuestionnaireResponse, PatientReportedClinicalContext, IntakeEscalationReport } from '../types/intake';
+import { apiFetch } from '../lib/api';
 
 const API_BASE = '/api/intake';
 
@@ -25,7 +26,7 @@ export interface SubmitIntakeResult {
 }
 
 export async function fetchQuestionnaires(): Promise<Questionnaire[]> {
-  const res = await fetch(`${API_BASE}/questionnaires`);
+  const res = await apiFetch(`${API_BASE}/questionnaires`);
   if (!res.ok) {
     throw new Error(`Failed to load questionnaires: HTTP ${res.status}`);
   }
@@ -35,7 +36,7 @@ export async function fetchQuestionnaires(): Promise<Questionnaire[]> {
 
 export async function fetchQuestionnaire(id: string): Promise<Questionnaire> {
   const cleanId = id.replace(/^Questionnaire\//, '');
-  const res = await fetch(`${API_BASE}/questionnaires/${cleanId}`);
+  const res = await apiFetch(`${API_BASE}/questionnaires/${cleanId}`);
   if (!res.ok) {
     throw new Error(`Failed to load questionnaire ${id}: HTTP ${res.status}`);
   }
@@ -50,7 +51,7 @@ export async function submitIntakeResponse(
   }
 ): Promise<SubmitIntakeResult> {
   const cleanId = questionnaireId.replace(/^Questionnaire\//, '');
-  const res = await fetch(`${API_BASE}/questionnaires/${cleanId}/responses`, {
+  const res = await apiFetch(`${API_BASE}/questionnaires/${cleanId}/responses`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -67,7 +68,7 @@ export async function submitIntakeResponse(
 
 export async function fetchIntakeResponse(responseId: string): Promise<QuestionnaireResponse> {
   const cleanId = responseId.replace(/^QuestionnaireResponse\//, '');
-  const res = await fetch(`${API_BASE}/responses/${cleanId}`);
+  const res = await apiFetch(`${API_BASE}/responses/${cleanId}`);
   if (!res.ok) {
     throw new Error(`Failed to load response ${responseId}: HTTP ${res.status}`);
   }

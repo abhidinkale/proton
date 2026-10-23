@@ -4,6 +4,7 @@ import type {
   OperationsSummary 
 } from '../types/operations';
 import { checkTriageEmergencyFlags } from './verification';
+import { apiFetch } from '../lib/api';
 
 // Client-side fallback store strictly for disconnected local UI dev
 let localTasksCache: OperationalTask[] | null = null;
@@ -248,7 +249,7 @@ class OperationsService {
 
   public async getSummary(): Promise<OperationsSummary> {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/operations/summary`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/operations/summary`, {
         headers: this.getAuthHeaders()
       });
       if (res.ok) {
@@ -283,7 +284,7 @@ class OperationsService {
       if (filters?.category) params.set('category', filters.category);
       if (filters?.patientId) params.set('patientId', filters.patientId);
 
-      const res = await fetch(`${API_BASE_URL}/api/operations/tasks?${params.toString()}`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/operations/tasks?${params.toString()}`, {
         headers: this.getAuthHeaders()
       });
       if (res.ok) {
@@ -316,7 +317,7 @@ class OperationsService {
   }): Promise<{ success: boolean; task: OperationalTask; isReplay?: boolean }> {
     const idempotencyKey = `triage-${params.patientId}-${Date.now()}`;
     try {
-      const res = await fetch(`${API_BASE_URL}/api/operations/triage`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/operations/triage`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -400,7 +401,7 @@ class OperationsService {
   }): Promise<{ success: boolean; task: OperationalTask }> {
     const doctor = options.doctor || 'Dr. Sarah Lin, MD';
     try {
-      const res = await fetch(`${API_BASE_URL}/api/operations/tasks/${options.taskId}/approve`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/operations/tasks/${options.taskId}/approve`, {
         method: 'POST',
         headers: this.getAuthHeaders(),
         body: JSON.stringify(options)
@@ -469,7 +470,7 @@ class OperationsService {
 
   public async rejectTask(taskId: string, reason?: string, doctor = 'Dr. Sarah Lin, MD'): Promise<{ success: boolean; task: OperationalTask }> {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/operations/tasks/${taskId}/reject`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/operations/tasks/${taskId}/reject`, {
         method: 'POST',
         headers: this.getAuthHeaders(),
         body: JSON.stringify({ reason, doctor })
@@ -499,7 +500,7 @@ class OperationsService {
   }
 
   public async dispatchCommunication(taskId: string, channel?: string): Promise<{ success: boolean; task?: OperationalTask }> {
-    const res = await fetch(`${API_BASE_URL}/api/operations/communications/${taskId}/dispatch`, {
+    const res = await apiFetch(`${API_BASE_URL}/api/operations/communications/${taskId}/dispatch`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
       body: JSON.stringify({ channel })
@@ -512,7 +513,7 @@ class OperationsService {
   }
 
   public async confirmAppointmentBooking(taskId: string, confirmedBy?: string): Promise<{ success: boolean; task?: OperationalTask }> {
-    const res = await fetch(`${API_BASE_URL}/api/operations/scheduling/${taskId}/confirm`, {
+    const res = await apiFetch(`${API_BASE_URL}/api/operations/scheduling/${taskId}/confirm`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
       body: JSON.stringify({ confirmedBy })
@@ -526,7 +527,7 @@ class OperationsService {
 
   public async getAuditEvents(limit = 50): Promise<any[]> {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/operations/audit?limit=${limit}`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/operations/audit?limit=${limit}`, {
         headers: this.getAuthHeaders()
       });
       if (res.ok) {
@@ -542,7 +543,7 @@ class OperationsService {
 
   public async verifyAuditChain(): Promise<{ valid: boolean; totalEventsVerified: number; error?: string }> {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/operations/audit/verify`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/operations/audit/verify`, {
         headers: this.getAuthHeaders()
       });
       if (res.ok) {
@@ -554,7 +555,7 @@ class OperationsService {
 
   public async setGatewayFailureMode(enable: boolean, reason?: string): Promise<any> {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/operations/gateway/failure-mode`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/operations/gateway/failure-mode`, {
         method: 'POST',
         headers: this.getAuthHeaders(),
         body: JSON.stringify({ enable, reason })
@@ -568,7 +569,7 @@ class OperationsService {
 
   public async resolvePatientIdentity(params: { patientId?: string; mrn?: string; phone?: string; birthDate?: string }) {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/operations/identity/resolve`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/operations/identity/resolve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(params)
@@ -589,7 +590,7 @@ class OperationsService {
 
   public async evaluateCareGaps(patientId: string, conditions: string[], recentLabs: any[] = []) {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/operations/scheduling/care-gaps`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/operations/scheduling/care-gaps`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ patientId, conditions, recentLabs })
@@ -603,7 +604,7 @@ class OperationsService {
 
   public async scheduleFollowup(consultationPlanText: string, patientId: string, patientAcuity?: string, patientName?: string) {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/operations/scheduling/followup`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/operations/scheduling/followup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ consultationPlanText, patientId, patientAcuity, patientName })
@@ -623,7 +624,7 @@ class OperationsService {
 
   public async compileReferral(params: any) {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/operations/referrals/compile`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/operations/referrals/compile`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(params)

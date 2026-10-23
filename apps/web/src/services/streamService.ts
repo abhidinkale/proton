@@ -8,6 +8,7 @@
 import { API_BASE_URL } from '../config';
 import type { ClinicalSSEEvent, StreamMetadata, StreamExecutionOptions } from '../types/streaming';
 import { medplum } from '../lib/medplum';
+import { apiFetch } from '../lib/api';
 
 function getStoredToken(): string | null {
   try {
@@ -38,7 +39,7 @@ export async function createClinicalStream(params: {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE_URL}/api/clinical/streams`, {
+  const response = await apiFetch(`${API_BASE_URL}/api/clinical/streams`, {
     method: 'POST',
     headers,
     body: JSON.stringify(params)
@@ -160,7 +161,7 @@ export async function streamClinicalPipeline(
     body = JSON.stringify(payload);
   }
 
-  const response = await fetch(`${API_BASE_URL}/api/clinical/pipeline/stream`, {
+  const response = await apiFetch(`${API_BASE_URL}/api/clinical/pipeline/stream`, {
     method: 'POST',
     headers,
     body,

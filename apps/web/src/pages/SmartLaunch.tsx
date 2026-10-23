@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Shield, CheckCircle2, Loader2, ArrowRight, Server, Building2 } from 'lucide-react';
+import { apiFetch } from '../lib/api';
 
 /**
  * SMART on FHIR Clinical Launch Handler
@@ -24,12 +25,12 @@ export default function SmartLaunch() {
     async function initSmart() {
       try {
         setStep('connecting');
-        const res = await fetch(`/api/smart/discover?iss=${encodeURIComponent(iss)}`);
+        const res = await apiFetch(`/api/smart/discover?iss=${encodeURIComponent(iss)}`);
         const config = res.ok ? await res.json() : null;
         if (!isMounted) return;
 
         setStep('authorizing');
-        const authRes = await fetch('/api/smart/authorize-url', {
+        const authRes = await apiFetch('/api/smart/authorize-url', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ iss, launchToken })

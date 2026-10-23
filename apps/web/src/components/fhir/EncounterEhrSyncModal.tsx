@@ -13,6 +13,7 @@ import {
   FileCheck2
 } from 'lucide-react';
 import { API_BASE_URL } from '../../config';
+import { apiFetch } from '../../lib/api';
 
 interface EncounterEhrSyncModalProps {
   patient: {
@@ -53,7 +54,7 @@ export default function EncounterEhrSyncModal({
     const fetchBundle = async () => {
       setLoadingBundle(true);
       try {
-        const res = await fetch(`${API_BASE_URL}/api/fhir/encounter/bundle`, {
+        const res = await apiFetch(`${API_BASE_URL}/api/fhir/encounter/bundle`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -96,7 +97,7 @@ export default function EncounterEhrSyncModal({
     if (!bundleData) return;
     setIsSyncing(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/fhir/encounter/sync`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/fhir/encounter/sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

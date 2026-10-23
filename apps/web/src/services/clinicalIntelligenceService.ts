@@ -5,11 +5,12 @@
 
 import type { ClinicalIntelligence, SpecialistPerspective, SpecialistSynthesis } from '../domain/ai/types';
 import { API_BASE_URL } from '../config';
+import { apiFetch } from '../lib/api';
 
 export const clinicalIntelligenceService = {
   async getIntelligence(patientId: string, chiefComplaint?: string): Promise<ClinicalIntelligence> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/ai/specialists/run`, {
+      const response = await apiFetch(`${API_BASE_URL}/api/ai/specialists/run`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ patientId, chiefComplaint })

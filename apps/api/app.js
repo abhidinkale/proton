@@ -101,7 +101,7 @@ const loginLimiter = createRateLimiter({
 
 app.use(generalLimiter);
 app.use(['/api/transcribe', '/api/generate-note', '/api/chat', '/api/extract-documents'], aiLimiter);
-app.use(['/api/auth/login', '/auth/login'], loginLimiter);
+app.use(['/api/auth/login', '/auth/login', '/api/auth/exchange'], loginLimiter);
 
 const defaultLocalOrigins = [
   'http://localhost:3000',
@@ -271,6 +271,7 @@ const {
   revokeSession,
   rotateSessionToken
 } = require('./middleware/authService');
+const { exchangeMedplumToken, MedplumExchangeError } = require('./middleware/medplumExchange');
 
 app.post('/api/auth/login', (req, res) => {
   const { email, password, mfaCode, passkeyAssertion } = req.body || {};
@@ -330,6 +331,38 @@ app.post('/api/auth/rotate', (req, res) => {
   }
 
   res.json(result);
+});
+
+/**
+ * Exchange a Medplum OIDC access token for a Proton clinical session.
+ * This is the only bridge between the two identity systems; the browser never
+ * receives anything but its own Proton session token in response.
+ */
+app.post('/api/auth/exchange', async (req, res) => {
+  const authHeader = req.headers['authorization'];
+  const bearer = (authHeader && authHeader.startsWith('Bearer ')) ? authHeader.slice(7).trim() : null;
+  const accessToken = req.body?.accessToken || bearer;
+
+  if (!accessToken) {
+    return res.status(400).json({
+      error: 'A Medplum access token is required',
+      code: 'ACCESS_TOKEN_REQUIRED'
+    });
+  }
+
+  try {
+    const result = await exchangeMedplumToken(accessToken);
+    return res.json(result);
+  } catch (err) {
+    if (err instanceof MedplumExchangeError) {
+      return res.status(err.status).json({ error: err.message, code: err.code });
+    }
+    // Never surface upstream/identity-provider internals to the client.
+    return res.status(502).json({
+      error: 'Identity exchange failed',
+      code: 'IDENTITY_PROVIDER_ERROR'
+    });
+  }
 });
 
 const upload = multer({

@@ -11,6 +11,7 @@ import {
   Send
 } from 'lucide-react';
 import { API_BASE_URL } from '../../config';
+import { apiFetch } from '../../lib/api';
 
 interface BillingCodingAdvisorProps {
   note: {
@@ -52,7 +53,7 @@ export default function BillingCodingAdvisor({
   const fetchBillingAnalysis = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/clinical/billing/analyze`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/clinical/billing/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -87,7 +88,7 @@ export default function BillingCodingAdvisor({
         p.name.toLowerCase().includes('statin')
       )?.name || 'Empagliflozin 10 mg';
 
-      const res = await fetch(`${API_BASE_URL}/api/clinical/billing/prior-auth`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/clinical/billing/prior-auth`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -116,7 +117,7 @@ export default function BillingCodingAdvisor({
     if (!priorAuthPacket) return;
     setTransmittingEdi(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/clinical/billing/prior-auth/edi278`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/clinical/billing/prior-auth/edi278`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ packet: priorAuthPacket })
@@ -136,7 +137,7 @@ export default function BillingCodingAdvisor({
     if (!priorAuthPacket) return;
     setGeneratingAppeal(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/clinical/billing/prior-auth/appeal`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/clinical/billing/prior-auth/appeal`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

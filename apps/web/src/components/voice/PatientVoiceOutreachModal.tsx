@@ -10,6 +10,7 @@ import {
   Send
 } from 'lucide-react';
 import { API_BASE_URL } from '../../config';
+import { apiFetch } from '../../lib/api';
 
 interface PatientVoiceOutreachModalProps {
   patient: {
@@ -33,7 +34,7 @@ export default function PatientVoiceOutreachModal({
   const startCall = async () => {
     setIsCalling(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/voice/outreach/start`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/voice/outreach/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -60,7 +61,7 @@ export default function PatientVoiceOutreachModal({
 
     setSendingTurn(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/voice/outreach/turn`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/voice/outreach/turn`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -83,7 +84,7 @@ export default function PatientVoiceOutreachModal({
   const endCall = async () => {
     if (!activeCall) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/api/voice/outreach/complete`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/voice/outreach/complete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ callId: activeCall.callId })

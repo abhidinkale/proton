@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '../config';
+import { apiFetch } from '../lib/api';
 
 export interface ClinicalAIService {
   generateNote(transcript: string, patientContext?: string, template?: string): Promise<any>;
@@ -10,7 +11,7 @@ export interface ChatMessage {
 }
 
 export async function sendClinicalChat(messages: ChatMessage[], patientContext?: string): Promise<string> {
-  const response = await fetch(`${API_BASE_URL}/api/chat`, {
+  const response = await apiFetch(`${API_BASE_URL}/api/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ messages, patientContext }),
@@ -28,7 +29,7 @@ export async function sendClinicalChat(messages: ChatMessage[], patientContext?:
 
 export class RealAIService implements ClinicalAIService {
   async generateNote(transcript: string, patientContext?: string, template?: string): Promise<any> {
-    const response = await fetch(`${API_BASE_URL}/api/generate-note`, {
+    const response = await apiFetch(`${API_BASE_URL}/api/generate-note`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -56,7 +57,7 @@ export interface NoteTemplateDefinition {
 
 export async function fetchNoteTemplates(): Promise<NoteTemplateDefinition[]> {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/note-templates`);
+    const res = await apiFetch(`${API_BASE_URL}/api/note-templates`);
     if (!res.ok) return getDefaultTemplates();
     const data = await res.json();
     return data.templates || getDefaultTemplates();
@@ -100,7 +101,7 @@ function getDefaultTemplates(): NoteTemplateDefinition[] {
 
 export async function generateConsultationLabel(transcript: string, patientName?: string): Promise<string> {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/consultation/label`, {
+    const res = await apiFetch(`${API_BASE_URL}/api/consultation/label`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ transcript, patientName })
@@ -124,7 +125,7 @@ export async function submitEncounterFeedback(payload: {
   encounterDurationMinutes?: number;
 }): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/pilot/feedback`, {
+    const res = await apiFetch(`${API_BASE_URL}/api/pilot/feedback`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -265,7 +266,7 @@ export async function routeClinicalCase(payload: {
   transcript?: string;
   patientContext?: any;
 }): Promise<any[]> {
-  const res = await fetch(`${API_BASE_URL}/api/ai/route`, {
+  const res = await apiFetch(`${API_BASE_URL}/api/ai/route`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
@@ -280,7 +281,7 @@ export async function runSpecialists(payload: {
   context: any;
   timeoutMs?: number;
 }): Promise<SpecialistAssessment[]> {
-  const res = await fetch(`${API_BASE_URL}/api/ai/specialists/run`, {
+  const res = await apiFetch(`${API_BASE_URL}/api/ai/specialists/run`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
@@ -291,7 +292,7 @@ export async function runSpecialists(payload: {
 }
 
 export async function synthesizeCrossSpecialty(assessments: SpecialistAssessment[]): Promise<CrossSpecialtySynthesisResult> {
-  const res = await fetch(`${API_BASE_URL}/api/ai/synthesize`, {
+  const res = await apiFetch(`${API_BASE_URL}/api/ai/synthesize`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ assessments })
@@ -306,7 +307,7 @@ export async function approveEncounterProvenance(payload: {
   physicianDirective?: string;
   comments?: string;
 }): Promise<any> {
-  const res = await fetch(`${API_BASE_URL}/api/ai/approve`, {
+  const res = await apiFetch(`${API_BASE_URL}/api/ai/approve`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)

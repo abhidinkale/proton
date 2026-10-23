@@ -17,6 +17,8 @@
 import { medplum } from '../lib/medplum';
 import { telemetry } from './telemetry';
 import { SYNTHETIC_AUTH_FALLBACK } from '../config';
+import { API_BASE_URL } from '../config';
+import { clearSessionToken, getSessionToken, setSessionToken } from '../lib/sessionToken';
 
 export type AuthMode = 'synthetic_development' | 'supabase' | 'oidc';
 
@@ -52,6 +54,7 @@ export interface IAuthenticationService {
   setSessionUser(user: ProtonDoctorUser): void;
   isAuthenticated(): boolean;
   getAuthMode(): AuthMode;
+  ensureProtonSession(): Promise<boolean>;
 }
 
 class ProtonAuthenticationService implements IAuthenticationService {
@@ -89,6 +92,50 @@ class ProtonAuthenticationService implements IAuthenticationService {
       return 'supabase';
     }
     return 'synthetic_development';
+  }
+
+  /**
+   * Trades a Medplum OIDC access token for a Proton clinical session token.
+   * The exchange is server-side; this client only forwards its own IdP token.
+   */
+  private async exchangeMedplumToken(accessToken: string): Promise<{ token: string; actor?: { actorName?: string } }> {
+    const response = await fetch(`${API_BASE_URL}/api/auth/exchange`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accessToken })
+    });
+
+    const body = await response.json().catch(() => null) as
+      | { token?: string; actor?: { actorName?: string }; error?: string; code?: string }
+      | null;
+
+    if (!response.ok || !body || typeof body.token !== 'string') {
+      const error = new Error(body?.error || `Proton session exchange failed (HTTP ${response.status})`);
+      (error as Error & { code?: string }).code = body?.code || 'SESSION_EXCHANGE_FAILED';
+      throw error;
+    }
+
+    setSessionToken(body.token);
+    return { token: body.token, actor: body.actor };
+  }
+
+  /**
+   * Heals sessions created before the Proton token bridge existed (or in a new
+   * tab): if Medplum still holds an access token, re-derive the API credential.
+   */
+  public async ensureProtonSession(): Promise<boolean> {
+    if (getSessionToken()) return true;
+
+    const accessToken = medplum.getAccessToken();
+    if (!accessToken) return false;
+
+    try {
+      await this.exchangeMedplumToken(accessToken);
+      return true;
+    } catch (err) {
+      console.warn('Proton API session could not be established:', (err as Error).message);
+      return false;
+    }
   }
 
   public isAuthenticated(): boolean {
@@ -212,6 +259,28 @@ class ProtonAuthenticationService implements IAuthenticationService {
       isSyntheticEvaluator: true
     };
 
+    // 3. Bridge the Medplum identity into a Proton API session. Without this the
+    //    shell renders but every clinical API call returns 401.
+    const medplumAccessToken = medplum.getAccessToken();
+    if (medplumAccessToken) {
+      try {
+        const exchanged = await this.exchangeMedplumToken(medplumAccessToken);
+        if (exchanged.actor?.actorName) {
+          doctorUser.displayName = exchanged.actor.actorName;
+        }
+      } catch (err) {
+        if (!SYNTHETIC_AUTH_FALLBACK) {
+          throw new Error(
+            'Signed in to the identity provider, but Proton could not establish a clinical API session. ' +
+            'Verify MEDPLUM_BASE_URL and the API deployment, then try again.'
+          );
+        }
+        console.warn('Proton API session exchange unavailable; continuing in evaluation mode:', (err as Error).message);
+      }
+    } else if (!SYNTHETIC_AUTH_FALLBACK) {
+      throw new Error('The identity provider did not return an API access token. Cannot establish a clinical session.');
+    }
+
     this.currentUser = doctorUser;
     sessionStorage.setItem('proton_auth_session', JSON.stringify(doctorUser));
 
@@ -226,6 +295,7 @@ class ProtonAuthenticationService implements IAuthenticationService {
   public async logout(): Promise<void> {
     telemetry.track('physician_logout', { status: 'success' });
     this.currentUser = null;
+    clearSessionToken();
     sessionStorage.removeItem('proton_auth_session');
     localStorage.removeItem('proton_auth_session');
     await medplum.signOut();

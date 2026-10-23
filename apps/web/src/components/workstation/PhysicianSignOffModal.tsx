@@ -6,6 +6,7 @@ import { approveEncounterProvenance } from '../../services/ai';
 import { API_BASE_URL } from '../../config';
 import type { DoctorDeskPatient } from '../DoctorDeskEncounter';
 import type { StructuredPlanState } from './StructuredTreatmentPlan';
+import { apiFetch } from '../../lib/api';
 
 interface PhysicianSignOffModalProps {
   isOpen: boolean;
@@ -101,7 +102,7 @@ export default function PhysicianSignOffModal({
       });
 
       // 3. Assemble and Commit FHIR R4 Encounter Bundle
-      const bundleRes = await fetch(`${API_BASE_URL}/api/fhir/encounter/bundle`, {
+      const bundleRes = await apiFetch(`${API_BASE_URL}/api/fhir/encounter/bundle`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -133,7 +134,7 @@ export default function PhysicianSignOffModal({
       const bundleData = await bundleRes.json().catch(() => null);
 
       // 4. Commit locally and Stage FHIR Sync
-      const syncRes = await fetch(`${API_BASE_URL}/api/fhir/encounter/sync`, {
+      const syncRes = await apiFetch(`${API_BASE_URL}/api/fhir/encounter/sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

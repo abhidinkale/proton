@@ -11,6 +11,7 @@ import {
   Target
 } from 'lucide-react';
 import { API_BASE_URL } from '../../config';
+import { apiFetch } from '../../lib/api';
 
 interface EvidenceGroundingPanelProps {
   conditions: string[];
@@ -36,7 +37,7 @@ export default function EvidenceGroundingPanel({
   const fetchEvidence = async (queryText: string) => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/clinical/evidence/search`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/clinical/evidence/search`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -60,7 +61,7 @@ export default function EvidenceGroundingPanel({
   const fetchClinicalTrials = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/clinical/trials/match`, {
+      const res = await apiFetch(`${API_BASE_URL}/api/clinical/trials/match`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
