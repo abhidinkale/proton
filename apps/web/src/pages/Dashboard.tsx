@@ -1,32 +1,26 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Stethoscope, 
-  Video, 
-  FileText, 
-  ChevronRight, 
-  Plus, 
-  RefreshCw, 
-  Share2, 
-  ChevronLeft, 
-  CheckCircle2, 
-  ArrowUpRight,
-  Activity,
-  ShieldAlert,
+import {
+  Plus,
+  RefreshCw,
+  Share2,
+  CheckCircle2,
   AlertTriangle,
-  ArrowRight
+  ArrowUpRight,
+  ArrowRight,
+  ShieldCheck,
+  FileText,
+  Mic,
+  Activity,
+  BellRing,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import Layout from '../components/Layout';
 import { scheduleService } from '../services/scheduleService';
 import type { Appointment } from '../domain/schedule/types';
-import { 
-  PageHeader, 
-  Card, 
-  Button, 
-  Badge, 
-  Tabs, 
-  AIStatus 
-} from '../design-system';
+import { authService } from '../services/auth';
+import { DotNumber, DotWave } from '../design-system/visual/DotNumber';
 
 interface DashboardPatient {
   id: string;
@@ -66,7 +60,7 @@ const DASHBOARD_PATIENTS: DashboardPatient[] = [
     id: 'samantha-williams',
     name: 'Samantha Williams',
     visitType: 'Routine Check-Up',
-    time: '09:15 AM',
+    time: '09:30 AM',
     ageGender: 'Female · 42 Years',
     mrn: 'SW-94821-22',
     chips: ['Hypertension', 'Lipid Panel', 'Refill'],
@@ -82,7 +76,7 @@ const DASHBOARD_PATIENTS: DashboardPatient[] = [
     id: 'amy-white',
     name: 'Amy White',
     visitType: 'Video Consultation',
-    time: '09:15 AM',
+    time: '10:00 AM',
     ageGender: 'Female · 29 Years',
     mrn: 'AW-11029-LK',
     chips: ['Allergic Rhinitis', 'Sinus Pressure'],
@@ -98,7 +92,7 @@ const DASHBOARD_PATIENTS: DashboardPatient[] = [
     id: 'tyler-young',
     name: 'Tyler Young',
     visitType: 'Report Review',
-    time: '09:45 AM',
+    time: '10:30 AM',
     ageGender: 'Male · 51 Years',
     mrn: 'TY-44021-RT',
     chips: ['CMP', 'eGFR Stability', 'HbA1c'],
@@ -114,7 +108,7 @@ const DASHBOARD_PATIENTS: DashboardPatient[] = [
     id: 'demo-scenario-b-eleanor',
     name: 'Eleanor Vance',
     visitType: 'Multi-Morbid Chronic Care',
-    time: '10:15 AM',
+    time: '11:00 AM',
     ageGender: 'Female · 68 Years',
     mrn: 'EV-94021-CR',
     chips: ['T2DM', 'Stage 2 HTN', 'Penicillin Allergy'],
@@ -128,740 +122,748 @@ const DASHBOARD_PATIENTS: DashboardPatient[] = [
   }
 ];
 
+const MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
+
+function parseMinutes(time: string): number {
+  const match = time.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+  if (!match) return 9 * 60;
+  let hours = Number(match[1]) % 12;
+  if (/PM/i.test(match[3])) hours += 12;
+  return hours * 60 + Number(match[2]);
+}
+
+function initials(name: string): string {
+  return name.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase();
+}
+
+function priorityTone(priority: Appointment['priority']) {
+  if (priority === 'critical') return { dot: '#E4587A', pill: 'bg-[#FBE3E8] text-[#B3425C]' };
+  if (priority === 'urgent') return { dot: '#E9A23B', pill: 'bg-[#FBEEDC] text-[#9A6224]' };
+  return { dot: '#8FB39A', pill: 'bg-[#E9F0E4] text-[#54764C]' };
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const [selectedPatient, setSelectedPatient] = useState<DashboardPatient>(DASHBOARD_PATIENTS[0]);
-  const [patientListFilter, setPatientListFilter] = useState<'Waiting' | 'In Consultation' | 'Ready for Review' | 'Completed' | 'All'>('Waiting');
-  const [timelineFilter, setTimelineFilter] = useState<'All' | 'In clinic' | 'Online'>('All');
+  const [patientListFilter, setPatientListFilter] = useState<'Waiting' | 'In Consultation' | 'Ready for Review' | 'Completed' | 'All'>('All');
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [currentMonthIndex, setCurrentMonthIndex] = useState(new Date().getMonth());
+  const [selectedDay, setSelectedDay] = useState(new Date().getDate());
+  const [shareFeedback, setShareFeedback] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     let mounted = true;
     scheduleService.getTodayAppointments().then(items => {
-      if (mounted) {
-        setAppointments(items);
-      }
+      if (mounted) setAppointments(items);
     }).catch(err => {
       console.warn('Could not load appointments from schedule service', err);
     });
     return () => { mounted = false; };
   }, []);
 
-  const waitingCount = appointments.filter(a => a.queueCategory === 'WAITING').length || 4;
-  const inRoomCount = appointments.filter(a => a.queueCategory === 'IN_CONSULTATION').length || 1;
-  const reviewCount = appointments.filter(a => a.queueCategory === 'READY_FOR_REVIEW').length || 2;
-  const completedCount = appointments.filter(a => a.queueCategory === 'COMPLETED').length || 3;
+  const handleRefreshSchedule = () => {
+    setIsRefreshing(true);
+    scheduleService.getTodayAppointments().then(items => {
+      setAppointments(items);
+      setShareFeedback('Schedule synced from the clinical registry');
+      setTimeout(() => setShareFeedback(null), 2500);
+    }).finally(() => setIsRefreshing(false));
+  };
 
-  const nextAppointment = appointments.find(a => a.queueCategory === 'IN_CONSULTATION' || a.queueCategory === 'WAITING') || null;
+  const handleShareTimeline = () => {
+    navigator.clipboard.writeText(
+      `Proton clinic summary — ${MONTHS[currentMonthIndex]} ${selectedDay}: ${appointments.length || DASHBOARD_PATIENTS.length} encounters queued.`
+    );
+    setShareFeedback('Daily clinic summary copied');
+    setTimeout(() => setShareFeedback(null), 2500);
+  };
+
+  const waitingCount = appointments.filter(a => a.queueCategory === 'WAITING').length;
+  const inRoomCount = appointments.filter(a => a.queueCategory === 'IN_CONSULTATION').length;
+  const reviewCount = appointments.filter(a => a.queueCategory === 'READY_FOR_REVIEW').length;
+  const completedCount = appointments.filter(a => a.queueCategory === 'COMPLETED').length;
+  const totalCount = appointments.length || DASHBOARD_PATIENTS.length;
+
+  const nextAppointment = appointments.find(
+    a => a.queueCategory === 'IN_CONSULTATION' || a.queueCategory === 'WAITING'
+  ) || null;
 
   const heroPatient = nextAppointment ? {
     id: nextAppointment.patientId,
     name: nextAppointment.patientName,
-    ageGender: `${nextAppointment.patientAge} years • ${nextAppointment.patientGender.charAt(0).toUpperCase() + nextAppointment.patientGender.slice(1)} • MRN: ${nextAppointment.mrn}`,
-    roomTime: `${nextAppointment.roomOrVirtual} • ${nextAppointment.time}`,
+    meta: `${nextAppointment.patientAge}y · ${nextAppointment.patientGender} · ${nextAppointment.mrn}`,
+    room: nextAppointment.roomOrVirtual,
+    time: nextAppointment.time,
     complaint: nextAppointment.chiefComplaint,
-    criticalAllergy: nextAppointment.criticalAllergies?.[0] || null
+    allergy: nextAppointment.criticalAllergies?.[0] || null,
+    priority: nextAppointment.priority,
+    wait: nextAppointment.waitTimeMinutes ?? 0
   } : {
     id: 'demo-scenario-b-eleanor',
     name: 'Eleanor Vance',
-    ageGender: '68 years • Female • MRN: EV-94021',
-    roomTime: 'Exam Room 102 • 08:30 AM',
-    complaint: 'Type 2 Diabetes Glycemic Review & Afternoon Fatigue',
-    criticalAllergy: 'Penicillin Anaphylaxis'
+    meta: '68y · female · EV-94021',
+    room: 'Exam Room 102',
+    time: '08:30 AM',
+    complaint: 'Type 2 diabetes glycemic review and afternoon fatigue',
+    allergy: 'Penicillin anaphylaxis',
+    priority: 'critical' as Appointment['priority'],
+    wait: 4
   };
+
+  const currentUser = authService.getCurrentUser();
+  const doctorName = (currentUser?.displayName || 'Dr. Aris Thorne').replace(/,?\s*MD$/i, '');
 
   const filteredPatients = patientListFilter === 'All'
     ? DASHBOARD_PATIENTS
     : patientListFilter === 'In Consultation'
-    ? DASHBOARD_PATIENTS.filter(p => p.iconType === 'video' || p.id.includes('eleanor'))
-    : patientListFilter === 'Ready for Review'
-    ? DASHBOARD_PATIENTS.filter(p => p.iconType === 'report' || p.id.includes('arthur'))
-    : patientListFilter === 'Completed'
-    ? DASHBOARD_PATIENTS.filter(p => p.iconType === 'routine')
-    : DASHBOARD_PATIENTS.filter(p => p.iconType === 'emergency' || p.id.includes('eleanor') || p.id.includes('taigo'));
+      ? DASHBOARD_PATIENTS.filter(p => p.iconType === 'video' || p.id.includes('eleanor'))
+      : patientListFilter === 'Ready for Review'
+        ? DASHBOARD_PATIENTS.filter(p => p.iconType === 'report' || p.id.includes('arthur'))
+        : patientListFilter === 'Completed'
+          ? DASHBOARD_PATIENTS.filter(p => p.iconType === 'routine')
+          : DASHBOARD_PATIENTS.filter(p => p.iconType === 'emergency' || p.id.includes('eleanor') || p.id.includes('taigo'));
+
+  const filterCounts = {
+    Waiting: waitingCount || 4,
+    'In Consultation': inRoomCount || 1,
+    'Ready for Review': reviewCount || 2,
+    Completed: completedCount || 3
+  };
+
+  // Timeline: real appointment times when loaded, otherwise the case library.
+  const dotSource = appointments.length
+    ? appointments.map((appointment, index) => ({
+      key: appointment.id,
+      minutes: parseMinutes(appointment.time),
+      color: priorityTone(appointment.priority).dot,
+      label: appointment.patientName,
+      index
+    }))
+    : DASHBOARD_PATIENTS.map((patient, index) => ({
+      key: patient.id,
+      minutes: 8 * 60 + index * 52,
+      color: ['#E4587A', '#8FB39A', '#E9A23B', '#8FB39A', '#E4587A'][index % 5],
+      label: patient.name,
+      index
+    }));
+
+  const minMinutes = Math.min(...dotSource.map(d => d.minutes)) - 30;
+  const maxMinutes = Math.max(...dotSource.map(d => d.minutes)) + 30;
+  const span = Math.max(1, maxMinutes - minMinutes);
+
+  const dayStrip = Array.from({ length: 7 }).map((_, index) => {
+    const day = selectedDay - 3 + index;
+    return { day, label: ['S', 'M', 'T', 'W', 'T', 'F', 'S'][new Date(2026, currentMonthIndex, Math.max(1, day)).getDay()] };
+  });
 
   return (
     <Layout>
-      <div className="space-y-6 animate-in fade-in pb-12">
-        
-        {/* ── HEADER GREETING VIA DESIGN SYSTEM PAGEHEADER ── */}
-        <PageHeader
-          title="Good morning, Dr. Olivia"
-          subtitle="Proton wishes you a calm and productive clinical day. 45 patients queued across departments. 1 scheduled live multidisciplinary case conference today."
-          statusBadge={<AIStatus status="ready" modelName="Proton Jev 2.0 Active" />}
-          actions={
-            <div className="flex items-center gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => navigate('/patients')}
-              >
-                Patients Directory
-              </Button>
-              <Button
-                variant="rose"
-                size="sm"
-                onClick={() => navigate('/consultation?patient=demo-scenario-b-eleanor')}
-              >
-                Resume Active Encounter
-              </Button>
+      <div className="animate-in fade-in pb-14">
+
+        {/* ── Page tabs + utilities ─────────────────────────────────────── */}
+        <div className="flex items-end justify-between gap-4 pt-1">
+          <div className="flex items-baseline gap-6">
+            <button
+              type="button"
+              className="text-[26px] font-medium tracking-[-0.045em] text-[#151719] cursor-default"
+            >
+              Today
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/patients')}
+              className="text-[26px] font-medium tracking-[-0.045em] text-[#B7B6B2] transition-colors hover:text-[#6F6F6C] cursor-pointer"
+            >
+              Records
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleRefreshSchedule}
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-[#5A5A57] shadow-[0_8px_24px_-18px_rgba(20,20,18,0.6)] transition-all hover:-translate-y-0.5 hover:bg-white active:translate-y-0 cursor-pointer"
+              title="Refresh schedule"
+              aria-label="Refresh schedule"
+            >
+              <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
+            </button>
+            <button
+              type="button"
+              onClick={handleShareTimeline}
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-[#5A5A57] shadow-[0_8px_24px_-18px_rgba(20,20,18,0.6)] transition-all hover:-translate-y-0.5 hover:bg-white active:translate-y-0 cursor-pointer"
+              title="Copy clinic summary"
+              aria-label="Copy clinic summary"
+            >
+              <Share2 size={14} />
+            </button>
+          </div>
+        </div>
+
+        {/* ── Greeting ─────────────────────────────────────────────────── */}
+        <div className="mt-9">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#A5A4A0]">
+            Good morning
+          </p>
+          <h1 className="mt-2 text-[38px] font-medium leading-[1.02] tracking-[-0.05em] text-[#151719] sm:text-[46px]">
+            {doctorName}
+          </h1>
+          <p className="mt-2.5 max-w-xl text-[12.5px] leading-relaxed text-[#8A8A87]">
+            {totalCount} encounters queued · {inRoomCount || 1} in room · {reviewCount || 2} awaiting your signature.
+            Every clinical write waits for you.
+          </p>
+        </div>
+
+        {/* ── Metric row (dot matrix) ──────────────────────────────────── */}
+        <div className="mt-9 grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-4">
+          {[
+            { value: totalCount, tag: 'Scheduled', caption: 'Across today’s clinic' },
+            { value: waitingCount || 4, tag: 'Waiting', caption: 'Roomed and ready' },
+            { value: reviewCount || 2, tag: 'To review', caption: 'Unsigned drafts' },
+            { value: 0, tag: 'Unapproved', caption: 'Physician gate holds' }
+          ].map((metric) => (
+            <div key={metric.tag}>
+              <div className="flex items-end gap-2.5">
+                <DotNumber value={metric.value} className="text-[#151719]" />
+                <span className="mb-1.5 rounded-full bg-white px-2 py-0.5 text-[8.5px] font-semibold uppercase tracking-[0.08em] text-[#8A8A87]">
+                  {metric.tag}
+                </span>
+              </div>
+              <p className="mt-2.5 text-[10px] leading-snug text-[#A5A4A0]">{metric.caption}</p>
             </div>
-          }
-        />
+          ))}
+        </div>
 
-        {/* ── MASTER 2-COLUMN VIEWPORT (Center Workspace + Right Schedule Rail) ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          
-          {/* ── LEFT & CENTER WORKSPACE (8 Columns) ── */}
-          <div className="lg:col-span-8 space-y-6">
+        {/* ── Day timeline ─────────────────────────────────────────────── */}
+        <div className="relative mt-9">
+          <div className="flex h-[74px] items-center gap-5 rounded-full bg-white/80 px-6 shadow-[0_24px_60px_-52px_rgba(20,20,18,0.7)]">
+            <span className="shrink-0 font-mono-clinical text-[9.5px] text-[#B0AFAB]">
+              {String(Math.floor(minMinutes / 60)).padStart(2, '0')}:{String(minMinutes % 60).padStart(2, '0')}
+            </span>
 
-            {/* ── CLINICAL PRIORITY & ATTENTION BAR ── */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-              {/* Who do I see next? Hero Card */}
-              <Card variant="white" className="md:col-span-7 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between pb-2 border-b border-[#F0ECE1]">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                      <span className="text-xs font-bold uppercase tracking-wider text-[#151719]">Who you see next</span>
-                    </div>
-                    <span className="text-[11px] font-mono text-[#88909A]">{heroPatient.roomTime}</span>
-                  </div>
-
-                  <div className="mt-3 flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="text-base font-bold text-[#151719]">{heroPatient.name}</h3>
-                      <p className="text-xs text-[#575D65]">{heroPatient.ageGender}</p>
-                      <p className="text-xs text-[#151719] font-medium mt-1">
-                        {heroPatient.complaint}
-                      </p>
-                    </div>
-                    {heroPatient.criticalAllergy && (
-                      <Badge
-                        variant="critical"
-                        label={heroPatient.criticalAllergy}
-                        size="xs"
-                        dot
-                      />
-                    )}
-                  </div>
-
-                  <div className="mt-3 flex items-center gap-3 px-3 py-1.5 rounded-xl bg-[#FAF9F6] border border-[#E8E5DC] text-xs font-mono text-[#575D65]">
-                    <span>BP <strong className="text-[#151719]">138/88</strong></span>
-                    <span>•</span>
-                    <span>HR <strong className="text-[#151719]">74 bpm</strong></span>
-                    <span>•</span>
-                    <span>HbA1c <strong className="text-[#991B1B]">8.2% (+1.1%)</strong></span>
-                  </div>
-                </div>
-
-                <div className="mt-4 pt-3 border-t border-[#F0ECE1] flex items-center justify-between">
-                  <span className="text-[11px] text-[#575D65]">Nurse Rooming Complete</span>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    iconRight={<ArrowRight size={13} />}
-                    onClick={() => navigate(`/consultation?patient=${heroPatient.id}`)}
-                  >
-                    Start Consultation
-                  </Button>
-                </div>
-              </Card>
-
-              {/* Clinical Attention Panel */}
-              <Card variant="subtle" className="md:col-span-5 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between pb-2 border-b border-[#E8E5DC]">
-                    <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#151719]">
-                      <ShieldAlert size={14} className="text-[#991B1B]" />
-                      <span>Needs Attention</span>
-                    </div>
-                    <span className="w-5 h-5 rounded-full bg-[#FEF2F2] text-[#991B1B] font-bold text-[10px] flex items-center justify-center">
-                      3
-                    </span>
-                  </div>
-
-                  <div className="mt-3 space-y-2">
-                    <div
-                      onClick={() => navigate('/consultation?patient=demo-scenario-b-eleanor')}
-                      className="p-2.5 rounded-2xl bg-white border border-[#FECACA] hover:bg-[#FEF2F2]/40 transition-colors cursor-pointer space-y-0.5"
-                    >
-                      <div className="flex items-center justify-between text-[11px] font-bold text-[#991B1B]">
-                        <span className="flex items-center gap-1">
-                          <AlertTriangle size={11} /> Critical Lab Escalation
-                        </span>
-                        <span>5m ago</span>
-                      </div>
-                      <p className="text-xs font-semibold text-[#151719] truncate">Eleanor Vance: HbA1c 8.2%</p>
-                    </div>
-
-                    <div
-                      onClick={() => navigate('/consultation?patient=demo-case-7-safety')}
-                      className="p-2.5 rounded-2xl bg-white border border-[#FED7AA] hover:bg-[#FFEDD5]/40 transition-colors cursor-pointer space-y-0.5"
-                    >
-                      <div className="flex items-center justify-between text-[11px] font-bold text-[#9A3412]">
-                        <span>Safety Intercept Lock</span>
-                        <span>18m ago</span>
-                      </div>
-                      <p className="text-xs font-semibold text-[#151719] truncate">Robert Hayes: Penicillin Allergy</p>
-                    </div>
-
-                    <div
-                      onClick={() => navigate('/consultation?patient=demo-scenario-d-arthur')}
-                      className="p-2.5 rounded-2xl bg-white border border-[#E8E5DC] hover:bg-[#F4F3EE] transition-colors cursor-pointer space-y-0.5"
-                    >
-                      <div className="flex items-center justify-between text-[11px] font-bold text-[#575D65]">
-                        <span>Awaiting Sign-Off</span>
-                        <span>1h ago</span>
-                      </div>
-                      <p className="text-xs font-semibold text-[#151719] truncate">Arthur Pendelton: Angina SOAP</p>
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => navigate('/patients')}
-                  className="mt-3 text-xs font-semibold text-[#575D65] hover:text-[#151719] text-center w-full py-1 cursor-pointer"
-                >
-                  View All Clinical Items →
-                </button>
-              </Card>
-            </div>
-
-            {/* 2x2 PASTEL METRIC CARDS GRID (Reference 1) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              
-              {/* Card 1: Canary Yellow (Patients Census) */}
-              <div className="bg-[#FEF08A] rounded-3xl border border-[#FDE047] p-5 text-[#854D0E] relative overflow-hidden flex flex-col justify-between min-h-[190px] shadow-xs">
-                {/* Background decorative glyph */}
-                <div className="absolute right-4 top-4 opacity-15 pointer-events-none font-bold text-7xl select-none">
-                  +
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-bold tracking-tight">Patients:</h3>
-                  <div className="flex items-center gap-4 mt-2 text-xs">
-                    <div>
-                      <span className="font-extrabold text-sm block">14 pers</span>
-                      <span className="text-[10px] opacity-80 uppercase tracking-wider font-semibold">22-32 Y.O</span>
-                    </div>
-                    <div>
-                      <span className="font-extrabold text-sm block">5 pers</span>
-                      <span className="text-[10px] opacity-80 uppercase tracking-wider font-semibold">32-45 Y.O</span>
-                    </div>
-                    <div>
-                      <span className="font-extrabold text-sm block">2 pers</span>
-                      <span className="text-[10px] opacity-80 uppercase tracking-wider font-semibold">45+ Y.O</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Stylized Bar Graph matching Reference 1 */}
-                <div className="pt-4 border-t border-[#854D0E]/20">
-                  <div className="h-12 flex items-end justify-between gap-1.5 px-2">
-                    <div className="w-1.5 bg-[#854D0E]/30 rounded-full h-4" />
-                    <div className="w-1.5 bg-[#854D0E]/50 rounded-full h-8" />
-                    <div className="w-1.5 bg-[#854D0E] rounded-full h-11" />
-                    <div className="w-1.5 bg-[#854D0E]/40 rounded-full h-6" />
-                    <div className="w-1.5 bg-[#854D0E]/60 rounded-full h-9" />
-                    <div className="w-1.5 bg-[#854D0E] rounded-full h-12" />
-                    <div className="w-1.5 bg-[#854D0E]/70 rounded-full h-7" />
-                    <div className="w-1.5 bg-[#854D0E]/30 rounded-full h-3" />
-                  </div>
-                  <div className="flex justify-between text-[9px] font-mono opacity-80 mt-1 px-1">
-                    <span>07:30 p.m</span>
-                    <span>12:00 p.m</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 2: Blush Pink (Visits Summary) */}
-              <div className="bg-[#FCE7F3] rounded-3xl border border-[#FBCFE8] p-5 text-[#9D174D] relative overflow-hidden flex flex-col justify-between min-h-[190px] shadow-xs">
-                {/* Background decorative heart glyph */}
-                <div className="absolute right-4 top-4 opacity-15 pointer-events-none text-6xl select-none">
-                  ♥
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-bold tracking-tight">Visits summary:</h3>
-                  <div className="flex items-center gap-4 mt-2 text-xs">
-                    <div>
-                      <span className="font-extrabold text-sm block">24 min</span>
-                      <span className="text-[10px] opacity-80 uppercase tracking-wider font-semibold">AVERAGE</span>
-                    </div>
-                    <div>
-                      <span className="font-extrabold text-sm block">15 min</span>
-                      <span className="text-[10px] opacity-80 uppercase tracking-wider font-semibold">MINIMUM</span>
-                    </div>
-                    <div>
-                      <span className="font-extrabold text-sm block">01:30 h</span>
-                      <span className="text-[10px] opacity-80 uppercase tracking-wider font-semibold">MAXIMUM</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Smooth SVG Wave Line Chart with Peak Marker (Reference 1) */}
-                <div className="pt-2 relative">
-                  <svg className="w-full h-12 overflow-visible" viewBox="0 0 200 40">
-                    <path
-                      d="M 0 32 Q 25 30 50 34 T 100 25 T 140 10 T 170 30 T 200 28"
-                      fill="none"
-                      stroke="#9D174D"
-                      strokeWidth="2"
-                    />
-                    {/* Peak marker at 140, 10 */}
-                    <circle cx="140" cy="10" r="3.5" fill="#9D174D" />
-                    <line x1="140" y1="10" x2="140" y2="40" stroke="#9D174D" strokeWidth="1" strokeDasharray="2 2" />
-                  </svg>
-                  <div className="flex justify-between text-[8px] font-mono opacity-80 mt-1">
-                    <span>10:30</span>
-                    <span>11:00</span>
-                    <span>11:30</span>
-                    <span className="font-bold">12:00</span>
-                    <span>12:30</span>
-                    <span>13:00</span>
-                    <span>13:30</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 3: Sage Olive (By Condition) */}
-              <div className="bg-[#DCFCE7] rounded-3xl border border-[#BBF7D0] p-5 text-[#166534] relative overflow-hidden flex flex-col justify-between min-h-[160px] shadow-xs">
-                {/* Geometric accent */}
-                <div className="absolute right-4 top-4 opacity-15 pointer-events-none text-6xl font-bold select-none">
-                  ▲
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-bold tracking-tight">By condition:</h3>
-                  <div className="flex items-center gap-4 mt-3 text-xs">
-                    <div>
-                      <span className="font-extrabold text-base block font-mono">14 pers</span>
-                      <span className="text-[10px] opacity-80 uppercase tracking-wider font-semibold">STABLE</span>
-                    </div>
-                    <div>
-                      <span className="font-extrabold text-base block font-mono">5 pers</span>
-                      <span className="text-[10px] opacity-80 uppercase tracking-wider font-semibold">FAIR</span>
-                    </div>
-                    <div>
-                      <span className="font-extrabold text-base block font-mono text-rose-700">1 pers</span>
-                      <span className="text-[10px] opacity-90 uppercase tracking-wider font-bold text-rose-700">CRITICAL</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-2 text-[11px] opacity-80 flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>95.2% clinical stability index across cohort</span>
-                </div>
-              </div>
-
-              {/* Card 4: Periwinkle Blue (Sessions) */}
-              <div className="bg-[#E0E7FF] rounded-3xl border border-[#C7D2FE] p-5 text-[#1E40AF] relative overflow-hidden flex flex-col justify-between min-h-[160px] shadow-xs">
-                {/* Geometric star accent */}
-                <div className="absolute right-4 top-4 opacity-15 pointer-events-none text-6xl select-none">
-                  ✦
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-bold tracking-tight">Sessions:</h3>
-                  <div className="flex items-center gap-4 mt-3 text-xs">
-                    <div>
-                      <span className="font-extrabold text-base block font-mono">03:45 h</span>
-                      <span className="text-[10px] opacity-80 uppercase tracking-wider font-semibold">IN CLINIC</span>
-                    </div>
-                    <div>
-                      <span className="font-extrabold text-base block font-mono">02:00 min</span>
-                      <span className="text-[10px] opacity-80 uppercase tracking-wider font-semibold">VIDEO CALLS</span>
-                    </div>
-                    <div>
-                      <span className="font-extrabold text-base block font-mono">00:24 min</span>
-                      <span className="text-[10px] opacity-80 uppercase tracking-wider font-semibold">IN CHAT</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-2 text-[11px] opacity-80 flex items-center gap-1.5">
-                  <Activity className="w-3.5 h-3.5" />
-                  <span>3 scheduled virtual consultations remaining</span>
-                </div>
-              </div>
-
-            </div>
-
-            {/* ── LOWER SECTION: PATIENT'S LIST & VISIT DETAILS (Reference 1) ── */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-              
-              {/* Patient's List Column (5 cols) */}
-              <div className="md:col-span-5 space-y-3">
-                <div className="flex flex-col gap-2 pb-1">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-sm font-bold text-[#151719]">Patient Queue</h2>
-                    <span className="text-[11px] font-mono text-[#88909A]">{filteredPatients.length} queued</span>
-                  </div>
-
-                  <Tabs
-                    variant="pill"
-                    size="sm"
-                    activeTab={patientListFilter}
-                    onChange={(id) => setPatientListFilter(id as any)}
-                    tabs={[
-                      { id: 'Waiting', label: 'Waiting', count: waitingCount },
-                      { id: 'In Consultation', label: 'In Room', count: inRoomCount },
-                      { id: 'Ready for Review', label: 'Review', count: reviewCount },
-                      { id: 'Completed', label: 'Done', count: completedCount }
-                    ]}
+            <div className="relative h-8 flex-1">
+              <div className="absolute inset-x-0 top-1/2 h-px bg-[#151719]/[0.06]" />
+              {dotSource.map((dot) => {
+                const left = ((dot.minutes - minMinutes) / span) * 100;
+                return (
+                  <span
+                    key={dot.key}
+                    title={`${dot.label} · ${Math.floor(dot.minutes / 60)}:${String(dot.minutes % 60).padStart(2, '0')}`}
+                    className="absolute top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-white"
+                    style={{ left: `${Math.min(98, Math.max(2, left))}%`, background: dot.color }}
                   />
+                );
+              })}
+            </div>
+
+            <span className="shrink-0 font-mono-clinical text-[9.5px] text-[#B0AFAB]">
+              {String(Math.floor(maxMinutes / 60)).padStart(2, '0')}:{String(maxMinutes % 60).padStart(2, '0')}
+            </span>
+          </div>
+
+          <div className="pointer-events-none absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-1.5 rounded-full bg-white px-3 py-1.5 shadow-[0_14px_34px_-22px_rgba(20,20,18,0.55)]">
+            <BellRing size={11} className="text-[#8A8A87]" />
+            <span className="text-[10px] font-medium text-[#4A4A47]">
+              {nextAppointment ? `${nextAppointment.roomOrVirtual} ready` : 'Schedule ready'}
+            </span>
+          </div>
+        </div>
+
+        {/* ── Main grid ────────────────────────────────────────────────── */}
+        <div className="mt-6 grid grid-cols-1 gap-5 xl:grid-cols-12">
+
+          {/* Left column */}
+          <div className="space-y-5 xl:col-span-8">
+
+            {/* Gradient scores */}
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <div
+                className="relative flex min-h-[196px] flex-col justify-between overflow-hidden rounded-[30px] p-5 text-white"
+                style={{ background: 'linear-gradient(158deg, #F4D3A6 0%, #E3DE83 26%, #6FBE5B 62%, #1F7A34 100%)' }}
+              >
+                <div className="flex items-start justify-between">
+                  <span className="font-editorial text-[19px] italic leading-none text-white/95">
+                    Clinic load
+                  </span>
+                  <span className="rounded-full bg-white/20 px-2 py-0.5 text-[8.5px] font-semibold uppercase tracking-[0.1em] text-white/90">
+                    Today
+                  </span>
                 </div>
 
-                <div className="space-y-2">
-                  {filteredPatients.map((p) => {
-                    const isSelected = selectedPatient.id === p.id;
-                    let iconBg = 'bg-[#FCE7F3] text-[#9D174D]';
-                    let IconComponent = Stethoscope;
+                <div className="mt-6">
+                  <DotNumber value={totalCount} dot={2.1} pitch={6.4} color="#FFFFFF" />
+                  <p className="mt-1.5 font-editorial text-[15px] italic text-white/90">On track</p>
+                </div>
 
-                    if (p.iconType === 'video') {
-                      iconBg = 'bg-[#FCE7F3] text-[#9D174D]';
-                      IconComponent = Video;
-                    } else if (p.iconType === 'routine') {
-                      iconBg = 'bg-[#E0E7FF] text-[#1E40AF]';
-                      IconComponent = Stethoscope;
-                    } else if (p.iconType === 'report') {
-                      iconBg = 'bg-[#DCFCE7] text-[#166534]';
-                      IconComponent = FileText;
-                    }
+                <DotWave
+                  values={[0.18, 0.22, 0.3, 0.26, 0.42, 0.38, 0.55, 0.62, 0.58, 0.72, 0.68, 0.8, 0.74, 0.62, 0.55, 0.48, 0.42, 0.36]}
+                  color="rgba(255,255,255,0.85)"
+                  dot={2.4}
+                  className="mt-4 h-8 w-full"
+                />
+              </div>
 
+              <div
+                className="relative flex min-h-[196px] flex-col justify-between overflow-hidden rounded-[30px] p-5 text-white"
+                style={{ background: 'linear-gradient(158deg, #C9D5E6 0%, #E8C6B2 28%, #F19B52 64%, #F26B3A 100%)' }}
+              >
+                <div className="flex items-start justify-between">
+                  <span className="font-editorial text-[19px] italic leading-none text-white/95">
+                    Safety gate
+                  </span>
+                  <span className="rounded-full bg-white/20 px-2 py-0.5 text-[8.5px] font-semibold uppercase tracking-[0.1em] text-white/90">
+                    Deterministic
+                  </span>
+                </div>
+
+                <div className="mt-6 flex items-end gap-2">
+                  <DotNumber value={100} dot={2.1} pitch={6.4} color="#FFFFFF" />
+                  <span className="mb-1 font-editorial text-[15px] italic text-white/90">%</span>
+                </div>
+                <p className="mt-1.5 font-editorial text-[15px] italic text-white/90">
+                  Zero unapproved writes
+                </p>
+
+                <DotWave
+                  values={[0.9, 0.88, 0.92, 0.95, 0.93, 0.97, 0.96, 0.99, 0.97, 0.98, 0.99, 1]}
+                  color="rgba(255,255,255,0.8)"
+                  dot={2.4}
+                  className="mt-4 h-8 w-full"
+                />
+              </div>
+            </div>
+
+            {/* Next patient */}
+            <section className="rounded-[30px] bg-white/80 p-5 shadow-[0_30px_80px_-64px_rgba(20,20,18,0.7)] sm:p-6">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#5AC46A]" />
+                  <span className="text-[9.5px] font-semibold uppercase tracking-[0.16em] text-[#A5A4A0]">
+                    In room next
+                  </span>
+                </div>
+                <span className="rounded-full bg-[#F1F0ED] px-2.5 py-1 font-mono-clinical text-[9.5px] text-[#6F6F6C]">
+                  {heroPatient.room} · {heroPatient.time}
+                </span>
+              </div>
+
+              <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <h2 className="text-[26px] font-medium leading-tight tracking-[-0.04em]">
+                    {heroPatient.name}
+                  </h2>
+                  <p className="mt-1 text-[11.5px] text-[#8A8A87]">{heroPatient.meta}</p>
+                  <p className="mt-3 max-w-md text-[12.5px] leading-relaxed text-[#4F4F4C]">
+                    {heroPatient.complaint}
+                  </p>
+                </div>
+
+                {heroPatient.allergy && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FBE3E8] px-2.5 py-1 text-[9.5px] font-semibold uppercase tracking-[0.06em] text-[#B3425C]">
+                    <AlertTriangle size={11} />
+                    {heroPatient.allergy}
+                  </span>
+                )}
+              </div>
+
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <span className={`rounded-full px-2.5 py-1 text-[9.5px] font-semibold uppercase tracking-[0.06em] ${priorityTone(heroPatient.priority).pill}`}>
+                  {heroPatient.priority}
+                </span>
+                <span className="rounded-full bg-[#F1F0ED] px-2.5 py-1 text-[9.5px] font-medium text-[#6F6F6C]">
+                  Waiting {heroPatient.wait}m
+                </span>
+                <span className="rounded-full bg-[#F1F0ED] px-2.5 py-1 text-[9.5px] font-medium text-[#6F6F6C]">
+                  Vitals roomed
+                </span>
+              </div>
+
+              <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[#151719]/[0.06] pt-4">
+                <span className="text-[10px] text-[#A5A4A0]">
+                  Brief assembled · three orders staged · signature required
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/patients`)}
+                    className="rounded-full bg-[#F1F0ED] px-3.5 py-2 text-[11.5px] font-semibold text-[#3A3A38] transition-colors hover:bg-[#E8E7E4] cursor-pointer"
+                  >
+                    Open chart
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/consultation?patient=${heroPatient.id}`)}
+                    className="group flex items-center gap-1.5 rounded-full bg-[#151719] px-4 py-2 text-[11.5px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-[#2A2A28] active:translate-y-0 cursor-pointer"
+                  >
+                    Start encounter
+                    <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            {/* Queue */}
+            <section>
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-baseline gap-2">
+                  <h2 className="text-[15px] font-semibold tracking-[-0.02em]">Patient queue</h2>
+                  <span className="text-[10.5px] text-[#A5A4A0]">{filteredPatients.length} shown</span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1">
+                  {(['All', 'Waiting', 'In Consultation', 'Ready for Review', 'Completed'] as const).map((filter) => {
+                    const label = filter === 'In Consultation' ? 'In room' : filter === 'Ready for Review' ? 'Review' : filter === 'Completed' ? 'Done' : filter;
+                    const active = patientListFilter === filter;
                     return (
-                      <div
-                        key={p.id}
-                        onClick={() => setSelectedPatient(p)}
-                        className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
-                          isSelected
-                            ? 'bg-[#FCE7F3] border-[#FBCFE8] shadow-xs'
-                            : 'bg-white border-[#E8E5DC] hover:bg-[#F9F8F5]'
+                      <button
+                        key={filter}
+                        type="button"
+                        onClick={() => setPatientListFilter(filter)}
+                        className={`rounded-full px-2.5 py-1 text-[10px] font-medium transition-colors cursor-pointer ${
+                          active ? 'bg-[#151719] text-white' : 'bg-white/70 text-[#8A8A87] hover:bg-white hover:text-[#151719]'
                         }`}
                       >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${iconBg}`}>
-                            <IconComponent size={15} />
-                          </div>
-                          <div className="min-w-0">
-                            <h4 className="text-xs font-bold text-[#151719] truncate">{p.name}</h4>
-                            <p className="text-[10px] text-[#575D65] truncate">{p.visitType}</p>
-                          </div>
-                        </div>
-
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold shrink-0 ${
-                          isSelected ? 'bg-white/80 text-[#9D174D]' : 'bg-[#F4F2EC] text-[#575D65]'
-                        }`}>
-                          {p.time}
-                        </span>
-                      </div>
+                        {label}
+                        {filter !== 'All' && (
+                          <span className={`ml-1 ${active ? 'text-white/60' : 'text-[#B7B6B2]'}`}>
+                            {filterCounts[filter as keyof typeof filterCounts]}
+                          </span>
+                        )}
+                      </button>
                     );
                   })}
                 </div>
               </div>
 
-              {/* Visit Details Column (7 cols, matching focused pink card in Reference 1) */}
-              <div className="md:col-span-7">
-                <div className="bg-[#FCE7F3] rounded-3xl border border-[#FBCFE8] p-5 text-[#9D174D] space-y-4 shadow-xs h-full flex flex-col justify-between">
-                  <div>
-                    {/* Header with MRN Badge */}
-                    <div className="flex items-center justify-between gap-2 pb-2 border-b border-[#FBCFE8]/80">
-                      <div>
-                        <h3 className="text-sm font-bold text-[#151719]">{selectedPatient.name}</h3>
-                        <p className="text-[11px] text-[#575D65] font-medium">{selectedPatient.ageGender}</p>
-                      </div>
-                      <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-white text-[#151719] border border-[#FBCFE8] shadow-2xs">
-                        {selectedPatient.mrn}
-                      </span>
-                    </div>
-
-                    {/* Symptom / Tag Chips */}
-                    <div className="flex flex-wrap items-center gap-1.5 mt-3">
-                      {selectedPatient.chips.map(chip => (
-                        <span key={chip} className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-white/70 text-[#9D174D] border border-[#FBCFE8]">
-                          {chip}
-                        </span>
-                      ))}
-                    </div>
-
-                    {/* Meta Fields */}
-                    <div className="mt-4 space-y-2 text-xs">
-                      <div className="flex items-baseline justify-between text-[11px]">
-                        <span className="text-[#575D65] font-medium">Last Checked:</span>
-                        <span className="font-semibold text-[#151719]">
-                          {selectedPatient.lastCheckedDoctor} on {selectedPatient.lastCheckedDate}
-                        </span>
-                      </div>
-
-                      <div className="flex items-baseline justify-between text-[11px]">
-                        <span className="text-[#575D65] font-medium">Prescription Reference:</span>
-                        <span className="font-mono font-bold text-[#1E40AF]">
-                          {selectedPatient.prescriptionId}
-                        </span>
-                      </div>
-
-                      <div className="pt-2 border-t border-[#FBCFE8]/60">
-                        <span className="text-[10px] uppercase font-bold tracking-wider text-[#575D65] block mb-0.5">
-                          Observation:
-                        </span>
-                        <p className="text-xs text-[#151719] leading-relaxed">
-                          {selectedPatient.observation}
-                        </p>
-                      </div>
-
-                      <div className="pt-2">
-                        <span className="text-[10px] uppercase font-bold tracking-wider text-[#575D65] block mb-0.5">
-                          Active Prescription:
-                        </span>
-                        <p className="text-xs text-[#151719] font-medium leading-relaxed">
-                          {selectedPatient.prescription}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Action Link button */}
-                  <div className="pt-3 border-t border-[#FBCFE8]/80 flex items-center justify-between">
-                    <span className="text-[10px] font-semibold text-[#575D65]">
-                      FHIR Encounter Active
-                    </span>
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      iconRight={<ArrowUpRight size={14} />}
-                      onClick={() => navigate(`/consultation?patient=${selectedPatient.id}`)}
+              <div className="space-y-2">
+                {filteredPatients.map((patient) => {
+                  const isSelected = selectedPatient.id === patient.id;
+                  return (
+                    <div
+                      key={patient.id}
+                      className={`overflow-hidden rounded-[22px] transition-colors ${
+                        isSelected ? 'bg-white shadow-[0_24px_60px_-52px_rgba(20,20,18,0.8)]' : 'bg-white/65 hover:bg-white/85'
+                      }`}
                     >
-                      Open Full Consultation
-                    </Button>
-                  </div>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedPatient(patient)}
+                        className="flex w-full items-center gap-3 px-4 py-3 text-left cursor-pointer"
+                        aria-expanded={isSelected}
+                      >
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F1F0ED] text-[10px] font-semibold text-[#6F6F6C]">
+                          {initials(patient.name)}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[12.5px] font-semibold text-[#151719]">{patient.name}</span>
+                          <span className="block truncate text-[10.5px] text-[#9A9995]">{patient.visitType}</span>
+                        </span>
+                        <span className="hidden items-center gap-1.5 sm:flex">
+                          {patient.chips.slice(0, 2).map((chip) => (
+                            <span key={chip} className="rounded-full bg-[#F6F5F3] px-2 py-0.5 text-[9px] font-medium text-[#8A8A87]">
+                              {chip}
+                            </span>
+                          ))}
+                        </span>
+                        <span className="shrink-0 font-mono-clinical text-[9.5px] text-[#A5A4A0]">{patient.time}</span>
+                        <ChevronRight
+                          size={14}
+                          className={`shrink-0 text-[#C2C1BD] transition-transform ${isSelected ? 'rotate-90' : ''}`}
+                        />
+                      </button>
+
+                      {isSelected && (
+                        <div className="px-4 pb-4">
+                          <div className="rounded-[18px] bg-[#F6F5F3] p-3.5">
+                            <p className="text-[11.5px] leading-relaxed text-[#4F4F4C]">{patient.observation}</p>
+                            <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 border-t border-[#151719]/[0.06] pt-2.5">
+                              <span className="font-mono-clinical text-[9px] text-[#A5A4A0]">
+                                {patient.mrn} · last seen {patient.lastCheckedDate}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => navigate(`/consultation?patient=${patient.id}`)}
+                                className="flex items-center gap-1 rounded-full bg-[#151719] px-3 py-1.5 text-[10.5px] font-semibold text-white transition-colors hover:bg-[#2A2A28] cursor-pointer"
+                              >
+                                Open encounter
+                                <ArrowUpRight size={11} />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+
+            {/* Case carousel */}
+            <section>
+              <div className="mb-3 flex items-center justify-between">
+                <div>
+                  <h2 className="text-[15px] font-semibold tracking-[-0.02em]">Synthetic cases</h2>
+                  <p className="mt-0.5 text-[10.5px] text-[#A5A4A0]">Ten evaluation cohorts, ready to run end to end.</p>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => navigate('/patients')}
+                  className="rounded-full bg-white/80 px-3 py-1.5 text-[10.5px] font-semibold text-[#4F4F4C] transition-colors hover:bg-white cursor-pointer"
+                >
+                  See all
+                </button>
               </div>
 
-            </div>
+              <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2">
+                {DASHBOARD_PATIENTS.map((patient) => {
+                  const tone = patient.statusColor === 'pink'
+                    ? { tag: 'bg-[#FBE3E8] text-[#B3425C]', blob: 'from-[#F7C9D3] to-[#F0A7B8]' }
+                    : patient.statusColor === 'green'
+                      ? { tag: 'bg-[#E4EFDF] text-[#4C7A45]', blob: 'from-[#CFE3C6] to-[#A9CB9E]' }
+                      : patient.statusColor === 'yellow'
+                        ? { tag: 'bg-[#FBEEDC] text-[#9A6224]', blob: 'from-[#F6E0BD] to-[#E9C28B]' }
+                        : { tag: 'bg-[#E3EBF6] text-[#3F6287]', blob: 'from-[#CBDCF0] to-[#A5C0DE]' };
 
+                  return (
+                    <button
+                      key={patient.id}
+                      type="button"
+                      onClick={() => navigate(`/consultation?patient=${patient.id}`)}
+                      className="w-[178px] shrink-0 rounded-[24px] bg-white/80 p-3.5 text-left transition-all hover:-translate-y-0.5 hover:bg-white cursor-pointer"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className={`rounded-full px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[0.08em] ${tone.tag}`}>
+                          {patient.visitType.split(' ')[0]}
+                        </span>
+                        <span className="font-mono-clinical text-[8.5px] text-[#B0AFAB]">{patient.time}</span>
+                      </div>
+
+                      <div className={`mt-3 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br ${tone.blob} text-[13px] font-semibold text-white/90`}>
+                        {initials(patient.name)}
+                      </div>
+
+                      <div className="mt-3 truncate text-[12px] font-semibold text-[#151719]">{patient.name}</div>
+                      <div className="mt-0.5 truncate text-[9.5px] text-[#9A9995]">{patient.chips[0]}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
           </div>
 
-          {/* ── RIGHT RAIL: MINI CALENDAR & TODAY'S TIMELINE (4 Columns) ── */}
-          <div className="lg:col-span-4 space-y-6">
-            
-            {/* White rounded card containing Calendar & Timeline */}
-            <div className="bg-white rounded-3xl border border-[#E8E5DC] p-5 sm:p-6 shadow-[0_2px_12px_rgba(0,0,0,0.02)] space-y-6">
-              
-              {/* Mini Calendar Header with Month & Controls */}
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <button className="p-1 rounded-full text-[#88909A] hover:text-[#151719]">
-                    <ChevronLeft size={16} />
-                  </button>
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#FCE7F3] text-[#9D174D]">
-                    May 2026
+          {/* Right rail */}
+          <div className="space-y-5 xl:col-span-4">
+
+            {/* Action pair */}
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                type="button"
+                onClick={() => navigate('/consultation?action=new-patient')}
+                className="group relative flex min-h-[154px] flex-col justify-between overflow-hidden rounded-[26px] bg-white/85 p-4 text-left transition-all hover:-translate-y-0.5 hover:bg-white cursor-pointer"
+              >
+                <div className="flex items-start justify-between">
+                  <span className="text-[12px] font-medium leading-snug text-[#2A2A28]">
+                    Start<br />encounter
                   </span>
-                  <button className="p-1 rounded-full text-[#88909A] hover:text-[#151719]">
-                    <ChevronRight size={16} />
-                  </button>
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#F1F0ED] text-[#3A3A38] transition-colors group-hover:bg-[#151719] group-hover:text-white">
+                    <Plus size={13} />
+                  </span>
                 </div>
 
-                {/* Weekday headers */}
-                <div className="grid grid-cols-8 text-center text-[10px] font-bold text-[#88909A] pb-2 border-b border-[#F0ECE1]">
-                  <span>MO</span>
-                  <span>TU</span>
-                  <span>WE</span>
-                  <span>TH</span>
-                  <span>FR</span>
-                  <span>SA</span>
-                  <span>SU</span>
-                  <span className="text-[8px] font-mono text-[#D6D2C4]">WK</span>
-                </div>
-
-                {/* Calendar Days Matrix */}
-                <div className="space-y-1 mt-2 text-xs">
-                  {/* Row 1 */}
-                  <div className="grid grid-cols-8 text-center items-center py-0.5">
-                    <span className="text-[#D6D2C4]">28</span>
-                    <span className="text-[#D6D2C4]">29</span>
-                    <span className="text-[#D6D2C4]">30</span>
-                    <span>1</span>
-                    <span>2</span>
-                    <span>3</span>
-                    <span>4</span>
-                    <span className="text-[9px] font-mono text-[#88909A]">W23</span>
-                  </div>
-                  {/* Row 2 */}
-                  <div className="grid grid-cols-8 text-center items-center py-0.5">
-                    <span>5</span>
-                    <span>6</span>
-                    <span>7</span>
-                    <span>8</span>
-                    <span>9</span>
-                    <span>10</span>
-                    <span>11</span>
-                    <span className="text-[9px] font-mono text-[#88909A]">W24</span>
-                  </div>
-                  {/* Row 3 (Active Week with 15 in pink pill) */}
-                  <div className="grid grid-cols-8 text-center items-center py-0.5">
-                    <span>12</span>
-                    <span>13</span>
-                    <span>14</span>
-                    <span className="w-6 h-6 mx-auto rounded-full bg-[#FCE7F3] text-[#9D174D] font-bold flex items-center justify-center shadow-2xs">
-                      15
-                    </span>
-                    <span>16</span>
-                    <span>17</span>
-                    <span>18</span>
-                    <span className="text-[9px] font-mono text-[#88909A]">W25</span>
-                  </div>
-                  {/* Row 4 */}
-                  <div className="grid grid-cols-8 text-center items-center py-0.5">
-                    <span>19</span>
-                    <span>20</span>
-                    <span>21</span>
-                    <span>22</span>
-                    <span>23</span>
-                    <span>24</span>
-                    <span>25</span>
-                    <span className="text-[9px] font-mono text-[#88909A]">W26</span>
+                <div className="relative mt-4 h-12">
+                  <div className="absolute left-3 top-0 h-10 w-9 rotate-[-8deg] rounded-[6px] border border-[#E6E5E1] bg-white shadow-sm" />
+                  <div className="absolute left-8 top-1 h-11 w-10 rotate-[5deg] rounded-[6px] border border-[#E6E5E1] bg-white p-1.5 shadow-sm">
+                    <div className="h-1 w-4 rounded-full bg-[#E0DFDB]" />
+                    <div className="mt-1 h-1 w-6 rounded-full bg-[#EFEEEA]" />
+                    <div className="mt-1 h-1 w-5 rounded-full bg-[#EFEEEA]" />
                   </div>
                 </div>
 
-                {/* Action Buttons: Add event pill + icon buttons */}
-                <div className="flex items-center gap-2 mt-4 pt-3 border-t border-[#F0ECE1]">
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    icon={<Plus size={14} />}
-                    className="flex-1"
-                    onClick={() => navigate('/schedule')}
-                  >
-                    Add event
-                  </Button>
-
-                  <button
-                    type="button"
-                    onClick={() => navigate('/schedule')}
-                    className="p-2 rounded-full border border-[#E8E5DC] text-[#575D65] hover:text-[#151719] hover:bg-[#F9F8F5] cursor-pointer"
-                    title="Refresh schedule"
-                  >
-                    <RefreshCw size={14} />
-                  </button>
-                  <button
-                    type="button"
-                    className="p-2 rounded-full border border-[#E8E5DC] text-[#575D65] hover:text-[#151719] hover:bg-[#F9F8F5] cursor-pointer"
-                    title="Export timeline"
-                  >
-                    <Share2 size={14} />
-                  </button>
+                <div className="mt-3 flex items-center justify-between">
+                  <span className="text-[10px] text-[#9A9995]">Draft or resume</span>
+                  <ArrowUpRight size={12} className="text-[#B0AFAB]" />
                 </div>
-              </div>
+              </button>
 
-              {/* Today's Timeline Section */}
-              <div className="space-y-3 pt-3 border-t border-[#F0ECE1]">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-xs font-bold text-[#151719]">May 15</h3>
-                    <p className="text-[10px] text-[#88909A]">Today&apos;s timeline</p>
-                  </div>
-                  <select
-                    value={timelineFilter}
-                    onChange={(e) => setTimelineFilter(e.target.value as any)}
-                    className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#F9F8F5] border border-[#E8E5DC] text-[#151719] focus:outline-none cursor-pointer"
-                  >
-                    <option value="All">All</option>
-                    <option value="In clinic">In clinic</option>
-                    <option value="Online">Online</option>
-                  </select>
+              <button
+                type="button"
+                onClick={() => navigate('/consultation?patient=demo-scenario-d-conflict')}
+                className="group relative flex min-h-[154px] flex-col justify-between overflow-hidden rounded-[26px] p-4 text-left text-white transition-all hover:-translate-y-0.5 cursor-pointer"
+                style={{ background: 'linear-gradient(155deg, #F7C6CF 0%, #F26B8A 48%, #E84C74 100%)' }}
+              >
+                <div className="flex items-start justify-between">
+                  <span className="text-[12px] font-medium leading-snug text-white/95">
+                    Ambient<br />capture
+                  </span>
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/25 text-white">
+                    <Plus size={13} />
+                  </span>
                 </div>
 
-                {/* Vertical Time Rail */}
-                <div className="relative pl-12 space-y-4 pt-1">
-                  {/* Vertical rule */}
-                  <div className="absolute left-8 top-1 bottom-1 w-px bg-[#E8E5DC]" />
-
-                  {/* 07:00 Event */}
-                  <div className="relative">
-                    <span className="absolute -left-12 top-1 font-mono text-[10px] text-[#88909A]">07:00</span>
-                    <div className="p-3 rounded-2xl bg-[#FDF2F8] border border-[#FBCFE8] space-y-1">
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-[#9D174D]">
-                        <Stethoscope size={13} />
-                        <span>Emergency visit</span>
-                      </div>
-                      <p className="text-[10px] text-[#575D65]">West camp, Room 312 · 07:00 - 07:30</p>
-                    </div>
-                  </div>
-
-                  {/* 07:30 Event */}
-                  <div className="relative">
-                    <span className="absolute -left-12 top-1 font-mono text-[10px] text-[#88909A]">07:30</span>
-                    <div className="p-3 rounded-2xl bg-[#EFF6FF] border border-[#BFDBFE] space-y-1">
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-[#1E40AF]">
-                        <FileText size={13} />
-                        <span>Diagnostic test</span>
-                      </div>
-                      <p className="text-[10px] text-[#575D65]">East camp, Laboratory, floor 5</p>
-                    </div>
-                  </div>
-
-                  {/* Live Time Red Dashed Marker (08:12 in Reference 1) */}
-                  <div className="relative flex items-center -ml-12 py-1">
-                    <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-[#F43F5E] text-white shrink-0 shadow-2xs">
-                      08:12
-                    </span>
-                    <div className="flex-1 border-t-2 border-dashed border-[#F43F5E] ml-2" />
-                  </div>
-
-                  {/* 08:00 Team Daily Planning Event */}
-                  <div className="relative">
-                    <span className="absolute -left-12 top-1 font-mono text-[10px] text-[#88909A]">08:00</span>
-                    <div className="p-3 rounded-2xl bg-[#FEF08A] border border-[#FDE047] text-[#854D0E] space-y-2">
-                      <div className="flex items-center gap-1.5 text-xs font-bold">
-                        <span>Team daily planning</span>
-                      </div>
-                      <p className="text-[10px] opacity-80">East camp, Room 200 · 08:00 - 09:00</p>
-                      <div className="flex items-center gap-1">
-                        {['TY', 'AB', 'NR', 'TY', 'SS', '+3'].map((item, i) => (
-                          <span key={i} className="w-4 h-4 rounded-full bg-black/10 flex items-center justify-center text-[7px] font-bold">
-                            {item}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 09:00 Emergency Visit */}
-                  <div className="relative">
-                    <span className="absolute -left-12 top-1 font-mono text-[10px] text-[#88909A]">09:00</span>
-                    <div className="p-3 rounded-2xl bg-[#FDF2F8] border border-[#FBCFE8] space-y-1">
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-[#9D174D]">
-                        <Stethoscope size={13} />
-                        <span>Emergency visit</span>
-                      </div>
-                      <p className="text-[10px] text-[#575D65]">West camp, Room 312</p>
-                    </div>
-                  </div>
+                <div className="relative mx-auto mt-2 flex h-14 w-14 items-center justify-center">
+                  <span className="absolute inset-0 rounded-full border border-white/40" />
+                  <span className="absolute inset-[7px] rounded-full border border-white/50" />
+                  <span className="absolute inset-[14px] rounded-full bg-white/30" />
+                  <span className="h-2 w-2 rounded-full bg-[#DDF25B]" />
                 </div>
 
-                {/* View all details Button */}
-                <div className="pt-3 border-t border-[#F0ECE1]">
-                  <Button
-                    variant="primary"
-                    size="md"
-                    fullWidth
-                    onClick={() => navigate('/schedule')}
-                  >
-                    View all details
-                  </Button>
+                <div className="mt-3 flex items-center justify-between">
+                  <span className="text-[10px] text-white/80">Mic · 2 speakers</span>
+                  <Mic size={12} className="text-white/80" />
                 </div>
-              </div>
-
+              </button>
             </div>
 
+            {/* Awaiting signature */}
+            <section className="rounded-[26px] bg-white/80 p-5">
+              <div className="flex items-center justify-between">
+                <h3 className="text-[12px] font-semibold text-[#2A2A28]">Awaiting signature</h3>
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#F1F0ED] text-[#9A9995]">
+                  <ShieldCheck size={12} />
+                </span>
+              </div>
+
+              <div className="mt-3 flex items-end gap-2.5">
+                <DotNumber value={reviewCount || 2} dot={2} pitch={6} className="text-[#151719]" />
+                <span className="mb-1 text-[10px] text-[#8A8A87]">drafts</span>
+              </div>
+
+              <div className="relative mt-4 h-1 rounded-full bg-[#EFEEEA]">
+                <div className="absolute inset-y-0 left-0 w-[62%] rounded-full bg-[#151719]" />
+                <span className="absolute left-[62%] top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-[#DDF25B]" />
+              </div>
+
+              <p className="mt-3 text-[10px] leading-relaxed text-[#9A9995]">
+                Nothing reaches FHIR until you review and sign. Average review 38 seconds.
+              </p>
+
+              <button
+                type="button"
+                onClick={() => navigate('/operations')}
+                className="mt-3 flex w-full items-center justify-between rounded-full bg-[#F1F0ED] px-3.5 py-2 text-[10.5px] font-semibold text-[#3A3A38] transition-colors hover:bg-[#E8E7E4] cursor-pointer"
+              >
+                Review queue
+                <ArrowRight size={12} />
+              </button>
+            </section>
+
+            {/* Attention */}
+            <section className="rounded-[26px] bg-white/80 p-5">
+              <div className="flex items-center justify-between">
+                <h3 className="flex items-center gap-1.5 text-[12px] font-semibold text-[#2A2A28]">
+                  <BellRing size={13} className="text-[#8A8A87]" />
+                  Needs attention
+                </h3>
+                <span className="rounded-full bg-[#FBE3E8] px-2 py-0.5 text-[9px] font-semibold text-[#B3425C]">3</span>
+              </div>
+
+              <ul className="mt-3 space-y-1.5">
+                {[
+                  { id: 'demo-scenario-b-eleanor', tone: '#E4587A', title: 'HbA1c escalation', detail: 'Eleanor Vance · 8.2%', time: '5m' },
+                  { id: 'demo-scenario-c-allergy', tone: '#E9A23B', title: 'Allergy hard stop', detail: 'Robert Hayes · penicillin', time: '18m' },
+                  { id: 'demo-scenario-d-conflict', tone: '#8FB39A', title: 'Note awaiting sign-off', detail: 'Arthur Pendelton', time: '1h' }
+                ].map((item) => (
+                  <li key={item.id}>
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/consultation?patient=${item.id}`)}
+                      className="flex w-full items-center gap-2.5 rounded-full px-1.5 py-2 text-left transition-colors hover:bg-[#F6F5F3] cursor-pointer"
+                    >
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: item.tone }} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[11px] font-medium text-[#2A2A28]">{item.title}</span>
+                        <span className="block truncate text-[9.5px] text-[#9A9995]">{item.detail}</span>
+                      </span>
+                      <span className="shrink-0 font-mono-clinical text-[8.5px] text-[#B7B6B2]">{item.time}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            {/* Day picker */}
+            <section className="rounded-[26px] bg-white/80 p-5">
+              <div className="flex items-center justify-between">
+                <h3 className="text-[12px] font-semibold text-[#2A2A28]">
+                  {MONTHS[currentMonthIndex]} {selectedDay}
+                </h3>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentMonthIndex(prev => Math.max(0, prev - 1))}
+                    className="flex h-6 w-6 items-center justify-center rounded-full bg-[#F1F0ED] text-[#6F6F6C] hover:bg-[#E8E7E4] cursor-pointer"
+                    aria-label="Previous month"
+                  >
+                    <ChevronLeft size={12} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentMonthIndex(prev => Math.min(MONTHS.length - 1, prev + 1))}
+                    className="flex h-6 w-6 items-center justify-center rounded-full bg-[#F1F0ED] text-[#6F6F6C] hover:bg-[#E8E7E4] cursor-pointer"
+                    aria-label="Next month"
+                  >
+                    <ChevronRight size={12} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-3 flex items-center justify-between gap-1">
+                {dayStrip.map((entry, index) => {
+                  const active = entry.day === selectedDay;
+                  return (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => setSelectedDay(entry.day)}
+                      className={`flex h-10 w-8 flex-col items-center justify-center rounded-full text-[10px] transition-colors cursor-pointer ${
+                        active ? 'bg-[#151719] text-white' : 'text-[#8A8A87] hover:bg-[#F1F0ED]'
+                      }`}
+                    >
+                      <span className={`text-[8px] ${active ? 'text-white/60' : 'text-[#B7B6B2]'}`}>{entry.label}</span>
+                      <span className="mt-0.5 font-medium">{entry.day}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-3 space-y-1.5 border-t border-[#151719]/[0.06] pt-3">
+                {[
+                  { time: '08:00', title: 'Team planning', icon: Activity },
+                  { time: '09:00', title: 'Emergency visit', icon: AlertTriangle },
+                  { time: '10:00', title: 'Telehealth block', icon: FileText }
+                ].map((event) => (
+                  <div key={event.time} className="flex items-center gap-2.5">
+                    <span className="font-mono-clinical text-[8.5px] text-[#B0AFAB]">{event.time}</span>
+                    <event.icon size={11} className="text-[#8A8A87]" />
+                    <span className="truncate text-[10px] text-[#4F4F4C]">{event.title}</span>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => navigate('/schedule')}
+                className="mt-3 flex w-full items-center justify-center gap-1 rounded-full bg-[#151719] py-2 text-[10.5px] font-semibold text-white transition-colors hover:bg-[#2A2A28] cursor-pointer"
+              >
+                Open schedule
+                <ArrowRight size={11} />
+              </button>
+            </section>
           </div>
-
         </div>
-
       </div>
+
+      {/* Toast */}
+      {shareFeedback && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full border border-white/10 bg-[#151719] px-4 py-2.5 text-[11px] font-semibold text-white shadow-2xl animate-in fade-in slide-in-from-bottom-2">
+          <CheckCircle2 size={14} className="shrink-0 text-[#DDF25B]" />
+          <span>{shareFeedback}</span>
+        </div>
+      )}
     </Layout>
   );
 }

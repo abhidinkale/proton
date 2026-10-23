@@ -31,7 +31,7 @@ export const DEFAULT_GENERAL_NAV: NavItem[] = [
   { to: '/patients', label: 'Patients', icon: Users },
   { to: '/consultation', label: 'Consultation', icon: Stethoscope },
   { to: '/education', label: 'Education', icon: BookOpen },
-  { to: '/document-review', label: 'Documents base', icon: FileText }
+  { to: '/document-review', label: 'Documents', icon: FileText }
 ];
 
 export const DEFAULT_TOOLS_NAV: NavItem[] = [
@@ -60,146 +60,153 @@ export function Sidebar({
   currentPath = window.location.pathname,
   className = ''
 }: SidebarProps) {
+  const renderItem = (item: NavItem, layoutId: string) => {
+    const active = item.end
+      ? currentPath === item.to
+      : currentPath.startsWith(item.to);
+
+    return (
+      <NavLink
+        key={item.to}
+        to={item.to}
+        end={item.end}
+        title={isCollapsed ? item.label : undefined}
+        aria-current={active ? 'page' : undefined}
+        className={`group relative flex h-11 items-center rounded-full transition-colors duration-200 ${
+          isCollapsed ? 'justify-center px-0' : 'gap-3 pl-3.5 pr-2'
+        } ${
+          active
+            ? 'text-[#151719]'
+            : 'text-[#777774] hover:bg-white/60 hover:text-[#151719]'
+        }`}
+      >
+        {active && (
+          <motion.span
+            layoutId={layoutId}
+            className="absolute inset-0 rounded-full bg-white shadow-[0_10px_30px_-20px_rgba(20,20,18,0.55),0_1px_0_rgba(255,255,255,0.9)_inset]"
+            transition={PROTON_SPRING}
+          />
+        )}
+
+        <item.icon
+          size={16}
+          strokeWidth={active ? 2 : 1.7}
+          className={`relative z-10 shrink-0 ${active ? 'text-[#151719]' : 'text-[#8A8A87] group-hover:text-[#151719]'}`}
+        />
+
+        {!isCollapsed && (
+          <>
+            <span className="relative z-10 flex-1 truncate text-[12.5px] font-medium tracking-[-0.01em]">
+              {item.label}
+            </span>
+            {active ? (
+              <span className="relative z-10 flex h-7 w-7 items-center justify-center rounded-full bg-[#F1F0ED] text-[#9A9995]">
+                <ChevronRight size={12} strokeWidth={2} />
+              </span>
+            ) : item.badge ? (
+              <span className="relative z-10 rounded-full bg-white/80 px-2 py-0.5 text-[9px] font-semibold text-[#9A9995]">
+                {item.badge}
+              </span>
+            ) : null}
+          </>
+        )}
+      </NavLink>
+    );
+  };
+
   return (
     <aside
-      className={`proton-glass-dark hidden lg:flex flex-col shrink-0 text-[#A0A5AD] transition-all duration-300 relative z-30 select-none my-3.5 ml-3.5 rounded-[28px] overflow-hidden ${
-        isCollapsed ? 'w-20' : 'w-60'
+      className={`hidden lg:flex flex-col shrink-0 select-none transition-[width] duration-300 relative ${
+        isCollapsed ? 'w-[76px]' : 'w-[228px]'
       } ${className}`}
       aria-label="Sidebar Navigation"
     >
-      {/* Seam Collapse/Expand Toggle Button */}
+      {/* Seam collapse toggle */}
       <button
         type="button"
         onClick={onToggleCollapse}
-        className="absolute -right-3.5 top-7 z-40 w-7 h-7 rounded-full bg-[#FCE7F3] text-[#9D174D] border-2 border-[#151619] shadow-md flex items-center justify-center hover:scale-110 active:scale-95 transition-transform cursor-pointer"
+        className="absolute right-[-11px] top-8 z-40 flex h-6 w-6 items-center justify-center rounded-full border border-white/80 bg-white text-[#8A8A87] shadow-[0_6px_18px_-10px_rgba(20,20,18,0.5)] transition-transform hover:scale-110 hover:text-[#151719] active:scale-95 cursor-pointer"
         title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
-        {isCollapsed ? <ChevronRight size={14} strokeWidth={2.5} /> : <ChevronLeft size={14} strokeWidth={2.5} />}
+        {isCollapsed ? <ChevronRight size={13} strokeWidth={2.2} /> : <ChevronLeft size={13} strokeWidth={2.2} />}
       </button>
 
-      {/* Top Brand Wordmark */}
-      <div className="h-20 px-6 flex items-center justify-between">
-        <NavLink to="/" className="flex items-center gap-2.5 group cursor-pointer" aria-label="Proton Home">
-          <div className="w-8 h-8 rounded-full bg-white text-[#151719] flex items-center justify-center font-black text-sm tracking-tighter group-hover:rotate-12 transition-transform">
-            P
-          </div>
-          {!isCollapsed && (
-            <div className="flex items-center gap-1">
-              <span className="font-extrabold text-xl tracking-tight text-white lowercase">
-                proton
-              </span>
-              <span className="w-1.5 h-1.5 rounded-full bg-[#F43F5E]" />
-            </div>
+      {/* Wordmark */}
+      <div className={`flex h-[72px] items-center ${isCollapsed ? 'justify-center px-0' : 'px-4'}`}>
+        <NavLink to="/" className="group flex items-center gap-2" aria-label="Proton home">
+          {isCollapsed ? (
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#151719] text-[13px] font-semibold text-white">
+              p
+            </span>
+          ) : (
+            <span className="text-[20px] font-semibold lowercase tracking-[-0.045em] text-[#111110]">
+              proton
+            </span>
           )}
         </NavLink>
       </div>
 
-      {/* Navigation Categories */}
-      <div className="flex-1 px-3 py-4 space-y-6 overflow-y-auto overflow-x-hidden">
-        {/* General Section */}
+      {/* Navigation */}
+      <nav className={`flex-1 overflow-y-auto overflow-x-hidden pb-2 ${isCollapsed ? 'px-3' : 'px-3'}`}>
         <div className="space-y-1">
-          {!isCollapsed && (
-            <div className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-[#636873]">
-              General
-            </div>
-          )}
-          {generalNav.map((item) => {
-            const active = item.end
-              ? currentPath === item.to
-              : currentPath.startsWith(item.to);
-
-            return (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                className={`relative flex items-center gap-3.5 px-3 py-2.5 rounded-2xl text-xs font-semibold transition-colors duration-150 ${
-                  active ? 'text-white' : 'text-[#A0A5AD] hover:bg-white/5 hover:text-white'
-                } ${isCollapsed ? 'justify-center px-0' : ''}`}
-                title={isCollapsed ? item.label : undefined}
-              >
-                {active && (
-                  <motion.span
-                    layoutId="proton-nav-active"
-                    className="absolute inset-0 rounded-2xl bg-white/10 shadow-xs"
-                    transition={PROTON_SPRING}
-                  />
-                )}
-                {active && !isCollapsed && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-full bg-[#F43F5E]" />
-                )}
-                <item.icon
-                  size={18}
-                  strokeWidth={active ? 2.2 : 1.8}
-                  className={`relative z-10 ${active ? 'text-white' : 'text-[#88909A]'}`}
-                />
-                {!isCollapsed && <span className="relative z-10 truncate">{item.label}</span>}
-              </NavLink>
-            );
-          })}
+          {generalNav.map((item) => renderItem(item, 'proton-pill-active'))}
         </div>
 
-        {/* Tools Section */}
-        <div className="space-y-1">
-          {!isCollapsed && (
-            <div className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-[#636873]">
-              Tools
-            </div>
-          )}
-          {toolsNav.map((item) => {
-            const active = currentPath.startsWith(item.to);
+        <div className="my-4 h-px bg-[#151719]/[0.06]" />
 
-            return (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                className={`relative flex items-center gap-3.5 px-3 py-2.5 rounded-2xl text-xs font-semibold transition-colors duration-150 ${
-                  active ? 'text-white' : 'text-[#A0A5AD] hover:bg-white/5 hover:text-white'
-                } ${isCollapsed ? 'justify-center px-0' : ''}`}
-                title={isCollapsed ? item.label : undefined}
-              >
-                {active && (
-                  <motion.span
-                    layoutId="proton-nav-active"
-                    className="absolute inset-0 rounded-2xl bg-white/10 shadow-xs"
-                    transition={PROTON_SPRING}
-                  />
-                )}
-                {active && !isCollapsed && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-full bg-[#F43F5E]" />
-                )}
-                <item.icon
-                  size={18}
-                  strokeWidth={active ? 2.2 : 1.8}
-                  className={`relative z-10 ${active ? 'text-white' : 'text-[#88909A]'}`}
-                />
-                {!isCollapsed && <span className="relative z-10 truncate">{item.label}</span>}
-              </NavLink>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Bottom Shelf: live system state + Log out */}
-      <div className="p-4 border-t border-[#23252B] space-y-2">
         {!isCollapsed && (
-          <div className="flex items-center gap-2 px-2 py-1.5 rounded-xl bg-white/[0.03] border border-white/5">
-            <LiveDot size={7} />
-            <span className="text-[10px] font-semibold tracking-wide text-[#88909A]">
-              Ambient capture ready
-            </span>
+          <div className="px-3.5 pb-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-[#A5A4A0]">
+            Tools
           </div>
         )}
+        <div className="space-y-1">
+          {toolsNav.map((item) => renderItem(item, 'proton-pill-active-tools'))}
+        </div>
+      </nav>
+
+      {/* Footer */}
+      <div className={`pb-3 ${isCollapsed ? 'px-3' : 'px-3'}`}>
+        {!isCollapsed ? (
+          <div className="relative rounded-[22px] bg-white/70 p-3 shadow-[0_18px_40px_-32px_rgba(20,20,18,0.5)]">
+            <div className="flex items-start justify-between">
+              <span className="rounded-full bg-[#DDF25B] px-2 py-0.5 text-[8.5px] font-bold uppercase tracking-[0.08em] text-[#26320A]">
+                Synthetic
+              </span>
+              <LiveDot size={6} color="#5AC46A" />
+            </div>
+            <p className="mt-2 text-[11px] font-semibold leading-snug text-[#2A2A28]">
+              Validation cohort
+            </p>
+            <p className="mt-0.5 text-[9.5px] leading-relaxed text-[#9A9995]">
+              No real PHI. Every write needs a signature.
+            </p>
+            <NavLink
+              to="/settings"
+              className="mt-2.5 flex items-center justify-center rounded-full bg-[#F1F0ED] py-1.5 text-[10px] font-semibold text-[#3A3A38] transition-colors hover:bg-[#E8E7E4]"
+            >
+              Controls
+            </NavLink>
+          </div>
+        ) : (
+          <NavLink
+            to="/settings"
+            className="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-white/70 text-[#8A8A87]"
+            title="Synthetic controls"
+          >
+            <LiveDot size={7} color="#5AC46A" />
+          </NavLink>
+        )}
+
         <button
           type="button"
           onClick={onLogout}
-          className={`w-full flex items-center gap-3.5 px-3 py-2.5 rounded-2xl text-xs font-semibold text-[#88909A] hover:bg-white/5 hover:text-rose-400 transition-colors cursor-pointer ${
-            isCollapsed ? 'justify-center px-0' : ''
+          className={`mt-2 flex h-10 w-full items-center rounded-full text-[11.5px] font-medium text-[#8A8A87] transition-colors hover:bg-white/60 hover:text-[#C0483F] cursor-pointer ${
+            isCollapsed ? 'justify-center px-0' : 'gap-3 pl-3.5 pr-2'
           }`}
           title="Log out"
         >
-          <LogOut size={18} />
+          <LogOut size={15} />
           {!isCollapsed && <span>Log out</span>}
         </button>
       </div>

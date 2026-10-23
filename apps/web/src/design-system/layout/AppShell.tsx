@@ -89,14 +89,14 @@ export function AppShell({
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className={`relative min-h-screen w-full bg-[#F7F4EE] text-[#151719] flex flex-col font-sans antialiased selection:bg-[#FCE7F3] selection:text-[#9D174D] ${className}`}>
+      <div className={`relative min-h-screen w-full bg-[#EDECEA] text-[#151719] flex flex-col font-sans antialiased selection:bg-[#DDF25B] selection:text-[#26320A] ${className}`}>
 
-      {/* Ambient light field: gives the glass chrome something to refract. */}
+      {/* Ambient light: a soft studio falloff rather than coloured orbs. */}
       <div className="proton-workspace-ambient" aria-hidden="true">
-        <div className="proton-orb -top-32 left-[18%] h-[34rem] w-[34rem] bg-[#DCE7F6]/70" />
-        <div className="proton-orb -right-24 top-24 h-[28rem] w-[28rem] bg-[#F8DDE7]/60" />
-        <div className="proton-orb -left-28 bottom-0 h-[30rem] w-[30rem] bg-[#F6E6CC]/60" />
-        <div className="proton-grid absolute inset-x-0 top-0 h-[38rem]" />
+        <div className="proton-orb -top-56 left-1/2 h-[46rem] w-[52rem] -translate-x-1/2 bg-white/70" />
+        <div className="proton-orb -right-48 top-1/4 h-[34rem] w-[34rem] bg-[#F5E7EA]/45" />
+        <div className="proton-orb -left-48 bottom-0 h-[30rem] w-[30rem] bg-[#E6EDF5]/45" />
+        <div className="proton-grain absolute inset-0" />
       </div>
 
       {/* Desktop Main Application Frame */}
@@ -126,7 +126,7 @@ export function AppShell({
           />
 
           {/* Workspace Body */}
-          <main className={`flex-1 overflow-y-auto px-4 sm:px-8 pb-12 ${fillCanvas ? 'p-0' : fullBleed ? 'p-2' : ''}`}>
+          <main className={`flex-1 overflow-y-auto px-4 sm:px-7 pb-12 ${fillCanvas ? 'p-0' : fullBleed ? 'p-2' : ''}`}>
             <div className="max-w-[1560px] mx-auto">
               <PageTransition routeKey={location.pathname} className="w-full">
                 {children}
@@ -222,32 +222,40 @@ export function AppShell({
             className="fixed inset-0 bg-black/40 backdrop-blur-2xs"
             onClick={() => setIsMobileMenuOpen(false)}
           />
-          <div className="relative w-72 bg-[#151619] text-white h-full flex flex-col shadow-2xl z-10 border-r border-[#23252B] p-5 space-y-6">
-            <div className="flex items-center justify-between pb-3 border-b border-[#23252B]">
+          <div className="relative z-10 flex h-full w-72 flex-col gap-5 bg-[#F4F3F1] p-4 shadow-2xl">
+            <div className="flex items-center justify-between px-1 pb-1">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-full bg-white text-[#151719] flex items-center justify-center font-black text-xs">
-                  P
-                </div>
-                <span className="font-extrabold text-base tracking-tight text-white lowercase">proton</span>
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#151719] text-[13px] font-semibold text-white">
+                  p
+                </span>
+                <span className="text-[19px] font-semibold lowercase tracking-[-0.045em] text-[#111110]">proton</span>
               </div>
               <button
+                type="button"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-1 rounded-lg text-[#88909A] hover:text-white"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-white/80 text-[#6F6F6D] hover:text-[#151719] cursor-pointer"
+                aria-label="Close navigation menu"
               >
-                <X size={18} />
+                <X size={16} />
               </button>
             </div>
 
             <nav className="flex-1 space-y-4 overflow-y-auto">
               <div className="space-y-1">
-                <div className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-[#636873]">General</div>
+                <div className="px-3 pb-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-[#A5A4A0]">Workspace</div>
                 {DEFAULT_GENERAL_NAV.map((item) => (
                   <NavLink
                     key={item.to}
                     to={item.to}
                     end={item.end}
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-[#A0A5AD] hover:bg-white/10 hover:text-white"
+                    className={({ isActive }) =>
+                      `flex h-11 items-center gap-3 rounded-full px-3.5 text-[12.5px] font-medium transition-colors ${
+                        isActive
+                          ? 'bg-white text-[#151719] shadow-[0_10px_30px_-22px_rgba(20,20,18,0.6)]'
+                          : 'text-[#777774] hover:bg-white/60 hover:text-[#151719]'
+                      }`
+                    }
                   >
                     <item.icon size={16} />
                     <span>{item.label}</span>
@@ -256,13 +264,19 @@ export function AppShell({
               </div>
 
               <div className="space-y-1">
-                <div className="px-3 pb-1 text-[10px] font-bold uppercase tracking-wider text-[#636873]">Tools</div>
+                <div className="px-3 pb-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-[#A5A4A0]">Tools</div>
                 {DEFAULT_TOOLS_NAV.map((item) => (
                   <NavLink
                     key={item.to}
                     to={item.to}
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-[#A0A5AD] hover:bg-white/10 hover:text-white"
+                    className={({ isActive }) =>
+                      `flex h-11 items-center gap-3 rounded-full px-3.5 text-[12.5px] font-medium transition-colors ${
+                        isActive
+                          ? 'bg-white text-[#151719] shadow-[0_10px_30px_-22px_rgba(20,20,18,0.6)]'
+                          : 'text-[#777774] hover:bg-white/60 hover:text-[#151719]'
+                      }`
+                    }
                   >
                     <item.icon size={16} />
                     <span>{item.label}</span>
@@ -271,15 +285,23 @@ export function AppShell({
               </div>
             </nav>
 
-            <div className="pt-3 border-t border-[#23252B]">
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-3 py-2 text-xs font-semibold text-rose-400 hover:bg-white/5 rounded-xl cursor-pointer"
-              >
-                <LogOut size={16} />
-                <span>Log out</span>
-              </button>
+            <div className="rounded-[22px] bg-white/70 p-3">
+              <span className="rounded-full bg-[#DDF25B] px-2 py-0.5 text-[8.5px] font-bold uppercase tracking-[0.08em] text-[#26320A]">
+                Synthetic
+              </span>
+              <p className="mt-2 text-[11px] font-semibold text-[#2A2A28]">Validation cohort</p>
+              <p className="mt-0.5 text-[9.5px] leading-relaxed text-[#9A9995]">
+                No real PHI. Every write needs a signature.
+              </p>
             </div>
+
+            <button
+              onClick={handleLogout}
+              className="flex h-10 w-full items-center gap-3 rounded-full px-3.5 text-[11.5px] font-medium text-[#8A8A87] hover:bg-white/60 hover:text-[#C0483F] cursor-pointer"
+            >
+              <LogOut size={15} />
+              <span>Log out</span>
+            </button>
           </div>
         </div>
       )}
