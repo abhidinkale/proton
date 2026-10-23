@@ -3607,3 +3607,132 @@ html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) :is(
     scroll-behavior: auto !important;
   }
 }
+
+/* ============================================================================
+   PROTON GLASS
+   A restrained frosted-glass layer: Apple-ish material, clinical restraint.
+   Rules:
+     - Glass is for chrome and preview surfaces, never for signed clinical facts.
+     - Every glass surface has a solid fallback when backdrop-filter is missing.
+     - Borders are hairline white + a 1px inner top highlight (specular edge).
+   ========================================================================== */
+
+:root {
+  --proton-glass-bg: rgba(255, 255, 255, 0.58);
+  --proton-glass-bg-strong: rgba(255, 255, 255, 0.78);
+  --proton-glass-border: rgba(255, 255, 255, 0.72);
+  --proton-glass-shadow:
+    0 1px 1px rgba(16, 18, 22, 0.03),
+    0 24px 70px -28px rgba(16, 18, 22, 0.30),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --proton-glass-dark-bg: rgba(15, 17, 21, 0.72);
+  --proton-glass-dark-border: rgba(255, 255, 255, 0.09);
+}
+
+.proton-glass,
+.proton-glass-strong,
+.proton-glass-dark {
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid var(--proton-glass-border);
+  box-shadow: var(--proton-glass-shadow);
+}
+
+.proton-glass {
+  background: var(--proton-glass-bg);
+}
+
+.proton-glass-strong {
+  background: var(--proton-glass-bg-strong);
+}
+
+.proton-glass-dark {
+  background: var(--proton-glass-dark-bg);
+  border-color: var(--proton-glass-dark-border);
+  box-shadow:
+    0 24px 70px -28px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Specular top edge — the highlight that makes glass read as a material. */
+.proton-specular {
+  position: relative;
+}
+
+.proton-specular::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.55) 0%,
+    rgba(255, 255, 255, 0.12) 18%,
+    rgba(255, 255, 255, 0) 42%
+  );
+  opacity: 0.55;
+}
+
+/* Frosted toolbar: for sticky chrome over a scrolling canvas. */
+.proton-toolbar {
+  background: rgba(247, 244, 238, 0.72);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow:
+    0 1px 0 rgba(17, 19, 21, 0.035),
+    0 12px 32px -24px rgba(17, 19, 21, 0.28);
+}
+
+/* Soft light fields that give the glass something to refract. */
+.proton-orb {
+  position: absolute;
+  border-radius: 9999px;
+  pointer-events: none;
+  filter: blur(90px);
+}
+
+.proton-workspace-ambient {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.proton-workspace-ambient .proton-orb {
+  opacity: 0.42;
+}
+
+/* Fine dotted grid; fades out so it never competes with content. */
+.proton-grid {
+  background-image:
+    linear-gradient(to right, rgba(17, 19, 21, 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(17, 19, 21, 0.045) 1px, transparent 1px);
+  background-size: 64px 64px;
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 10%, transparent 72%);
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 10%, transparent 72%);
+}
+
+/* Segmented control, iOS-style. */
+.proton-segment {
+  background: rgba(17, 19, 21, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: inset 0 1px 2px rgba(17, 19, 21, 0.04);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .proton-glass,
+  .proton-glass-strong {
+    background: rgba(255, 255, 255, 0.95);
+  }
+
+  .proton-glass-dark {
+    background: #15171b;
+  }
+
+  .proton-toolbar {
+    background: #f7f4ee;
+  }
+}

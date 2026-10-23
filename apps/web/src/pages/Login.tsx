@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { 
-  ShieldCheck, ArrowRight, Database, 
-  Cpu, AlertCircle, Stethoscope, X, Sparkles
+import { Link } from 'react-router-dom';
+import {
+  ShieldCheck, ArrowRight, Database,
+  Cpu, AlertCircle, Stethoscope, X, Sparkles, Lock
 } from 'lucide-react';
 import { authService } from '../services/auth';
+import { LiveDot, Reveal } from '../design-system/motion/primitives';
 
 export default function Login() {
   const [email, setEmail] = useState('admin@example.com');
@@ -61,349 +63,324 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-12 bg-[#F8F8F6] text-[#121417] font-sans antialiased">
-      
-      {/* ── LEFT HERO PANEL (7 Cols on Desktop) ── */}
-      <div className="lg:col-span-7 p-8 sm:p-12 lg:p-16 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-[#EAE8E3] bg-gradient-to-b from-white via-[#FAF9F5] to-[#F4F3EE] relative overflow-hidden">
-        
-        {/* Subtle architectural ambient background */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-100/30 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-80 h-80 bg-amber-100/30 rounded-full blur-3xl pointer-events-none" />
+    <div className="relative min-h-screen overflow-hidden bg-[#F5F3EE] text-[#111315] font-sans antialiased selection:bg-[#111315] selection:text-white">
 
-        {/* Brand Header */}
-        <div className="relative z-10 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#111315] text-white flex items-center justify-center font-bold text-sm tracking-tight shadow-xs">
-              P+
-            </div>
-            <div>
-              <span className="font-bold tracking-tight text-base text-[#111315] block leading-none">
-                Proton<span className="text-[#0F766E]">.</span>
-              </span>
-              <span className="font-mono text-[10px] text-[#6E767E] tracking-wider uppercase">
-                Clinical Operating System
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setShowHowItWorks(true)}
-              className="px-3 py-1.5 bg-white border border-[#EAE8E3] hover:border-[#111315] text-xs font-medium text-[#50575F] hover:text-[#111315] rounded-xl transition-all cursor-pointer shadow-2xs"
-            >
-              How It Works
-            </button>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-emerald-200 text-emerald-800 rounded-full text-xs font-mono font-medium shadow-2xs">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span>SYSTEM READY</span>
-            </span>
-          </div>
-        </div>
-
-        {/* Center Philosophy & Architecture */}
-        <div className="relative z-10 my-12 lg:my-16 space-y-8 max-w-xl">
-          <div className="space-y-4">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-medium bg-[#111315]/5 text-[#50575F] border border-[#111315]/10">
-              <Sparkles size={13} className="text-amber-600" />
-              <span>AI-NATIVE CLINICAL INFRASTRUCTURE</span>
-            </span>
-
-            <h1 className="text-3xl sm:text-5xl font-semibold tracking-tight text-[#111315] leading-[1.12]">
-              The intelligent OS for high-acuity clinical care.
-            </h1>
-
-            <p className="text-sm sm:text-base text-[#5A6065] leading-relaxed">
-              Proton unifies longitudinal FHIR records, ambient audio synthesis, multimodal vision, and dynamic patient intake under deterministic clinical safety guardrails.
-            </p>
-          </div>
-
-          {/* Core System Pillars */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-            <div className="p-4 bg-white/80 backdrop-blur-xs rounded-2xl border border-[#EAE8E3] space-y-1.5 shadow-2xs">
-              <div className="w-7 h-7 rounded-lg bg-sky-50 text-sky-700 flex items-center justify-center">
-                <Database size={15} />
-              </div>
-              <h4 className="text-xs font-semibold text-[#111315]">FHIR R4 Atomic Persistence</h4>
-              <p className="text-[11px] text-[#6E767E] leading-relaxed">
-                Atomic transactions with tamper-evident cryptographic provenance.
-              </p>
-            </div>
-
-            <div className="p-4 bg-white/80 backdrop-blur-xs rounded-2xl border border-[#EAE8E3] space-y-1.5 shadow-2xs">
-              <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
-                <ShieldCheck size={15} />
-              </div>
-              <h4 className="text-xs font-semibold text-[#111315]">Deterministic Safety Rails</h4>
-              <p className="text-[11px] text-[#6E767E] leading-relaxed">
-                Zero-tolerance hard stops for cross-reactivity and contraindications.
-              </p>
-            </div>
-
-            <div className="p-4 bg-white/80 backdrop-blur-xs rounded-2xl border border-[#EAE8E3] space-y-1.5 shadow-2xs">
-              <div className="w-7 h-7 rounded-lg bg-violet-50 text-violet-700 flex items-center justify-center">
-                <Cpu size={15} />
-              </div>
-              <h4 className="text-xs font-semibold text-[#111315]">Physician Authority</h4>
-              <p className="text-[11px] text-[#6E767E] leading-relaxed">
-                AI advises with transparent evidence. Clinicians confirm and decide.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom Synthetic Compliance Card */}
-        <div className="relative z-10 p-4 bg-white/80 border border-amber-200/80 rounded-2xl flex items-start gap-3 shadow-2xs">
-          <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-          <div className="text-xs text-[#50575F] leading-relaxed">
-            <span className="font-semibold text-[#111315]">Synthetic Clinical Validation:</span>{' '}
-            Pre-configured with synthetic evaluation cohorts (Eleanor Vance, Arthur Pendelton). Patient/tenant isolation enforced.
-          </div>
-        </div>
+      {/* Ambient light field */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+        <div className="proton-drift proton-drift-a absolute -top-48 left-1/2 h-[44rem] w-[44rem] -translate-x-1/2 rounded-full blur-3xl" />
+        <div className="proton-drift proton-drift-b absolute -right-40 top-24 h-[32rem] w-[32rem] rounded-full blur-3xl" />
+        <div className="proton-drift proton-drift-c absolute -left-36 bottom-0 h-[30rem] w-[30rem] rounded-full blur-3xl" />
+        <div className="proton-grid absolute inset-x-0 top-0 h-[46rem]" />
+        <div className="proton-grain absolute inset-0" />
       </div>
 
-      {/* ── RIGHT SIGN-IN DESK (5 Cols on Desktop) ── */}
-      <div className="lg:col-span-5 p-8 sm:p-12 lg:p-16 flex flex-col justify-center bg-[#F8F8F6]">
-        <div className="max-w-md w-full mx-auto space-y-7">
-          
-          <div>
-            <span className="font-mono text-xs uppercase tracking-wider text-[#0F766E] font-medium">
-              PHYSICIAN DESK ACCESS
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#111315] mt-1">
-              Sign in to Proton
-            </h2>
-            <p className="text-xs sm:text-sm text-[#6E767E] mt-1">
-              Select your credential pass to enter the clinical workspace.
-            </p>
-          </div>
+      <div className="relative z-10 grid min-h-screen grid-cols-1 lg:grid-cols-12">
 
-          {error && (
-            <div className="p-3.5 bg-red-50 border border-red-200 text-red-800 text-xs rounded-xl font-medium">
-              {error}
-            </div>
-          )}
+        {/* ── LEFT: the argument ─────────────────────────────────────────── */}
+        <div className="flex flex-col justify-between gap-12 px-6 pb-10 pt-8 sm:px-10 lg:col-span-7 lg:px-14 lg:py-12">
 
-          {/* Quick 1-Click Evaluation Bypass Banner */}
-          <div className="p-3 bg-emerald-50/80 border border-emerald-200 rounded-xl flex items-center justify-between gap-3 shadow-2xs">
-            <div className="flex items-center gap-2 text-xs text-emerald-950 font-medium">
-              <Sparkles size={15} className="text-[#0F766E] shrink-0" />
-              <span>Attending Pass Ready</span>
-            </div>
-            <button
-              type="button"
-              onClick={handle1ClickLaunch}
-              className="px-3.5 py-1.5 bg-[#0F766E] hover:bg-[#0B5C56] text-white rounded-lg text-xs font-bold cursor-pointer shadow-xs transition-all flex items-center gap-1.5"
-            >
-              <span>Instant Bypass →</span>
-            </button>
-          </div>
+          {/* Brand */}
+          <div className="flex items-center justify-between gap-3">
+            <Link to="/" className="flex items-center gap-2.5 group" aria-label="Proton home">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#111315] text-sm font-bold text-white">
+                p
+              </span>
+              <span className="flex items-baseline gap-2">
+                <span className="text-[17px] font-semibold lowercase tracking-[-0.03em]">proton</span>
+                <span className="hidden text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7A8188] sm:inline">
+                  Clinical OS
+                </span>
+              </span>
+            </Link>
 
-          {/* Mode Switcher */}
-          <div className="grid grid-cols-2 p-1 bg-[#ECEAE3] rounded-xl text-xs font-medium">
-            <button
-              type="button"
-              onClick={() => setAuthMode('synthetic')}
-              className={`py-2 px-3 rounded-lg transition-all cursor-pointer ${
-                authMode === 'synthetic' 
-                  ? 'bg-white text-[#111315] font-semibold shadow-2xs' 
-                  : 'text-[#6E767E] hover:text-[#111315]'
-              }`}
-            >
-              1-Click Attending Pass
-            </button>
-            <button
-              type="button"
-              onClick={() => setAuthMode('medplum')}
-              className={`py-2 px-3 rounded-lg transition-all cursor-pointer ${
-                authMode === 'medplum' 
-                  ? 'bg-white text-[#111315] font-semibold shadow-2xs' 
-                  : 'text-[#6E767E] hover:text-[#111315]'
-              }`}
-            >
-              Medplum Credentials
-            </button>
-          </div>
-
-          {/* 1-Click Instant Attending Launch Card */}
-          <div className="p-6 bg-white border border-[#EAE8E3] rounded-2xl space-y-4 shadow-sm hover:border-[#D5D2C9] transition-colors">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-emerald-50 text-[#0F766E] border border-emerald-100 flex items-center justify-center font-bold">
-                  <Stethoscope size={20} />
-                </div>
-                <div>
-                  <div className="font-semibold text-sm text-[#111315]">Dr. Aris Thorne, MD</div>
-                  <div className="text-xs text-[#6E767E]">Attending Physician • Cardiology & IM</div>
-                </div>
-              </div>
-              <span className="font-mono text-[9px] px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-md font-semibold">
-                PRE-VERIFIED
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowHowItWorks(true)}
+                className="rounded-full border border-white/70 bg-white/55 px-3 py-1.5 text-[11.5px] font-medium text-[#4C535A] backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:bg-white/80 hover:text-[#111315] active:translate-y-0 cursor-pointer"
+              >
+                How it works
+              </button>
+              <span className="hidden items-center gap-1.5 rounded-full border border-emerald-300/60 bg-emerald-100/50 px-2.5 py-1 text-[9.5px] font-semibold uppercase tracking-[0.12em] text-emerald-800 sm:inline-flex">
+                <LiveDot size={5} color="#0F9D67" />
+                System ready
               </span>
             </div>
+          </div>
 
-            <div className="p-3 rounded-xl bg-[#F8F8F6] border border-[#EAE8E3] text-xs text-[#50575F] space-y-1">
-              <div className="flex items-center justify-between">
-                <span>Active Cohort:</span>
-                <span className="font-mono font-medium text-[#111315]">Eleanor Vance (68F), Arthur Pendelton (74M)</span>
+          {/* Statement */}
+          <Reveal className="max-w-xl">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/55 px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#4C535A] backdrop-blur-xl">
+              <Sparkles className="h-3 w-3 text-[#0F4C81]" />
+              AI-native clinical infrastructure
+            </span>
+
+            <h1 className="mt-6 text-[34px] font-semibold leading-[1.05] tracking-[-0.045em] sm:text-[48px] lg:text-[56px]">
+              The intelligent OS for
+              <br />
+              <span className="bg-gradient-to-r from-[#111315] via-[#2E3A48] to-[#0F4C81] bg-clip-text text-transparent">
+                high-acuity care.
+              </span>
+            </h1>
+
+            <p className="mt-5 max-w-lg text-[14px] leading-relaxed text-[#5A6065] sm:text-[15px]">
+              Proton unifies longitudinal FHIR records, ambient audio synthesis, multimodal
+              vision, and patient intake under deterministic clinical safety guardrails.
+            </p>
+          </Reveal>
+
+          {/* Pillars */}
+          <Reveal delay={0.1}>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="proton-glass proton-specular rounded-2xl p-4">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#EDF3F9] text-[#0F4C81]">
+                  <Database size={15} />
+                </span>
+                <h2 className="mt-2.5 text-[12.5px] font-semibold">FHIR R4 atomic persistence</h2>
+                <p className="mt-1 text-[11px] leading-relaxed text-[#6E757C]">
+                  Transactions with tamper-evident provenance.
+                </p>
               </div>
-              <div className="flex items-center justify-between">
-                <span>Authorizations:</span>
-                <span className="font-medium text-[#111315]">Full SOAP, Vision, Rx Sign-Off</span>
+
+              <div className="proton-glass proton-specular rounded-2xl p-4">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-red-50 text-red-600">
+                  <ShieldCheck size={15} />
+                </span>
+                <h2 className="mt-2.5 text-[12.5px] font-semibold">Deterministic safety rails</h2>
+                <p className="mt-1 text-[11px] leading-relaxed text-[#6E757C]">
+                  Hard stops for cross-reactivity and contraindications.
+                </p>
+              </div>
+
+              <div className="proton-glass proton-specular rounded-2xl p-4">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#EFEDFA] text-[#5B4BC4]">
+                  <Cpu size={15} />
+                </span>
+                <h2 className="mt-2.5 text-[12.5px] font-semibold">Physician authority</h2>
+                <p className="mt-1 text-[11px] leading-relaxed text-[#6E757C]">
+                  AI advises with evidence. Clinicians decide.
+                </p>
               </div>
             </div>
+          </Reveal>
 
-            <button
-              type="button"
-              onClick={handle1ClickLaunch}
-              disabled={isLoading}
-              className="w-full py-3 px-4 bg-[#111315] hover:bg-[#262A2E] text-white text-xs font-semibold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs disabled:opacity-60"
-            >
-              <span>{isLoading ? 'Initializing Clinical Workspace...' : '1-Click Launch Doctor Desk'}</span>
-              <ArrowRight size={14} />
-            </button>
+          {/* Compliance note */}
+          <div className="flex items-start gap-2.5 rounded-2xl border border-amber-300/50 bg-amber-100/40 px-4 py-3 backdrop-blur-xl">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+            <p className="text-[11.5px] leading-relaxed text-[#5A6065]">
+              <span className="font-semibold text-[#111315]">Synthetic clinical validation.</span>{' '}
+              Pre-configured with evaluation cohorts (Eleanor Vance, Arthur Pendelton). Patient
+              and tenant isolation enforced.
+            </p>
           </div>
+        </div>
 
-          {/* Standard Credential Form (when requested) */}
-          {authMode === 'medplum' && (
-            <form onSubmit={handleClinicalSignIn} className="space-y-4 pt-2">
-              <div>
-                <label htmlFor="login-email" className="block text-xs font-medium text-[#50575F] mb-1.5">
-                  Clinician Email / Practitioner ID
-                </label>
-                <input
-                  id="login-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-white border border-[#EAE8E3] rounded-xl text-sm focus:outline-none focus:border-[#111315] transition-colors"
-                  required
-                />
-              </div>
+        {/* ── RIGHT: the desk ────────────────────────────────────────────── */}
+        <div className="flex items-center justify-center px-6 pb-14 pt-4 sm:px-10 lg:col-span-5 lg:px-12 lg:py-12">
+          <Reveal delay={0.06} className="w-full max-w-md">
+            <div className="proton-glass-strong proton-specular rounded-[28px] p-6 shadow-[0_40px_120px_-45px_rgba(16,18,22,0.45)] sm:p-8">
 
               <div>
-                <label htmlFor="login-password" className="block text-xs font-medium text-[#50575F] mb-1.5">
-                  Password
-                </label>
-                <input
-                  id="login-password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-white border border-[#EAE8E3] rounded-xl text-sm focus:outline-none focus:border-[#111315] transition-colors"
-                  required
-                />
+                <span className="font-mono-clinical text-[10px] font-semibold uppercase tracking-[0.16em] text-[#0F4C81]">
+                  Physician desk access
+                </span>
+                <h2 className="mt-1.5 text-[24px] font-semibold tracking-[-0.035em] sm:text-[28px]">
+                  Sign in to Proton
+                </h2>
+                <p className="mt-1 text-[12.5px] text-[#6E757C]">
+                  Select a credential pass to enter the clinical workspace.
+                </p>
               </div>
 
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full py-3 px-4 bg-[#111315] hover:bg-[#262A2E] text-white text-xs font-semibold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs disabled:opacity-60"
-              >
-                <span>{isLoading ? 'Verifying...' : 'Sign in with Credentials'}</span>
-                <ArrowRight size={14} />
-              </button>
-            </form>
-          )}
+              {error && (
+                <div className="mt-5 rounded-xl border border-red-200 bg-red-50/90 px-3.5 py-3 text-[11.5px] font-medium text-red-800">
+                  {error}
+                </div>
+              )}
 
-          <div className="text-center">
-            <span className="text-[11px] text-[#8C949D]">
-              Proton Core Clinical Operating System • v2.4 (Safety Enforced)
-            </span>
-          </div>
+              {/* Attending pass banner */}
+              <div className="mt-5 flex items-center justify-between gap-3 rounded-2xl border border-emerald-300/60 bg-emerald-50/70 px-3.5 py-2.5">
+                <span className="flex items-center gap-1.5 text-[11.5px] font-medium text-emerald-900">
+                  <Sparkles size={14} className="text-emerald-700" />
+                  Attending pass ready
+                </span>
+                <button
+                  type="button"
+                  onClick={handle1ClickLaunch}
+                  className="flex items-center gap-1 rounded-full bg-emerald-700 px-3 py-1.5 text-[11px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-emerald-800 active:translate-y-0 cursor-pointer"
+                >
+                  Instant pass
+                  <ArrowRight size={12} />
+                </button>
+              </div>
 
+              {/* Mode switcher */}
+              <div className="proton-segment mt-5 grid grid-cols-2 gap-1 rounded-2xl p-1 text-[11.5px] font-medium">
+                <button
+                  type="button"
+                  onClick={() => setAuthMode('synthetic')}
+                  aria-pressed={authMode === 'synthetic'}
+                  className={`rounded-xl px-3 py-2 transition-all cursor-pointer ${
+                    authMode === 'synthetic'
+                      ? 'bg-white text-[#111315] font-semibold shadow-[0_4px_14px_-6px_rgba(16,18,22,0.35)]'
+                      : 'text-[#6E757C] hover:text-[#111315]'
+                  }`}
+                >
+                  1-click attending pass
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAuthMode('medplum')}
+                  aria-pressed={authMode === 'medplum'}
+                  className={`rounded-xl px-3 py-2 transition-all cursor-pointer ${
+                    authMode === 'medplum'
+                      ? 'bg-white text-[#111315] font-semibold shadow-[0_4px_14px_-6px_rgba(16,18,22,0.35)]'
+                      : 'text-[#6E757C] hover:text-[#111315]'
+                  }`}
+                >
+                  Medplum credentials
+                </button>
+              </div>
+
+              {/* Attending card */}
+              <div className="mt-4 rounded-2xl border border-white/80 bg-white/70 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-11 w-11 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
+                      <Stethoscope size={19} />
+                    </span>
+                    <div>
+                      <div className="text-[13px] font-semibold">Dr. Aris Thorne, MD</div>
+                      <div className="text-[11px] text-[#7A8188]">Attending · Cardiology &amp; IM</div>
+                    </div>
+                  </div>
+                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 font-mono-clinical text-[8.5px] font-semibold uppercase tracking-[0.08em] text-emerald-800">
+                    Pre-verified
+                  </span>
+                </div>
+
+                <dl className="mt-3 space-y-1 rounded-xl border border-black/[0.05] bg-white/50 px-3 py-2.5 text-[11px]">
+                  <div className="flex items-center justify-between gap-3">
+                    <dt className="text-[#7A8188]">Active cohort</dt>
+                    <dd className="text-right font-medium text-[#111315]">Vance (68F), Pendelton (74M)</dd>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <dt className="text-[#7A8188]">Authorizations</dt>
+                    <dd className="text-right font-medium text-[#111315]">SOAP · Vision · Rx sign-off</dd>
+                  </div>
+                </dl>
+
+                <button
+                  type="button"
+                  onClick={handle1ClickLaunch}
+                  disabled={isLoading}
+                  className="group mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-[#111315] px-4 py-3 text-[12.5px] font-semibold text-white shadow-[0_16px_34px_-18px_rgba(17,19,21,0.75)] transition-all hover:-translate-y-0.5 hover:bg-[#24272C] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+                >
+                  <span>{isLoading ? 'Initializing workspace…' : 'Launch doctor desk'}</span>
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                </button>
+              </div>
+
+              {/* Credential form */}
+              {authMode === 'medplum' && (
+                <form onSubmit={handleClinicalSignIn} className="mt-4 space-y-3.5">
+                  <div>
+                    <label htmlFor="login-email" className="mb-1.5 block text-[11px] font-medium text-[#50575F]">
+                      Clinician email / practitioner ID
+                    </label>
+                    <input
+                      id="login-email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full rounded-xl border border-white/80 bg-white/80 px-3.5 py-2.5 text-[13px] outline-none transition-colors focus:border-[#0F4C81]/40 focus:ring-2 focus:ring-[#0F4C81]/15"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="login-password" className="mb-1.5 block text-[11px] font-medium text-[#50575F]">
+                      Password
+                    </label>
+                    <input
+                      id="login-password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full rounded-xl border border-white/80 bg-white/80 px-3.5 py-2.5 text-[13px] outline-none transition-colors focus:border-[#0F4C81]/40 focus:ring-2 focus:ring-[#0F4C81]/15"
+                      required
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="flex w-full items-center justify-center gap-2 rounded-full bg-[#111315] px-4 py-3 text-[12.5px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-[#24272C] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+                  >
+                    <span>{isLoading ? 'Verifying…' : 'Sign in with credentials'}</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </button>
+                </form>
+              )}
+
+              <p className="mt-5 flex items-center justify-center gap-1.5 text-center text-[10px] text-[#8A9199]">
+                <Lock className="h-2.5 w-2.5" />
+                Proton core clinical OS · v2.4 · safety enforced
+              </p>
+            </div>
+          </Reveal>
         </div>
       </div>
 
       {/* ── HOW IT WORKS MODAL ── */}
       {showHowItWorks && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-[#EAE8E3]">
-            <div className="flex items-start justify-between">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#111315]/35 p-4 backdrop-blur-md">
+          <div className="proton-glass-strong proton-specular max-h-[88vh] w-full max-w-2xl overflow-y-auto rounded-[26px] p-6 shadow-2xl sm:p-8">
+            <div className="flex items-start justify-between gap-4">
               <div>
-                <span className="font-mono text-xs uppercase text-[#0F766E] font-medium">
-                  CLINICAL WORKFLOW LIFECYCLE
+                <span className="font-mono-clinical text-[10px] font-semibold uppercase tracking-[0.16em] text-[#0F4C81]">
+                  Clinical workflow lifecycle
                 </span>
-                <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-[#111315] mt-1">
-                  How Proton Works in Practice
+                <h3 className="mt-1.5 text-[22px] font-semibold tracking-[-0.035em]">
+                  How Proton works in practice
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setShowHowItWorks(false)}
-                className="p-1.5 text-[#6E767E] hover:text-[#111315] hover:bg-[#F4F3EE] rounded-xl transition-colors cursor-pointer"
+                className="rounded-full p-1.5 text-[#6E757C] transition-colors hover:bg-black/5 hover:text-[#111315] cursor-pointer"
+                aria-label="Close"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div className="p-3.5 bg-[#F8F8F6] border border-[#EAE8E3] rounded-xl space-y-1">
-                <div className="font-bold text-[#111315] flex items-center gap-1.5">
-                  <span className="w-4 h-4 rounded-full bg-[#111315] text-white flex items-center justify-center text-[10px]">1</span>
-                  Pre-Consultation Brief
+            <div className="mt-6 grid grid-cols-1 gap-3 text-[11.5px] sm:grid-cols-2">
+              {[
+                ['1', 'Pre-consultation brief', 'Computes 10-second temporal deltas from confirmed FHIR before entering the exam room.'],
+                ['2', 'Ambient dialogue & scribe', 'Real-time microphone stream synchronized with conversational medical models.'],
+                ['3', 'Structured note synthesis', 'Generates SOAP documentation marked with explicit AI advisory badges.'],
+                ['4', 'Deterministic safety engine', 'Cross-reactivity and contraindication checks before any prescription.'],
+                ['5', 'Multimodal vision & docs', 'Analysis of clinical photos and lab PDFs with Accept / Modify / Reject controls.'],
+                ['6', 'Audit & commit', 'Explicit physician signature required to commit atomic changes into FHIR R4.']
+              ].map(([step, title, body]) => (
+                <div key={step} className="rounded-2xl border border-white/80 bg-white/60 p-3.5">
+                  <div className="flex items-center gap-1.5 font-semibold text-[#111315]">
+                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#111315] text-[9px] text-white">
+                      {step}
+                    </span>
+                    {title}
+                  </div>
+                  <p className="mt-1 leading-relaxed text-[#6E757C]">{body}</p>
                 </div>
-                <div className="text-[#6E767E] leading-relaxed">
-                  Computes 10-second temporal deltas from confirmed FHIR before entering exam room.
-                </div>
-              </div>
-
-              <div className="p-3.5 bg-[#F8F8F6] border border-[#EAE8E3] rounded-xl space-y-1">
-                <div className="font-bold text-[#111315] flex items-center gap-1.5">
-                  <span className="w-4 h-4 rounded-full bg-[#111315] text-white flex items-center justify-center text-[10px]">2</span>
-                  Ambient Dialogue & Scribe
-                </div>
-                <div className="text-[#6E767E] leading-relaxed">
-                  Real-time microphone stream synchronized with conversational medical models.
-                </div>
-              </div>
-
-              <div className="p-3.5 bg-[#F8F8F6] border border-[#EAE8E3] rounded-xl space-y-1">
-                <div className="font-bold text-[#111315] flex items-center gap-1.5">
-                  <span className="w-4 h-4 rounded-full bg-[#111315] text-white flex items-center justify-center text-[10px]">3</span>
-                  Structured Note Synthesis
-                </div>
-                <div className="text-[#6E767E] leading-relaxed">
-                  Generates SOAP documentation marked with explicit AI advisory badges.
-                </div>
-              </div>
-
-              <div className="p-3.5 bg-[#F8F8F6] border border-[#EAE8E3] rounded-xl space-y-1">
-                <div className="font-bold text-[#111315] flex items-center gap-1.5">
-                  <span className="w-4 h-4 rounded-full bg-[#111315] text-white flex items-center justify-center text-[10px]">4</span>
-                  Deterministic Safety Engine
-                </div>
-                <div className="text-[#6E767E] leading-relaxed">
-                  Real-time cross-reactivity and contraindication check before any prescription.
-                </div>
-              </div>
-
-              <div className="p-3.5 bg-[#F8F8F6] border border-[#EAE8E3] rounded-xl space-y-1">
-                <div className="font-bold text-[#111315] flex items-center gap-1.5">
-                  <span className="w-4 h-4 rounded-full bg-[#111315] text-white flex items-center justify-center text-[10px]">5</span>
-                  Multimodal Vision & Docs
-                </div>
-                <div className="text-[#6E767E] leading-relaxed">
-                  Deep analysis of clinical photos and lab PDFs with explicit Accept/Modify/Reject controls.
-                </div>
-              </div>
-
-              <div className="p-3.5 bg-[#F8F8F6] border border-[#EAE8E3] rounded-xl space-y-1">
-                <div className="font-bold text-[#111315] flex items-center gap-1.5">
-                  <span className="w-4 h-4 rounded-full bg-[#111315] text-white flex items-center justify-center text-[10px]">6</span>
-                  Cryptographic Audit & Commit
-                </div>
-                <div className="text-[#6E767E] leading-relaxed">
-                  Explicit physician signature required to commit atomic changes into FHIR R4.
-                </div>
-              </div>
+              ))}
             </div>
 
-            <div className="flex justify-end pt-2 border-t border-[#EAE8E3]">
+            <div className="mt-6 flex justify-end border-t border-black/[0.06] pt-4">
               <button
                 type="button"
                 onClick={() => setShowHowItWorks(false)}
-                className="px-5 py-2 bg-[#111315] hover:bg-[#272B30] text-white text-xs font-semibold rounded-xl transition-all cursor-pointer shadow-xs"
+                className="rounded-full bg-[#111315] px-5 py-2.5 text-[12px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-[#272B30] active:translate-y-0 cursor-pointer"
               >
                 Close
               </button>

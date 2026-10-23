@@ -62,7 +62,7 @@ export function Sidebar({
 }: SidebarProps) {
   return (
     <aside
-      className={`hidden lg:flex flex-col shrink-0 bg-[#151619] text-[#A0A5AD] transition-all duration-300 relative z-30 select-none my-3.5 ml-3.5 rounded-[28px] shadow-lg border border-white/5 overflow-hidden ${
+      className={`proton-glass-dark hidden lg:flex flex-col shrink-0 text-[#A0A5AD] transition-all duration-300 relative z-30 select-none my-3.5 ml-3.5 rounded-[28px] overflow-hidden ${
         isCollapsed ? 'w-20' : 'w-60'
       } ${className}`}
       aria-label="Sidebar Navigation"

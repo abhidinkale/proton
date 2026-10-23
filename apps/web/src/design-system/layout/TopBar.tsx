@@ -28,7 +28,7 @@ export function TopBar({
 }: TopBarProps) {
   const navigate = useNavigate();
   return (
-    <header className={`h-20 px-4 sm:px-8 flex items-center justify-between gap-4 shrink-0 z-20 ${className}`}>
+    <header className={`proton-toolbar h-20 px-4 sm:px-8 flex items-center justify-between gap-4 shrink-0 z-20 ${className}`}>
       {/* Mobile menu toggle & Global Pill Search */}
       <div className="flex items-center gap-3 flex-1 max-w-2xl min-w-0">
         <button

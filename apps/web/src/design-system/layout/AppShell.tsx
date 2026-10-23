@@ -89,10 +89,18 @@ export function AppShell({
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className={`min-h-screen w-full bg-[#F7F4EE] text-[#151719] flex flex-col font-sans antialiased selection:bg-[#FCE7F3] selection:text-[#9D174D] ${className}`}>
-      
+      <div className={`relative min-h-screen w-full bg-[#F7F4EE] text-[#151719] flex flex-col font-sans antialiased selection:bg-[#FCE7F3] selection:text-[#9D174D] ${className}`}>
+
+      {/* Ambient light field: gives the glass chrome something to refract. */}
+      <div className="proton-workspace-ambient" aria-hidden="true">
+        <div className="proton-orb -top-32 left-[18%] h-[34rem] w-[34rem] bg-[#DCE7F6]/70" />
+        <div className="proton-orb -right-24 top-24 h-[28rem] w-[28rem] bg-[#F8DDE7]/60" />
+        <div className="proton-orb -left-28 bottom-0 h-[30rem] w-[30rem] bg-[#F6E6CC]/60" />
+        <div className="proton-grid absolute inset-x-0 top-0 h-[38rem]" />
+      </div>
+
       {/* Desktop Main Application Frame */}
-      <div className="flex-1 flex overflow-hidden min-h-screen">
+      <div className="relative z-10 flex-1 flex overflow-hidden min-h-screen">
         
         {/* Left Persistent Navigation Rail */}
         <Sidebar
