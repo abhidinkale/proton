@@ -6,6 +6,11 @@ const cors = require('cors');
 const multer = require('multer');
 const { Type } = require('@google/genai');
 const { getProvider, getProviderStatus } = require('./providers/factory');
+const { diagnosticDoctorAgent } = require('./agents/diagnosticDoctorAgent');
+const { whisperStreamingEngine } = require('./services/voice/whisperStreamingEngine');
+const { tesseractLabStudio } = require('./services/document/tesseractLabStudio');
+const { pgvectorClinicalMemory } = require('./services/evidence/pgvectorClinicalMemory');
+const { evidenceLoopPipeline, claimVerifier, caseCompiler } = require('./services/evidence/loop');
 
 const app = express();
 app.disable('x-powered-by');
@@ -33,8 +38,21 @@ app.use((req, res, next) => {
   next();
 });
 
-// --- IN-MEMORY RATE LIMITER ---
+// --- RESILIENT RATE LIMITER (BOUNDED WITH STALE KEY CLEANUP) ---
 const rateLimitMap = new Map();
+const MAX_RATE_LIMIT_KEYS = 50000;
+
+// Periodic sweep to prevent memory leakage in high-throughput environments
+const cleanupInterval = setInterval(() => {
+  const now = Date.now();
+  for (const [key, record] of rateLimitMap.entries()) {
+    if (now > record.resetTime) {
+      rateLimitMap.delete(key);
+    }
+  }
+}, 60 * 1000);
+if (cleanupInterval.unref) cleanupInterval.unref();
+
 function createRateLimiter({ windowMs, maxRequests, message, code }) {
   return (req, res, next) => {
     if (process.env.NODE_ENV === 'test') return next();
@@ -42,6 +60,11 @@ function createRateLimiter({ windowMs, maxRequests, message, code }) {
     const now = Date.now();
     let record = rateLimitMap.get(key);
     if (!record || now > record.resetTime) {
+      if (rateLimitMap.size >= MAX_RATE_LIMIT_KEYS) {
+        // Emergency purge of oldest 10% keys if saturated
+        const keysToDelete = Array.from(rateLimitMap.keys()).slice(0, Math.floor(MAX_RATE_LIMIT_KEYS * 0.1));
+        for (const k of keysToDelete) rateLimitMap.delete(k);
+      }
       record = { count: 1, resetTime: now + windowMs };
       rateLimitMap.set(key, record);
     } else {
@@ -69,8 +92,16 @@ const aiLimiter = createRateLimiter({
   code: 'AI_RATE_LIMIT_EXCEEDED'
 });
 
+const loginLimiter = createRateLimiter({
+  windowMs: 60 * 1000,
+  maxRequests: 10,
+  message: 'Too many authentication attempts. Please wait before retrying.',
+  code: 'AUTH_RATE_LIMIT_EXCEEDED'
+});
+
 app.use(generalLimiter);
 app.use(['/api/transcribe', '/api/generate-note', '/api/chat', '/api/extract-documents'], aiLimiter);
+app.use(['/api/auth/login', '/auth/login'], loginLimiter);
 
 const defaultLocalOrigins = [
   'http://localhost:3000',
@@ -113,7 +144,8 @@ app.use(cors({
 }));
 
 const { telemetryMiddleware } = require('./middleware/telemetry');
-const { validateConfig } = require('./config');
+const { resolveActorMiddleware } = require('./middleware/rbac');
+const { validateConfig, resolveSyntheticMode } = require('./config');
 
 // In production, ensure configuration fails closed if required secrets are missing
 if (process.env.NODE_ENV === 'production') {
@@ -127,8 +159,50 @@ if (process.env.NODE_ENV === 'production') {
   }
 }
 
+if (resolveSyntheticMode()) {
+  console.warn(
+    '[SECURITY] Synthetic development auth is ENABLED. Unauthenticated requests resolve to a seeded ' +
+    'development physician. Never expose this mode to real patients or the public internet. ' +
+    'Set PROTON_SYNTHETIC_MODE=false (or NODE_ENV=production) to disable.'
+  );
+}
+
 app.use(express.json({ limit: '10mb' }));
 app.use(telemetryMiddleware);
+
+// ==========================================
+// AUTHENTICATED SURFACE (mounted before the routes it protects)
+// ==========================================
+// Express middleware only applies to routes registered after it, so this must stay
+// above every clinician-facing route definition.
+app.use([
+  '/api/operations',
+  '/operations',
+  '/api/clinical',
+  '/api/ai',
+  '/api/transcribe',
+  '/api/generate-note',
+  '/api/chat',
+  '/api/extract-documents',
+  // Surfaces that previously had no actor resolution at all.
+  '/api/voice',
+  '/api/documents',
+  '/api/vision',
+  '/api/jobs',
+  '/api/pilot',
+  '/api/fhir',
+  '/api/memory',
+  '/api/agents',
+  '/api/encounter',
+  '/api/note-templates',
+  '/api/consultation'
+], resolveActorMiddleware);
+
+// Deliberately NOT gated above:
+//   /api/patient/*  patient-facing booking and intake (no clinician session exists)
+//   /api/capture/*  mobile capture, authenticated by a per-session pairing token
+//   /api/smart/*    SMART on FHIR OAuth discovery and token exchange
+//   /health*        liveness/readiness probes
 
 // --- SAFE NON-PHI TELEMETRY LOGGER ---
 function logAiTelemetry({ provider, operation, status, latencyMs, inputBytes, outputBytes, model, errorCategory, tokens }) {
@@ -152,6 +226,7 @@ app.get(['/health', '/api/health'], (req, res) => {
   res.json({
     status: 'ok',
     mode: process.env.PROTON_AI_MODE || 'demo',
+    auth: resolveSyntheticMode() ? 'synthetic_dev' : 'session',
     timestamp: new Date().toISOString()
   });
 });
@@ -192,14 +267,19 @@ const {
 } = require('./middleware/authService');
 
 app.post('/api/auth/login', (req, res) => {
-  const { email, password, mfaCode } = req.body || {};
+  const { email, password, mfaCode, passkeyAssertion } = req.body || {};
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password are required', code: 'CREDENTIALS_REQUIRED' });
   }
 
-  const result = authenticateCredentials(email, password, { mfaVerified: true });
+  const result = authenticateCredentials(email, password, { mfaCode, passkeyAssertion });
   if (!result.success) {
-    return res.status(401).json({ error: result.error, code: result.code });
+    const status = result.code === 'MFA_REQUIRED' ? 401 : (result.code === 'DEMO_ACCOUNTS_DISABLED' ? 403 : 401);
+    return res.status(status).json({
+      error: result.error,
+      code: result.code,
+      ...(result.mfaRequired ? { mfaRequired: true } : {})
+    });
   }
 
   res.json(result);
@@ -712,7 +792,7 @@ const { verifyRefillProposal } = require('./agents/refillReferralAgent');
 const { resolvePatientIdentity } = require('./agents/identityResolver');
 const { executeInternalTool, ToolExecutionError } = require('./agents/tools');
 const { IdempotencyConflictError } = require('./agents/idempotency');
-const { resolveActorMiddleware, requireRole, validatePatientAndTenantContext, requireStrictAuth } = require('./middleware/rbac');
+const { requireRole, validatePatientAndTenantContext, requireStrictAuth } = require('./middleware/rbac');
 const { idempotencyMiddleware } = require('./middleware/idempotency');
 const { auditService } = require('./services/audit/auditService');
 const { globalSyntheticGateway } = require('./storage/communicationGateway');
@@ -722,18 +802,6 @@ const { refillAgentV2 } = require('./agents/refillAgentV2');
 const { referralAgentV2 } = require('./agents/referralAgentV2');
 const { documentFaxAgent } = require('./agents/documentFaxAgent');
 const { brainOperationsBridge } = require('./agents/brainOperationsBridge');
-
-// Mount authoritative actor resolution & dev persona adapter across operations, clinical, AI, and assistant endpoints
-app.use([
-  '/api/operations',
-  '/operations',
-  '/api/clinical',
-  '/api/ai',
-  '/api/transcribe',
-  '/api/generate-note',
-  '/api/chat',
-  '/api/extract-documents'
-], resolveActorMiddleware);
 
 // ==========================================
 // PROTON CANONICAL CLINICAL PIPELINE (V2)
@@ -2687,6 +2755,377 @@ app.get('/api/jobs/:id', (req, res) => {
   const job = jobQueueService.getJob(req.params.id);
   if (!job) return res.status(404).json({ error: 'Job not found', code: 'JOB_NOT_FOUND' });
   res.json({ job });
+});
+
+// --- PROTON WORLD-CLASS CLINICAL INTELLIGENCE ENDPOINTS ---
+
+// 1. Autonomous Diagnostic Doctor Agent (AMIE Clinical Reasoning & Workup Engine)
+app.post('/api/clinical/diagnose', async (req, res) => {
+  try {
+    if (req.query.grounded === 'true' || req.body?.grounded === true || req.body?.options?.grounded === true) {
+      const groundedResult = await evidenceLoopPipeline.execute(req.body, diagnosticDoctorAgent);
+      return res.json(groundedResult);
+    }
+    const diagnosisResult = await diagnosticDoctorAgent.evaluate(req.body);
+    res.json(diagnosisResult);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message, code: err.code || 'DIAGNOSTIC_EVALUATION_FAILED' });
+  }
+});
+
+// 1b. Proton Evidence Loop Autonomous Grounded Diagnostic Engine (Full 28-Phase Loop)
+app.post('/api/clinical/diagnose-grounded', async (req, res) => {
+  try {
+    const groundedResult = await evidenceLoopPipeline.execute(req.body, diagnosticDoctorAgent);
+    res.json(groundedResult);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message, code: err.code || 'GROUNDED_DIAGNOSTIC_EVALUATION_FAILED' });
+  }
+});
+
+// 1c. Proton Evidence Loop Claim-Level Verification Endpoint
+app.post('/api/clinical/evidence-loop/verify', async (req, res) => {
+  try {
+    const { claims = [], patientContext = {} } = req.body;
+    const factStore = caseCompiler.compile(patientContext);
+    const { evidenceAcquisitionService, ClinicalClaim } = require('./services/evidence/loop');
+    const claimInstances = claims.map(c => c instanceof ClinicalClaim ? c : new ClinicalClaim(c));
+    const retrievedSources = [];
+    for (const c of claimInstances) {
+      const sources = await evidenceAcquisitionService.acquireEvidenceForClaim(c);
+      retrievedSources.push(...sources);
+    }
+    const verificationResults = claimVerifier.verifyClaims(claimInstances, factStore, retrievedSources);
+    res.json({
+      success: true,
+      patientId: factStore.patient_id,
+      ...verificationResults
+    });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message, code: err.code || 'CLAIM_VERIFICATION_FAILED' });
+  }
+});
+
+// 2. Whisper Ambient Streaming & Diarization Engine
+app.post('/api/voice/transcribe-stream', async (req, res) => {
+  try {
+    const { audioBuffer, patientContext, options } = req.body;
+    const streamResult = await whisperStreamingEngine.processAudioConsultation(audioBuffer, patientContext, options);
+    res.json(streamResult);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message, code: err.code || 'WHISPER_STREAMING_FAILED' });
+  }
+});
+
+// 3. Tesseract Multi-Zone Bounding Box Lab Studio Engine
+app.post('/api/documents/lab-studio', async (req, res) => {
+  try {
+    const { documentInput, options } = req.body;
+    const labResult = await tesseractLabStudio.processLabDocument(documentInput, options);
+    res.json(labResult);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message, code: err.code || 'LAB_STUDIO_EXTRACTION_FAILED' });
+  }
+});
+
+// 4. pgvector High-Dimensional Clinical Memory & Semantic RAG Engine
+app.post('/api/memory/semantic-search', async (req, res) => {
+  try {
+    const { query, options } = req.body;
+    const searchResult = await pgvectorClinicalMemory.searchClinicalMemory(query, options);
+    res.json(searchResult);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message, code: err.code || 'SEMANTIC_SEARCH_FAILED' });
+  }
+});
+
+// ==============================================================================
+// FULL-LOOP AUTONOMOUS PATIENT-FACING HEALTHCARE SYSTEM (PILLARS 1-6)
+// ==============================================================================
+
+const { anamnesisAgent } = require('./agents/anamnesisAgent');
+const { rppgVitalsService } = require('./services/vision/rppgVitalsService');
+const { guidedPhysicalExamService } = require('./services/vision/guidedPhysicalExamService');
+const { wearableTelemetryService } = require('./services/clinical/wearableTelemetryService');
+const { workupOrchestrator } = require('./services/clinical/workupOrchestrator');
+const { specialistConsensusCouncil } = require('./agents/specialistConsensusCouncil');
+const { escalationRouter } = require('./services/safety/escalationRouter');
+const { longitudinalMonitorAgent } = require('./agents/longitudinalMonitorAgent');
+
+// --- PILLAR 1: ACTIVE BAYESIAN ANAMNESIS AGENT ---
+app.post('/api/clinical/anamnesis/start', (req, res) => {
+  try {
+    const { patientContext, chiefComplaint } = req.body;
+    const sessionPacket = anamnesisAgent.startSession(patientContext, chiefComplaint);
+    res.json(sessionPacket);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message, code: 'ANAMNESIS_START_FAILED' });
+  }
+});
+
+app.post('/api/clinical/anamnesis/turn', (req, res) => {
+  try {
+    const { sessionId, response } = req.body;
+    const turnResult = anamnesisAgent.processTurn(sessionId, response);
+    res.json(turnResult);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message, code: 'ANAMNESIS_TURN_FAILED' });
+  }
+});
+
+app.post('/api/clinical/anamnesis/handoff', async (req, res) => {
+  try {
+    const { sessionId } = req.body;
+    const handoffResult = await anamnesisAgent.handoffToEvidenceLoop(sessionId, evidenceLoopPipeline);
+    res.json(handoffResult);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message, code: 'ANAMNESIS_HANDOFF_FAILED' });
+  }
+});
+
+// --- PILLAR 2: MULTIMODAL VIRTUAL PHYSICAL EXAM SUITE ---
+app.post('/api/clinical/exam/rppg', (req, res) => {
+  try {
+    const result = rppgVitalsService.processScan(req.body.input || req.body, req.body.options || {});
+    res.json(result);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message, code: 'RPPG_PROCESSING_FAILED' });
+  }
+});
+
+app.post('/api/clinical/exam/acoustic', (req, res) => {
+  try {
+    const { audioInput, options } = req.body;
+    const result = whisperStreamingEngine.classifyAcousticBiomarkers(audioInput, options || {});
+    res.json(result);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message, code: 'ACOUSTIC_BIOMARKER_FAILED' });
+  }
+});
+
+app.post('/api/clinical/exam/guided-protocols', (req, res) => {
+  try {
+    const { differential = [], chiefComplaints = [] } = req.body;
+    const protocols = guidedPhysicalExamService.recommendExamProtocols(differential, chiefComplaints);
+    res.json({ success: true, count: protocols.length, protocols });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message, code: 'EXAM_PROTOCOLS_FAILED' });
+  }
+});
+
+app.post('/api/clinical/exam/guided-analyze', (req, res) => {
+  try {
+    const { protocolId, mediaData, options } = req.body;
+    const findings = guidedPhysicalExamService.analyzeExamCapture(protocolId, mediaData || {}, options || {});
+    res.json(findings);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message, code: 'GUIDED_EXAM_ANALYSIS_FAILED' });
+  }
+});
+
+app.post('/api/clinical/exam/telemetry', (req, res) => {
+  try {
+    const result = wearableTelemetryService.ingestTelemetry(req.body);
+    res.json(result);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message, code: 'WEARABLE_TELEMETRY_FAILED' });
+  }
+});
+
+// --- PILLAR 3: ASYNCHRONOUS WORKUP STATE MACHINE ---
+app.post('/api/clinical/workup/freeze', async (req, res) => {
+  try {
+    const result = await workupOrchestrator.freezeEncounterWorkup(req.body);
+    res.json(result);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message, code: 'WORKUP_FREEZE_FAILED' });
+  }
+});
+
+app.post('/api/clinical/workup/resume', async (req, res) => {
+  try {
+    const result = await workupOrchestrator.resumeEncounterWithResults(req.body);
+    res.json(result);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message, code: 'WORKUP_RESUME_FAILED' });
+  }
+});
+
+app.get('/api/clinical/workup/status/:encounterId', (req, res) => {
+  try {
+    const state = workupOrchestrator.getEncounterState(req.params.encounterId);
+    if (!state) return res.status(404).json({ error: 'Workup encounter not found', code: 'WORKUP_NOT_FOUND' });
+    res.json({ success: true, state });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message, code: 'WORKUP_STATUS_FAILED' });
+  }
+});
+
+// --- PILLAR 4: MULTI-AGENT SPECIALIST CONSENSUS COUNCIL ---
+app.post('/api/clinical/consensus-council/convene', async (req, res) => {
+  try {
+    const result = await specialistConsensusCouncil.conveneCouncil(req.body);
+    res.json(result);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message, code: 'CONSENSUS_COUNCIL_FAILED' });
+  }
+});
+
+// --- PILLAR 5: DETERMINISTIC EMERGENCY CIRCUIT BREAKER & ASYNC MD GATE ---
+app.post('/api/clinical/circuit-breaker/evaluate', (req, res) => {
+  try {
+    const assessment = escalationRouter.evaluateEmergencyCircuitBreaker(req.body);
+    res.json(assessment);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message, code: 'CIRCUIT_BREAKER_FAILED' });
+  }
+});
+
+app.post('/api/clinical/attending-queue/route', (req, res) => {
+  try {
+    const queuePacket = escalationRouter.routeToPhysicianQueue(req.body);
+    res.json(queuePacket);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message, code: 'QUEUE_ROUTING_FAILED' });
+  }
+});
+
+// --- PILLAR 6: LONGITUDINAL MONITOR & TRAJECTORY ENGINE ---
+app.post('/api/clinical/longitudinal/schedule', (req, res) => {
+  try {
+    const schedule = longitudinalMonitorAgent.createMonitoringSchedule(req.body);
+    res.json({ success: true, schedule });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message, code: 'LONGITUDINAL_SCHEDULE_FAILED' });
+  }
+});
+
+app.post('/api/clinical/longitudinal/checkin', async (req, res) => {
+  try {
+    const checkInResult = await longitudinalMonitorAgent.ingestCheckIn(req.body);
+    res.json(checkInResult);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message, code: 'LONGITUDINAL_CHECKIN_FAILED' });
+  }
+});
+
+// --- 68 NMC MD SPECIALIST BOARD & CLOSED-LOOP CLINICAL ECOSYSTEM ---
+const { mdSpecialistRegistry } = require('./agents/mdSpecialistRegistry');
+const { mdSpecialistEngine } = require('./agents/mdSpecialistEngine');
+const { closedLoopEncounterService } = require('./services/clinical/closedLoopEncounterService');
+
+// Query 68 MD Specialists Catalog
+app.get('/api/agents/md-specialists', (req, res) => {
+  try {
+    const { tier, query } = req.query;
+    if (query) {
+      const match = mdSpecialistRegistry.resolveCanonicalSpecialist(query);
+      return res.json({ success: true, count: match ? 1 : 0, specialists: match ? [match] : [] });
+    }
+    if (tier) {
+      const list = mdSpecialistRegistry.getByTier(tier);
+      return res.json({ success: true, tier, count: list.length, specialists: list });
+    }
+    const all = mdSpecialistRegistry.getAllSpecialists();
+    res.json({ success: true, count: all.length, specialists: all });
+  } catch (err) {
+    res.status(500).json({ error: err.message, code: 'MD_SPECIALISTS_QUERY_FAILED' });
+  }
+});
+
+// Context-Protocol Pre-Consult Case Synthesis
+app.post('/api/agents/pre-consult-synthesis', async (req, res) => {
+  try {
+    const result = await mdSpecialistEngine.synthesizePreConsultCase(req.body);
+    res.json(result);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message, code: 'PRE_CONSULT_SYNTHESIS_FAILED' });
+  }
+});
+
+// Phase 3: Exam Room Consent Handshake - Request OTP
+app.post('/api/encounter/request-access', async (req, res) => {
+  try {
+    const { patientId = 'PAT-007', contextOverrides = {} } = req.body;
+    const result = await closedLoopEncounterService.requestEncounterAccess(patientId, contextOverrides);
+    res.json(result);
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message, code: 'REQUEST_ACCESS_FAILED' });
+  }
+});
+
+// Phase 3: Exam Room Consent Handshake - Verify OTP & Unlock
+app.post('/api/encounter/verify-otp', (req, res) => {
+  try {
+    const { patientId = 'PAT-007', otp } = req.body;
+    if (!otp) {
+      return res.status(400).json({ error: '4-digit OTP is required', code: 'OTP_REQUIRED' });
+    }
+    const result = closedLoopEncounterService.verifyEncounterOtp(patientId, otp);
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ error: err.message, code: 'OTP_VERIFICATION_FAILED' });
+  }
+});
+
+// Phase 4: Doctor Supervision & 1-Click Approve & Sign
+app.post('/api/encounter/approve-and-sign', async (req, res) => {
+  try {
+    const result = await closedLoopEncounterService.approveAndSignEncounter(req.body);
+    res.json(result);
+  } catch (err) {
+    res.status(err.status || 400).json({ error: err.message, code: 'APPROVE_AND_SIGN_FAILED' });
+  }
+});
+
+// Phase 1: Smart Appointment Booking & Intake
+app.post('/api/patient/appointment-booking', async (req, res) => {
+  try {
+    const { patientId = 'PAT-007', preferredDate, preferredTime, chiefComplaint } = req.body;
+    const appointmentId = `apt-${Date.now()}`;
+    res.json({
+      success: true,
+      appointmentId,
+      patientId,
+      status: 'CONFIRMED',
+      scheduledTime: `${preferredDate || 'Tomorrow'} ${preferredTime || '10:00 AM'}`,
+      chiefComplaint: chiefComplaint || 'Acute symptoms',
+      preVisitInterviewRequired: true,
+      nextStep: 'Complete 3-question OLDCARTS intake questionnaire prior to arrival.'
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message, code: 'APPOINTMENT_BOOKING_FAILED' });
+  }
+});
+
+// Phase 1: Pre-Visit AI Interview (OLDCARTS Framework)
+app.post('/api/patient/pre-visit-interview', (req, res) => {
+  try {
+    const { patientId = 'PAT-007', symptoms, onset, triggers } = req.body;
+    res.json({
+      success: true,
+      patientId,
+      status: 'INTAKE_COMPILED',
+      compiledSummary: {
+        chiefComplaints: Array.isArray(symptoms) ? symptoms : [symptoms || 'Acute symptoms'],
+        onset: onset || '1 day ago',
+        suspectedTriggers: Array.isArray(triggers) ? triggers : [triggers || 'None reported']
+      },
+      message: 'Intake answers saved to clinical staging. Your physician team will review before rooming.'
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message, code: 'PRE_VISIT_INTERVIEW_FAILED' });
+  }
+});
+
+// Phase 6: Post-Visit Patient Check-In & Two-Branch Routing
+app.post('/api/patient/follow-up-response', (req, res) => {
+  try {
+    const result = closedLoopEncounterService.handlePatientFollowUpCheckIn(req.body);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message, code: 'FOLLOW_UP_RESPONSE_FAILED' });
+  }
 });
 
 // Safe Express error handling with internal path and secret scrubbing

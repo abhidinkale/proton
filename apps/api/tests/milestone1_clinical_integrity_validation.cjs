@@ -283,24 +283,80 @@ async function runIntegrityTests() {
   console.log('\n--- SUITE 4: FHIR Atomic Transaction Failure & Rollback ---');
 
   await testAsync('Atomic transaction failure rolls back cleanly and leaves no partial resources', async () => {
+    fhirService.adapter.setSyntheticStore({
+      resourceType: 'Patient',
+      id: 'patient-rollback-01',
+      name: [{ given: ['Rollback'], family: 'Patient' }]
+    });
+
     const bundleWithFault = {
       resourceType: 'Bundle',
       type: 'transaction',
       id: 'bundle-fault-test',
       entry: [
-        { resource: { resourceType: 'Encounter', id: 'enc-will-rollback-1', status: 'finished' } },
-        { resource: { resourceType: 'SIMULATED_TRANSACTION_FAULT', id: 'faulty-res' } } // Injected fault
+        {
+          resource: {
+            resourceType: 'Encounter',
+            id: 'enc-will-rollback-1',
+            status: 'finished',
+            subject: { reference: 'Patient/patient-rollback-01' }
+          }
+        },
+        {
+          resource: {
+            resourceType: 'Observation',
+            id: 'obs-will-fail-1',
+            status: 'final',
+            subject: { reference: 'Patient/patient-rollback-01' },
+            code: { text: 'Fault injection' }
+          }
+        }
       ]
     };
 
-    await assert.rejects(
-      async () => fhirService.executeTransaction(bundleWithFault),
-      (err) => err.message.includes('Simulated atomic transaction failure')
-    );
+    // The transaction pre-validates every entry before writing, so an invalid
+    // resource never reaches persistence. To exercise the rollback path we must
+    // inject a failure during the write phase, after the Encounter was committed.
+    const adapter = fhirService.adapter;
+    const originalPersist = adapter.persistResource.bind(adapter);
+    adapter.persistResource = async (resource, options = {}) => {
+      if (resource.resourceType === 'Observation') {
+        throw new Error('Simulated persistence failure on second resource');
+      }
+      return originalPersist(resource, options);
+    };
+
+    try {
+      await assert.rejects(
+        () => fhirService.executeTransaction(bundleWithFault),
+        (err) => err.message.includes('Simulated persistence failure')
+      );
+    } finally {
+      adapter.persistResource = originalPersist;
+    }
 
     // Verify Encounter was NOT partially stored
     const checkEncounter = await fhirService.adapter.getResource('Encounter', 'enc-will-rollback-1');
     assert.strictEqual(checkEncounter, null, 'Partial resource must NOT exist in store after atomic failure');
+  });
+
+  await testAsync('Atomic transaction pre-validation rejects invalid resources before any write', async () => {
+    const invalidBundle = {
+      resourceType: 'Bundle',
+      type: 'transaction',
+      id: 'bundle-invalid-test',
+      entry: [
+        { resource: { resourceType: 'Encounter', id: 'enc-invalid-1', status: 'finished' } }
+      ]
+    };
+
+    await assert.rejects(
+      () => fhirService.executeTransaction(invalidBundle),
+      (err) => err.message.includes('requires valid subject reference')
+    );
+
+    const persisted = await fhirService.adapter.getResource('Encounter', 'enc-invalid-1');
+    assert.strictEqual(persisted, null, 'Invalid resource must never be written to the store');
   });
 
   // --- SUITE 5: Audit Integrity & Failure Logging ---

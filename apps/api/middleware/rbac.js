@@ -47,6 +47,7 @@ const CONTROLLED_DEV_PERSONAS = {
 };
 
 const { verifySessionToken } = require('./authService');
+const { resolveSyntheticMode } = require('../config');
 
 /**
  * Resolves the authenticated actor, tenant, and role.
@@ -60,9 +61,7 @@ const { verifySessionToken } = require('./authService');
  *   - Falls back to controlled development personas adapter only when NODE_ENV !== 'production'.
  */
 function resolveActorMiddleware(req, res, next) {
-  const isDevAllowed = process.env.NODE_ENV !== 'production' && 
-                       process.env.PROTON_ENV !== 'private-beta' && 
-                       process.env.PROTON_ENV !== 'production';
+  const isDevAllowed = resolveSyntheticMode();
 
   // Strictly strip and discard any browser-injected or spoofed actor headers
   delete req.headers['x-proton-actor-id'];

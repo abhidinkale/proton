@@ -38,6 +38,7 @@ huggingface/
 *.mp3
 *.ogg
 *.flac
+*.wav
 test_consultation.m4a
 
 # 4. Dependencies & Package Manager Dumps
@@ -61,8 +62,10 @@ build/
 *.sqlite
 *.sqlite3
 *.db
+*.db-wal
+*.db-shm
 apps/api/data/uploads/
-apps/api/data/*.db
+apps/api/data/*.db*
 .cache/
 .vite/
 .turbo/
@@ -96,3 +99,8 @@ apps/api/test_models.cjs
 apps/api/update_*.cjs
 apps/api/apps/
 .vercel
+
+# 9. Generated Tool Output & Repository Snapshots
+repomix-output.xml
+repomix-output.*.xml
+*.repomix.xml

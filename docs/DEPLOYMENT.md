@@ -96,6 +96,19 @@ Configure these in the Vercel Project Settings for **`apps/api`**:
 | `GEMINI_API_KEY` | **Yes** | `AIzaSy...` | Private Google Gemini API key (server-side secret). |
 | `GEMINI_MODEL` | Optional | `gemini-3.8-flash` | Gemini model identifier (defaults to `gemini-3.8-flash`). |
 | `CORS_ALLOWED_ORIGINS` | **Yes** | `https://proton-web.vercel.app` | Comma-separated list of allowed frontend origins (e.g. `https://proton-web.vercel.app,https://*-proton.vercel.app`). Wildcard `*` for all origins is strictly disallowed. |
+| `PROTON_AUTH_SECRET` | **Yes** | `openssl rand -base64 48` | HMAC key for clinical session tokens. 32+ chars, not the dev default. The API refuses to boot without it. |
+| `INTERNAL_AGENT_SECRET` | **Yes** | `openssl rand -base64 32` | Shared secret for internal tool invocation. 16+ chars, not the dev default. |
+| `PROTON_SYNTHETIC_MODE` | **Yes** | `false` | Must be `false` in production. When true, unauthenticated requests resolve to a seeded development physician. Production refuses to boot if set true. |
+| `PROTON_ALLOW_DEMO_ACCOUNTS` | Optional | `false` | Enables the hardcoded evaluation accounts. Never enable in production. |
+| `PROTON_REQUIRE_MFA` | Optional | `true` | Requires an MFA challenge on `/api/auth/login`. |
+| `MEDPLUM_TOKEN` | If `PROTON_FHIR_PERSISTENCE_MODE=medplum` | server token | Server-side FHIR credential. |
+
+> [!WARNING]
+> **Strict-mode client gap.** Outside synthetic mode the API now rejects anonymous
+> clinician traffic (`401 AUTHENTICATION_REQUIRED`). The web client does not yet
+> send a Proton session token with its API calls, so clinician screens will fail
+> closed until a single authenticated API client (or a Medplum→Proton token
+> exchange) is wired. See [`VALIDATION.md`](./VALIDATION.md#what-is-not-covered).
 
 ---
 

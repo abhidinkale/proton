@@ -16,9 +16,18 @@
 
 const crypto = require('crypto');
 const { distributedStateManager } = require('../services/distributed/distributedStateManager');
+const { resolveSyntheticMode } = require('../config');
 
 function getAuthSecret() {
-  return process.env.PROTON_AUTH_SECRET || 'proton-private-beta-auth-secret-change-in-prod-2026';
+  const configured = process.env.PROTON_AUTH_SECRET;
+  if (!configured) {
+    if (process.env.NODE_ENV === 'production') {
+      // Fail closed: never sign clinical session tokens with a known default in production.
+      throw new Error('FATAL: PROTON_AUTH_SECRET must be set in production. Refusing to sign session tokens.');
+    }
+    return 'dev-only-insecure-proton-session-secret';
+  }
+  return configured;
 }
 
 // In-memory session tracking and revocation store
@@ -228,7 +237,7 @@ function touchSession(sessionKey) {
  * Supports TOTP codes and WebAuthn / Passkey assertion verification.
  */
 function verifyMfaChallenge(actorId, challengeInput = {}) {
-  const { code, passkeyAssertion, method = 'passkey' } = challengeInput;
+  const { code, passkeyAssertion, method } = challengeInput;
 
   if (method === 'passkey' || passkeyAssertion) {
     // In production, verifies WebAuthn challenge signature using FIDO2 public key
@@ -242,7 +251,9 @@ function verifyMfaChallenge(actorId, challengeInput = {}) {
   }
 
   if (method === 'totp' || code) {
-    // Deterministic 6-digit TOTP validation
+    // SYNTHETIC ONLY: accepts any non-zero six-digit code. Replace with a real
+    // RFC 6238 TOTP verification (and per-actor secret provisioning) before MFA
+    // is used to protect anything other than evaluation data.
     if (typeof code === 'string' && /^\d{6}$/.test(code) && code !== '000000') {
       return { verified: true, method: 'totp', verifiedAt: new Date().toISOString() };
     }
@@ -302,6 +313,19 @@ function authenticateCredentials(email, password, options = {}) {
     return { success: false, error: 'Email and password are required', code: 'CREDENTIALS_REQUIRED' };
   }
 
+  // The hardcoded accounts below are synthetic evaluation fixtures. They must never
+  // authenticate a production deployment unless an operator explicitly opts in.
+  const demoAccountsEnabled =
+    resolveSyntheticMode() || process.env.PROTON_ALLOW_DEMO_ACCOUNTS === 'true';
+
+  if (!demoAccountsEnabled) {
+    return {
+      success: false,
+      error: 'Synthetic demo credentials are disabled in this environment. Authenticate through the configured identity provider.',
+      code: 'DEMO_ACCOUNTS_DISABLED'
+    };
+  }
+
   const cleanEmail = String(email).trim().toLowerCase();
   const inputHash = crypto.createHash('sha256').update(String(password)).digest('hex');
 
@@ -317,8 +341,28 @@ function authenticateCredentials(email, password, options = {}) {
     return { success: false, error: 'Invalid credentials or password mismatch', code: 'INVALID_CREDENTIALS' };
   }
 
+  // MFA is mandatory only when the deployment enables it; a missing challenge fails closed.
+  const mfaRequired = process.env.PROTON_REQUIRE_MFA === 'true';
+  if (mfaRequired) {
+    const challenge = verifyMfaChallenge(account.actorId, {
+      code: options.mfaCode,
+      passkeyAssertion: options.passkeyAssertion
+    });
+    if (!challenge.verified) {
+      return {
+        success: false,
+        error: 'Multi-factor authentication is required for this account.',
+        code: 'MFA_REQUIRED',
+        mfaRequired: true
+      };
+    }
+  }
+
   // Generate session token
-  const token = createSessionToken(account, 24, options);
+  const token = createSessionToken(account, 24, {
+    mfaVerified: mfaRequired || options.mfaVerified === true,
+    mfaMethod: mfaRequired ? 'totp_or_passkey' : 'not_configured'
+  });
 
   return {
     success: true,
@@ -330,6 +374,7 @@ function authenticateCredentials(email, password, options = {}) {
       tenantId: account.tenantId,
       npi: account.npi || null
     },
+    mfaRequired,
     expiresInSeconds: 24 * 3600
   };
 }

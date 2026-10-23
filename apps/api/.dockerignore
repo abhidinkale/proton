@@ -1,0 +1,25 @@
+# Never bake local configuration, secrets, dependencies, or test fixtures into a runtime image.
+node_modules/
+**/node_modules/
+
+.env
+.env.*
+!.env.example
+
+.vercel/
+apps/
+tests/
+test_*.cjs
+update_*.cjs
+
+data/uploads/
+data/*.db*
+*.log
+*.zip
+*.tar
+*.tar.gz
+
+.DS_Store
+.git/
+.gitignore
+coverage/

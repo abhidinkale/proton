@@ -1,0 +1,24 @@
+# Keep the build context small and free of local secrets/fixtures.
+node_modules/
+dist/
+
+.env
+.env.*
+!.env.example
+
+tests/
+test*.cjs
+test*.js
+run_*.cjs
+create_*.cjs
+
+*.wav
+*.m4a
+*.png
+!public/**/*.png
+!src/assets/**/*.png
+
+.DS_Store
+.git/
+.gitignore
+vite.config.ts.timestamp-*

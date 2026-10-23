@@ -102,10 +102,17 @@ PORT=3002
 PROTON_AI_MODE=demo
 PROTON_AI_PROVIDER=demo
 CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost:5173
+# Local development only: resolve unauthenticated requests to a seeded physician.
+# Never enable this on a public deployment.
+PROTON_SYNTHETIC_MODE=true
 # Optional: Set when testing live AI
 # GEMINI_API_KEY=your-gemini-key
 # XAI_API_KEY=your-grok-key
 ```
+
+Production deployments additionally require strong `PROTON_AUTH_SECRET` and
+`INTERNAL_AGENT_SECRET` values; the API refuses to boot without them. See
+[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
 
 ### 5. Run the Application
 In separate terminals:
@@ -126,27 +133,23 @@ Open `http://localhost:3001` in your browser.
 
 ## Automated Test Verification
 
-Proton includes automated end-to-end test suites powered by Puppeteer:
+The gated suite is hermetic: it needs no API keys, no local model, and no running
+server. See [`docs/VALIDATION.md`](docs/VALIDATION.md) for exactly what is and is
+not covered.
 
 ```bash
-# Run Web TypeScript & Vite Production Build
-cd apps/web && npm run build
+# Web type-check and production build
+npm --prefix apps/web run build
 
-# Run Core Clinical End-to-End Suite
-node apps/web/tests/e2e_suite.cjs
+# All deterministic API + clinical safety suites (37 suites)
+npm --prefix apps/api test
 
-# Run Clinical Brain & Temporal Trajectory Suite (15 Phases)
-node apps/web/tests/clinical_brain_e2e.cjs
-
-# Run Doctor Command Center Suite
-node apps/web/tests/command_center_e2e.cjs
-
-# Run Clinical Safety & Verification Suite
-node apps/web/tests/safety_e2e.cjs
-
-# Run Structured Prescription & PDF Export Suite
-node apps/web/tests/prescription_e2e.cjs
+# One suite, e.g. the security matrix
+npm --prefix apps/api test -- --filter=milestone6
 ```
+
+`apps/web/tests/*.cjs` are legacy manual browser scripts that require `puppeteer`
+and a running web/API stack. They are not part of CI.
 
 ---
 
@@ -164,12 +167,11 @@ Detailed step-by-step deployment and clinician invitation procedures are documen
 
 ## Project Documentation Directory
 
-- [`docs/BETA_READINESS.md`](docs/BETA_READINESS.md) — Private beta readiness audit scorecard and gap analysis.
-- [`docs/PHYSICIAN_VALIDATION_PROTOCOL.md`](docs/PHYSICIAN_VALIDATION_PROTOCOL.md) — 14-section validation test protocol for practicing physicians.
-- [`docs/PHYSICIAN_VALIDATION_METRICS.md`](docs/PHYSICIAN_VALIDATION_METRICS.md) — Objective timings, editing rates, trust Likert scales, and observer scoring rubric.
-- [`docs/PHYSICIAN_VALIDATION_READINESS.md`](docs/PHYSICIAN_VALIDATION_READINESS.md) — Clinical safety and synthetic validation audit declaration.
+- [`docs/VALIDATION.md`](docs/VALIDATION.md) — **Single source of truth for test coverage.**
+- [`docs/README.md`](docs/README.md) — Documentation index; explains which reports are historical.
 - [`docs/PRIVATE_SYNTHETIC_BETA_DEPLOYMENT.md`](docs/PRIVATE_SYNTHETIC_BETA_DEPLOYMENT.md) — Remote PaaS deployment guide and physician account setup.
-- [`docs/PRIVATE_SYNTHETIC_BETA_READINESS.md`](docs/PRIVATE_SYNTHETIC_BETA_READINESS.md) — Remote deployment readiness verdict and architecture report.
+- [`docs/PROTON_M6_THREAT_MODEL.md`](docs/PROTON_M6_THREAT_MODEL.md) — Threat model and trust boundaries.
+- [`docs/PHYSICIAN_VALIDATION_PROTOCOL.md`](docs/PHYSICIAN_VALIDATION_PROTOCOL.md) — 14-section validation test protocol for practicing physicians.
 
 ---
 

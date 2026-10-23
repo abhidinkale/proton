@@ -21,6 +21,26 @@ const DEFAULT_DEV_SECRETS = {
 };
 
 /**
+ * Resolves whether synthetic (non-authenticated) development auth is permitted.
+ *
+ * Precedence:
+ *   1. PROTON_SYNTHETIC_MODE=false -> always disabled (explicit kill switch).
+ *   2. production / private-beta   -> always disabled, even if explicitly enabled.
+ *   3. PROTON_SYNTHETIC_MODE=true  -> enabled (outside production, per rule 2).
+ *   4. Otherwise                   -> enabled unless NODE_ENV=production.
+ *
+ * This is intentionally centralized so the RBAC middleware, the login endpoint,
+ * and startup diagnostics all agree on the same answer.
+ */
+function resolveSyntheticMode(env = process.env) {
+  if (env.PROTON_SYNTHETIC_MODE === 'false') return false;
+  if (env.PROTON_ENV === 'production' || env.PROTON_ENV === 'private-beta') return false;
+  if (env.NODE_ENV === 'production') return false;
+  if (env.PROTON_SYNTHETIC_MODE === 'true') return true;
+  return env.NODE_ENV !== 'production';
+}
+
+/**
  * Validates platform configuration.
  * INVARIANT: In production, missing or trivial secrets strictly fail closed.
  */
@@ -51,6 +71,12 @@ function validateConfig(env = process.env) {
     if (env.PROTON_FHIR_PERSISTENCE_MODE === 'synthetic') {
       weak.push('PROTON_FHIR_PERSISTENCE_MODE (mock/synthetic FHIR store is strictly prohibited in production)');
     }
+    if (resolveSyntheticMode(env) || env.PROTON_SYNTHETIC_MODE === 'true') {
+      weak.push('PROTON_SYNTHETIC_MODE (synthetic auth/development personas must be disabled in production)');
+    }
+    if (env.PROTON_ALLOW_DEMO_ACCOUNTS === 'true') {
+      weak.push('PROTON_ALLOW_DEMO_ACCOUNTS (hardcoded demo credentials must be disabled in production)');
+    }
     if (env.PROTON_FHIR_PERSISTENCE_MODE === 'medplum') {
       if (!env.MEDPLUM_BASE_URL) missing.push('MEDPLUM_BASE_URL');
       if (!env.MEDPLUM_TOKEN) missing.push('MEDPLUM_TOKEN');
@@ -73,6 +99,7 @@ function validateConfig(env = process.env) {
     isProduction,
     dbDriver: env.PROTON_DB_DRIVER === 'postgres' ? 'postgres' : 'sqlite',
     fhirPersistenceMode: env.PROTON_FHIR_PERSISTENCE_MODE || 'in_memory',
+    syntheticMode: resolveSyntheticMode(env),
     authSecret: authSecret || DEFAULT_DEV_SECRETS.PROTON_AUTH_SECRET,
     internalSecret: internalSecret || DEFAULT_DEV_SECRETS.INTERNAL_AGENT_SECRET
   };
@@ -115,6 +142,7 @@ function sanitizeConfigForLogging(configObj = process.env) {
 module.exports = {
   validateConfig,
   sanitizeConfigForLogging,
+  resolveSyntheticMode,
   ConfigurationError,
   DEFAULT_DEV_SECRETS
 };

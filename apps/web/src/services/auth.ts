@@ -16,6 +16,7 @@
 
 import { medplum } from '../lib/medplum';
 import { telemetry } from './telemetry';
+import { SYNTHETIC_AUTH_FALLBACK } from '../config';
 
 export type AuthMode = 'synthetic_development' | 'supabase' | 'oidc';
 
@@ -147,13 +148,15 @@ class ProtonAuthenticationService implements IAuthenticationService {
       }
 
       // If Medplum server is unreachable (e.g. deployed on Vercel without local Medplum),
-      // allow synthetic beta physician credentials to enter evaluation mode
+      // allow synthetic beta physician credentials to enter evaluation mode.
+      // INVARIANT: only when VITE_SYNTHETIC_MODE explicitly enables the fallback.
       const isNetworkError = err?.name === 'TypeError' || 
         err?.message?.includes('Failed to fetch') || 
         err?.message?.includes('NetworkError') ||
         err?.message?.includes('Load failed');
 
-      if (isNetworkError && (email === 'admin@example.com' || email.includes('admin') || email.includes('doctor'))) {
+      if (isNetworkError && SYNTHETIC_AUTH_FALLBACK &&
+          (email === 'admin@example.com' || email.includes('admin') || email.includes('doctor'))) {
         console.warn('Medplum server unreachable. Activating synthetic evaluation physician session.');
         const syntheticUser: ProtonDoctorUser = {
           id: 'synthetic-evaluator-physician',
