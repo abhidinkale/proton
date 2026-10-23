@@ -146,6 +146,7 @@ app.use(cors({
 const { telemetryMiddleware } = require('./middleware/telemetry');
 const { resolveActorMiddleware } = require('./middleware/rbac');
 const { validateConfig, resolveSyntheticMode } = require('./config');
+const { resolveWorkflowPersistence } = require('./services/workflow/runtime');
 
 // In production, ensure configuration fails closed if required secrets are missing
 if (process.env.NODE_ENV === 'production') {
@@ -195,7 +196,8 @@ app.use([
   '/api/agents',
   '/api/encounter',
   '/api/note-templates',
-  '/api/consultation'
+  '/api/consultation',
+  '/api/workflow'
 ], resolveActorMiddleware);
 
 // Deliberately NOT gated above:
@@ -203,6 +205,9 @@ app.use([
 //   /api/capture/*  mobile capture, authenticated by a per-session pairing token
 //   /api/smart/*    SMART on FHIR OAuth discovery and token exchange
 //   /health*        liveness/readiness probes
+
+// Durable clinical workflow (encounter state machine, booking, outbox, audit).
+app.use('/api/workflow', require('./api/workflow'));
 
 // --- SAFE NON-PHI TELEMETRY LOGGER ---
 function logAiTelemetry({ provider, operation, status, latencyMs, inputBytes, outputBytes, model, errorCategory, tokens }) {
@@ -227,6 +232,7 @@ app.get(['/health', '/api/health'], (req, res) => {
     status: 'ok',
     mode: process.env.PROTON_AI_MODE || 'demo',
     auth: resolveSyntheticMode() ? 'synthetic_dev' : 'session',
+    workflow: resolveWorkflowPersistence(),
     timestamp: new Date().toISOString()
   });
 });

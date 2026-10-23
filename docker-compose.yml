@@ -1,4 +1,27 @@
 services:
+  # ---------------------------------------------------------------------------
+  # Durable workflow state. Postgres is the system of record for the encounter
+  # state machine, outbox and audit chain; Medplum/FHIR remains the system of
+  # record for clinical resources.
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16
+    container_name: proton-postgres
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-proton}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set (10+ characters)}
+      - POSTGRES_DB=${POSTGRES_DB:-proton_ops}
+    ports:
+      - "5432:5432"
+    volumes:
+      - proton-postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-proton} -d ${POSTGRES_DB:-proton_ops}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
   api:
     build:
       context: ./apps/api
@@ -15,11 +38,18 @@ services:
       - INTERNAL_AGENT_SECRET=${INTERNAL_AGENT_SECRET:?INTERNAL_AGENT_SECRET must be set to a random value of at least 16 characters}
       - PROTON_SYNTHETIC_MODE=false
       - PROTON_FHIR_PERSISTENCE_MODE=${PROTON_FHIR_PERSISTENCE_MODE:-in_memory}
+      # Durable workflow. Production refuses to boot without this.
+      - DATABASE_URL=postgres://${POSTGRES_USER:-proton}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-proton_ops}
+      - WORKFLOW_PERSISTENCE=postgres
+      - WORKFLOW_SCHEDULER=on
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - MEDPLUM_BASE_URL=${MEDPLUM_BASE_URL:-https://api.medplum.com/}
       - MEDPLUM_CLIENT_ID=${MEDPLUM_CLIENT_ID:-}
       - MEDPLUM_TOKEN=${MEDPLUM_TOKEN:-}
       - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000,http://localhost}
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3002/health"]
@@ -44,3 +74,6 @@ services:
       api:
         condition: service_healthy
     restart: unless-stopped
+
+volumes:
+  proton-postgres-data:

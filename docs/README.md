@@ -4,7 +4,9 @@ Start here:
 
 | Document | Purpose |
 | --- | --- |
+| [`BUILD_PLAN.md`](./BUILD_PLAN.md) | **The active plan.** Phases, stack choices, acceptance criteria, current status. |
 | [`VALIDATION.md`](./VALIDATION.md) | **What is actually tested, and what is not.** Read before quoting any test result. |
+| [`adr/`](./adr/) | Architecture Decision Records — decisions that are expensive to reverse. |
 | [`DEPLOYMENT.md`](./DEPLOYMENT.md) | Deployment and environment configuration. |
 | [`PRIVATE_SYNTHETIC_BETA_DEPLOYMENT.md`](./PRIVATE_SYNTHETIC_BETA_DEPLOYMENT.md) | Synthetic beta deployment posture. |
 | [`PROTON_M6_THREAT_MODEL.md`](./PROTON_M6_THREAT_MODEL.md) | Threat model and trust boundaries. |

@@ -1,8 +1,17 @@
 # Proton Build Plan — From Cockpit to Durable Clinical Loop
 
-**Status:** proposed
+**Status:** in progress — Phase 1 complete, Phase 2 next
 **Baseline:** current `main` working tree (hardening pass applied)
 **Goal:** one durable, end-to-end, doctor-supervised encounter loop — booking → context → capture → note → diagnosis → prescription → patient app → report → follow-up — that survives a restart and works on real (non-fixture) data.
+
+## Progress
+
+| Phase | Status | Evidence |
+| --- | --- | --- |
+| 1 — Persistence & durable orchestration | **done** | `docs/adr/0001`, `docs/adr/0002`, `workflow_state_machine_validation.cjs` (29 checks), `workflow_api_validation.cjs` (23 checks) |
+| 2 — One authenticated API client | not started | — |
+| 3 — Real booking & patient context | not started | booking endpoint exists on the durable schema; the old stub and fixtures are still present |
+| 4–10 | not started | — |
 
 ---
 
@@ -56,22 +65,41 @@ Browser (React)
 
 Estimates are focused engineering days, not calendar days.
 
-### Phase 1 — Persistence & durable orchestration · 4–5 d
+### Phase 1 — Persistence & durable orchestration · 4–5 d · **DONE**
 
 The foundation. Nothing else is worth building before this.
 
-- Add `postgres:16` + `medplum/medplum-server` to `docker-compose.yml` (local profile).
-- Schema (migrations, versioned):
-  - `patients`, `appointments`, `encounters`, `encounter_events` (append-only), `encounter_state` (current + version)
-  - `notes`, `diagnoses`, `prescriptions`, `reports`
-  - `outbox` (transactional outbound messages)
-  - `audit_events` (hash chain, tenant-scoped)
-  - `jobs` (pg-boss schema)
-- Encounter state machine: `BOOKED → CHECKED_IN → INTAKE → READY → CAPTURING → DRAFTED → PENDING_REVIEW → SIGNED → REPORTED → FOLLOW_UP_DUE → CLOSED` (+ `ESCALATED`, `CANCELLED`). Illegal transitions throw; every transition writes an event row and an audit row in the same transaction.
-- Replace the in-memory repositories behind a `PersistenceMode` flag (`memory` for tests, `postgres` for everything else).
-- `pg-boss` for all async work. Remove `services/jobs/jobQueueService.js` in-memory queue from the request path.
-- Session revocation and idempotency keys move to Postgres (they currently vanish on restart).
-- **Acceptance:** start an encounter, kill the API mid-flight, restart, resume from the same state; a queued follow-up still fires; audit chain verifies after restart.
+Shipped:
+
+- `postgres:16` service in `docker-compose.yml` (Medplum service still pending Phase 3).
+- Versioned migrations (`apps/api/db/workflowMigrations.js`, v2) for `patients`,
+  `appointments`, `encounters`, `encounter_events` (append-only), `notes`,
+  `diagnoses`, `prescriptions`, `reports`, `outbox`, `patient_messages`,
+  `workflow_audit_events`, `workflow_idempotency`. The migration runner now uses
+  one dedicated client per migration inside a transaction, guarded by an
+  advisory lock (previously `BEGIN`/`COMMIT` went through the pool and could
+  spread across connections).
+- `services/workflow/encounterStateMachine.js`: the 11-state lifecycle, 15
+  transitions, role gates, attestation gate, reason gates, `SELECT … FOR UPDATE`
+  + version precondition, and atomic event + audit + outbox writes.
+- `storage/postgres/workflowRepository.js` and
+  `storage/postgres/workflowAuditRepository.js`.
+- `services/workflow/outboxDispatcher.js` + channel adapters. IN_APP is a real
+  delivery; EMAIL is honestly flagged `simulated`.
+- `services/workflow/runtime.js`: pg-boss on the same database, recurring
+  outbox dispatch, wired into `index.js` with graceful shutdown.
+- `api/workflow.js` mounted at `/api/workflow` behind actor resolution.
+- **Acceptance met:** stop the runtime, drop the pool, restart — encounter state
+  and pending messages survive and are dispatched
+  (`workflow_state_machine_validation.cjs`, SUITE 8).
+
+Not done in this phase, carried forward:
+
+- In-memory session revocation and the legacy `jobQueueService` are still in
+  place for the pre-existing endpoints; the new workflow path does not use them.
+- No Medplum service in compose yet (Phase 3).
+- Multi-process worker behaviour is designed for (`SKIP LOCKED`) but only
+  single-process tested.
 
 ### Phase 2 — One authenticated API client · 2–3 d
 

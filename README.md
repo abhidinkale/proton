@@ -63,7 +63,12 @@ Proton is an AI-native clinical operating system and ambient copilot designed fo
 
 ### Prerequisites
 - Node.js 20.x or higher
-- Docker (for local Medplum FHIR server)
+- PostgreSQL 16 (for durable workflow state) — `brew install postgresql@16` or the compose service
+- Docker (optional, for local Medplum FHIR server)
+
+The API boots without PostgreSQL, but `/api/workflow/*` then returns
+`503 WORKFLOW_PERSISTENCE_DISABLED` and the clinical loop is not durable.
+Production refuses to start without `DATABASE_URL`.
 
 ### 1. Clone the Repository
 ```bash
@@ -105,10 +110,21 @@ CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhos
 # Local development only: resolve unauthenticated requests to a seeded physician.
 # Never enable this on a public deployment.
 PROTON_SYNTHETIC_MODE=true
+# Durable clinical workflow (PostgreSQL). Omit to run without persistence.
+DATABASE_URL=postgres://localhost:5432/proton_ops
+WORKFLOW_PERSISTENCE=postgres
 # Optional: Set when testing live AI
 # GEMINI_API_KEY=your-gemini-key
 # XAI_API_KEY=your-grok-key
 ```
+
+Create the database once:
+
+```bash
+createdb proton_ops     # or: docker compose up -d postgres
+```
+
+The API applies its migrations and starts the pg-boss worker at boot.
 
 Production deployments additionally require strong `PROTON_AUTH_SECRET` and
 `INTERNAL_AGENT_SECRET` values; the API refuses to boot without them. See

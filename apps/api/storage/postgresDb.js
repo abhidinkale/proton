@@ -6,6 +6,7 @@
  */
 
 const { Pool } = require('pg');
+const { WORKFLOW_MIGRATIONS } = require('../db/workflowMigrations');
 
 let pgPool = null;
 
@@ -148,47 +149,69 @@ const POSTGRES_MIGRATIONS = [
         expires_at TIMESTAMPTZ NOT NULL
       );
     `
-  }
+  },
+  ...WORKFLOW_MIGRATIONS
 ];
 
 /**
- * Runs PostgreSQL migrations
+ * Runs PostgreSQL migrations.
+ *
+ * Each migration runs inside a single transaction on a dedicated client. The
+ * previous implementation issued BEGIN/COMMIT through the pool, which could
+ * spread a migration across three different connections; a failure mid-way
+ * would then leave the schema applied but unrecorded.
+ *
+ * A session-level advisory lock makes concurrent boots (multiple API replicas)
+ * safe: the second process waits, then observes the already-applied version.
  */
 async function runPostgresMigrations(pool = null) {
   const p = pool || getPostgresPool();
-  
-  await p.query(`
-    CREATE TABLE IF NOT EXISTS schema_migrations (
-      version INTEGER PRIMARY KEY,
-      name TEXT NOT NULL,
-      applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    );
-  `);
+  const client = await p.connect();
 
-  const { rows } = await p.query('SELECT version FROM schema_migrations ORDER BY version ASC;');
-  const applied = new Set(rows.map(r => r.version));
+  try {
+    await client.query(`SELECT pg_advisory_lock(hashtext('proton_schema_migrations'));`);
 
-  for (const migration of POSTGRES_MIGRATIONS) {
-    if (!applied.has(migration.version)) {
-      await p.query('BEGIN');
-      try {
-        await p.query(migration.sql);
-        await p.query('INSERT INTO schema_migrations (version, name, applied_at) VALUES ($1, $2, NOW());', [
-          migration.version,
-          migration.name
-        ]);
-        await p.query('COMMIT');
-      } catch (err) {
-        await p.query('ROLLBACK');
-        throw err;
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS schema_migrations (
+        version INTEGER PRIMARY KEY,
+        name TEXT NOT NULL,
+        applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+
+    const { rows } = await client.query('SELECT version FROM schema_migrations ORDER BY version ASC;');
+    const applied = new Set(rows.map(r => r.version));
+
+    for (const migration of POSTGRES_MIGRATIONS) {
+      if (!applied.has(migration.version)) {
+        await client.query('BEGIN');
+        try {
+          await client.query(migration.sql);
+          await client.query(
+            'INSERT INTO schema_migrations (version, name, applied_at) VALUES ($1, $2, NOW());',
+            [migration.version, migration.name]
+          );
+          await client.query('COMMIT');
+        } catch (err) {
+          await client.query('ROLLBACK');
+          throw new Error(`Migration v${migration.version} (${migration.name}) failed: ${err.message}`);
+        }
       }
     }
+  } finally {
+    try {
+      await client.query(`SELECT pg_advisory_unlock(hashtext('proton_schema_migrations'));`);
+    } catch {
+      // Connection may already be broken; the lock dies with the session anyway.
+    }
+    client.release();
   }
 }
 
 module.exports = {
   initPostgresPool,
   getPostgresPool,
+  getPostgresConfig,
   closePostgresPool,
   runPostgresMigrations,
   POSTGRES_MIGRATIONS

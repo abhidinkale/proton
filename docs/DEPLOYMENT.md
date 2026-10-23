@@ -101,6 +101,9 @@ Configure these in the Vercel Project Settings for **`apps/api`**:
 | `PROTON_SYNTHETIC_MODE` | **Yes** | `false` | Must be `false` in production. When true, unauthenticated requests resolve to a seeded development physician. Production refuses to boot if set true. |
 | `PROTON_ALLOW_DEMO_ACCOUNTS` | Optional | `false` | Enables the hardcoded evaluation accounts. Never enable in production. |
 | `PROTON_REQUIRE_MFA` | Optional | `true` | Requires an MFA challenge on `/api/auth/login`. |
+| `DATABASE_URL` | **Yes** | `postgres://user:pass@host:5432/proton_ops` | PostgreSQL system of record for workflow state. The API refuses to boot in production without it. |
+| `WORKFLOW_PERSISTENCE` | Optional | `postgres` | `disabled` turns off durable workflow (returns `503` on `/api/workflow/*`). Production requires `postgres`. |
+| `WORKFLOW_SCHEDULER` | Optional | `on` | `off` disables the recurring outbox safety-net job; the worker still drains on demand. |
 | `MEDPLUM_TOKEN` | If `PROTON_FHIR_PERSISTENCE_MODE=medplum` | server token | Server-side FHIR credential. |
 
 > [!WARNING]

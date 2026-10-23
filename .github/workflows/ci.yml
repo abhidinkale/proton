@@ -10,6 +10,29 @@ jobs:
   verify-and-test:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: proton_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      # Workflow durability tests create and drop their own throwaway databases
+      # derived from this URL.
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/proton_ci
+      # A skipped durability suite is a failed gate in CI.
+      REQUIRE_POSTGRES: '1'
+      NODE_ENV: test
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -20,8 +43,8 @@ jobs:
           node-version: 22
           cache: 'npm'
           cache-dependency-path: |
-            apps/api/package.json
-            apps/web/package.json
+            apps/api/package-lock.json
+            apps/web/package-lock.json
 
       - name: Install API Dependencies
         working-directory: ./apps/api
@@ -35,8 +58,6 @@ jobs:
         working-directory: ./apps/web
         run: npm run build
 
-      - name: Deterministic API & Clinical Safety Suites
+      - name: Deterministic API, Workflow Durability & Clinical Safety Suites
         working-directory: ./apps/api
-        env:
-          NODE_ENV: test
         run: npm test
