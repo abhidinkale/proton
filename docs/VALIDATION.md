@@ -8,8 +8,8 @@ Last updated: 2026-10-27.
 | Gate | Command | What it proves |
 | --- | --- | --- |
 | Web type-check + build | `npm --prefix apps/web run build` (`tsc -b && vite build`) | The SPA compiles, types are sound. |
-| Hermetic API suites | `npm --prefix apps/api test` → `tests/run-deterministic-suite.cjs` | 49 API suites covering safety rules, FHIR transaction semantics, RBAC/tenant isolation, auth-boundary fail-closed behaviour, patient OTP delivery (Brevo/Resend request shape, `devCode` suppression, failed-send invalidation), the clinician↔patient live loop, audit-chain integrity, idempotency, capture sessions, document/vision pipelines, and clinical workflow invariants. |
-| Durable workflow suites (Postgres) | included in the same command | 6 suites proving the encounter state machine, transactional outbox, audit chain, restart survival, concurrency safety, patient sync and the clinician live loop. CI provisions a `postgres:16` service. |
+| Hermetic API suites | `npm --prefix apps/api test` → `tests/run-deterministic-suite.cjs` | 51 API suites covering safety rules, FHIR transaction semantics, RBAC/tenant isolation, auth-boundary fail-closed behaviour, patient OTP delivery (Brevo/Resend request shape, `devCode` suppression, failed-send invalidation), the clinician↔patient live loop, patient document upload and signed-prescription delivery, audit-chain integrity, idempotency, capture sessions, document/vision pipelines, and clinical workflow invariants. |
+| Durable workflow suites (Postgres) | included in the same command | 8 suites proving the encounter state machine, transactional outbox, audit chain, restart survival, concurrency safety, patient sync, patient documents, prescriptions and the clinician live loop. CI provisions a `postgres:16` service. |
 
 The runner executes every `apps/api/tests/*.cjs` file **except** an explicit
 denylist of suites that need live infrastructure (see the header of

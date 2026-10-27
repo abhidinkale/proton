@@ -115,3 +115,6 @@ repomix-output.*.xml
 .dsh-inspect/
 .gemini/
 .mimocode/
+
+# 11. Patient document store (bytes live on the host, not in the repo)
+apps/api/var/

@@ -159,7 +159,7 @@ not covered.
 # Web type-check and production build
 npm --prefix apps/web run build
 
-# All deterministic API + clinical safety suites (37 suites)
+# All deterministic API + clinical safety suites (51 suites)
 npm --prefix apps/api test
 
 # One suite, e.g. the security matrix
