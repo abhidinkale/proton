@@ -276,6 +276,43 @@ const WORKFLOW_MIGRATIONS = [
       CREATE INDEX IF NOT EXISTS idx_workflow_idempotency_expiry
         ON workflow_idempotency(expires_at);
     `
+  },
+  {
+    version: 5,
+    name: 'appointment_patient_local_id',
+    sql: `
+      -- The app books on the device first, so it needs to recognise its own
+      -- appointment when the clinic sends it back. Without this the pull would
+      -- add a second, duplicate appointment under the server id.
+      ALTER TABLE appointments
+        ADD COLUMN IF NOT EXISTS patient_local_id TEXT;
+
+      CREATE INDEX IF NOT EXISTS idx_appointments_patient_local
+        ON appointments(tenant_id, patient_local_id);
+    `
+  },
+  {
+    version: 6,
+    name: 'clinic_live_loop',
+    sql: `
+      -- Reception confirming an appointment is a fact about the booking, not a
+      -- new status: BOOKED/CANCELLED/COMPLETED/NO_SHOW still describe the visit
+      -- itself. Storing the confirmation separately means a reschedule can
+      -- clear it without inventing a state the state machine does not know.
+      ALTER TABLE appointments
+        ADD COLUMN IF NOT EXISTS confirmed_at TIMESTAMPTZ;
+
+      -- A patient message stays in "needs attention" until a clinician closes
+      -- it. Metadata alone would make that a JSON scan on every poll.
+      ALTER TABLE patient_messages
+        ADD COLUMN IF NOT EXISTS resolved_at TIMESTAMPTZ;
+
+      CREATE INDEX IF NOT EXISTS idx_patient_messages_open
+        ON patient_messages(tenant_id, resolved_at, created_at DESC);
+
+      CREATE INDEX IF NOT EXISTS idx_patient_messages_encounter
+        ON patient_messages(tenant_id, encounter_id);
+    `
   }
 ];
 

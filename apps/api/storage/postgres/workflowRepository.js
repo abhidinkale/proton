@@ -107,8 +107,8 @@ async function createAppointment(input, { client = null, p = null } = {}) {
   const { rows } = await q.query(
     `INSERT INTO appointments
        (id, tenant_id, patient_id, clinician_id, scheduled_for, duration_minutes,
-        status, reason, fhir_appointment_id, idempotency_key)
-     VALUES ($1, $2, $3, $4, $5, $6, 'BOOKED', $7, $8, $9)
+        status, reason, fhir_appointment_id, idempotency_key, patient_local_id)
+     VALUES ($1, $2, $3, $4, $5, $6, 'BOOKED', $7, $8, $9, $10)
      RETURNING *;`,
     [
       id,
@@ -119,10 +119,53 @@ async function createAppointment(input, { client = null, p = null } = {}) {
       input.durationMinutes || 20,
       input.reason || null,
       input.fhirAppointmentId || null,
-      input.idempotencyKey || null
+      input.idempotencyKey || null,
+      input.patientLocalId || null
     ]
   );
   return rows[0];
+}
+
+/**
+ * Updates mutable appointment fields. Only the fields supplied are changed.
+ * Tenant is always part of the predicate, so a caller cannot reach across
+ * organizations even with a valid appointment id.
+ */
+async function updateAppointment({
+  tenantId = 'org-default',
+  appointmentId,
+  scheduledFor = null,
+  status = null,
+  p = null
+}) {
+  const sets = [];
+  const params = [];
+
+  if (scheduledFor !== null) {
+    params.push(scheduledFor);
+    sets.push(`scheduled_for = $${params.length}`);
+  }
+  if (status !== null) {
+    params.push(status);
+    sets.push(`status = $${params.length}`);
+  }
+
+  if (sets.length === 0) {
+    return getAppointment({ tenantId, appointmentId, p });
+  }
+
+  params.push(appointmentId);
+  const idParam = params.length;
+  params.push(tenantId);
+  const tenantParam = params.length;
+
+  const { rows } = await pool(p).query(
+    `UPDATE appointments SET ${sets.join(', ')}
+      WHERE id = $${idParam} AND tenant_id = $${tenantParam}
+      RETURNING *;`,
+    params
+  );
+  return rows[0] || null;
 }
 
 async function getAppointment({ tenantId = 'org-default', appointmentId, client = null, p = null }) {
@@ -134,7 +177,7 @@ async function getAppointment({ tenantId = 'org-default', appointmentId, client 
   return rows[0] || null;
 }
 
-async function listAppointments({ tenantId = 'org-default', from = null, to = null, p = null } = {}) {
+async function listAppointments({ tenantId = 'org-default', from = null, to = null, limit = 200, order = 'ASC', p = null } = {}) {
   const params = [tenantId];
   let sql = `SELECT a.*, p.full_name AS patient_name
                FROM appointments a
@@ -148,7 +191,9 @@ async function listAppointments({ tenantId = 'org-default', from = null, to = nu
     params.push(to);
     sql += ` AND a.scheduled_for <= $${params.length}`;
   }
-  sql += ` ORDER BY a.scheduled_for ASC LIMIT 200;`;
+  const direction = String(order).toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+  const capped = Math.min(Math.max(Number(limit) || 200, 1), 500);
+  sql += ` ORDER BY a.scheduled_for ${direction} LIMIT ${capped};`;
   const { rows } = await pool(p).query(sql, params);
   return rows;
 }
@@ -413,6 +458,7 @@ module.exports = {
   listPatients,
   createAppointment,
   getAppointment,
+  updateAppointment,
   listAppointments,
   findAppointmentByIdempotencyKey,
   createEncounter,

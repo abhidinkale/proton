@@ -7,6 +7,8 @@
 
 const { Pool } = require('pg');
 const { WORKFLOW_MIGRATIONS } = require('../db/workflowMigrations');
+const { PATIENT_AUTH_MIGRATIONS } = require('../db/patientAuthMigrations');
+const { ORGANIZATION_MIGRATIONS } = require('../db/organizationMigrations');
 
 let pgPool = null;
 
@@ -150,7 +152,11 @@ const POSTGRES_MIGRATIONS = [
       );
     `
   },
-  ...WORKFLOW_MIGRATIONS
+  ...WORKFLOW_MIGRATIONS,
+  // Patient identity (OTP accounts, identifiers, sessions) — v30.
+  ...PATIENT_AUTH_MIGRATIONS,
+  // Multi-tenant organization provisioning and membership — v40.
+  ...ORGANIZATION_MIGRATIONS
 ];
 
 /**

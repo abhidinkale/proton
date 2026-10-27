@@ -190,13 +190,18 @@ async function bookAppointment(input = {}) {
 
       const appointment = await repo.createAppointment(
         {
+          // A caller that already has an id (the offline-first app) supplies it,
+          // so the appointment it created on the device and the server row share
+          // one identity.
+          id: input.appointmentId || undefined,
           tenantId,
           patientId,
           clinicianId,
           scheduledFor,
           durationMinutes,
           reason,
-          idempotencyKey
+          idempotencyKey,
+          patientLocalId: input.patientLocalId || null
         },
         { client }
       );

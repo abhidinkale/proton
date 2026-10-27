@@ -383,6 +383,127 @@ function runMigrations(db) {
         CREATE INDEX IF NOT EXISTS idx_v_review_actor ON clinical_vision_reviews(actor_id);
         CREATE UNIQUE INDEX IF NOT EXISTS idx_v_review_unique_finding ON clinical_vision_reviews(analysis_id, finding_index);
       `
+    },
+    {
+      version: 7,
+      name: 'durable_clinic_workspace',
+      sql: `
+        -- 14. Clinic Patients (longitudinal synthetic cohort + clinician-created records)
+        CREATE TABLE IF NOT EXISTS clinic_patients (
+          id TEXT PRIMARY KEY,
+          tenant_id TEXT NOT NULL DEFAULT 'org-default',
+          name TEXT NOT NULL,
+          mrn TEXT,
+          data_json TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_clinic_patients_tenant ON clinic_patients(tenant_id);
+        CREATE INDEX IF NOT EXISTS idx_clinic_patients_name ON clinic_patients(name);
+
+        -- 15. Clinic Appointments (the real schedule the dashboard reads)
+        CREATE TABLE IF NOT EXISTS clinic_appointments (
+          id TEXT PRIMARY KEY,
+          tenant_id TEXT NOT NULL DEFAULT 'org-default',
+          patient_id TEXT NOT NULL,
+          date TEXT NOT NULL,
+          time TEXT NOT NULL,
+          start_minutes INTEGER NOT NULL,
+          duration_minutes INTEGER NOT NULL DEFAULT 30,
+          status TEXT NOT NULL,
+          queue_category TEXT NOT NULL,
+          priority TEXT NOT NULL DEFAULT 'normal',
+          data_json TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_clinic_appointments_date ON clinic_appointments(date);
+        CREATE INDEX IF NOT EXISTS idx_clinic_appointments_patient ON clinic_appointments(patient_id);
+        CREATE INDEX IF NOT EXISTS idx_clinic_appointments_tenant ON clinic_appointments(tenant_id);
+
+        -- 16. Encounter Notes / Drafts with physician sign-off state
+        CREATE TABLE IF NOT EXISTS clinic_notes (
+          id TEXT PRIMARY KEY,
+          tenant_id TEXT NOT NULL DEFAULT 'org-default',
+          patient_id TEXT NOT NULL,
+          appointment_id TEXT,
+          status TEXT NOT NULL CHECK (status IN ('DRAFT', 'SIGNED', 'AMENDED')),
+          data_json TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          signed_at TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_clinic_notes_patient ON clinic_notes(patient_id);
+        CREATE INDEX IF NOT EXISTS idx_clinic_notes_status ON clinic_notes(status);
+
+        -- 17. Clinical Attention Queue / Notifications
+        CREATE TABLE IF NOT EXISTS clinic_notifications (
+          id TEXT PRIMARY KEY,
+          tenant_id TEXT NOT NULL DEFAULT 'org-default',
+          patient_id TEXT,
+          type TEXT NOT NULL,
+          severity TEXT NOT NULL CHECK (severity IN ('critical', 'warning', 'info')),
+          title TEXT NOT NULL,
+          body TEXT NOT NULL,
+          action_path TEXT,
+          source_id TEXT,
+          created_at TEXT NOT NULL,
+          read_at TEXT,
+          resolved_at TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_clinic_notifications_tenant ON clinic_notifications(tenant_id);
+        CREATE INDEX IF NOT EXISTS idx_clinic_notifications_read ON clinic_notifications(read_at);
+
+        -- 18. Hash-chained clinical audit trail
+        CREATE TABLE IF NOT EXISTS clinic_audit_events (
+          id TEXT PRIMARY KEY,
+          tenant_id TEXT NOT NULL DEFAULT 'org-default',
+          actor_id TEXT,
+          actor_name TEXT,
+          action TEXT NOT NULL,
+          resource_type TEXT NOT NULL,
+          resource_id TEXT,
+          patient_id TEXT,
+          summary TEXT NOT NULL,
+          at TEXT NOT NULL,
+          prev_hash TEXT,
+          hash TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_clinic_audit_tenant ON clinic_audit_events(tenant_id);
+        CREATE INDEX IF NOT EXISTS idx_clinic_audit_at ON clinic_audit_events(at);
+
+        -- 19. Clinic workspace metadata (seed watermark, preferences)
+        CREATE TABLE IF NOT EXISTS clinic_meta (
+          key TEXT PRIMARY KEY,
+          value TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        );
+      `
+    },
+    {
+      version: 8,
+      name: 'clinic_billing_ledger',
+      sql: `
+        -- 20. Billing ledger derived from real encounters, with persisted
+        -- payment/claim state so an invoice is not re-derived on every view.
+        CREATE TABLE IF NOT EXISTS clinic_invoices (
+          id TEXT PRIMARY KEY,
+          tenant_id TEXT NOT NULL DEFAULT 'org-default',
+          appointment_id TEXT,
+          patient_id TEXT NOT NULL,
+          status TEXT NOT NULL DEFAULT 'DRAFT'
+            CHECK (status IN ('DRAFT', 'SENT', 'PAID', 'VOID')),
+          amount_cents INTEGER NOT NULL DEFAULT 0,
+          data_json TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_clinic_invoices_appointment
+          ON clinic_invoices(tenant_id, appointment_id)
+          WHERE appointment_id IS NOT NULL;
+        CREATE INDEX IF NOT EXISTS idx_clinic_invoices_tenant ON clinic_invoices(tenant_id);
+        CREATE INDEX IF NOT EXISTS idx_clinic_invoices_status ON clinic_invoices(status);
+      `
     }
   ];
 

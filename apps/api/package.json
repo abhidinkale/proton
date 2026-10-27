@@ -7,7 +7,9 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "test": "node tests/run-deterministic-suite.cjs",
-    "test:deterministic": "node tests/run-deterministic-suite.cjs"
+    "test:deterministic": "node tests/run-deterministic-suite.cjs",
+    "demo:seed": "node scripts/demo-seed.js",
+    "demo:reset": "node scripts/demo-reset.js"
   },
   "keywords": [],
   "author": "",
