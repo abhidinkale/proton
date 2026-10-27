@@ -1,0 +1,12 @@
+# Real secrets and runtime artifacts in this directory must never be committed.
+# The repo-root .gitignore already ignores `.env.*`; this nested file re-includes
+# the example and keeps backup output out of git.
+.env.deploy
+.env.deploy.local
+!.env.deploy.example
+
+backups.log
+*.dump
+*.dump.age
+*.dump.gpg
+*.lock

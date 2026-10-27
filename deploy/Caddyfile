@@ -1,0 +1,76 @@
+# =============================================================================
+# Caddyfile — ALTERNATIVE PATH ONLY
+# =============================================================================
+#
+# Use this ONLY if you are NOT using Cloudflare Tunnel and want Caddy to
+# terminate TLS on the VM itself. The default/recommended deployment is the
+# tunnel (deploy/docker-compose.free.yml + deploy/cloudflared/config.yml.example),
+# which needs no inbound ports and no certificate management.
+#
+# This file is not referenced by docker-compose.free.yml and is not required.
+# If you use it:
+#   1. Point an A/AAAA record at the VM's public IP.
+#   2. Open inbound 80/tcp and 443/tcp in the cloud firewall AND the VM
+#      firewall (Oracle: VCN security list + iptables).
+#   3. Run Caddy on the compose network so it can resolve `api`:
+#
+#      docker run -d --name proton-caddy --restart unless-stopped \
+#        --network proton_default \
+#        -p 80:80 -p 443:443 \
+#        -e PROTON_HOSTNAME=api.example.com \
+#        -e ACME_EMAIL=ops@example.com \
+#        -v "$PWD/deploy/Caddyfile:/etc/caddy/Caddyfile:ro" \
+#        -v proton_caddy_data:/data \
+#        -v proton_caddy_config:/config \
+#        caddy:2
+#
+#      (Network name is `<compose name>_default`; this stack sets name: proton.)
+#
+# The web site is still served by Cloudflare Pages; Caddy only fronts the API.
+# To serve the static site from the VM instead, mount apps/web/dist at
+# /srv/proton-web and uncomment the file_server block below.
+# =============================================================================
+
+{
+	email {$ACME_EMAIL}
+	# Uncomment for local/self-signed testing only:
+	# local_certs
+}
+
+{$PROTON_HOSTNAME} {
+	encode zstd gzip
+
+	# API + health endpoints. Everything else is the static SPA (if mounted).
+	@api path /api/* /health /health/*
+	handle @api {
+		reverse_proxy api:3002 {
+			# Do not buffer audio uploads; /api/transcribe can be large.
+			request_buffering off
+			header_up X-Forwarded-Proto {scheme}
+			header_up X-Real-IP {remote_host}
+		}
+	}
+
+	# Static web build (optional — Cloudflare Pages is the recommended host).
+	# handle {
+	# 	root * /srv/proton-web
+	# 	try_files {path} /index.html
+	# 	file_server
+	# }
+
+	handle {
+		respond "Not Found" 404
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}

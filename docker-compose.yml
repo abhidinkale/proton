@@ -12,7 +12,9 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set (10+ characters)}
       - POSTGRES_DB=${POSTGRES_DB:-proton_ops}
     ports:
-      - "5432:5432"
+      # Loopback only: a dev database must never be reachable from the LAN or
+      # the internet. The API uses the compose network, not this binding.
+      - "127.0.0.1:5432:5432"
     volumes:
       - proton-postgres-data:/var/lib/postgresql/data
     restart: unless-stopped
@@ -28,7 +30,9 @@ services:
       dockerfile: Dockerfile
     container_name: proton-api
     ports:
-      - "3002:3002"
+      # Loopback only. The web container reaches the API over the compose
+      # network, and a developer browser reaches http://localhost:3002.
+      - "127.0.0.1:3002:3002"
     environment:
       - NODE_ENV=production
       - PORT=3002
@@ -40,6 +44,10 @@ services:
       - PROTON_FHIR_PERSISTENCE_MODE=${PROTON_FHIR_PERSISTENCE_MODE:-in_memory}
       # Durable workflow. Production refuses to boot without this.
       - DATABASE_URL=postgres://${POSTGRES_USER:-proton}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-proton_ops}
+      # apps/api/storage/postgresDb.js enables TLS whenever NODE_ENV=production.
+      # The official postgres image has TLS off, so without this the API fails
+      # its migrations and exits (production treats that as fatal).
+      - PG_DISABLE_SSL=true
       - WORKFLOW_PERSISTENCE=postgres
       - WORKFLOW_SCHEDULER=on
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}

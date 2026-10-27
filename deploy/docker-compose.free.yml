@@ -1,0 +1,185 @@
+# =============================================================================
+# Proton — single-VM, $0/month production-shaped deployment
+# =============================================================================
+#
+# Shape:
+#   Internet -> Cloudflare edge -> cloudflared tunnel -> api:3002 -> postgres
+#   Web UI is a static build on Cloudflare Pages (NOT in this compose file).
+#
+# There are NO public port bindings here. The only ingress is the Cloudflare
+# Tunnel. 127.0.0.1:3002 is bound for host-local debugging / healthcheck.sh
+# only; it is not reachable from the internet and does not traverse the VM's
+# public interface.
+#
+# Usage (always pass the env file, otherwise ${VAR:?} interpolation fails):
+#   docker compose --env-file deploy/.env.deploy \
+#     -f deploy/docker-compose.free.yml up -d --build
+#
+# Resource budget assumes a 4 GB VM. Oracle Always Free A1 (24 GB) has plenty;
+# GCP e2-medium (4 GB) is the failover target. Do not run this on a 1 GB box.
+# =============================================================================
+
+name: proton
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL 16 — system of record for the durable workflow / outbox / audit
+  # chain. Tuned for a small VM: 256 MB shared buffers, 4 MB work_mem, 40 conns.
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16
+    container_name: proton-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-proton}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in deploy/.env.deploy}
+      POSTGRES_DB: ${POSTGRES_DB:-proton_ops}
+      # Keep the cluster's default timezone UTC so audit timestamps and backup
+      # names agree with the host.
+      TZ: UTC
+    command:
+      - postgres
+      - -c
+      - shared_buffers=256MB
+      - -c
+      - effective_cache_size=768MB
+      - -c
+      - work_mem=4MB
+      - -c
+      - maintenance_work_mem=64MB
+      - -c
+      - max_connections=40
+      - -c
+      - wal_compression=on
+      - -c
+      - max_wal_size=1GB
+      - -c
+      - checkpoint_completion_target=0.9
+      - -c
+      - log_min_duration_statement=2000
+    shm_size: 256mb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-proton} -d ${POSTGRES_DB:-proton_ops}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    mem_limit: 1g
+    logging: *default-logging
+    # No ports: only the compose network can reach Postgres.
+
+  # ---------------------------------------------------------------------------
+  # API — Node/Express. Runs migrations + pg-boss on boot. In production the
+  # process exits if migrations fail or DATABASE_URL/WORKFLOW_PERSISTENCE are
+  # missing, so "api is up" genuinely means "durable workflow is online".
+  # ---------------------------------------------------------------------------
+  api:
+    build:
+      context: ../apps/api
+      dockerfile: Dockerfile
+    image: proton-api:free
+    container_name: proton-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    user: "proton" # created (non-root) by apps/api/Dockerfile
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    volumes:
+      # Writable scratch for the legacy SQLite/local-file paths in the API.
+      # Postgres remains authoritative for workflow state. Do not mark this
+      # volume read-only or the process will fail creating /app/data.
+      - api_data:/app/data
+    environment:
+      NODE_ENV: production
+      PORT: "3002"
+      PROTON_ENV: private-beta
+      PROTON_AUTH_SECRET: ${PROTON_AUTH_SECRET:?PROTON_AUTH_SECRET must be at least 32 chars}
+      INTERNAL_AGENT_SECRET: ${INTERNAL_AGENT_SECRET:?INTERNAL_AGENT_SECRET must be at least 16 chars}
+      # Fail closed. Production also refuses to boot if these are true.
+      PROTON_SYNTHETIC_MODE: "false"
+      PROTON_ALLOW_DEMO_ACCOUNTS: "false"
+      PROTON_REQUIRE_MFA: ${PROTON_REQUIRE_MFA:-false}
+      # `in_memory` keeps FHIR optional for the demo. Set to `medplum` only
+      # when MEDPLUM_BASE_URL and MEDPLUM_TOKEN are configured.
+      PROTON_FHIR_PERSISTENCE_MODE: ${PROTON_FHIR_PERSISTENCE_MODE:-in_memory}
+      DATABASE_URL: postgres://${POSTGRES_USER:-proton}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@postgres:5432/${POSTGRES_DB:-proton_ops}
+      # apps/api/storage/postgresDb.js enables TLS whenever NODE_ENV=production.
+      # The official postgres image has TLS off and this network is private, so
+      # without this the API fails migrations and exits on first boot.
+      PG_DISABLE_SSL: "true"
+      WORKFLOW_PERSISTENCE: postgres
+      WORKFLOW_SCHEDULER: "on"
+      # AI. `demo` is deterministic and costs $0; `real` needs a provider key.
+      PROTON_AI_MODE: ${PROTON_AI_MODE:-demo}
+      PROTON_AI_PROVIDER: ${PROTON_AI_PROVIDER:-demo}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.8-flash}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      XAI_API_KEY: ${XAI_API_KEY:-}
+      MEDPLUM_BASE_URL: ${MEDPLUM_BASE_URL:-https://api.medplum.com/}
+      MEDPLUM_CLIENT_ID: ${MEDPLUM_CLIENT_ID:-}
+      MEDPLUM_TOKEN: ${MEDPLUM_TOKEN:-}
+      # Must include the Cloudflare Pages origin, e.g. https://app.example.com.
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:?CORS_ALLOWED_ORIGINS must list the web origin}
+    # Loopback ONLY. Remove entirely if you don't want host debugging; the
+    # tunnel reaches the container over the compose network regardless.
+    ports:
+      - "127.0.0.1:3002:3002"
+    healthcheck:
+      # Overrides the Dockerfile healthcheck so a container that is up but not
+      # reporting a healthy workflow is marked unhealthy.
+      test:
+        [
+          "CMD-SHELL",
+          "wget -q -O - http://127.0.0.1:3002/health | grep -q '\"status\":\"ok\"'",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+    mem_limit: 768m
+    security_opt:
+      - no-new-privileges:true
+    logging: *default-logging
+
+  # ---------------------------------------------------------------------------
+  # Cloudflare Tunnel — the only ingress. The token is created with
+  # `cloudflared tunnel token proton-api`; public hostnames/ingress live in the
+  # Cloudflare Zero Trust dashboard (token mode), or in
+  # deploy/cloudflared/config.yml.example (credentials-file mode).
+  # ---------------------------------------------------------------------------
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: proton-cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?CLOUDFLARE_TUNNEL_TOKEN must be set}
+    depends_on:
+      api:
+        condition: service_healthy
+    mem_limit: 128m
+    security_opt:
+      - no-new-privileges:true
+    logging: *default-logging
+    # Deliberately no network_mode: host. cloudflared must resolve `api` via
+    # the compose DNS name on the default bridge network.
+
+volumes:
+  postgres_data:
+  api_data:

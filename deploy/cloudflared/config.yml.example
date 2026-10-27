@@ -1,0 +1,48 @@
+# =============================================================================
+# Cloudflare Tunnel — credentials-file mode (OPTIONAL reference)
+# =============================================================================
+#
+# The default deploy uses a TOKEN (`CLOUDFLARE_TUNNEL_TOKEN` in .env.deploy)
+# and configures ingress in the Zero Trust dashboard:
+#   Networks -> Tunnels -> proton-api -> Public Hostname
+#   Subdomain: api   Domain: example.com
+#   Service:   HTTP  ->  api:3002
+#
+# Token mode ignores this file. Use this file only if you prefer a local,
+# versioned ingress config with a credentials JSON instead of the dashboard.
+#
+# --- Create the tunnel -------------------------------------------------------
+#   cloudflared tunnel login
+#   cloudflared tunnel create proton-api
+#   cloudflared tunnel route dns proton-api api.example.com
+#   # -> writes ~/.cloudflared/<TUNNEL_UUID>.json  (keep it secret)
+#
+# --- Run with this file ------------------------------------------------------
+#   cloudflared tunnel --config /etc/cloudflared/config.yml --no-autoupdate run
+#
+# In compose, mount this file AND the credentials JSON read-only, and replace
+# the `command:` with `tunnel --config /etc/cloudflared/config.yml
+# --no-autoupdate run`. Do not set TUNNEL_TOKEN in that mode.
+#
+# IMPORTANT: `service: http://api:3002` resolves via the compose network DNS
+# name `api`. It is not a public hostname and must not be changed to
+# localhost (cloudflared runs in its own container).
+# =============================================================================
+
+tunnel: REPLACE_WITH_TUNNEL_UUID
+credentials-file: /etc/cloudflared/REPLACE_WITH_TUNNEL_UUID.json
+
+# Seconds to wait for a local origin before returning an error. Keep it short
+# so a dead API produces a fast 502 instead of a hung browser tab.
+originRequest:
+  connectTimeout: 10s
+  noHappyEyeballs: false
+  tcpKeepAlive: 30s
+
+# Order matters: first match wins. Always end with a catch-all.
+ingress:
+  - hostname: api.example.com
+    service: http://api:3002
+    originRequest:
+      connectTimeout: 10s
+  - service: http_status:404
