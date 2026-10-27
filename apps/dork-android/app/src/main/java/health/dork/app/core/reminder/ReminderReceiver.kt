@@ -26,8 +26,13 @@ class ReminderReceiver : BroadcastReceiver() {
     val dosage = intent.getStringExtra(MedicationReminderScheduler.EXTRA_DOSAGE).orEmpty()
     val instructions = intent.getStringExtra(MedicationReminderScheduler.EXTRA_INSTRUCTIONS).orEmpty()
     val timeLabel = intent.getStringExtra(MedicationReminderScheduler.EXTRA_TIME_LABEL).orEmpty()
+    val tone = ReminderTone.fromStorage(
+      intent.getStringExtra(MedicationReminderScheduler.EXTRA_TONE)
+    )
 
-    MedicationReminderScheduler(context).ensureChannel()
+    // The channel owns the sound, so the reminder must be posted to the channel
+    // for its own tone rather than to one shared "medication" channel.
+    MedicationReminderScheduler(context).ensureChannels()
 
     val openApp = PendingIntent.getActivity(
       context,
@@ -38,7 +43,7 @@ class ReminderReceiver : BroadcastReceiver() {
 
     val notification = NotificationCompat.Builder(
       context,
-      MedicationReminderScheduler.CHANNEL_ID
+      tone.channelId
     )
       .setSmallIcon(R.drawable.ic_notification_pill)
       .setContentTitle("Time for $name")

@@ -15,7 +15,9 @@ data class PlannedReminder(
   val dosage: String,
   val instructions: String,
   val timeLabel: String,
-  val atIso: String
+  val atIso: String,
+  /** Carried through so the alarm can pick its channel without a database read. */
+  val tone: ReminderTone = ReminderTone.CHIME
 ) {
   val at: LocalDateTime
     get() = LocalDateTime.parse(atIso)
@@ -60,7 +62,8 @@ object ReminderPlanner {
                 dosage = plan.dosage.substringBefore(" ("),
                 instructions = plan.instructions,
                 timeLabel = label,
-                atIso = at.toString()
+                atIso = at.toString(),
+                tone = plan.tone
               )
             }
           }

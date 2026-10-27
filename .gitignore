@@ -121,3 +121,6 @@ apps/api/var/
 
 # Icon generator scratch output
 apps/dork-android/tools/launcher-icon/out/
+
+# Bundled reminder tones are app resources, not captured audio.
+!apps/dork-android/app/src/main/res/raw/*.wav

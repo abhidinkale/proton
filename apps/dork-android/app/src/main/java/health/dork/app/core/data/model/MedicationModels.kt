@@ -1,6 +1,7 @@
 package health.dork.app.core.data.model
 
 import health.dork.app.core.designsystem.components.MedicationDoseState
+import health.dork.app.core.reminder.ReminderTone
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -31,7 +32,9 @@ data class MedicationPlan(
   val dailyTimes: List<String>,
   val active: Boolean = true,
   val totalScheduledDoses: Int = 30,
-  val dosesTaken: Int = 26
+  val dosesTaken: Int = 26,
+  /** What the reminder sounds like. Defaulted so plans saved before tones existed still load. */
+  val tone: ReminderTone = ReminderTone.CHIME
 ) {
   val adherencePercentage: Int
     get() = if (totalScheduledDoses > 0) (dosesTaken * 100) / totalScheduledDoses else 100

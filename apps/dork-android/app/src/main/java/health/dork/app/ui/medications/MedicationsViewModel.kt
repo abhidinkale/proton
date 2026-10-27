@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import health.dork.app.core.data.model.MedicationDose
 import health.dork.app.core.data.model.MedicationPlan
 import health.dork.app.core.data.repository.MedicationRepository
+import health.dork.app.core.reminder.ReminderTone
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -59,6 +60,51 @@ class MedicationsViewModel(
   fun skipDose(doseId: String) {
     viewModelScope.launch {
       medicationRepository.markDoseSkipped(doseId)
+    }
+  }
+
+  /**
+   * Adds a medicine the patient entered themselves.
+   *
+   * `totalScheduledDoses` is computed rather than guessed: adherence is a
+   * percentage of what was actually scheduled, and a plan that starts life
+   * claiming thirty doses it never had makes a patient look non-adherent on day
+   * one.
+   */
+  fun addMedicine(
+    name: String,
+    dosage: String,
+    instructions: String,
+    durationDays: Int?,
+    times: List<String>,
+    tone: ReminderTone,
+    onDone: () -> Unit = {}
+  ) {
+    viewModelScope.launch {
+      val today = java.time.LocalDate.now()
+      val plan = MedicationPlan(
+        id = "med-${System.currentTimeMillis()}",
+        name = name,
+        dosage = dosage,
+        frequency = when (times.size) {
+          1 -> "Once daily"
+          2 -> "Twice daily"
+          3 -> "Three times daily"
+          else -> "${times.size} times daily"
+        },
+        duration = durationDays?.let { "$it days" } ?: "Ongoing",
+        instructions = instructions.ifBlank { "Take as directed" },
+        prescribingDoctor = "Added by you",
+        startDateIso = today.toString(),
+        endDateIso = durationDays?.let { today.plusDays(it.toLong()).toString() },
+        dailyTimes = times,
+        active = true,
+        totalScheduledDoses = (durationDays ?: 30) * times.size,
+        dosesTaken = 0,
+        tone = tone
+      )
+      medicationRepository.addMedicationPlan(plan)
+      onDone()
     }
   }
 }

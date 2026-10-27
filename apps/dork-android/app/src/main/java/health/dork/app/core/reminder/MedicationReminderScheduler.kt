@@ -7,6 +7,8 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.media.AudioAttributes
+import android.net.Uri
 import android.os.Build
 import health.dork.app.core.data.model.MedicationPlan
 import java.time.LocalDateTime
@@ -27,20 +29,50 @@ class MedicationReminderScheduler(private val context: Context) {
 
   private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
-  fun ensureChannel() {
+  /**
+   * Creates one channel per tone.
+   *
+   * Android freezes a channel's sound at creation and ignores later edits, so a
+   * "change the alarm sound" setting is only honest if every tone owns its own
+   * channel. Safe to call repeatedly; existing channels are left alone.
+   */
+  fun ensureChannels() {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
     val manager = context.getSystemService(NotificationManager::class.java) ?: return
-    if (manager.getNotificationChannel(CHANNEL_ID) != null) return
-    val channel = NotificationChannel(
-      CHANNEL_ID,
-      "Medication reminders",
-      NotificationManager.IMPORTANCE_HIGH
-    ).apply {
-      description = "Reminders at the times you scheduled for each medication."
-      enableVibration(true)
+
+    ReminderTone.entries.forEach { tone ->
+      if (manager.getNotificationChannel(tone.channelId) != null) return@forEach
+
+      val channel = NotificationChannel(
+        tone.channelId,
+        "Medication reminders · ${tone.label}",
+        NotificationManager.IMPORTANCE_HIGH
+      ).apply {
+        description = "Dose reminders that sound like ${tone.label.lowercase()}."
+        enableVibration(tone.vibrate)
+        if (tone.vibrate) vibrationPattern = longArrayOf(0, 250, 180, 250)
+        setShowBadge(true)
+
+        tone.soundRes?.let { res ->
+          val uri = Uri.parse("android.resource://${context.packageName}/$res")
+          setSound(
+            uri,
+            AudioAttributes.Builder()
+              .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+              .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+              .build()
+          )
+        }
+        // SILENT deliberately leaves sound unset.
+      }
+      manager.createNotificationChannel(channel)
     }
-    manager.createNotificationChannel(channel)
   }
+
+  /** Kept for callers that do not care which tone is in play. */
+  fun ensureChannel() = ensureChannels()
+
+  fun channelIdFor(tone: ReminderTone): String = tone.channelId
 
   /**
    * Replaces the whole schedule. Safe to call on launch, on boot, after any
@@ -53,7 +85,7 @@ class MedicationReminderScheduler(private val context: Context) {
   ) {
     cancelAll()
     if (!enabled) return
-    ensureChannel()
+    ensureChannels()
 
     ReminderPlanner.upcoming(plans, now).forEach { reminder ->
       schedule(reminder)
@@ -101,6 +133,7 @@ class MedicationReminderScheduler(private val context: Context) {
         putExtra(EXTRA_DOSAGE, it.dosage)
         putExtra(EXTRA_INSTRUCTIONS, it.instructions)
         putExtra(EXTRA_TIME_LABEL, it.timeLabel)
+        putExtra(EXTRA_TONE, it.tone.name)
       }
     }
     return PendingIntent.getBroadcast(
@@ -127,6 +160,7 @@ class MedicationReminderScheduler(private val context: Context) {
     const val EXTRA_DOSAGE = "med_dosage"
     const val EXTRA_INSTRUCTIONS = "med_instructions"
     const val EXTRA_TIME_LABEL = "med_time"
+    const val EXTRA_TONE = "med_tone"
 
     fun requestCodeFor(doseId: String): Int = doseId.hashCode() and 0x7FFFFFFF
   }

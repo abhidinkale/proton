@@ -1,5 +1,7 @@
 package health.dork.app.ui.medications
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -27,6 +29,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -36,6 +41,8 @@ import health.dork.app.core.designsystem.components.DorkCard
 import health.dork.app.core.designsystem.components.DorkMedicationCard
 import health.dork.app.core.designsystem.components.DorkStatusBadge
 import health.dork.app.core.designsystem.components.DorkStatusType
+import health.dork.app.core.designsystem.components.DorkButton
+import health.dork.app.core.designsystem.components.DorkButtonVariant
 
 @Composable
 fun MedicationsScreen(
@@ -45,6 +52,12 @@ fun MedicationsScreen(
 ) {
   val uiState by viewModel.uiState.collectAsState()
   val scrollState = rememberScrollState()
+  var showEditor by remember { mutableStateOf(false) }
+  val adherenceProgress by animateFloatAsState(
+    targetValue = uiState.overallAdherence / 100f,
+    animationSpec = tween(700),
+    label = "adherence"
+  )
 
   Column(
     modifier = modifier
@@ -62,6 +75,16 @@ fun MedicationsScreen(
       text = "Daily schedule, reminders, and routine tracking",
       style = MaterialTheme.typography.bodyMedium,
       color = DorkTheme.colors.textSecondary
+    )
+
+    Spacer(modifier = Modifier.height(DorkSpacing.m))
+
+    // The one action a patient opens this screen to take. Placed above the
+    // numbers so it is not mistaken for a report.
+    DorkButton(
+      text = "Add a medicine",
+      onClick = { showEditor = true },
+      variant = DorkButtonVariant.Primary
     )
 
     Spacer(modifier = Modifier.height(DorkSpacing.l))
@@ -99,7 +122,7 @@ fun MedicationsScreen(
         Spacer(modifier = Modifier.height(DorkSpacing.s))
 
         LinearProgressIndicator(
-          progress = { uiState.overallAdherence / 100f },
+          progress = { adherenceProgress },
           modifier = Modifier.fillMaxWidth().height(6.dp),
           color = MaterialTheme.colorScheme.primary,
           trackColor = DorkTheme.colors.surfaceBorderSubtle
@@ -248,5 +271,16 @@ fun MedicationsScreen(
     }
 
     Spacer(modifier = Modifier.height(DorkSpacing.giant))
+  }
+
+  if (showEditor) {
+    MedicationEditorSheet(
+      onDismiss = { showEditor = false },
+      onSave = { name, dosage, instructions, durationDays, times, tone ->
+        viewModel.addMedicine(name, dosage, instructions, durationDays, times, tone) {
+          showEditor = false
+        }
+      }
+    )
   }
 }
