@@ -2,20 +2,19 @@
 <!--
   Debug-only network policy.
 
-  SyncUrlPolicy already refuses plain http:// except for a loopback host, but
-  Android's platform default blocks cleartext for every host on targetSdk 28+.
-  Without this file a developer pointing the app at their laptop would see a
-  generic connection error instead of a working local sync.
+  SyncUrlPolicy already refuses plain http:// unless the host is loopback or a
+  private RFC1918 address, but Android's platform default blocks cleartext for
+  every host on targetSdk 28+, so the check would never be reached: the request
+  would die in the socket layer with a generic connection error.
 
-  Release builds do not include this file, so a production APK can still only
-  speak TLS.
+  Android's network-security-config cannot express an address range, and a
+  developer's laptop moves between networks, so this file permits cleartext for
+  the whole debug build and leaves the address decision to SyncUrlPolicy, which
+  is the stricter of the two.
+
+  Release builds do not include this file. A production APK can still only
+  speak TLS, and the policy refuses http:// there regardless.
 -->
 <network-security-config>
-  <base-config cleartextTrafficPermitted="false" />
-  <domain-config cleartextTrafficPermitted="true">
-    <domain includeSubdomains="false">localhost</domain>
-    <domain includeSubdomains="false">127.0.0.1</domain>
-    <!-- The Android emulator's alias for the host machine. -->
-    <domain includeSubdomains="false">10.0.2.2</domain>
-  </domain-config>
+  <base-config cleartextTrafficPermitted="true" />
 </network-security-config>

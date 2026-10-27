@@ -40,7 +40,7 @@ class SyncEngine(
   private val careRepository: CareRepository,
   private val recordRepository: RecordRepository,
   private val clinicInboxRepository: ClinicInboxRepository = NoOpClinicInboxRepository,
-  private val allowCleartextLocalhost: Boolean = BuildConfig.DEBUG,
+  private val allowCleartextDevServer: Boolean = BuildConfig.DEBUG,
   private val nowIso: () -> String = { Instant.now().toString() }
 ) {
 
@@ -53,7 +53,7 @@ class SyncEngine(
     if (!settings.enabled.value) return SyncRunReport()
     if (settings.baseUrl.value.isBlank()) return SyncRunReport()
 
-    if (!SyncUrlPolicy.validate(settings.baseUrl.value, allowCleartextLocalhost)
+    if (!SyncUrlPolicy.validate(settings.baseUrl.value, allowCleartextDevServer)
         .let { it is SyncUrlPolicy.Result.Valid }
     ) {
       val message = "Sync is paused until the server address is a valid https:// URL."

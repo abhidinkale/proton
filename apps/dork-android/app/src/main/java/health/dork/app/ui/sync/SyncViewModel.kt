@@ -57,7 +57,7 @@ class SyncViewModel(
   private val clinicRepository: ClinicRepository,
   private val scheduleSync: () -> Unit = {},
   private val cancelSync: () -> Unit = {},
-  private val allowCleartextLocalhost: Boolean = BuildConfig.DEBUG
+  private val allowCleartextDevServer: Boolean = BuildConfig.DEBUG
 ) : ViewModel() {
 
   private val _uiState = MutableStateFlow(
@@ -209,7 +209,7 @@ class SyncViewModel(
       return
     }
 
-    when (val policy = SyncUrlPolicy.validate(state.baseUrl, allowCleartextLocalhost)) {
+    when (val policy = SyncUrlPolicy.validate(state.baseUrl, allowCleartextDevServer)) {
       is SyncUrlPolicy.Result.Invalid -> {
         _uiState.value = state.copy(error = policy.reason, message = null)
         return
@@ -232,7 +232,7 @@ class SyncViewModel(
       connect()
       return
     }
-    when (val policy = SyncUrlPolicy.validate(state.baseUrl, allowCleartextLocalhost)) {
+    when (val policy = SyncUrlPolicy.validate(state.baseUrl, allowCleartextDevServer)) {
       is SyncUrlPolicy.Result.Invalid -> _uiState.value = state.copy(error = policy.reason)
       is SyncUrlPolicy.Result.Valid ->
         requestOtp(policy.normalizedBaseUrl, state.identifier.trim(), state.clinicCode)

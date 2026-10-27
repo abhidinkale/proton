@@ -90,7 +90,7 @@ class SyncEngineTest {
     careRepository = care,
     recordRepository = records,
     clinicInboxRepository = inbox,
-    allowCleartextLocalhost = false
+    allowCleartextDevServer = false
   )
 
   @Test
