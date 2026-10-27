@@ -27,6 +27,7 @@ data class OnboardingUiState(
   val bloodGroup: BloodGroup = BloodGroup.UNKNOWN,
   val selectedConditions: Set<String> = emptySet(),
   val selectedAllergies: Set<String> = emptySet(),
+  val customConditionInput: String = "",
   val customAllergyInput: String = "",
   val currentMedications: String = "",
   val emergencyContactName: String = "",
@@ -118,6 +119,27 @@ class OnboardingViewModel(
 
   fun onCustomAllergyChange(text: String) {
     _uiState.value = _uiState.value.copy(customAllergyInput = text)
+  }
+
+  /**
+   * Adds a condition the preset list does not cover.
+   *
+   * That list is a prompt, not a vocabulary: "post-viral fatigue" or
+   * "endometriosis" are ordinary answers to "any medical conditions" that no
+   * fixed chip row will anticipate. Typing one also clears "None", because the
+   * two cannot both be true.
+   */
+  fun addCustomCondition() {
+    val input = _uiState.value.customConditionInput.trim()
+    if (input.isBlank()) return
+    val current = _uiState.value.selectedConditions.toMutableSet()
+    current.remove("None")
+    current.add(input)
+    _uiState.value = _uiState.value.copy(selectedConditions = current, customConditionInput = "")
+  }
+
+  fun onCustomConditionChange(text: String) {
+    _uiState.value = _uiState.value.copy(customConditionInput = text)
   }
 
   fun onMedicationsChange(text: String) {
