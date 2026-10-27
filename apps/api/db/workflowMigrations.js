@@ -313,6 +313,78 @@ const WORKFLOW_MIGRATIONS = [
       CREATE INDEX IF NOT EXISTS idx_patient_messages_encounter
         ON patient_messages(tenant_id, encounter_id);
     `
+  },
+  {
+    version: 7,
+    name: 'patient_documents',
+    sql: `
+      -- ---------------------------------------------------------------------
+      -- Documents the patient uploads from the phone
+      --
+      -- The bytes live on the object store, not in Postgres; this row is the
+      -- index. That keeps a 10 MB scan out of every dump of the workflow
+      -- database while still making the document a first-class, queryable
+      -- clinical record.
+      --
+      -- The content hash is stored so the same file uploaded twice can be
+      -- recognised, and so a clinician can confirm the artefact they opened is
+      -- the artefact the patient sent.
+      -- ---------------------------------------------------------------------
+      CREATE TABLE IF NOT EXISTS patient_documents (
+        id TEXT PRIMARY KEY,
+        tenant_id TEXT NOT NULL DEFAULT 'org-default',
+        patient_id TEXT NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+        title TEXT NOT NULL,
+        category TEXT NOT NULL DEFAULT 'OTHER'
+          CHECK (category IN (
+            'LAB_REPORT', 'PRESCRIPTION', 'DISCHARGE_SUMMARY',
+            'IMAGING_REPORT', 'REFERRAL', 'INSURANCE', 'OTHER'
+          )),
+        original_name TEXT NOT NULL,
+        mime_type TEXT NOT NULL,
+        byte_size INTEGER NOT NULL CHECK (byte_size > 0),
+        sha256 TEXT NOT NULL,
+        storage_path TEXT NOT NULL,
+        -- Who put it here. A clinician-authored scan and a patient's own upload
+        -- carry different trust, and the UI must be able to say which it is.
+        source TEXT NOT NULL DEFAULT 'PATIENT_APP'
+          CHECK (source IN ('PATIENT_APP', 'CLINIC', 'FHIR_IMPORT')),
+        uploaded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        -- Soft delete: a patient can retract a document from their timeline,
+        -- but the clinic's audit trail still knows it existed.
+        deleted_at TIMESTAMPTZ
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_patient_documents_patient
+        ON patient_documents(tenant_id, patient_id, uploaded_at DESC);
+
+      CREATE INDEX IF NOT EXISTS idx_patient_documents_live
+        ON patient_documents(tenant_id, patient_id)
+        WHERE deleted_at IS NULL;
+
+      CREATE INDEX IF NOT EXISTS idx_patient_documents_hash
+        ON patient_documents(tenant_id, sha256);
+    `
+  },
+  {
+    version: 8,
+    name: 'prescription_authorship',
+    sql: `
+      -- A prescription the patient can see must say who signed it and why.
+      -- signed_by is an actor id, which is not a name a patient can read, and
+      -- the reason a drug was started belongs on the prescription rather than
+      -- buried in an encounter event.
+      ALTER TABLE prescriptions
+        ADD COLUMN IF NOT EXISTS signed_by_name TEXT;
+
+      ALTER TABLE prescriptions
+        ADD COLUMN IF NOT EXISTS reason TEXT;
+
+      -- The phone pulls "my signed prescriptions" on every sync; without this
+      -- the join from encounters to prescriptions is a scan.
+      CREATE INDEX IF NOT EXISTS idx_prescriptions_signed
+        ON prescriptions(tenant_id, status, signed_at DESC);
+    `
   }
 ];
 

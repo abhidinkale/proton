@@ -417,6 +417,206 @@ async function listPatientMessages({ tenantId = 'org-default', patientId, limit 
 }
 
 // ---------------------------------------------------------------------------
+// Patient documents
+// ---------------------------------------------------------------------------
+
+/**
+ * Inserts a document index row.
+ *
+ * The bytes are already on the object store by the time this runs; if the
+ * insert fails the caller deletes them, so a row and a file never diverge in
+ * the direction that would lose a patient's record.
+ */
+async function createPatientDocument(
+  {
+    id,
+    tenantId = 'org-default',
+    patientId,
+    title,
+    category = 'OTHER',
+    originalName,
+    mimeType,
+    byteSize,
+    sha256,
+    storagePath,
+    source = 'PATIENT_APP'
+  },
+  { client = null, p = null } = {}
+) {
+  const q = client || pool(p);
+  const { rows } = await q.query(
+    `INSERT INTO patient_documents
+       (id, tenant_id, patient_id, title, category, original_name,
+        mime_type, byte_size, sha256, storage_path, source)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+     RETURNING *;`,
+    [
+      id || newId('doc'),
+      tenantId,
+      patientId,
+      title,
+      category,
+      originalName,
+      mimeType,
+      byteSize,
+      sha256,
+      storagePath,
+      source
+    ]
+  );
+  return rows[0];
+}
+
+/** Live (not retracted) documents for one patient, newest first. */
+async function listPatientDocuments({ tenantId = 'org-default', patientId, limit = 100, p = null } = {}) {
+  const { rows } = await pool(p).query(
+    `SELECT * FROM patient_documents
+      WHERE tenant_id = $1 AND patient_id = $2 AND deleted_at IS NULL
+      ORDER BY uploaded_at DESC LIMIT $3;`,
+    [tenantId, patientId, Math.min(Math.max(Number(limit) || 100, 1), 200)]
+  );
+  return rows;
+}
+
+/**
+ * One document, scoped to a tenant.
+ *
+ * Deliberately does not filter `deleted_at`: the file route has to be able to
+ * answer "this was retracted" with a 404 rather than a database miss, and a
+ * clinician verifying a past read still needs the row.
+ */
+async function getPatientDocument({ tenantId = 'org-default', documentId, p = null }) {
+  const { rows } = await pool(p).query(
+    `SELECT * FROM patient_documents WHERE tenant_id = $1 AND id = $2;`,
+    [tenantId, documentId]
+  );
+  return rows[0] || null;
+}
+
+/**
+ * Documents across every patient in a tenant, for the clinic's document queue.
+ * Joins the patient name so the caller does not need a second query per row.
+ */
+async function listTenantDocuments({ tenantId = 'org-default', patientId = null, limit = 100, p = null } = {}) {
+  const params = [tenantId];
+  let sql = `
+    SELECT d.*, p.full_name AS patient_name
+      FROM patient_documents d
+      JOIN patients p ON p.id = d.patient_id AND p.tenant_id = d.tenant_id
+     WHERE d.tenant_id = $1 AND d.deleted_at IS NULL`;
+  if (patientId) {
+    params.push(patientId);
+    sql += ` AND d.patient_id = $2`;
+  }
+  params.push(Math.min(Math.max(Number(limit) || 100, 1), 200));
+  sql += ` ORDER BY d.uploaded_at DESC LIMIT $${params.length};`;
+  const { rows } = await pool(p).query(sql, params);
+  return rows;
+}
+
+/** Soft delete. Returns the updated row, or null when it is not there. */
+async function retractPatientDocument({ tenantId = 'org-default', patientId, documentId, p = null }) {
+  const { rows } = await pool(p).query(
+    `UPDATE patient_documents
+        SET deleted_at = NOW()
+      WHERE tenant_id = $1 AND patient_id = $2 AND id = $3 AND deleted_at IS NULL
+      RETURNING *;`,
+    [tenantId, patientId, documentId]
+  );
+  return rows[0] || null;
+}
+
+// ---------------------------------------------------------------------------
+// Prescriptions
+// ---------------------------------------------------------------------------
+
+/**
+ * Writes one signed prescription row per medication.
+ *
+ * A prescription is per-medication in this schema, so a three-drug script is
+ * three rows sharing an encounter and a signing instant. They are written in
+ * one transaction by the caller: a half-signed script is not a clinical state.
+ */
+async function createPrescriptions(
+  {
+    tenantId = 'org-default',
+    encounterId,
+    signedBy,
+    signedByName = null,
+    reason = null,
+    signedAt = new Date(),
+    medications = [],
+    safetyStatus = 'PENDING',
+    safetyDetail = {}
+  },
+  { client = null, p = null } = {}
+) {
+  const q = client || pool(p);
+  const rows = [];
+
+  for (const medication of medications) {
+    const { rows: inserted } = await q.query(
+      `INSERT INTO prescriptions
+         (id, tenant_id, encounter_id, medication_name, rxnorm_code, dose, route,
+          frequency, duration_days, status, safety_status, safety_detail,
+          signed_by, signed_by_name, reason, signed_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'SIGNED', $10, $11, $12, $13, $14, $15)
+       RETURNING *;`,
+      [
+        newId('rx'),
+        tenantId,
+        encounterId,
+        medication.medicationName,
+        medication.rxnormCode || null,
+        medication.dose,
+        medication.route || 'Oral',
+        medication.frequency,
+        medication.durationDays || null,
+        safetyStatus,
+        JSON.stringify(safetyDetail),
+        signedBy,
+        signedByName,
+        reason,
+        signedAt
+      ]
+    );
+    rows.push(inserted[0]);
+  }
+
+  return rows;
+}
+
+/**
+ * Signed prescriptions for one patient, newest first.
+ *
+ * Prescriptions hang off an encounter, not the patient, so this joins through
+ * encounters. Only SIGNED rows are returned: a PROPOSED row is a draft the
+ * patient must never see as an instruction.
+ */
+async function listSignedPrescriptionsForPatient({ tenantId = 'org-default', patientId, limit = 100, p = null } = {}) {
+  const { rows } = await pool(p).query(
+    `SELECT rx.*, e.patient_id
+       FROM prescriptions rx
+       JOIN encounters e ON e.id = rx.encounter_id AND e.tenant_id = rx.tenant_id
+      WHERE rx.tenant_id = $1 AND e.patient_id = $2 AND rx.status = 'SIGNED'
+      ORDER BY rx.signed_at DESC NULLS LAST
+      LIMIT $3;`,
+    [tenantId, patientId, Math.min(Math.max(Number(limit) || 100, 1), 200)]
+  );
+  return rows;
+}
+
+async function listSignedPrescriptionsForEncounter({ tenantId = 'org-default', encounterId, p = null }) {
+  const { rows } = await pool(p).query(
+    `SELECT * FROM prescriptions
+      WHERE tenant_id = $1 AND encounter_id = $2 AND status = 'SIGNED'
+      ORDER BY created_at ASC;`,
+    [tenantId, encounterId]
+  );
+  return rows;
+}
+
+// ---------------------------------------------------------------------------
 // Idempotency
 // ---------------------------------------------------------------------------
 
@@ -473,6 +673,14 @@ module.exports = {
   listOutbox,
   recordPatientMessage,
   listPatientMessages,
+  createPatientDocument,
+  listPatientDocuments,
+  getPatientDocument,
+  listTenantDocuments,
+  retractPatientDocument,
+  createPrescriptions,
+  listSignedPrescriptionsForPatient,
+  listSignedPrescriptionsForEncounter,
   getWorkflowIdempotentResponse,
   putWorkflowIdempotentResponse
 };

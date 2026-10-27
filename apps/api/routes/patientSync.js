@@ -17,16 +17,27 @@
 
 const express = require('express');
 const crypto = require('crypto');
+const multer = require('multer');
 const { requirePatientAuth } = require('../middleware/patientAuth');
 const { bookAppointment, BookingError } = require('../services/scheduling/durableBooking');
 const repo = require('../storage/postgres/workflowRepository');
+const documentStore = require('../services/documents/patientDocumentStore');
+const prescriptionService = require('../services/careLoop/prescriptionService');
 const { resolveWorkflowPersistence } = require('../services/workflow/runtime');
 const patientAccountStore = require('../services/patients/patientAccountStore');
 
 const router = express.Router();
 
 const IDEMPOTENCY_HEADER = 'idempotency-key';
-const SUPPORTED_KINDS = ['bookings', 'intakes', 'follow-ups', 'refills', 'cancellations', 'reschedules'];
+const SUPPORTED_KINDS = [
+  'bookings',
+  'intakes',
+  'follow-ups',
+  'refills',
+  'cancellations',
+  'reschedules',
+  'documents'
+];
 
 function requestHash(body) {
   return crypto.createHash('sha256').update(JSON.stringify(body || {})).digest('hex');
@@ -562,21 +573,302 @@ router.post('/refills', requirePatientAuth, async (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
+// Documents
+// ---------------------------------------------------------------------------
+
+const documentUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: documentStore.MAX_BYTES, files: 1 },
+  // Rejects at the boundary, before the bytes are buffered. The store checks
+  // the type again: this is an early exit, not the only guard.
+  fileFilter: (req, file, cb) => {
+    if (!documentStore.extensionFor(file.mimetype)) {
+      const err = new Error(
+        'Only PDF and image files can be attached. Please export the report as PDF or take a photo of it.'
+      );
+      err.code = 'DOCUMENT_TYPE_UNSUPPORTED';
+      err.status = 415;
+      return cb(err);
+    }
+    cb(null, true);
+  }
+});
+
+/** Multer reports its own errors outside the handler; translate them to the API's shape. */
+function receiveDocument(req, res, next) {
+  documentUpload.single('file')(req, res, (err) => {
+    if (!err) return next();
+
+    if (err instanceof multer.MulterError) {
+      const tooLarge = err.code === 'LIMIT_FILE_SIZE';
+      return res.status(tooLarge ? 413 : 400).json({
+        error: tooLarge
+          ? 'That file is larger than 15 MB. Please split it or compress the scan.'
+          : 'The upload could not be read. Please try again.',
+        code: tooLarge ? 'DOCUMENT_TOO_LARGE' : 'DOCUMENT_UPLOAD_INVALID'
+      });
+    }
+
+    return res.status(err.status || 400).json({
+      error: err.message || 'The upload could not be read.',
+      code: err.code || 'DOCUMENT_UPLOAD_INVALID'
+    });
+  });
+}
+
+/** A file name is metadata, never a path. Strip anything that reads like one. */
+function cleanFileName(value, fallback) {
+  const raw = typeof value === 'string' ? value : '';
+  const base = raw.split(/[\\/]/).pop() || '';
+  // eslint-disable-next-line no-control-regex
+  const clean = base.replace(/[\u0000-\u001F\u007F]/g, '').trim().slice(0, 200);
+  return clean || fallback;
+}
+
+function cleanCategory(value) {
+  const upper = typeof value === 'string' ? value.trim().toUpperCase() : '';
+  return documentStore.CATEGORIES.includes(upper) ? upper : 'OTHER';
+}
+
+/**
+ * The server id for a document the app queued offline.
+ *
+ * Same reasoning as `deriveSyncAppointmentId`: the phone's retry must map to the
+ * row it already created, and two patients may both call a document `doc-1`.
+ */
+function deriveSyncDocumentId(tenantId, patientId, localId) {
+  return (
+    'doc-sync-' +
+    crypto
+      .createHash('sha256')
+      .update(`${tenantId}\u0000${patientId}\u0000${localId}`)
+      .digest('hex')
+      .slice(0, 32)
+  );
+}
+
+/** The wire shape for a stored document. Deliberately omits `storage_path`. */
+function documentPayload(row) {
+  return {
+    id: row.id,
+    title: row.title,
+    category: row.category,
+    contentType: row.mime_type,
+    byteSize: row.byte_size,
+    sha256: row.sha256,
+    source: row.source,
+    uploadedAt: row.uploaded_at,
+    downloadPath: `/api/patient/sync/documents/${encodeURIComponent(row.id)}/file`
+  };
+}
+
+/**
+ * Ensures the clinical `patients` row exists before a document points at it.
+ *
+ * A patient may upload a report before they have ever booked, so the row is
+ * created from the account name the clinic already holds. Without this the
+ * foreign key would reject the upload, and a patient would be told to book an
+ * appointment before they can attach the report the appointment is about.
+ */
+async function ensurePatientRow({ tenantId, patientId }) {
+  const existing = await repo.getPatient({ tenantId, patientId });
+  if (existing) return existing;
+
+  const account = await patientAccountStore
+    .getPatientAccount({ tenantId, patientId })
+    .catch(() => null);
+
+  return repo.createPatient({
+    id: patientId,
+    tenantId,
+    fullName: account?.display_name || account?.displayName || 'Patient'
+  });
+}
+
+/**
+ * Accepts a document from the patient's phone.
+ *
+ * Order matters: the row is only written after the bytes are on disk, and the
+ * bytes are removed if the row fails. A document is either fully recorded or
+ * not there at all — never a row pointing at nothing.
+ */
+router.post('/documents', requirePatientAuth, receiveDocument, async (req, res) => {
+  if (!requirePostgres(res)) return;
+
+  const file = req.file;
+  if (!file || !file.buffer || file.buffer.length === 0) {
+    return res.status(400).json({
+      error: 'Choose a file to upload.',
+      code: 'DOCUMENT_EMPTY'
+    });
+  }
+
+  const body = req.body || {};
+  const localId = cleanText(body.localDocumentId, 128);
+  const documentId = localId
+    ? deriveSyncDocumentId(req.patient.tenantId, req.patient.id, localId)
+    : `doc-${crypto.randomUUID()}`;
+
+  try {
+    const payload = await withIdempotency(req, async () => {
+      // A retry with a fresh Idempotency-Key still must not store the file
+      // twice; the derived id is the second line of defence.
+      const existing = await repo.getPatientDocument({
+        tenantId: req.patient.tenantId,
+        documentId
+      });
+      if (existing) {
+        if (existing.patient_id !== req.patient.id) {
+          const e = new Error('That document is not on your record.');
+          e.status = 403;
+          e.code = 'DOCUMENT_SCOPE_VIOLATION';
+          throw e;
+        }
+        return { success: true, document: documentPayload(existing), idempotent: true };
+      }
+
+      await ensurePatientRow({ tenantId: req.patient.tenantId, patientId: req.patient.id });
+
+      const stored = await documentStore.put({
+        tenantId: req.patient.tenantId,
+        patientId: req.patient.id,
+        documentId,
+        buffer: file.buffer,
+        mimeType: file.mimetype
+      });
+
+      let row;
+      try {
+        row = await repo.createPatientDocument({
+          id: documentId,
+          tenantId: req.patient.tenantId,
+          patientId: req.patient.id,
+          title: cleanText(body.title, 200) || cleanFileName(file.originalname, 'Medical document'),
+          category: cleanCategory(body.category),
+          originalName: cleanFileName(file.originalname, 'document'),
+          mimeType: stored.mimeType,
+          byteSize: stored.byteSize,
+          sha256: stored.sha256,
+          storagePath: stored.storagePath,
+          source: 'PATIENT_APP'
+        });
+      } catch (insertError) {
+        // The file is an orphan the moment the row fails; never leave it behind.
+        await documentStore.remove({ storagePath: stored.storagePath });
+        throw insertError;
+      }
+
+      return { success: true, document: documentPayload(row), idempotent: false };
+    });
+
+    return res.status(payload.idempotent ? 200 : 201).json(payload);
+  } catch (err) {
+    if (err instanceof documentStore.DocumentStoreError) {
+      return res.status(err.status).json({ error: err.message, code: err.code });
+    }
+    return sendError(res, err);
+  }
+});
+
+router.get('/documents', requirePatientAuth, async (req, res) => {
+  if (!requirePostgres(res)) return;
+
+  try {
+    const rows = await repo.listPatientDocuments({
+      tenantId: req.patient.tenantId,
+      patientId: req.patient.id,
+      limit: 100
+    });
+    return res.json({ documents: rows.map(documentPayload) });
+  } catch (err) {
+    return sendError(res, err);
+  }
+});
+
+/**
+ * Streams one document back to its owner.
+ *
+ * The lookup is scoped to the caller, so a guessed id is a 404 rather than
+ * another patient's scan. `Content-Disposition: inline` keeps the browser's
+ * PDF viewer working; `nosniff` stops a mislabelled upload being executed.
+ */
+router.get('/documents/:documentId/file', requirePatientAuth, async (req, res) => {
+  if (!requirePostgres(res)) return;
+
+  try {
+    const row = await repo.getPatientDocument({
+      tenantId: req.patient.tenantId,
+      documentId: String(req.params.documentId || '')
+    });
+
+    if (!row || row.deleted_at || row.patient_id !== req.patient.id) {
+      return res.status(404).json({ error: 'That document was not found.', code: 'DOCUMENT_NOT_FOUND' });
+    }
+
+    const { stream, byteSize } = await documentStore.read({ storagePath: row.storage_path });
+    res.setHeader('Content-Type', row.mime_type);
+    res.setHeader('Content-Length', String(byteSize));
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader(
+      'Content-Disposition',
+      `inline; filename="${encodeURIComponent(row.original_name || 'document')}"`
+    );
+    stream.on('error', () => {
+      if (!res.headersSent) {
+        res.status(500).json({ error: 'The document could not be read.', code: 'DOCUMENT_READ_FAILED' });
+      } else {
+        res.destroy();
+      }
+    });
+    return stream.pipe(res);
+  } catch (err) {
+    if (err instanceof documentStore.DocumentStoreError) {
+      return res.status(err.status).json({ error: err.message, code: err.code });
+    }
+    return sendError(res, err);
+  }
+});
+
+/**
+ * Retracts a document from the patient's timeline.
+ *
+ * Soft delete: the clinic's record that the document existed survives, which is
+ * what an audit needs, while the patient's phone stops showing it.
+ */
+router.delete('/documents/:documentId', requirePatientAuth, async (req, res) => {
+  if (!requirePostgres(res)) return;
+
+  try {
+    const row = await repo.retractPatientDocument({
+      tenantId: req.patient.tenantId,
+      patientId: req.patient.id,
+      documentId: String(req.params.documentId || '')
+    });
+    if (!row) {
+      return res.status(404).json({ error: 'That document was not found.', code: 'DOCUMENT_NOT_FOUND' });
+    }
+    return res.json({ success: true, documentId: row.id });
+  } catch (err) {
+    return sendError(res, err);
+  }
+});
+
+// ---------------------------------------------------------------------------
 // Pull
 // ---------------------------------------------------------------------------
 
 /**
  * Everything the clinic sends back.
  *
- * Appointments and clinic messages are served from the workflow database. A
- * message is included only when a clinician wrote it — the patient's own
- * check-ins and refill requests stay on their device and on the clinic's queue,
- * so the phone's inbox is not a mirror of its outbox.
+ * Appointments, clinic messages and the patient's own uploaded documents are
+ * served from the workflow database. A message is included only when a
+ * clinician wrote it — the patient's own check-ins and refill requests stay on
+ * their device and on the clinic's queue, so the phone's inbox is not a mirror
+ * of its outbox.
  *
- * Prescriptions and availability still return empty arrays, and the client's
- * merger treats an absent collection as "no change" rather than "delete" — so a
- * patient never loses the data already on their phone because a server had
- * nothing to say.
+ * Availability still returns an empty array, and the client's merger treats an
+ * absent collection as "no change" rather than "delete" — so a patient never
+ * loses the data already on their phone because a server had nothing to say.
  */
 router.get('/pull', requirePatientAuth, async (req, res) => {
   if (!requirePostgres(res)) return;
@@ -629,11 +921,28 @@ router.get('/pull', requirePatientAuth, async (req, res) => {
         };
       });
 
+    const documents = (
+      await repo.listPatientDocuments({
+        tenantId: req.patient.tenantId,
+        patientId: req.patient.id,
+        limit: 100
+      })
+    ).map(documentPayload);
+
+    // A signed prescription is an instruction the patient may act on, so it is
+    // sent as a bundle: the timeline record and the structured medicines
+    // together. PROPOSED rows never leave the clinic.
+    const prescriptions = await prescriptionService.prescriptionsForPatient({
+      tenantId: req.patient.tenantId,
+      patientId: req.patient.id
+    });
+
     return res.json({
       serverTime: new Date().toISOString(),
       appointments: mine,
       messages,
-      prescriptions: [],
+      documents,
+      prescriptions,
       availability: []
     });
   } catch (err) {
