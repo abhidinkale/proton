@@ -27,7 +27,7 @@ export interface AccentOption {
 }
 
 export const ACCENTS: AccentOption[] = [
-  { id: 'blue', label: 'Clinic blue', swatch: '#2F5AE0', note: 'Default. Calm, legible under fluorescent light.' },
+  { id: 'blue', label: 'Clinic blue', swatch: '#4D6BFE', note: 'Default. Calm, legible under fluorescent light.' },
   { id: 'teal', label: 'Teal', swatch: '#0F766E', note: 'Quiet, reads well next to vital-sign greens.' },
   { id: 'violet', label: 'Violet', swatch: '#6A4CD9', note: 'More presence; good for demo lighting.' },
   { id: 'amber', label: 'Amber', swatch: '#B26A0B', note: 'Warm; sits next to paper without contrast fights.' },
@@ -83,11 +83,16 @@ export interface DashboardPrefs {
   hidden: PanelId[];
 }
 
+/** Panels a doctor should not meet on their first visit. */
+const DEFAULT_HIDDEN: PanelId[] = ['notes', 'activity'];
+
 const DEFAULT_PREFS: DashboardPrefs = {
   accent: 'blue',
   density: 'comfortable',
   order: { main: [...PANEL_ORDER_MAIN], rail: [...PANEL_ORDER_RAIL] },
-  hidden: []
+  // The first screen a doctor sees stays quiet: the signature prompt covers
+  // notes, and the audit trail is opt-in. Both are one toggle away.
+  hidden: [...DEFAULT_HIDDEN]
 };
 
 function storageKey(userKey: string): string {
@@ -95,7 +100,11 @@ function storageKey(userKey: string): string {
 }
 
 function sanitize(raw: unknown): DashboardPrefs {
-  if (!raw || typeof raw !== 'object') return { ...DEFAULT_PREFS, order: { ...DEFAULT_PREFS.order } };
+  if (!raw || typeof raw !== 'object') {
+    // Copy every array: a shallow spread would share DEFAULT_PREFS' arrays, and
+    // one in-place edit anywhere would poison the defaults for the session.
+    return { ...DEFAULT_PREFS, order: { ...DEFAULT_PREFS.order }, hidden: [...DEFAULT_PREFS.hidden] };
+  }
   const input = raw as Partial<DashboardPrefs>;
   const accent = ACCENTS.some((option) => option.id === input.accent) ? (input.accent as AccentId) : 'blue';
   const density: Density = input.density === 'compact' ? 'compact' : 'comfortable';
@@ -156,8 +165,13 @@ export function useDashboardPrefs(userKey: string): DashboardPrefsApi {
   // The accent lives on <html> so the rail, top bar and focus rings inherit it.
   useEffect(() => {
     document.documentElement.dataset.accent = prefs.accent;
+  }, [prefs.accent]);
+
+  // Density is a second root attribute: index.css keys the compact rules off it,
+  // so it has to be written here or the picker in the panel does nothing.
+  useEffect(() => {
     document.documentElement.dataset.density = prefs.density;
-  }, [prefs.accent, prefs.density]);
+  }, [prefs.density]);
 
   useEffect(() => {
     writePrefs(userKey, prefs);
@@ -212,7 +226,7 @@ export function useDashboardPrefs(userKey: string): DashboardPrefsApi {
   const isCustomized =
     prefs.accent !== 'blue' ||
     prefs.density !== 'comfortable' ||
-    prefs.hidden.length > 0 ||
+    [...prefs.hidden].sort().join() !== [...DEFAULT_HIDDEN].sort().join() ||
     prefs.order.main.join() !== PANEL_ORDER_MAIN.join() ||
     prefs.order.rail.join() !== PANEL_ORDER_RAIL.join();
 

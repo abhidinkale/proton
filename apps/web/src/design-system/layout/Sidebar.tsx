@@ -85,7 +85,7 @@ export function Sidebar({
         {active && (
           <motion.span
             layoutId={layoutId}
-            className="absolute inset-0 rounded-[7px] bg-[#EBE5D5]"
+            className="proton-nav-active absolute inset-0 rounded-[7px] bg-[#EBE5D5]"
             transition={PROTON_SPRING}
           />
         )}
@@ -173,7 +173,7 @@ export function Sidebar({
       {/* Footer */}
       <div className={`pb-3 ${isCollapsed ? 'px-3' : 'px-3'}`}>
         {!isCollapsed ? (
-          <div className="rounded-[10px] border border-[#E2DCCD] bg-[#F1ECDE] p-3">
+          <div className="proton-cohort-card rounded-[12px] border border-[#E2DCCD] bg-[#F1ECDE] p-3">
             <div className="flex items-start justify-between">
               <span className="inline-flex items-center rounded-[4px] border border-[#D8C99B] px-1.5 py-0.5 font-mono text-[7.5px] uppercase tracking-[0.12em] text-[#8A6A1F]">
                 Synthetic

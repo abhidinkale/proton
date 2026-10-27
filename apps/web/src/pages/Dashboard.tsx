@@ -43,7 +43,7 @@ import { useDashboardPrefs, type PanelId } from '../lib/dashboardPrefs';
  * API and says what it counts.
  */
 
-const MUTED = '#6E6A61';
+const MUTED = '#6B7280';
 const WEEKDAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = [
   'January',
@@ -102,13 +102,13 @@ function stageTone(category: ClinicAppointment['queueCategory']): { dot: string;
     case 'IN_CONSULTATION':
       return { dot: 'var(--accent)', text: 'var(--accent-strong)' };
     case 'WAITING':
-      return { dot: '#B07A2A', text: '#7A5416' };
+      return { dot: '#C98A2E', text: '#9A6A1E' };
     case 'READY_FOR_REVIEW':
-      return { dot: '#14161A', text: '#14161A' };
+      return { dot: '#171A21', text: '#171A21' };
     case 'COMPLETED':
-      return { dot: '#8A8578', text: MUTED };
+      return { dot: '#8A93A6', text: MUTED };
     default:
-      return { dot: '#C9C3B4', text: '#A9A394' };
+      return { dot: '#CBD5F0', text: '#A3AEC4' };
   }
 }
 
@@ -249,6 +249,12 @@ export default function Dashboard() {
     return () => window.clearInterval(timer);
   }, []);
 
+  // The soft blue field belongs to the desk, not the whole product.
+  useEffect(() => {
+    document.body.classList.add('clinic-canvas');
+    return () => document.body.classList.remove('clinic-canvas');
+  }, []);
+
   const appointments = useMemo(() => overview?.appointments ?? [], [overview]);
   const metrics = overview?.metrics;
   const drafts = useMemo(() => notes.filter((note) => note.status === 'DRAFT'), [notes]);
@@ -384,48 +390,42 @@ export default function Dashboard() {
               <button
                 type="button"
                 onClick={() => navigate('/documents')}
-                className="inline-flex items-center gap-1 text-[11px] text-[#6E6A61] transition-colors hover:text-[#14161A]"
+                className="inline-flex items-center gap-1 text-[11px] text-[#6B7280] transition-colors hover:text-[#171A21]"
               >
                 Review
                 <ArrowUpRight size={11} />
               </button>
             }
           >
-            <div className={`flex flex-wrap items-center gap-6 ${dense ? 'px-4 py-3' : 'px-5 py-4'}`}>
-              <div className="flex items-center gap-4">
-                <span className="text-[36px] leading-none tracking-[-0.03em] tabular-nums text-[#14161A]">
+            <div className={`flex flex-wrap items-center justify-between gap-4 ${dense ? 'px-5 py-3' : 'px-5 py-5'}`}>
+              <div className="flex items-baseline gap-3.5">
+                <span
+                  className="font-display text-[40px] leading-none tracking-[-0.03em] tabular-nums"
+                  style={{ color: drafts.length > 0 ? 'var(--accent-strong)' : '#171A21' }}
+                >
                   {drafts.length}
                 </span>
                 <div>
-                  <p className="text-[12px] leading-tight text-[#14161A]">
+                  <p className="text-[13.5px] leading-tight text-[#171A21]">
                     {drafts.length === 0
-                      ? 'Queue is clear'
-                      : `note${drafts.length === 1 ? '' : 's'} to sign`}
+                      ? 'Nothing waiting on you'
+                      : `note${drafts.length === 1 ? '' : 's'} awaiting your signature`}
                   </p>
-                  <p className="mt-0.5 text-[10.5px] text-[#8A8578]">
+                  <p className="mt-1 text-[11.5px] text-[#8A93A6]">
                     {signedNotes.length} signed today · {metrics?.unapprovedWrites ?? 0} unapproved write
-                    {(metrics?.unapprovedWrites ?? 0) === 1 ? '' : 's'}
+                    {(metrics?.unapprovedWrites ?? 0) === 1 ? '' : 's'} · {metrics?.signatureRate ?? 0}% signed
                   </p>
                 </div>
               </div>
-
-              <div className="min-w-[9rem] flex-1">
-                <div className="flex h-[6px] overflow-hidden rounded-full bg-[#EFEADF]">
-                  <span
-                    className="h-full"
-                    style={{
-                      width: `${Math.min(100, Math.max(0, metrics?.signatureRate ?? 0))}%`,
-                      background: 'var(--accent)'
-                    }}
-                  />
-                </div>
-                <div className="mt-1.5 flex items-baseline justify-between font-mono text-[9px] uppercase tracking-[0.12em] text-[#A9A394]">
-                  <span>{metrics?.signatureRate ?? 0}% signed</span>
-                  <span>
-                    {metrics?.completed ?? 0}/{metrics?.scheduled ?? 0} closed
-                  </span>
-                </div>
-              </div>
+              <button
+                type="button"
+                onClick={() => navigate('/documents')}
+                className="inline-flex items-center gap-1.5 rounded-[10px] px-3.5 py-2 text-[12px] transition-opacity hover:opacity-90"
+                style={{ background: 'var(--accent)', color: 'var(--accent-on)' }}
+              >
+                Open notes
+                <ArrowRight size={12} />
+              </button>
             </div>
           </Panel>
         );
@@ -436,7 +436,7 @@ export default function Dashboard() {
           <Panel
             key={panel}
             title="Patient flow"
-            eyebrow="By hour · selected day"
+            eyebrow="Hour by hour"
             dense={dense}
             aside={
               <div className="flex items-center gap-0.5" role="tablist" aria-label="Patient flow filter">
@@ -447,10 +447,10 @@ export default function Dashboard() {
                     role="tab"
                     aria-selected={flowFilter === filter}
                     onClick={() => setFlowFilter(filter)}
-                    className={`rounded-[5px] px-2 py-1 text-[10.5px] transition-colors ${
+                    className={`rounded-full border px-3 py-1 text-[11.5px] transition-colors ${
                       flowFilter === filter
-                        ? 'bg-[#14161A] text-[#FCFAF4]'
-                        : 'text-[#8A8578] hover:text-[#14161A]'
+                        ? 'border-[#D8E2FF] bg-[#EEF3FF] text-[#3A55E0]'
+                        : 'border-transparent text-[#8A93A6] hover:text-[#171A21]'
                     }`}
                   >
                     {filter}
@@ -462,39 +462,34 @@ export default function Dashboard() {
             <div className={dense ? 'px-4 py-3' : 'px-5 py-4'}>
               <div className="flex items-baseline justify-between">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-[26px] leading-none tracking-[-0.02em] tabular-nums text-[#14161A]">
+                  <span className="text-[32px] leading-none tracking-[-0.02em] tabular-nums text-[#171A21]">
                     {flow.total}
                   </span>
-                  <span className="text-[11px] text-[#6E6A61]">
+                  <span className="text-[11px] text-[#6B7280]">
                     {flowFilter === 'All' ? 'visits' : flowFilter === 'New' ? 'new patients' : 'insurance visits'}
                   </span>
                 </div>
-                <p className="font-mono text-[9px] uppercase tracking-[0.12em] text-[#A9A394]">
+                <p className="text-[10.5px] text-[#A3AEC4]">
                   {flow.total > 0 ? `peak ${hourLabel(flow.peak.hour)} · ${flow.peak[flow.key]}` : 'no visits'}
                 </p>
               </div>
 
-              <div className="relative mt-5">
-                <div className="pointer-events-none absolute inset-0 flex flex-col justify-between" aria-hidden="true">
-                  {[0, 1, 2].map((line) => (
-                    <span key={line} className="h-px w-full bg-[#F1EDE3]" />
-                  ))}
-                </div>
-                <div className="relative flex h-[84px] items-end gap-1" role="img" aria-label="Visits by hour">
+              <div className="relative mt-6">
+                <div className="relative flex h-[76px] items-end gap-1.5" role="img" aria-label="Visits by hour">
                   {flow.buckets.map((bucket) => {
                     const value = bucket[flow.key];
-                    const height = value === 0 ? 3 : Math.max(8, Math.round((value / max) * 80));
+                    const height = value === 0 ? 4 : Math.max(10, Math.round((value / max) * 72));
                     return (
                       <div key={bucket.hour} className="group relative flex h-full flex-1 items-end justify-center">
                         <span
-                          className="w-[62%] max-w-[20px] rounded-t-[3px] transition-all"
+                          className="w-[54%] max-w-[18px] rounded-[5px] transition-all"
                           style={{
                             height,
-                            background: value === 0 ? '#E8E3D6' : 'var(--accent)',
+                            background: value === 0 ? '#E4EAF6' : 'var(--accent)',
                             opacity: value === 0 ? 1 : 0.9
                           }}
                         />
-                        <span className="pointer-events-none absolute -top-1 hidden whitespace-nowrap rounded-[4px] bg-[#14161A] px-1.5 py-0.5 font-mono text-[9px] text-[#FCFAF4] group-hover:block">
+                        <span className="pointer-events-none absolute -top-1 hidden whitespace-nowrap rounded-[4px] bg-[#171A21] px-1.5 py-0.5 font-mono text-[9px] text-[#FFFFFF] group-hover:block">
                           {bucket.hour}:00 · {value}
                         </span>
                       </div>
@@ -502,7 +497,7 @@ export default function Dashboard() {
                   })}
                 </div>
               </div>
-              <div className="mt-2 flex justify-between font-mono text-[8.5px] uppercase tracking-[0.08em] text-[#B7B1A2]">
+              <div className="mt-3 flex justify-between text-[10.5px] text-[#A3AEC4]">
                 <span>8am</span>
                 <span>11am</span>
                 <span>2pm</span>
@@ -518,7 +513,7 @@ export default function Dashboard() {
           <Panel
             key={panel}
             title="Patient queue"
-            eyebrow={`${counts.all} on the books · ${counts.done} closed`}
+            eyebrow={`${counts.all} patients · ${counts.done} seen`}
             dense={dense}
             aside={
               <div className="flex items-center gap-0.5 overflow-x-auto" role="tablist" aria-label="Queue filter">
@@ -540,10 +535,10 @@ export default function Dashboard() {
                       role="tab"
                       aria-selected={queueFilter === filter}
                       onClick={() => setQueueFilter(filter)}
-                      className={`whitespace-nowrap rounded-[5px] px-2 py-1 text-[10.5px] transition-colors ${
+                      className={`whitespace-nowrap rounded-full border px-3 py-1 text-[11.5px] transition-colors ${
                         queueFilter === filter
-                          ? 'bg-[#14161A] text-[#FCFAF4]'
-                          : 'text-[#8A8578] hover:text-[#14161A]'
+                          ? 'border-[#D8E2FF] bg-[#EEF3FF] text-[#3A55E0]'
+                          : 'border-transparent text-[#8A93A6] hover:text-[#171A21]'
                       }`}
                     >
                       {filter}
@@ -567,13 +562,11 @@ export default function Dashboard() {
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse text-left">
                   <thead>
-                    <tr className="font-mono text-[8.5px] uppercase tracking-[0.14em] text-[#A9A394]">
-                      <th className="px-4 py-2 font-normal">Time</th>
-                      <th className="py-2 font-normal">Patient</th>
-                      <th className="py-2 font-normal">Reason</th>
-                      <th className="py-2 font-normal">Room</th>
-                      <th className="py-2 font-normal">Stage</th>
-                      <th className="px-4 py-2 text-right font-normal">Chart</th>
+                    <tr className="text-[11px] text-[#8A93A6]">
+                      <th className="px-5 py-2.5 font-normal">Time</th>
+                      <th className="py-2.5 font-normal">Patient</th>
+                      <th className="py-2.5 font-normal">Reason</th>
+                      <th className="px-5 py-2.5 text-right font-normal">Stage</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -585,83 +578,64 @@ export default function Dashboard() {
                         <tr
                           key={appointment.id}
                           onClick={() => navigate(`/patients/${appointment.patientId}`)}
-                          className="cursor-pointer border-t border-[#F1EDE3] transition-colors hover:bg-[#F6F3EA]"
+                          className="group cursor-pointer border-t border-[#F1F4FC] transition-colors hover:bg-[#F7FAFF]"
                         >
                           <td
-                            className={`w-[78px] whitespace-nowrap pl-4 pr-2 font-mono text-[10.5px] tabular-nums text-[#6E6A61] ${
-                              dense ? 'py-2' : 'py-2.5'
+                            className={`w-[80px] whitespace-nowrap pl-5 pr-2 font-mono text-[11px] tabular-nums text-[#6B7280] ${
+                              dense ? 'py-2.5' : 'py-3'
                             }`}
                           >
                             {appointment.time}
                           </td>
-                          <td className={dense ? 'py-2' : 'py-2.5'}>
+                          <td className={`max-w-[17rem] overflow-hidden ${dense ? 'py-2.5' : 'py-3'}`}>
                             <div className="flex items-center gap-1.5">
-                              <span className="font-editorial text-[15px] leading-tight text-[#14161A]">
+                              <span className="font-display text-[14px] leading-tight text-[#171A21]">
                                 {appointment.patientName}
                               </span>
                               {urgent && (
                                 <span
-                                  className="rounded-[3px] px-1 py-[1px] font-mono text-[8px] uppercase tracking-[0.08em]"
-                                  style={{ background: '#FBEDEF', color: '#8E2B46' }}
+                                  className="rounded-[3px] px-1 py-[1px] text-[9px] uppercase tracking-[0.06em]"
+                                  style={{ background: '#FDEEF2', color: '#C0355C' }}
                                 >
                                   {appointment.priority}
                                 </span>
                               )}
                             </div>
-                            <p className="mt-0.5 flex items-center gap-1 overflow-hidden whitespace-nowrap text-[10px] text-[#8A8578]">
+                            <p className="mt-0.5 flex items-center gap-1 overflow-hidden whitespace-nowrap text-[11px] text-[#8A93A6]">
                               <span className="truncate">
                                 {appointment.mrn ? `${appointment.mrn} · ` : ''}
                                 {appointment.appointmentType}
+                                {appointment.roomOrVirtual ? ` · ${appointment.roomOrVirtual}` : ''}
                               </span>
                               {allergy && (
                                 <span
-                                  className="inline-flex max-w-[10rem] shrink-0 items-center gap-0.5"
-                                  style={{ color: '#8E2B46' }}
+                                  className="inline-flex shrink-0 items-center gap-0.5"
+                                  style={{ color: '#C0355C' }}
                                   title={allergy}
                                 >
                                   <AlertTriangle size={9} className="shrink-0" />
-                                  <span className="truncate">{allergy}</span>
+                                  <span className="max-w-[9rem] truncate">{allergy}</span>
                                 </span>
                               )}
                             </p>
                           </td>
-                          <td
-                            className={`max-w-[16rem] pr-3 text-[11.5px] leading-snug text-[#5F5B52] ${
-                              dense ? 'py-2' : 'py-2.5'
-                            }`}
-                          >
-                            <span className="line-clamp-2">
+                          <td className={`pr-4 text-[12px] leading-snug text-[#4A5162] ${dense ? 'py-2.5' : 'py-3'}`}>
+                            <span className="line-clamp-1" title={appointment.chiefComplaint || appointment.notes || ''}>
                               {appointment.chiefComplaint || appointment.notes || '—'}
                             </span>
                           </td>
-                          <td
-                            className={`w-[7.5rem] truncate whitespace-nowrap pr-4 font-mono text-[10px] text-[#8A8578] ${
-                              dense ? 'py-2' : 'py-2.5'
-                            }`}
-                          >
-                            {appointment.roomOrVirtual || '—'}
-                          </td>
-                          <td className={`w-[92px] ${dense ? 'py-2' : 'py-2.5'}`}>
+                          <td className={`px-5 text-right ${dense ? 'py-2.5' : 'py-3'}`}>
                             <span
-                              className="inline-flex items-center gap-1.5 whitespace-nowrap text-[11px]"
+                              className="inline-flex items-center gap-1.5 whitespace-nowrap text-[12px]"
                               style={{ color: tone.text }}
                             >
                               <span className="h-[5px] w-[5px] rounded-full" style={{ background: tone.dot }} />
                               {queueStage(appointment.queueCategory)}
+                              <ArrowRight
+                                size={12}
+                                className="ml-1 text-[#B6C0D6] opacity-0 transition-opacity group-hover:opacity-100"
+                              />
                             </span>
-                          </td>
-                          <td className={`w-[64px] pr-4 text-right ${dense ? 'py-2' : 'py-2.5'}`}>
-                            <button
-                              type="button"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                navigate(`/patients/${appointment.patientId}`);
-                              }}
-                              className="inline-flex items-center gap-1 rounded-[5px] border border-transparent px-2 py-1 text-[10.5px] text-[#6E6A61] transition-all hover:border-[#DCD6C8] hover:bg-[#FCFAF4] hover:text-[#14161A]"
-                            >
-                              Open
-                              <ArrowRight size={10} />
-                            </button>
                           </td>
                         </tr>
                       );
@@ -684,7 +658,7 @@ export default function Dashboard() {
               <button
                 type="button"
                 onClick={() => navigate('/documents')}
-                className="text-[11px] text-[#6E6A61] transition-colors hover:text-[#14161A]"
+                className="text-[11px] text-[#6B7280] transition-colors hover:text-[#171A21]"
               >
                 All notes
               </button>
@@ -693,17 +667,17 @@ export default function Dashboard() {
             {drafts.length === 0 ? (
               <EmptyState title="Signature clear" body="Every note you touched today is signed and attributed." />
             ) : (
-              <ul className="divide-y divide-[#F1EDE3]">
+              <ul className="divide-y divide-[#F1F4FC]">
                 {drafts.slice(0, 5).map((note) => (
                   <li key={note.id}>
                     <button
                       type="button"
                       onClick={() => navigate('/documents')}
-                      className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left transition-colors hover:bg-[#F6F3EA]"
+                      className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left transition-colors hover:bg-[#F5F8FF]"
                     >
                       <span className="min-w-0">
-                        <span className="block truncate text-[12px] text-[#14161A]">{note.title}</span>
-                        <span className="mt-0.5 block text-[10.5px] text-[#8A8578]">
+                        <span className="block truncate font-display text-[13.5px] text-[#171A21]">{note.title}</span>
+                        <span className="mt-0.5 block text-[10.5px] text-[#8A93A6]">
                           {note.patientName} · {note.template}
                         </span>
                       </span>
@@ -731,13 +705,13 @@ export default function Dashboard() {
                 body="Every write on this desk will appear here with its author."
               />
             ) : (
-              <ul className="divide-y divide-[#F1EDE3]">
+              <ul className="divide-y divide-[#F1F4FC]">
                 {activity.slice(0, 5).map((event) => (
                   <li key={event.id} className="flex items-start gap-2 px-4 py-2.5">
-                    <span className="mt-[5px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#C9C3B4]" />
+                    <span className="mt-[5px] h-[5px] w-[5px] shrink-0 rounded-full bg-[#CBD5F0]" />
                     <div className="min-w-0 flex-1">
-                      <p className="text-[11.5px] leading-snug text-[#3F3B34]">{event.summary}</p>
-                      <p className="mt-0.5 text-[10px] text-[#A9A394]">
+                      <p className="text-[11.5px] leading-snug text-[#39404F]">{event.summary}</p>
+                      <p className="mt-0.5 text-[10px] text-[#A3AEC4]">
                         {event.actorName || 'System'} · {timeAgo(event.at)}
                       </p>
                     </div>
@@ -763,7 +737,7 @@ export default function Dashboard() {
                   onClick={() =>
                     setMonthCursor(new Date(monthCursor.getFullYear(), monthCursor.getMonth() - 1, 1))
                   }
-                  className="flex h-6 w-6 items-center justify-center rounded-[4px] text-[#8A8578] hover:bg-[#F1EDE4] hover:text-[#14161A]"
+                  className="flex h-6 w-6 items-center justify-center rounded-[4px] text-[#8A93A6] hover:bg-[#F2F5FD] hover:text-[#171A21]"
                 >
                   <ChevronLeft size={12} />
                 </button>
@@ -773,7 +747,7 @@ export default function Dashboard() {
                   onClick={() =>
                     setMonthCursor(new Date(monthCursor.getFullYear(), monthCursor.getMonth() + 1, 1))
                   }
-                  className="flex h-6 w-6 items-center justify-center rounded-[4px] text-[#8A8578] hover:bg-[#F1EDE4] hover:text-[#14161A]"
+                  className="flex h-6 w-6 items-center justify-center rounded-[4px] text-[#8A93A6] hover:bg-[#F2F5FD] hover:text-[#171A21]"
                 >
                   <ChevronRight size={12} />
                 </button>
@@ -781,7 +755,7 @@ export default function Dashboard() {
             }
           >
             <div className={dense ? 'px-3 py-2.5' : 'px-4 py-3'}>
-              <div className="grid grid-cols-7 gap-y-1 text-center font-mono text-[8.5px] uppercase tracking-[0.06em] text-[#B7B1A2]">
+              <div className="grid grid-cols-7 gap-y-1 text-center font-mono text-[8.5px] uppercase tracking-[0.06em] text-[#B6C0D6]">
                 {WEEKDAY.map((day) => (
                   <span key={day}>{day[0]}</span>
                 ))}
@@ -799,23 +773,23 @@ export default function Dashboard() {
                       onClick={() => pickDay(cell)}
                       aria-current={isSelected ? 'date' : undefined}
                       className={`relative mx-auto flex h-7 w-7 items-center justify-center rounded-full text-[11px] tabular-nums transition-colors ${
-                        isSelected ? 'font-medium text-[#FCFAF4]' : 'text-[#3F3B34] hover:bg-[#F1EDE4]'
+                        isSelected ? 'font-medium text-[#FFFFFF]' : 'text-[#39404F] hover:bg-[#F2F5FD]'
                       }`}
                       style={isSelected ? { background: 'var(--accent)' } : undefined}
                     >
                       {Number(cell.slice(-2))}
                       {busy && !isSelected && (
-                        <span className="absolute bottom-[2px] h-[2px] w-[2px] rounded-full bg-[#B7B1A2]" />
+                        <span className="absolute bottom-[2px] h-[2px] w-[2px] rounded-full bg-[#B6C0D6]" />
                       )}
                       {isToday && !isSelected && (
-                        <span className="absolute inset-0 rounded-full border border-[#C9C3B4]" />
+                        <span className="absolute inset-0 rounded-full border border-[#CBD5F0]" />
                       )}
                     </button>
                   );
                 })}
               </div>
-              <div className="mt-2 flex items-center justify-between border-t border-[#F1EDE3] pt-2">
-                <p className="text-[10px] text-[#8A8578]">{weekTotal} visits this week</p>
+              <div className="mt-2 flex items-center justify-between border-t border-[#F1F4FC] pt-2">
+                <p className="text-[10px] text-[#8A93A6]">{weekTotal} visits this week</p>
                 <button
                   type="button"
                   onClick={() => pickDay(today)}
@@ -840,7 +814,7 @@ export default function Dashboard() {
               <button
                 type="button"
                 onClick={() => navigate('/schedule')}
-                className="text-[11px] text-[#6E6A61] transition-colors hover:text-[#14161A]"
+                className="text-[11px] text-[#6B7280] transition-colors hover:text-[#171A21]"
               >
                 Full day
               </button>
@@ -849,7 +823,7 @@ export default function Dashboard() {
             {appointments.length === 0 ? (
               <EmptyState title="A clear day" body="No visits booked. Use the front desk panel to add one." />
             ) : (
-              <ul className="divide-y divide-[#F1EDE3]">
+              <ul className="divide-y divide-[#F1F4FC]">
                 {appointments.slice(0, 6).map((appointment) => {
                   const tone = stageTone(appointment.queueCategory);
                   return (
@@ -857,16 +831,16 @@ export default function Dashboard() {
                       <button
                         type="button"
                         onClick={() => navigate(`/patients/${appointment.patientId}`)}
-                        className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-[#F6F3EA]"
+                        className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-[#F5F8FF]"
                       >
-                        <span className="w-[64px] shrink-0 whitespace-nowrap font-mono text-[10px] tabular-nums text-[#6E6A61]">
+                        <span className="w-[64px] shrink-0 whitespace-nowrap text-[12px] tabular-nums text-[#6B7280]">
                           {appointment.time}
                         </span>
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate text-[12px] text-[#14161A]">
+                          <span className="block truncate font-display text-[13.5px] text-[#171A21]">
                             {appointment.patientName}
                           </span>
-                          <span className="mt-0.5 block truncate text-[10px] text-[#8A8578]">
+                          <span className="mt-0.5 block truncate text-[10px] text-[#8A93A6]">
                             {appointment.appointmentType}
                           </span>
                         </span>
@@ -882,30 +856,35 @@ export default function Dashboard() {
 
       case 'careLoop':
         return (
-          <section key={panel} className="relative overflow-hidden rounded-[14px] bg-[#18191D] px-4 py-4">
+          <section
+            key={panel}
+            className="relative overflow-hidden rounded-[18px] px-5 py-4"
+            style={{ background: 'var(--accent-wash)', border: '1px solid var(--accent-line)' }}
+          >
             <div
-              className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full opacity-20 blur-2xl"
+              className="pointer-events-none absolute -right-14 -top-14 h-36 w-36 rounded-full opacity-[0.12] blur-2xl"
               style={{ background: 'var(--accent)' }}
               aria-hidden="true"
             />
             <div className="relative">
               <div className="flex items-center justify-between">
-                <p className="font-mono text-[8.5px] uppercase tracking-[0.16em] text-[#8E8B84]">Care loop</p>
+                <p className="text-[11px] text-[#5B6580]">Care loop</p>
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full" style={{ background: 'var(--accent)' }} />
               </div>
               <div className="mt-3 flex items-baseline gap-2">
-                <span className="text-[26px] leading-none tabular-nums text-[#F4F1E8]">
+                <span className="font-display text-[32px] leading-none tabular-nums text-[#171A21]">
                   {loop?.attention ?? 0}
                 </span>
-                <span className="text-[11px] text-[#B7B2A6]">waiting on a reply</span>
+                <span className="text-[12px] text-[#4A5162]">waiting on a reply</span>
               </div>
-              <p className="mt-1.5 text-[10.5px] leading-relaxed text-[#8E8B84]">
+              <p className="mt-2 text-[11.5px] leading-relaxed text-[#5B6580]">
                 {loop?.awaiting ?? 0} appointments still unconfirmed by the patient app.
               </p>
               <button
                 type="button"
                 onClick={() => navigate('/care-loop')}
-                className="mt-3 inline-flex w-full items-center justify-between rounded-[7px] border border-white/10 px-3 py-2 text-[11px] text-[#F4F1E8] transition-colors hover:border-white/25"
+                className="mt-3 inline-flex w-full items-center justify-between rounded-[10px] border bg-white/70 px-3 py-2 text-[12px] text-[#1F2F8F] transition-colors hover:bg-white"
+                style={{ borderColor: 'var(--accent-line)' }}
               >
                 Open care loop
                 <ArrowRight size={11} />
@@ -921,7 +900,7 @@ export default function Dashboard() {
               <button
                 type="button"
                 onClick={() => navigate('/consultation?action=new-patient')}
-                className="flex w-full items-center gap-2.5 rounded-[7px] px-2.5 py-2 text-left text-[12px] text-[#FCFAF4] transition-opacity hover:opacity-90"
+                className="flex w-full items-center gap-2.5 rounded-[7px] px-2.5 py-2 text-left text-[12px] text-[#FFFFFF] transition-opacity hover:opacity-90"
                 style={{ background: 'var(--accent)', color: 'var(--accent-on)' }}
               >
                 <Plus size={13} />
@@ -936,25 +915,25 @@ export default function Dashboard() {
                   key={action.label}
                   type="button"
                   onClick={() => navigate(action.to)}
-                  className="mt-1 flex w-full items-center justify-between rounded-[7px] px-2.5 py-2 text-left text-[11.5px] text-[#3F3B34] transition-colors hover:bg-[#F1EDE4]"
+                  className="mt-1 flex w-full items-center justify-between rounded-[7px] px-2.5 py-2 text-left text-[11.5px] text-[#39404F] transition-colors hover:bg-[#F2F5FD]"
                 >
                   <span className="inline-flex items-center gap-2.5">
-                    <span className="text-[#8A8578]">{action.icon}</span>
+                    <span className="text-[#8A93A6]">{action.icon}</span>
                     {action.label}
                   </span>
-                  <ArrowRight size={11} className="text-[#B7B1A2]" />
+                  <ArrowRight size={11} className="text-[#B6C0D6]" />
                 </button>
               ))}
               {topPrescriptions.length > 0 && (
-                <div className="mt-2 border-t border-[#F1EDE3] px-2.5 pt-2">
-                  <p className="font-mono text-[8.5px] uppercase tracking-[0.12em] text-[#B7B1A2]">
+                <div className="mt-2 border-t border-[#F1F4FC] px-2.5 pt-2">
+                  <p className="text-[10px] text-[#A3AEC4]">
                     Most prescribed
                   </p>
                   <ul className="mt-1 space-y-1">
                     {topPrescriptions.slice(0, 3).map((rx) => (
-                      <li key={rx.name} className="flex items-baseline justify-between text-[11px] text-[#5F5B52]">
+                      <li key={rx.name} className="flex items-baseline justify-between text-[11px] text-[#4A5162]">
                         <span className="truncate">{rx.name}</span>
-                        <span className="ml-2 tabular-nums text-[10px] text-[#A9A394]">{rx.count}</span>
+                        <span className="ml-2 tabular-nums text-[10px] text-[#A3AEC4]">{rx.count}</span>
                       </li>
                     ))}
                   </ul>
@@ -974,42 +953,42 @@ export default function Dashboard() {
       <div className="pb-10 pt-1">
         <header className="mb-5 flex flex-wrap items-end justify-between gap-4">
           <div className="min-w-0">
-            <p className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.18em] text-[#8A8578]">
+            <p className="flex items-center gap-2 text-[12px] text-[#6B7280]">
               <span className="h-1.5 w-1.5 rounded-full" style={{ background: 'var(--accent)' }} />
               Live
-              <span className="text-[#C9C3B4]">/</span>
+              <span className="text-[#CBD5F0]">/</span>
               Clinic desk
             </p>
-            <h1 className="mt-2 font-editorial text-[34px] leading-[1.02] tracking-[-0.01em] text-[#14161A] sm:text-[42px]">
+            <h1 className="mt-2 font-display text-[34px] leading-[1.08] tracking-[-0.02em] text-[#171A21] sm:text-[44px]">
               {greeting}, Dr. {doctorSurname}.
             </h1>
-            <p className="mt-1.5 max-w-xl text-[12.5px] leading-relaxed text-[#6E6A61]">{daySummary}</p>
+            <p className="mt-1.5 max-w-xl text-[12.5px] leading-relaxed text-[#6B7280]">{daySummary}</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center rounded-[9px] border border-[#DCD6C8] bg-[#FCFAF4]">
+            <div className="flex items-center rounded-[12px] border border-[#E6ECFB] bg-white">
               <button
                 type="button"
                 onClick={() => moveDay(-1)}
                 aria-label="Previous day"
-                className="flex h-9 w-8 items-center justify-center text-[#8A8578] transition-colors hover:text-[#14161A]"
+                className="flex h-9 w-8 items-center justify-center text-[#8A93A6] transition-colors hover:text-[#171A21]"
               >
                 <ChevronLeft size={14} />
               </button>
               <button
                 type="button"
                 onClick={() => pickDay(today)}
-                className="inline-flex h-9 items-center gap-2 border-x border-[#E3DED2] px-3 text-[11.5px] text-[#14161A]"
+                className="inline-flex h-9 items-center gap-2 border-x border-[#E6ECFB] px-3 text-[11.5px] text-[#171A21]"
                 title="Jump to today"
               >
-                <CalendarDays size={13} className="text-[#8A8578]" />
+                <CalendarDays size={13} className="text-[#8A93A6]" />
                 {pickerLabel(selectedDate)}
               </button>
               <button
                 type="button"
                 onClick={() => moveDay(1)}
                 aria-label="Next day"
-                className="flex h-9 w-8 items-center justify-center text-[#8A8578] transition-colors hover:text-[#14161A]"
+                className="flex h-9 w-8 items-center justify-center text-[#8A93A6] transition-colors hover:text-[#171A21]"
               >
                 <ChevronRight size={14} />
               </button>
@@ -1018,11 +997,11 @@ export default function Dashboard() {
             <button
               type="button"
               onClick={() => setPersonalizeOpen(true)}
-              className="inline-flex h-9 items-center gap-1.5 rounded-[9px] border px-3 text-[11.5px] transition-colors"
+              className="inline-flex h-9 items-center gap-1.5 rounded-[12px] border px-3.5 text-[12px] transition-colors"
               style={{
-                borderColor: isCustomized ? 'var(--accent-line)' : '#DCD6C8',
-                background: isCustomized ? 'var(--accent-wash)' : '#FCFAF4',
-                color: isCustomized ? 'var(--accent-strong)' : '#3F3B34'
+                borderColor: isCustomized ? 'var(--accent-line)' : '#E1E8FA',
+                background: isCustomized ? 'var(--accent-wash)' : '#FFFFFF',
+                color: isCustomized ? 'var(--accent-strong)' : '#39404F'
               }}
               title="Change accent and panels"
             >
@@ -1040,18 +1019,18 @@ export default function Dashboard() {
         </header>
 
         {shareFeedback && (
-          <p className="mb-3 font-mono text-[9px] uppercase tracking-[0.12em] text-[#6E6A61]">{shareFeedback}</p>
+          <p className="mb-3 font-mono text-[9px] uppercase tracking-[0.12em] text-[#6B7280]">{shareFeedback}</p>
         )}
 
         {error && (
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-l-2 border-[#B07A2A] bg-[#FBF5E9] px-4 py-3">
-            <p className="text-[11.5px] leading-relaxed text-[#7A643F]">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-l-2 border-[#C98A2E] bg-[#FFF8EC] px-4 py-3">
+            <p className="text-[11.5px] leading-relaxed text-[#8A6A32]">
               {error} {' '}The desk keeps the last known state — retry when the API is back.
             </p>
             <button
               type="button"
               onClick={() => { void load(selectedDate); }}
-              className="font-mono text-[9px] uppercase tracking-[0.12em] text-[#7A643F]"
+              className="font-mono text-[9px] uppercase tracking-[0.12em] text-[#8A6A32]"
             >
               Retry
             </button>
@@ -1060,7 +1039,7 @@ export default function Dashboard() {
 
         <section
           aria-label="The day at a glance"
-          className="mb-4 grid grid-cols-2 overflow-hidden rounded-[14px] border border-[#E3DED2] bg-[#FCFAF4] lg:grid-cols-4"
+          className="clinic-card mb-4 grid grid-cols-2 overflow-hidden lg:grid-cols-4"
         >
           <Vital
             icon={<CalendarDays size={12} />}
@@ -1103,11 +1082,11 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <footer className="mt-8 flex flex-wrap items-center justify-between gap-2 border-t border-[#E3DED2] pt-3">
-          <p className="font-mono text-[8.5px] uppercase tracking-[0.14em] text-[#B7B1A2]">
+        <footer className="mt-8 flex flex-wrap items-center justify-between gap-2 border-t border-[#E6ECFB] pt-3">
+          <p className="font-mono text-[8.5px] uppercase tracking-[0.14em] text-[#B6C0D6]">
             Synthetic · no PHI · every write needs a signature
           </p>
-          <p className="font-mono text-[8.5px] uppercase tracking-[0.14em] text-[#B7B1A2]">
+          <p className="font-mono text-[8.5px] uppercase tracking-[0.14em] text-[#B6C0D6]">
             Updated {now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </p>
         </footer>
@@ -1144,17 +1123,17 @@ function Panel({
   dense: boolean;
 }) {
   return (
-    <section className="overflow-hidden rounded-[14px] border border-[#E3DED2] bg-[#FCFAF4]">
+    <section className="clinic-card overflow-hidden">
       <header
-        className={`flex flex-wrap items-center justify-between gap-2 border-b border-[#EFEADF] ${
-          dense ? 'px-4 py-2' : 'px-4 py-2.5'
+        className={`flex flex-wrap items-center justify-between gap-2 border-b border-[#F1F4FC] ${
+          dense ? 'px-5 py-3' : 'px-5 py-3.5'
         }`}
       >
         <div className="min-w-0">
           {eyebrow && (
-            <p className="font-mono text-[8.5px] uppercase tracking-[0.16em] text-[#A9A394]">{eyebrow}</p>
+            <p className="text-[11px] leading-none text-[#8A93A6]">{eyebrow}</p>
           )}
-          <h2 className="mt-0.5 font-editorial text-[17px] leading-none text-[#24262B]">{title}</h2>
+          <h2 className="mt-1 font-display text-[18px] leading-tight tracking-[-0.01em] text-[#171A21]">{title}</h2>
         </div>
         {aside}
       </header>
@@ -1181,21 +1160,21 @@ function Vital({
   accent?: boolean;
 }) {
   return (
-    <div className={`border-[#EFEADF] [&:not(:first-child)]:border-l ${dense ? 'px-4 py-2.5' : 'px-4 py-3.5'}`}>
+    <div className={`border-[#EEF2FB] [&:not(:first-child)]:border-l ${dense ? 'px-4 py-2.5' : 'px-4 py-3.5'}`}>
       <div className="flex items-center justify-between">
-        <p className="font-mono text-[8.5px] uppercase tracking-[0.14em] text-[#A9A394]">{label}</p>
-        <span style={accent ? { color: 'var(--accent)' } : { color: '#C9C3B4' }}>{icon}</span>
+        <p className="text-[11px] text-[#8A93A6]">{label}</p>
+        <span style={accent ? { color: 'var(--accent)' } : { color: '#CBD5F0' }}>{icon}</span>
       </div>
       <div className="mt-2 flex items-baseline gap-0.5">
         <span
-          className="text-[26px] leading-none tracking-[-0.02em] tabular-nums"
-          style={{ color: accent ? 'var(--accent-strong)' : '#14161A' }}
+          className="text-[30px] leading-none tracking-[-0.02em] tabular-nums"
+          style={{ color: accent ? 'var(--accent-strong)' : '#171A21' }}
         >
           {value}
         </span>
-        {suffix && <span className="text-[13px] text-[#8A8578]">{suffix}</span>}
+        {suffix && <span className="text-[13px] text-[#8A93A6]">{suffix}</span>}
       </div>
-      <p className="mt-1 text-[10.5px] leading-tight text-[#8A8578]">{hint}</p>
+      <p className="mt-1 text-[11.5px] leading-tight text-[#8A93A6]">{hint}</p>
     </div>
   );
 }
@@ -1203,8 +1182,8 @@ function Vital({
 function EmptyState({ title, body }: { title: string; body: string }) {
   return (
     <div className="px-4 py-7">
-      <p className="text-[12.5px] text-[#3F3B34]">{title}</p>
-      <p className="mt-1 max-w-sm text-[11px] leading-relaxed text-[#8A8578]">{body}</p>
+      <p className="text-[12.5px] text-[#39404F]">{title}</p>
+      <p className="mt-1 max-w-sm text-[11px] leading-relaxed text-[#8A93A6]">{body}</p>
     </div>
   );
 }
@@ -1224,7 +1203,7 @@ function IconAction({
       onClick={onClick}
       aria-label={label}
       title={label}
-      className="flex h-9 w-9 items-center justify-center rounded-[9px] border border-[#DCD6C8] bg-[#FCFAF4] text-[#6E6A61] transition-colors hover:border-[#C9C3B4] hover:text-[#14161A]"
+      className="flex h-9 w-9 items-center justify-center rounded-[12px] border border-[#E6ECFB] bg-white text-[#6B7280] transition-colors hover:border-[#CBD5F0] hover:text-[#171A21]"
     >
       {children}
     </button>

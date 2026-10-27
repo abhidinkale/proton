@@ -186,7 +186,7 @@ export function AppShell({
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className={`relative min-h-screen w-full bg-[#F7F4EC] text-[#14161A] flex flex-col font-sans antialiased selection:bg-[#E8E2D0] selection:text-[#14161A] ${className}`}>
+      <div className={`proton-workspace-root relative min-h-screen w-full bg-[#F7F4EC] text-[#14161A] flex flex-col font-sans antialiased selection:bg-[#E8E2D0] selection:text-[#14161A] ${className}`}>
 
       {/* Paper, not chrome: one flat warm ground with a whisper of grain. */}
       <div className="proton-workspace-ambient" aria-hidden="true">

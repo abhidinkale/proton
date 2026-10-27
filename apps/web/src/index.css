@@ -14,12 +14,17 @@
   --color-brand-900: #151515;
   --color-brand-950: #111111;
 
-  /* ── Typography (Modern Geometric Sans-Serif + Apple System + Clinical Mono) ── */
-  --font-sans: 'Outfit', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'SF Pro Display', 'SF Pro Text', system-ui, sans-serif;
-  --font-display: 'Outfit', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'SF Pro Display', system-ui, sans-serif;
-  --font-rounded: 'Outfit', 'SF Pro Rounded', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-editorial: 'Instrument Serif', Georgia, serif;
-  --font-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+  /* ── Typography ────────────────────────────────────────────────────────────
+   * Fraunces carries the voice: a variable old-style serif with soft, slightly
+   * wonky curves, made for editorial settings rather than dashboards. Instrument
+   * Sans does the reading work — a grotesque with a little more spine than the
+   * geometric defaults. IBM Plex Mono handles anything measured.
+   * ──────────────────────────────────────────────────────────────────────── */
+  --font-sans: 'Instrument Sans', -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  --font-display: 'Fraunces', 'Instrument Serif', Georgia, serif;
+  --font-rounded: 'Instrument Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-editorial: 'Fraunces', 'Instrument Serif', Georgia, serif;
+  --font-mono: 'IBM Plex Mono', 'SF Mono', ui-monospace, monospace;
 
   /* ── Clinical Environment (Warm Alabaster Canvas & Deep Carbon Ink) ── */
   --color-surface: #ffffff;
@@ -99,11 +104,11 @@
  * ────────────────────────────────────────────────────────────────────────── */
 :root,
 [data-accent='blue'] {
-  --accent: #2f5ae0;
-  --accent-strong: #1f3fad;
-  --accent-ink: #16276b;
-  --accent-wash: #eef2fe;
-  --accent-line: #c9d6f7;
+  --accent: #4d6bfe;
+  --accent-strong: #3a55e0;
+  --accent-ink: #1f2f8f;
+  --accent-wash: #eef3ff;
+  --accent-line: #d8e2ff;
   --accent-on: #ffffff;
 }
 
@@ -158,6 +163,66 @@
   outline-offset: 2px;
 }
 
+/* ── Clinic canvas ──────────────────────────────────────────────────────────
+ * The dashboard sits on a soft blue-white field rather than flat paper: three
+ * blurred blooms over a barely-there vertical wash. Applied to <body> only
+ * while the dashboard is mounted, so other pages keep their own surface.
+ * ────────────────────────────────────────────────────────────────────────── */
+body.clinic-canvas {
+  background-color: #f7faff;
+  background-image:
+    radial-gradient(1100px 560px at 6% -10%, #ffffff 0%, rgba(255, 255, 255, 0) 62%),
+    radial-gradient(1100px 620px at 84% -8%, #cfdfff 0%, rgba(207, 223, 255, 0) 60%),
+    radial-gradient(760px 460px at 54% 4%, #edf3ff 0%, rgba(237, 243, 255, 0) 60%),
+    linear-gradient(180deg, #fbfdff 0%, #f5f8ff 36%, #f8fafe 100%);
+  background-attachment: fixed;
+}
+
+/* The shell paints its own warm ground, so repaint it in the desk's field. */
+body.clinic-canvas .proton-workspace-root {
+  background-color: #f7faff;
+  background-image:
+    radial-gradient(1100px 560px at 6% -10%, #ffffff 0%, rgba(255, 255, 255, 0) 62%),
+    radial-gradient(1100px 620px at 84% -8%, #cfdfff 0%, rgba(207, 223, 255, 0) 60%),
+    radial-gradient(760px 460px at 54% 4%, #edf3ff 0%, rgba(237, 243, 255, 0) 60%),
+    linear-gradient(180deg, #fbfdff 0%, #f5f8ff 36%, #f8fafe 100%);
+  background-attachment: fixed;
+}
+
+body.clinic-canvas .proton-workspace-ambient .proton-orb {
+  opacity: 0.18;
+}
+
+body.clinic-canvas .proton-nav-active {
+  background: var(--accent-wash);
+  box-shadow: inset 0 0 0 1px var(--accent-line);
+}
+
+body.clinic-canvas .proton-search-trigger {
+  background: rgba(255, 255, 255, 0.78);
+  border-color: #e6ecfb;
+}
+
+body.clinic-canvas .proton-search-trigger:hover {
+  background: #ffffff;
+  border-color: #d8e2ff;
+}
+
+body.clinic-canvas .proton-cohort-card {
+  background: #ffffff;
+  border-color: #e6ecfb;
+}
+
+/* The calm card: white, generous radius, a hint of blue in the edge. */
+.clinic-card {
+  background: #ffffff;
+  border: 1px solid #e6ecfb;
+  border-radius: 18px;
+  box-shadow:
+    0 1px 1px rgba(23, 32, 64, 0.02),
+    0 12px 32px -28px rgba(23, 32, 64, 0.35);
+}
+
 /* ── Base Styles (Modern Geometric Clinical Workspace) ── */
 html, body {
   background-color: #F7F6F2;
@@ -173,7 +238,8 @@ html, body {
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
-  letter-spacing: -0.022em;
+  letter-spacing: -0.018em;
+  font-optical-sizing: auto;
 }
 
 button, input, select, textarea {
@@ -182,7 +248,16 @@ button, input, select, textarea {
 
 /* ── Swiss Clinical Typography & Utility Classes ── */
 .font-editorial {
-  font-family: 'Instrument Serif', Georgia, serif;
+  font-family: var(--font-editorial);
+  font-optical-sizing: auto;
+  font-variation-settings: 'SOFT' 20, 'WONK' 0;
+}
+
+/* Fraunces at display sizes: keep the soft curves, skip the novelty. */
+.font-display {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  font-variation-settings: 'SOFT' 0, 'WONK' 0;
 }
 
 .font-mono-clinical {

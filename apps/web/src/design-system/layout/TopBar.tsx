@@ -57,7 +57,7 @@ export function TopBar({
         <button
           type="button"
           onClick={onOpenCommandPalette}
-          className="group flex h-9 w-full max-w-[330px] items-center gap-2.5 rounded-[7px] border border-[#E2DCCD] bg-[#FBF9F3]/70 px-3 text-left transition-colors hover:border-[#C9C3B4] hover:bg-[#FBF9F3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#14161A]/10"
+          className="proton-search-trigger group flex h-9 w-full max-w-[330px] items-center gap-2.5 rounded-[10px] border border-[#E2DCCD] bg-[#FBF9F3]/70 px-3 text-left transition-colors hover:border-[#C9C3B4] hover:bg-[#FBF9F3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#14161A]/10"
           aria-label="Open global search"
         >
           <Search size={13} className="shrink-0 text-[#A9A394] transition-colors group-hover:text-[#6E6A61]" />
