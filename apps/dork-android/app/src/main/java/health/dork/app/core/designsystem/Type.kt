@@ -15,32 +15,36 @@ import androidx.compose.ui.unit.sp
  * matrix in [health.dork.app.core.designsystem.components.DotNumber], not text.
  */
 val DorkTypography = Typography(
+  // Display and the largest headline are set in the system serif. It is the one
+  // real typographic lever available offline, and the contrast against the sans
+  // body is what makes a screen read as "editorial" rather than "settings app".
+  // Tight tracking keeps the serif from looking like a wedding invitation.
   displayLarge = TextStyle(
-    fontFamily = FontFamily.SansSerif,
-    fontWeight = FontWeight.SemiBold,
-    fontSize = 42.sp,
-    lineHeight = 44.sp,
-    letterSpacing = (-1.6).sp
+    fontFamily = FontFamily.Serif,
+    fontWeight = FontWeight.Normal,
+    fontSize = 44.sp,
+    lineHeight = 46.sp,
+    letterSpacing = (-1.4).sp
   ),
   displayMedium = TextStyle(
-    fontFamily = FontFamily.SansSerif,
-    fontWeight = FontWeight.SemiBold,
-    fontSize = 34.sp,
-    lineHeight = 38.sp,
-    letterSpacing = (-1.2).sp
+    fontFamily = FontFamily.Serif,
+    fontWeight = FontWeight.Normal,
+    fontSize = 36.sp,
+    lineHeight = 40.sp,
+    letterSpacing = (-1.0).sp
   ),
   displaySmall = TextStyle(
-    fontFamily = FontFamily.SansSerif,
-    fontWeight = FontWeight.Medium,
-    fontSize = 28.sp,
-    lineHeight = 32.sp,
-    letterSpacing = (-0.9).sp
+    fontFamily = FontFamily.Serif,
+    fontWeight = FontWeight.Normal,
+    fontSize = 29.sp,
+    lineHeight = 33.sp,
+    letterSpacing = (-0.7).sp
   ),
   headlineLarge = TextStyle(
-    fontFamily = FontFamily.SansSerif,
-    fontWeight = FontWeight.SemiBold,
-    fontSize = 24.sp,
-    lineHeight = 28.sp,
+    fontFamily = FontFamily.Serif,
+    fontWeight = FontWeight.Normal,
+    fontSize = 26.sp,
+    lineHeight = 30.sp,
     letterSpacing = (-0.6).sp
   ),
   headlineMedium = TextStyle(
@@ -48,7 +52,7 @@ val DorkTypography = Typography(
     fontWeight = FontWeight.SemiBold,
     fontSize = 21.sp,
     lineHeight = 26.sp,
-    letterSpacing = (-0.4).sp
+    letterSpacing = (-0.5).sp
   ),
   headlineSmall = TextStyle(
     fontFamily = FontFamily.SansSerif,
