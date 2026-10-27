@@ -27,6 +27,7 @@ import { streamClinicalPipeline } from '../services/streamService';
 import type { PrescriptionItem } from '../types/prescription';
 import type { Patient } from '@medplum/fhirtypes';
 import ClinicalPerspectivesPanel from './workstation/ClinicalPerspectivesPanel';
+import MDSpecialistBoardPanel from './workstation/MDSpecialistBoardPanel';
 import StructuredTreatmentPlan, { type StructuredPlanState } from './workstation/StructuredTreatmentPlan';
 import SafetyInterventionBanner from './workstation/SafetyInterventionBanner';
 import PhysicianSignOffModal from './workstation/PhysicianSignOffModal';
@@ -340,7 +341,7 @@ export default function DoctorDeskEncounter({ patient, onCloseMeeting, onBackToD
   const [prescriptions, setPrescriptions] = useState(() => getInitialPrescriptions(patient));
   const [structuredPlan, setStructuredPlan] = useState<StructuredPlanState>(() => getInitialStructuredPlan(patient, getInitialPrescriptions(patient)));
   const [encounterPhase, setEncounterPhase] = useState<'consultation' | 'completed' | 'handoff'>('consultation');
-  const [rightPanelMode, setRightPanelMode] = useState<'perspectives' | 'copilot'>('perspectives');
+  const [rightPanelMode, setRightPanelMode] = useState<'68md' | 'perspectives' | 'copilot'>('68md');
   const [isTranscriptCollapsed, setIsTranscriptCollapsed] = useState(true);
   const [overrideDirective, setOverrideDirective] = useState('');
   const [isSignOffModalOpen, setIsSignOffModalOpen] = useState(false);
@@ -1629,6 +1630,17 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
             <div className="flex items-center gap-1 bg-[#f4f4f5] p-0.5 rounded-lg border border-[#e4e4e7]">
               <button
                 type="button"
+                onClick={() => setRightPanelMode('68md')}
+                className={`px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer ${
+                  rightPanelMode === '68md'
+                    ? 'bg-white text-[#09090b] shadow-2xs'
+                    : 'text-[#71717a] hover:text-[#09090b]'
+                }`}
+              >
+                68-MD Board
+              </button>
+              <button
+                type="button"
                 onClick={() => setRightPanelMode('perspectives')}
                 className={`px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer ${
                   rightPanelMode === 'perspectives'
@@ -1653,11 +1665,21 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
 
             <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full text-[10px] text-emerald-700 font-semibold">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Specialists Active
+              68 Specialists Active
             </div>
           </div>
 
-          {rightPanelMode === 'perspectives' ? (
+          {rightPanelMode === '68md' ? (
+            <div className="flex-1 min-h-0 overflow-y-auto p-4 bg-[#fbfbfa]">
+              <MDSpecialistBoardPanel
+                patientId={patient.id || 'PAT-007'}
+                onSignedSuccess={(_summary) => {
+                  setDeskShortcutFeedback('Encounter Signed by Attending Physician');
+                  setTimeout(() => setDeskShortcutFeedback(null), 3000);
+                }}
+              />
+            </div>
+          ) : rightPanelMode === 'perspectives' ? (
             <div className="flex-1 min-h-0 overflow-hidden">
               <ClinicalPerspectivesPanel
                 patient={patient}

@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { ShieldCheck, Cpu, User, Keyboard, AlertTriangle, CheckCircle2, LayoutTemplate } from 'lucide-react';
+import { ShieldCheck, Cpu, User, Keyboard, AlertTriangle, CheckCircle2, LayoutTemplate, SlidersHorizontal, LoaderCircle } from 'lucide-react';
 import Layout from '../components/Layout';
 import { API_BASE_URL } from '../config';
 import { apiFetch } from '../lib/api';
+import { clinicApi, type ClinicAuditEvent, type ClinicPreferences } from '../lib/clinicApi';
+import { authService } from '../services/auth';
 
 interface AIHealthStatus {
   provider: string;
@@ -15,6 +17,37 @@ interface AIHealthStatus {
 export default function Settings() {
   const [aiStatus, setAiStatus] = useState<AIHealthStatus | null>(null);
   const [aiStatusState, setAiStatusState] = useState<'loading' | 'ready' | 'unavailable'>('loading');
+  const [preferences, setPreferences] = useState<ClinicPreferences | null>(null);
+  const [preferencesError, setPreferencesError] = useState<string | null>(null);
+  const [isSavingPreferences, setIsSavingPreferences] = useState(false);
+  const [preferencesSaved, setPreferencesSaved] = useState(false);
+  const [auditEvents, setAuditEvents] = useState<ClinicAuditEvent[]>([]);
+  const [auditVerification, setAuditVerification] = useState<{ valid: boolean; totalEventsVerified: number; headHash: string | null } | null>(null);
+  const [auditState, setAuditState] = useState<'idle' | 'loading' | 'error'>('idle');
+
+  const currentUser = authService.getCurrentUser();
+
+  const loadAudit = () => {
+    setAuditState('loading');
+    Promise.all([clinicApi.listAudit(25), clinicApi.verifyAudit()])
+      .then(([list, verification]) => {
+        setAuditEvents(list.events);
+        setAuditVerification(verification);
+        setAuditState('idle');
+      })
+      .catch(() => setAuditState('error'));
+  };
+
+  useEffect(() => {
+    loadAudit();
+  }, []);
+
+  useEffect(() => {
+    clinicApi
+      .getPreferences()
+      .then((result) => setPreferences(result.preferences))
+      .catch((error) => setPreferencesError((error as Error).message || 'Could not load preferences.'));
+  }, []);
 
   useEffect(() => {
     apiFetch(`${API_BASE_URL}/health/ai`)
@@ -31,6 +64,44 @@ export default function Settings() {
         setAiStatusState('unavailable');
       });
   }, []);
+
+  const updatePreference = <K extends keyof ClinicPreferences>(key: K, value: ClinicPreferences[K]) => {
+    setPreferencesSaved(false);
+    setPreferences((current) => {
+      if (!current) return current;
+      const next = { ...current, [key]: value };
+      // Appearance and motion apply immediately; the save button persists them.
+      if (key === 'appearance') {
+        const theme = value === 'dark' ? 'dark' : 'light';
+        localStorage.setItem('proton_appearance', theme);
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.style.colorScheme = theme;
+      }
+      if (key === 'density') {
+        document.documentElement.dataset.density = String(value);
+      }
+      if (key === 'reduceMotion') {
+        document.documentElement.dataset.reduceMotion = String(value);
+      }
+      return next;
+    });
+  };
+
+  const savePreferences = async () => {
+    if (!preferences) return;
+    setIsSavingPreferences(true);
+    setPreferencesError(null);
+    try {
+      const result = await clinicApi.updatePreferences(preferences);
+      setPreferences(result.preferences);
+      setPreferencesSaved(true);
+      window.setTimeout(() => setPreferencesSaved(false), 2600);
+    } catch (error) {
+      setPreferencesError((error as Error).message || 'Could not save preferences.');
+    } finally {
+      setIsSavingPreferences(false);
+    }
+  };
 
   const providerDisplay = aiStatus?.provider === 'medgemma'
     ? 'MedGemma Local'
@@ -93,6 +164,128 @@ export default function Settings() {
           </button>
         </div>
 
+        {/* Section: Working preferences (persisted) */}
+        <div className="proton-card p-6 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[var(--color-border-subtle)]">
+            <div className="flex items-center gap-2.5">
+              <div className="h-8 w-8 bg-[var(--color-surface-sunken)] text-[var(--color-text-secondary)] rounded-lg flex items-center justify-center">
+                <SlidersHorizontal size={16} />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-[var(--color-text-primary)]">Working preferences</h2>
+                <p className="text-[11px] text-[var(--color-text-tertiary)]">Stored per clinician on the clinic server.</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => { void savePreferences(); }}
+              disabled={!preferences || isSavingPreferences}
+              className="inline-flex items-center gap-1.5 rounded-full bg-[#151719] px-3.5 py-1.5 text-[11px] font-semibold text-white transition-colors hover:bg-[#2A2A28] disabled:opacity-50 cursor-pointer"
+            >
+              {isSavingPreferences && <LoaderCircle size={12} className="animate-spin" />}
+              {isSavingPreferences ? 'Saving…' : preferencesSaved ? 'Saved' : 'Save preferences'}
+            </button>
+          </div>
+
+          {preferencesError && (
+            <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-900">{preferencesError}</p>
+          )}
+
+          {!preferences ? (
+            <p className="text-[11.5px] text-[var(--color-text-tertiary)]">Loading preferences…</p>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="proton-micro-label text-[var(--color-text-tertiary)] block mb-1.5">Appearance</label>
+                <div className="flex items-center rounded-full bg-[var(--color-surface-sunken)] p-1 text-[11px] font-semibold">
+                  {(['system', 'light', 'dark'] as const).map((appearance) => (
+                    <button
+                      key={appearance}
+                      type="button"
+                      onClick={() => updatePreference('appearance', appearance)}
+                      className={`flex-1 rounded-full px-2 py-1.5 capitalize transition-colors cursor-pointer ${
+                        preferences.appearance === appearance
+                          ? 'bg-white text-[#151719] shadow-xs'
+                          : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]'
+                      }`}
+                    >
+                      {appearance}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="proton-micro-label text-[var(--color-text-tertiary)] block mb-1.5">Density</label>
+                <div className="flex items-center rounded-full bg-[var(--color-surface-sunken)] p-1 text-[11px] font-semibold">
+                  {(['comfortable', 'compact'] as const).map((density) => (
+                    <button
+                      key={density}
+                      type="button"
+                      onClick={() => updatePreference('density', density)}
+                      className={`flex-1 rounded-full px-2 py-1.5 capitalize transition-colors cursor-pointer ${
+                        preferences.density === density
+                          ? 'bg-white text-[#151719] shadow-xs'
+                          : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]'
+                      }`}
+                    >
+                      {density}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="proton-micro-label text-[var(--color-text-tertiary)] block mb-1.5">Default note template</label>
+                <select
+                  value={preferences.defaultNoteTemplate}
+                  onChange={(event) => updatePreference('defaultNoteTemplate', event.target.value)}
+                  className="w-full rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-raised)] px-3 py-2 text-[12px] focus:outline-none"
+                >
+                  <option value="SOAP">SOAP — Subjective, Objective, Assessment, Plan</option>
+                  <option value="HPI">HPI — History of present illness</option>
+                  <option value="Progress">Progress note</option>
+                  <option value="Consult">Consultation note</option>
+                </select>
+              </div>
+
+              {[
+                {
+                  key: 'notificationsEnabled' as const,
+                  title: 'Clinical notifications',
+                  description: 'Show the attention queue badge for lab escalations and unsigned notes.'
+                },
+                {
+                  key: 'reduceMotion' as const,
+                  title: 'Reduce motion',
+                  description: 'Disable page and card animation throughout the workspace.'
+                },
+                {
+                  key: 'showSyntheticBanner' as const,
+                  title: 'Synthetic data banner',
+                  description: 'Keep the evaluation-environment reminder visible.'
+                }
+              ].map((entry) => (
+                <label
+                  key={entry.key}
+                  className="flex cursor-pointer items-start justify-between gap-3 rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-raised)] p-3 sm:col-span-2"
+                >
+                  <span>
+                    <span className="block text-[12px] font-semibold text-[var(--color-text-primary)]">{entry.title}</span>
+                    <span className="mt-0.5 block text-[10.5px] leading-relaxed text-[var(--color-text-tertiary)]">{entry.description}</span>
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={Boolean(preferences[entry.key])}
+                    onChange={(event) => updatePreference(entry.key, event.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-[var(--color-border-default)]"
+                  />
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Section 1: Physician Identity */}
         <div className="proton-card p-6 space-y-4">
           <div className="flex items-center gap-2.5 pb-3 border-b border-[var(--color-border-subtle)]">
@@ -104,13 +297,23 @@ export default function Settings() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="p-4 bg-[var(--color-surface-raised)] rounded-xl border border-[var(--color-border-subtle)]">
               <span className="proton-micro-label text-[var(--color-text-tertiary)] block">Treating Clinician</span>
-              <span className="text-[var(--color-text-primary)] font-bold text-sm mt-1 block">Dr. Alex Morgan, MD</span>
-              <span className="text-[var(--color-text-tertiary)] text-[11px] mt-0.5 block">Internal & Ambulatory Medicine</span>
+              <span className="text-[var(--color-text-primary)] font-bold text-sm mt-1 block">
+                {currentUser?.displayName || 'Not signed in'}
+              </span>
+              <span className="text-[var(--color-text-tertiary)] text-[11px] mt-0.5 block">
+                {currentUser?.email || 'No session'}
+              </span>
             </div>
             <div className="p-4 bg-[var(--color-surface-raised)] rounded-xl border border-[var(--color-border-subtle)]">
               <span className="proton-micro-label text-[var(--color-text-tertiary)] block">Clinical Role</span>
-              <span className="text-[var(--color-text-primary)] font-bold text-sm mt-1 block">Attending Physician (Final Authority)</span>
-              <span className="text-[var(--color-text-tertiary)] text-[11px] mt-0.5 block">Exclusive authority to sign notes & orders</span>
+              <span className="text-[var(--color-text-primary)] font-bold text-sm mt-1 block">
+                {currentUser?.role
+                  ? currentUser.role.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
+                  : 'Unassigned'}
+              </span>
+              <span className="text-[var(--color-text-tertiary)] text-[11px] mt-0.5 block">
+                {currentUser?.npi ? `NPI ${currentUser.npi}` : 'NPI not on session'} · {currentUser?.organizationId || 'no tenant'}
+              </span>
             </div>
           </div>
         </div>
@@ -205,6 +408,74 @@ export default function Settings() {
                   </div>
                 </div>
                 <span className="proton-micro-label px-2 py-0.5 bg-[var(--color-surface-sunken)] text-[var(--color-text-secondary)] rounded border border-[var(--color-border-default)] shrink-0">Enforced</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Section: Audit trail */}
+        <div className="proton-card p-6 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[var(--color-border-subtle)]">
+            <div className="flex items-center gap-2.5">
+              <div className="h-8 w-8 bg-[var(--color-surface-sunken)] text-[var(--color-text-secondary)] rounded-lg flex items-center justify-center">
+                <ShieldCheck size={16} />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-[var(--color-text-primary)]">Hash-chained audit trail</h2>
+                <p className="text-[11px] text-[var(--color-text-tertiary)]">
+                  Every clinic write is appended with a SHA-256 link to the previous event.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={loadAudit}
+              className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-border-default)] bg-[var(--color-surface-raised)] px-3 py-1.5 text-[11px] font-semibold text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-text-primary)] cursor-pointer"
+            >
+              {auditState === 'loading' && <LoaderCircle size={12} className="animate-spin" />}
+              Verify chain
+            </button>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] font-semibold ${
+              auditVerification?.valid
+                ? 'bg-emerald-50 text-emerald-800'
+                : auditVerification
+                  ? 'bg-rose-50 text-rose-800'
+                  : 'bg-[var(--color-surface-sunken)] text-[var(--color-text-tertiary)]'
+            }`}>
+              <CheckCircle2 size={12} />
+              {auditState === 'error'
+                ? 'Verification unavailable'
+                : auditVerification
+                  ? auditVerification.valid
+                    ? `Chain valid · ${auditVerification.totalEventsVerified} events`
+                    : 'Chain integrity failure'
+                  : 'Not verified yet'}
+            </span>
+            {auditVerification?.headHash && (
+              <span className="truncate font-mono text-[10px] text-[var(--color-text-tertiary)]">
+                head {auditVerification.headHash.slice(0, 24)}…
+              </span>
+            )}
+          </div>
+
+          <div className="max-h-64 divide-y divide-[var(--color-border-subtle)] overflow-y-auto">
+            {auditEvents.length === 0 && auditState !== 'loading' && (
+              <p className="py-4 text-[11.5px] text-[var(--color-text-tertiary)]">No audit events yet.</p>
+            )}
+            {auditEvents.map((event) => (
+              <div key={event.id} className="flex items-start justify-between gap-3 py-2.5">
+                <div className="min-w-0">
+                  <p className="truncate text-[11.5px] font-semibold text-[var(--color-text-primary)]">{event.summary}</p>
+                  <p className="mt-0.5 font-mono text-[9.5px] text-[var(--color-text-tertiary)]">
+                    {event.action} · {event.actorName || 'system'} · {new Date(event.at).toLocaleString()}
+                  </p>
+                </div>
+                <span className="shrink-0 font-mono text-[9px] text-[var(--color-text-tertiary)]">
+                  {event.hash.slice(0, 10)}…
+                </span>
               </div>
             ))}
           </div>

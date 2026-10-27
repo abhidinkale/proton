@@ -69,7 +69,6 @@ export default function PhysicianSignOffModal({
     setErrorMessage(null);
 
     try {
-      // 1. Construct Draft Provenance Envelope
       const draftPayload = {
         patientId: patient.id,
         encounterType: patient.visitType || 'ambulatory_consultation',
@@ -80,28 +79,87 @@ export default function PhysicianSignOffModal({
         timestamp: new Date().toISOString()
       };
 
-      // Create a deterministic simulated draft envelope for signing
-      const draftEnvelope = {
-        id: `prov-draft-${patient.id}-${Date.now().toString(36)}`,
-        status: 'DRAFT',
-        patientId: patient.id,
-        actionType: 'consultation_plan',
-        tamperHash: '4f83b1a9e7019c43d84f932821a719c836d102b489a647d8120fa2917e33e9b1',
-        draftPayload,
-        safetyGate: {
-          passed: !hasContraindication || isOverrideSufficient,
-          flags: hasContraindication ? ['PENICILLIN_ALLERGY_CONTRAINDICATION'] : []
-        }
-      };
+      // 1. Mint a real provenance envelope on the server. The server computes a
+      // SHA-256 digest over the draft payload; the browser never invents a hash.
+      const draftRes = await apiFetch(`${API_BASE_URL}/api/ai/provenance`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          agentId: 'physician-workstation',
+          specialty: patient.visitType || 'Ambulatory care',
+          modelId: 'proton-clinical-workstation',
+          modelVersion: '1.0',
+          inputContext: {
+            patientId: patient.id,
+            allergies: patient.allergies,
+            conditions: patient.conditions,
+            medications: patient.medications
+          },
+          sources: patient.conditions.map((condition) => ({
+            resourceType: 'Condition',
+            id: patient.id,
+            quote: condition,
+            authority: 'Patient chart'
+          })),
+          draftPayload
+        })
+      });
+      if (!draftRes.ok) {
+        const body = await draftRes.json().catch(() => ({}));
+        throw new Error(body.message || 'The system could not create a provenance record for this draft.');
+      }
+      const { envelope: draftEnvelope } = await draftRes.json();
 
       // 2. Call POST /api/ai/approve with Physician Credentials
       const approvedEnvelope = await approveEncounterProvenance({
         provenanceEnvelope: draftEnvelope,
         physicianDirective: hasContraindication ? overrideDirective : undefined,
-        comments: `Attending Physician sign-off verified for ${patient.name} (${patient.mrn}).`
+        comments: `Attending Physician sign-off verified for ${patient.name} (${patient.mrn}).`,
+        clinicalArtifact: draftPayload,
+        patientId: patient.id
       });
 
-      // 3. Assemble and Commit FHIR R4 Encounter Bundle
+      // 3. Ask the billing engine to code the encounter from the signed note.
+      // The sign-off never assumes a CPT code; if analysis fails we still commit
+      // the clinical record but omit the billing annotation.
+      let billing: Record<string, unknown> | undefined;
+      try {
+        const billingRes = await apiFetch(`${API_BASE_URL}/api/clinical/billing/analyze`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            note,
+            patient: {
+              id: patient.id,
+              name: patient.name,
+              age: patient.age,
+              gender: patient.gender,
+              dob: patient.dob,
+              mrn: patient.mrn,
+              conditions: patient.conditions,
+              medications: patient.medications
+            },
+            prescriptions: plan.medications,
+            isNewPatient: false
+          })
+        });
+        if (billingRes.ok) {
+          const analysis = await billingRes.json();
+          if (analysis?.cptCode) {
+            billing = {
+              cptCode: analysis.cptCode,
+              overallMdm: analysis.overallMdm || analysis.mdmComplexity?.level,
+              estimatedPayment: analysis.estimatedPayment ?? analysis.financialImpact?.estimatedPayment,
+              wRVU: analysis.wRVU ?? analysis.financialImpact?.expectedWRVU,
+              icd10Codes: analysis.icd10Codes || []
+            };
+          }
+        }
+      } catch {
+        // Coding is an annotation on the bundle, not a gate on the clinical record.
+      }
+
+      // 4. Assemble the FHIR R4 Encounter Bundle
       const bundleRes = await apiFetch(`${API_BASE_URL}/api/fhir/encounter/bundle`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -121,11 +179,7 @@ export default function PhysicianSignOffModal({
             hr: patient.vitals.hr,
             spo2: patient.vitals.spo2
           },
-          billing: {
-            cptCode: '99214',
-            overallMdm: 'Moderate',
-            estimatedPayment: 133.60
-          },
+          ...(billing ? { billing } : {}),
           confirmedConditions: patient.conditions,
           confirmedPrescriptions: plan.medications
         })
@@ -133,13 +187,13 @@ export default function PhysicianSignOffModal({
 
       const bundleData = await bundleRes.json().catch(() => null);
 
-      // 4. Commit locally and Stage FHIR Sync
+      // 5. Commit locally and stage FHIR sync against the in-process store.
       const syncRes = await apiFetch(`${API_BASE_URL}/api/fhir/encounter/sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           bundle: bundleData?.bundle || bundleData,
-          ehrSystem: 'FHIR R4 Medplum Core & Epic Care Everywhere Adapter',
+          ehrSystem: 'Proton local FHIR R4 store',
           patientId: patient.id
         })
       });

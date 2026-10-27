@@ -1,9 +1,10 @@
-import { lazy, Suspense, useState, useEffect } from 'react';
+import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useMedplumProfile, useMedplum } from '@medplum/react';
 
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import CareLoop from './pages/CareLoop';
 import Patients from './pages/Patients';
 import PatientProfile from './pages/PatientProfile';
 import Consultation from './pages/Consultation';
@@ -25,31 +26,25 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const medplum = useMedplum();
   const profile = useMedplumProfile();
   const user = authService.getCurrentUser();
-  const [timedOut, setTimedOut] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setTimedOut(true);
-    }, 2500);
-    return () => clearTimeout(timer);
-  }, []);
   
-  if (medplum.isLoading() && !user && !timedOut) {
+  // Deterministic Auth Guard: While Medplum is actively negotiating, allow if local session is valid
+  if (medplum.isLoading() && !user) {
     return (
       <div className="min-h-screen bg-[#F8F8F6] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <span className="text-xl font-bold tracking-tight text-[#111315]">proton</span>
           <div className="text-center">
             <p className="text-sm font-medium text-[#111315]">Verifying clinical credentials</p>
-            <p className="text-xs text-[#6E767E] mt-1">Loading your workspace</p>
+            <p className="text-xs text-[#6E767E] mt-1">Authenticating session with EHR boundary</p>
           </div>
         </div>
       </div>
     );
   }
 
-  const activeUser = user || authService.getCurrentUser();
+  const activeUser = user || (profile ? authService.getCurrentUser() : null);
 
+  // Fail-closed security rule: No profile and no active physician session -> redirect to login
   if (!profile && !activeUser) {
     return <Navigate to="/login" replace />;
   }
@@ -75,6 +70,7 @@ export default function App() {
       <Route path="/launch" element={<SmartLaunch />} />
       <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/care-loop" element={<ProtectedRoute><CareLoop /></ProtectedRoute>} />
       <Route path="/schedule" element={<ProtectedRoute><Schedule /></ProtectedRoute>} />
       <Route path="/patients" element={<ProtectedRoute><Patients /></ProtectedRoute>} />
       <Route path="/patients/:id" element={<ProtectedRoute><PatientProfile /></ProtectedRoute>} />

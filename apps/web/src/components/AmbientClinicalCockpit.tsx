@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { motion } from 'motion/react';
 import {
   Activity, Play, CheckCircle2, AlertTriangle, ShieldCheck,
@@ -6,6 +6,7 @@ import {
   ArrowRight, ChevronRight
 } from 'lucide-react';
 import { apiJson } from '../lib/api';
+import { clinicApi } from '../lib/clinicApi';
 import { authService } from '../services/auth';
 import { LiveDot } from '../design-system/motion/primitives';
 import ClinicalEvidenceInspectorModal, { type TraceableClaim } from './evidence/ClinicalEvidenceInspectorModal';
@@ -101,28 +102,7 @@ const UTTERANCES: Utterance[] = [
 
 const WAVE_HEIGHTS = [40, 65, 30, 85, 95, 45, 70, 35, 90, 60, 80, 50, 75, 40, 95, 85, 30, 70, 60, 45, 80, 65, 90, 40];
 
-const SOAP_SECTIONS = [
-  {
-    key: 'S',
-    label: 'Subjective',
-    body: 'Arthur Pendelton presents with a 2-week history of dry non-productive cough and progressive dyspnea on moderate exertion (walking up stairs). Denies acute crushing chest pain, diaphoresis, or syncope. Reports bilateral dependent ankle swelling and home fasting blood glucose readings averaging 185-210 mg/dL on metformin monotherapy.'
-  },
-  {
-    key: 'O',
-    label: 'Objective',
-    body: 'BP: 134/84 mmHg, HR: 76 bpm regular, SpO₂: 97% on room air, Temp: 98.4°F. Lungs: clear to auscultation bilaterally, no wheezing or rales. Extremities: trace 1+ bilateral pitting pedal edema.'
-  },
-  {
-    key: 'A',
-    label: 'Assessment',
-    body: '1. Uncontrolled Type 2 Diabetes Mellitus with glycemic escalation; step-up therapy indicated.\n2. Dyspnea on exertion with mild peripheral edema; evaluate for early HFpEF vs medication-induced fluid retention.'
-  },
-  {
-    key: 'P',
-    label: 'Plan',
-    body: '1. Initiate Empagliflozin 10 mg PO daily for cardiorenal protection and glycemic control per ADA 2026 guidelines.\n2. Titrate Metformin to 1000 mg BID with meals.\n3. Stat 12-lead ECG, same-day HbA1c and CMP.\n4. Follow-up clinic review in 4 weeks.'
-  }
-];
+
 
 const DEFAULT_TRACEABLE_CLAIMS: TraceableClaim[] = [
   {
@@ -201,6 +181,8 @@ export default function AmbientClinicalCockpit({
   const [activeAudioSnippet, setActiveAudioSnippet] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'agent' | 'soap'>('agent');
   const [isSigned, setIsSigned] = useState(false);
+  const [isSigning, setIsSigning] = useState(false);
+  const [signError, setSignError] = useState<string | null>(null);
   const [attestationPayload, setAttestationPayload] = useState<any>(null);
 
   // Dynamically resolve clinician identity from authenticated session
@@ -306,6 +288,44 @@ export default function AmbientClinicalCockpit({
   const primaryAllergy = allergies[0]?.replace(/\s*\(.*\)\s*/g, '').trim();
   const clinicianLabel = currentUser?.displayName || 'Attending physician';
 
+  /**
+   * The note is generated from the patient actually in the room, not a bundled
+   * sample. Whatever is signed here is exactly what is persisted.
+   */
+  const soapNote = useMemo(() => {
+    const transcript = typeof patient.consultationTranscript === 'string' ? patient.consultationTranscript : '';
+    const subjective = [patient.chiefComplaint, transcript].filter(Boolean).join('\n\n') || 'No subjective history captured.';
+
+    const vitals = (patient.vitals || {}) as Record<string, string>;
+    const objective = Object.entries(vitals)
+      .filter(([, value]) => Boolean(value))
+      .map(([key, value]) => `${key.toUpperCase()}: ${value}`)
+      .join(' · ') || 'Vitals not recorded.';
+
+    const assessment = differential.length
+      ? differential
+          .map((entry, index) => `${index + 1}. ${entry.condition}${entry.probability ? ` (${entry.probability})` : ''}`)
+          .join('\n')
+      : 'No differential generated for this encounter.';
+
+    const plan = [
+      investigations.length ? `Investigations: ${investigations.map((entry) => entry.testName).join(', ')}.` : '',
+      medications.length
+        ? `Medications: ${medications.map((entry) => `${entry.name} ${entry.dose} ${entry.frequency}`).join('; ')}.`
+        : '',
+      patient.visitType ? `Visit type: ${patient.visitType}.` : ''
+    ].filter(Boolean).join('\n') || 'No orders staged.';
+
+    return { subjective, objective, assessment, plan };
+  }, [patient, differential, investigations, medications]);
+
+  const soapSections = [
+    { key: 'S', label: 'Subjective', body: soapNote.subjective },
+    { key: 'O', label: 'Objective', body: soapNote.objective },
+    { key: 'A', label: 'Assessment', body: soapNote.assessment },
+    { key: 'P', label: 'Plan', body: soapNote.plan }
+  ];
+
   const runLiveDiagnosis = async (symptomQuery?: string) => {
     const query = (symptomQuery || customSymptoms).trim();
     if (!query) return;
@@ -340,18 +360,45 @@ export default function AmbientClinicalCockpit({
     setTimeout(() => setActiveAudioSnippet(null), 3500);
   };
 
-  const handleSignEncounter = () => {
-    const timestamp = new Date().toISOString();
-    setAttestationPayload({
-      practitionerId: currentUser?.id || 'doc-synthetic-01',
-      practitionerName: currentUser?.displayName || 'Dr. Eleanor Vance',
-      npi: npiSignature,
-      patientId: patient.id || 'pat-live',
-      merkleRoot: groundedData?.auditLedger?.rootLedgerHash || 'sha256-merkle-verified',
-      timestamp,
-      attestationStatement: 'I hereby attest that I have personally reviewed, calibrated, and confirmed the clinical formulation, differential diagnoses, and staged orders for this patient encounter.'
-    });
-    setIsSigned(true);
+  const handleSignEncounter = async () => {
+    if (isSigning || isSigned) return;
+    setIsSigning(true);
+    setSignError(null);
+    try {
+      const { note } = await clinicApi.signNote({
+        patientId: String(patient.id),
+        patientName: String(patient.name || 'Patient'),
+        title: `${patient.visitType || 'Clinical encounter'} — ${new Date().toLocaleDateString('en-US')}`,
+        note: soapNote,
+        diagnoses: differential.map((entry) => entry.condition),
+        prescriptions: medications.map((entry) => ({
+          name: entry.name,
+          dose: entry.dose,
+          route: entry.route,
+          frequency: entry.frequency,
+          duration: entry.duration,
+          rxnorm: entry.rxnorm,
+          indication: entry.indication
+        })),
+        attestation:
+          'I hereby attest that I have personally reviewed, calibrated, and confirmed the clinical formulation, differential diagnoses, and staged orders for this patient encounter.'
+      });
+
+      setAttestationPayload({
+        practitionerId: note.signature?.actorId || currentUser?.id || 'unknown',
+        practitionerName: note.signature?.actorName || clinicianLabel,
+        npi: note.signature?.npi || npiSignature,
+        patientId: patient.id,
+        merkleRoot: note.id,
+        timestamp: note.signedAt || new Date().toISOString(),
+        attestationStatement: note.signature?.attestation
+      });
+      setIsSigned(true);
+    } catch (error) {
+      setSignError((error as Error).message || 'The signature could not be committed.');
+    } finally {
+      setIsSigning(false);
+    }
   };
 
   const initials = String(patient.name || 'Patient')
@@ -786,7 +833,7 @@ export default function AmbientClinicalCockpit({
 
             {activeTab === 'soap' && (
               <div className="space-y-2.5 p-4">
-                {SOAP_SECTIONS.map((section) => (
+                {soapSections.map((section) => (
                   <article key={section.key} className="rounded-2xl border border-white/80 bg-white/60 p-3.5">
                     <div className="flex items-center gap-2">
                       <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#111315] font-mono-clinical text-[10px] font-bold text-white">
@@ -831,10 +878,10 @@ export default function AmbientClinicalCockpit({
                   Signed &amp; committed
                 </div>
                 <div className="mt-1 text-[10.5px] font-medium text-emerald-800">
-                  {attestationPayload?.practitionerName || 'Attending physician'} · {npiSignature}
+                  {attestationPayload?.practitionerName || 'Attending physician'} · {attestationPayload?.npi || npiSignature}
                 </div>
                 <div className="mt-0.5 truncate font-mono-clinical text-[9.5px] text-emerald-700">
-                  Merkle {String(attestationPayload?.merkleRoot || 'sha256-verified').substring(0, 18)}…
+                  Note {String(attestationPayload?.merkleRoot || '—').substring(0, 18)}…
                 </div>
               </div>
             ) : (
@@ -845,12 +892,22 @@ export default function AmbientClinicalCockpit({
                 </div>
                 <button
                   type="button"
-                  onClick={handleSignEncounter}
-                  className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-full bg-[#111315] py-2.5 text-[12px] font-semibold text-white shadow-[0_16px_34px_-20px_rgba(17,19,21,0.85)] transition-all hover:-translate-y-0.5 hover:bg-[#24272C] active:translate-y-0 cursor-pointer"
+                  onClick={() => { void handleSignEncounter(); }}
+                  disabled={isSigning}
+                  className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-full bg-[#111315] py-2.5 text-[12px] font-semibold text-white shadow-[0_16px_34px_-20px_rgba(17,19,21,0.85)] transition-all hover:-translate-y-0.5 hover:bg-[#24272C] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
                 >
-                  <Lock className="h-3.5 w-3.5 text-emerald-400" />
-                  Sign &amp; commit to FHIR
+                  {isSigning ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-emerald-400" />
+                  ) : (
+                    <Lock className="h-3.5 w-3.5 text-emerald-400" />
+                  )}
+                  {isSigning ? 'Signing…' : 'Sign & commit to record'}
                 </button>
+                {signError && (
+                  <p className="mt-1.5 rounded-lg border border-rose-200 bg-rose-50 px-2 py-1 text-center text-[9.5px] leading-relaxed text-rose-800">
+                    {signError}
+                  </p>
+                )}
                 <p className="mt-1.5 text-center text-[9.5px] text-[#9AA0A6]">
                   Draft orders · nothing released until signed
                 </p>

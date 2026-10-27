@@ -23,6 +23,7 @@ import { ReferralPipeline } from '../components/operations/ReferralPipeline';
 import { OperationsAuditLog } from '../components/operations/OperationsAuditLog';
 import PracticeROIDashboard from '../components/operations/PracticeROIDashboard';
 import AcuteImagingTriageWorklist from '../components/operations/AcuteImagingTriageWorklist';
+import { authService } from '../services/auth';
 
 type ActiveTab = 'all' | 'triage' | 'refill' | 'scheduling' | 'referral' | 'audit' | 'roi' | 'imaging_triage';
 
@@ -33,19 +34,13 @@ export default function Operations() {
   const [selectedTask, setSelectedTask] = useState<OperationalTask | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
-  const [devPersona, setDevPersona] = useState<string>(operationsService.getDevPersona());
   const isOffline = operationsService.isOffline();
-
-  const handlePersonaChange = (newPersona: string) => {
-    setDevPersona(newPersona);
-    operationsService.setDevPersona(newPersona);
-    loadOperationsData();
-  };
+  const clinicianName = authService.getCurrentUser()?.displayName || 'Attending physician';
 
   // Simulation modal
   const [simMessage, setSimMessage] = useState('');
   const [simPatientId, setSimPatientId] = useState('eleanor-vance');
-  const [isSimulating, setIsSimulating] = useState(false);
+  const [isSubmittingTest, setIsSubmittingTest] = useState(false);
 
   const loadOperationsData = async () => {
     setIsLoading(true);
@@ -77,7 +72,7 @@ export default function Operations() {
     try {
       const result = await operationsService.approveTask({
         taskId: selectedTask.id,
-        doctor: 'Dr. Sarah Lin, MD',
+        doctor: clinicianName,
         editedContent: editedResponse
       });
       if (result.success) {
@@ -101,7 +96,7 @@ export default function Operations() {
     try {
       const result = await operationsService.approveTask({
         taskId: selectedTask.id,
-        doctor: 'Dr. Sarah Lin, MD',
+        doctor: clinicianName,
         physicianDecision: decision
       });
       if (result.success) {
@@ -118,7 +113,7 @@ export default function Operations() {
   const handleConfirmAppointment = async () => {
     if (!selectedTask) return;
     try {
-      const result = await operationsService.confirmAppointmentBooking(selectedTask.id, 'Dr. Sarah Lin, MD');
+      const result = await operationsService.confirmAppointmentBooking(selectedTask.id, clinicianName);
       if (result.success) {
         setActionSuccess('Appointment confirmed and booked in calendar.');
         setTimeout(() => setActionSuccess(null), 4000);
@@ -163,10 +158,10 @@ export default function Operations() {
     }
   };
 
-  const handleSimulateMessage = async (customText?: string) => {
+  const handleSubmitTestMessage = async (customText?: string) => {
     const textToSim = customText || simMessage;
     if (!textToSim.trim()) return;
-    setIsSimulating(true);
+    setIsSubmittingTest(true);
     try {
       const context = simPatientId === 'eleanor-vance' 
         ? {
@@ -198,17 +193,15 @@ export default function Operations() {
         setActiveTab('triage');
       }
     } finally {
-      setIsSimulating(false);
+      setIsSubmittingTest(false);
     }
   };
 
-  const handleResetCohort = () => {
-    const resetList = operationsService.resetToSyntheticCohort();
-    setTasks(resetList);
-    setSelectedTask(resetList[0]);
-    operationsService.getSummary().then(setSummary);
-    setActionSuccess('Operational queue reset to canonical synthetic cohort.');
-    setTimeout(() => setActionSuccess(null), 3000);
+  const handleRefreshQueue = () => {
+    void loadOperationsData().then(() => {
+      setActionSuccess('Operational queue refreshed from the live API.');
+      setTimeout(() => setActionSuccess(null), 3000);
+    });
   };
 
   const filteredTasks = tasks.filter(t => {
@@ -221,16 +214,16 @@ export default function Operations() {
     <Layout>
       <div className="flex flex-col h-full bg-[#fafaf9] overflow-hidden text-zinc-900">
         
-        {/* Offline Synthetic Mode Banner */}
+        {/* Offline connection banner */}
         {isOffline && (
           <div className="bg-amber-100 border-b border-amber-300 px-6 py-1.5 flex items-center justify-between text-xs text-amber-950 font-medium shrink-0">
             <div className="flex items-center gap-2">
               <AlertTriangle size={14} className="text-amber-700 shrink-0" />
               <span>
-                <strong>[OFFLINE SYNTHETIC MODE - SIMULATED EXECUTION ONLY - NOT REAL CLINICAL TRANSMISSION]</strong>: Operational backend is detached. Actions take effect in local synthetic memory.
+                <strong>Offline mode</strong>: the operational API is unreachable. Queue changes are cached in this browser and are not transmitted until the connection is restored.
               </span>
             </div>
-            <span className="font-mono text-[10px] uppercase font-bold text-amber-800">Local Sandbox</span>
+            <span className="font-mono text-[10px] uppercase font-bold text-amber-800">Offline cache</span>
           </div>
         )}
 
@@ -253,21 +246,8 @@ export default function Operations() {
                     Store: SQLite (WAL)
                   </span>
                   <span className="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-zinc-100 text-zinc-600 border border-zinc-200">
-                    FHIR Mode: in_memory_stub
+                    Queue: {isOffline ? 'offline cache' : 'live API'}
                   </span>
-                  {/* Development Persona Selector (Isolated synthetic dev mode only) */}
-                  <div className="flex items-center gap-1.5 ml-2 px-2 py-0.5 rounded border border-purple-200 bg-purple-50 text-purple-900 text-[10px] font-mono">
-                    <span className="font-semibold uppercase tracking-wider text-[9px] text-purple-600">Dev Persona:</span>
-                    <select
-                      value={devPersona}
-                      onChange={(e) => handlePersonaChange(e.target.value)}
-                      className="bg-transparent border-none text-purple-900 font-semibold focus:outline-hidden cursor-pointer"
-                    >
-                      <option value="physician-lin">Dr. Sarah Lin (Physician)</option>
-                      <option value="ops-staff-marcus">Marcus Vance (Ops Staff)</option>
-                      <option value="external-physician">Dr. External (Org Mismatch)</option>
-                    </select>
-                  </div>
                 </div>
                 <p className="text-xs text-zinc-500 mt-1">
                   Autonomous Triage • Care Gaps & Scheduling • Governed Refill Authority • HL7 FHIR R4
@@ -283,12 +263,12 @@ export default function Operations() {
                 </div>
               )}
               <button
-                onClick={handleResetCohort}
+                onClick={handleRefreshQueue}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-zinc-600 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 transition-colors cursor-pointer"
-                title="Reset queue to canonical synthetic cohort"
+                title="Reload the operational queue from the API"
               >
                 <RefreshCw size={13} className={isLoading ? 'animate-spin' : ''} />
-                <span>Reset Cohort</span>
+                <span>Refresh queue</span>
               </button>
             </div>
           </div>
@@ -542,8 +522,8 @@ export default function Operations() {
               {/* Inbound Simulator Bar */}
               <div className="p-3 border-t border-zinc-200 bg-zinc-50/70">
                 <div className="text-[11px] font-semibold text-zinc-700 mb-1.5 flex items-center justify-between">
-                  <span>Synthetic Inbound Simulation</span>
-                  <span className="text-[10px] text-zinc-400 font-normal">Test agent gates</span>
+                  <span>Triage intake tester</span>
+                  <span className="text-[10px] text-zinc-400 font-normal">Writes to the live queue</span>
                 </div>
                 <div className="mb-2">
                   <select
@@ -557,18 +537,18 @@ export default function Operations() {
                 </div>
                 <div className="flex gap-1.5 mb-1.5">
                   <button
-                    disabled={isSimulating}
-                    onClick={() => handleSimulateMessage("Hello, my home BP was 152/94 this morning and I felt dizzy when standing up. Should I stop my Lisinopril?")}
+                    disabled={isSubmittingTest}
+                    onClick={() => handleSubmitTestMessage("Hello, my home BP was 152/94 this morning and I felt dizzy when standing up. Should I stop my Lisinopril?")}
                     className="px-2 py-1 rounded text-[10px] bg-white border border-zinc-200 hover:bg-zinc-100 text-zinc-700 cursor-pointer flex-1 truncate disabled:opacity-50"
-                    title="Simulate Eleanor Vance BP spike inquiry"
+                    title="Submit a test BP-spike message for Eleanor Vance"
                   >
-                    {isSimulating ? 'Evaluating...' : 'BP Spike (Eleanor)'}
+                    {isSubmittingTest ? 'Evaluating...' : 'BP Spike (Eleanor)'}
                   </button>
                   <button
-                    disabled={isSimulating}
-                    onClick={() => handleSimulateMessage("I have crushing chest pain radiating to my left arm and jaw")}
+                    disabled={isSubmittingTest}
+                    onClick={() => handleSubmitTestMessage("I have crushing chest pain radiating to my left arm and jaw")}
                     className="px-2 py-1 rounded text-[10px] bg-red-50 border border-red-200 hover:bg-red-100 text-red-700 cursor-pointer flex-1 truncate disabled:opacity-50"
-                    title="Simulate 911 Emergency Red Flag"
+                    title="Submit a test emergency red-flag message"
                   >
                     911 Chest Pain
                   </button>

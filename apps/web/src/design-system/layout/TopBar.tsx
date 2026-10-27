@@ -1,10 +1,11 @@
 import { Search, Menu, Bell, Settings, Sparkles, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ProtonStatusChip from '../../components/proton/ProtonStatusChip';
-import { LiveDot } from '../motion/primitives';
 
 export interface TopBarProps {
   doctorName?: string;
+  unreadNotifications?: number;
+  criticalNotifications?: number;
   onOpenMobileMenu: () => void;
   onOpenCommandPalette: () => void;
   onOpenNotifications: () => void;
@@ -26,7 +27,9 @@ function initials(name: string): string {
 }
 
 export function TopBar({
-  doctorName = 'Dr. Olivia',
+  doctorName = 'Dr. Sarah Lin',
+  unreadNotifications = 0,
+  criticalNotifications = 0,
   onOpenMobileMenu,
   onOpenCommandPalette,
   onOpenNotifications,
@@ -38,84 +41,92 @@ export function TopBar({
   const navigate = useNavigate();
 
   return (
-    <header className={`flex h-[72px] shrink-0 items-center justify-between gap-4 px-4 sm:px-7 z-20 ${className}`}>
+    <header className={`flex h-[64px] shrink-0 items-center justify-between gap-4 border-b border-[#E2DCCD] px-4 sm:px-7 z-20 ${className}`}>
 
       {/* Search */}
       <div className="flex min-w-0 flex-1 items-center gap-2.5">
         <button
           type="button"
           onClick={onOpenMobileMenu}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/80 text-[#151719] shadow-[0_8px_24px_-18px_rgba(20,20,18,0.6)] transition-colors hover:bg-white lg:hidden"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[6px] border border-[#E2DCCD] text-[#14161A] transition-colors hover:bg-[#F1ECDE] lg:hidden"
           aria-label="Open navigation menu"
         >
-          <Menu size={16} />
+          <Menu size={15} />
         </button>
 
         <button
           type="button"
           onClick={onOpenCommandPalette}
-          className="group flex h-10 w-full max-w-[340px] items-center gap-2.5 rounded-full bg-white/75 px-3.5 text-left shadow-[0_10px_30px_-24px_rgba(20,20,18,0.6)] transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#151719]/15"
+          className="group flex h-9 w-full max-w-[330px] items-center gap-2.5 rounded-[7px] border border-[#E2DCCD] bg-[#FBF9F3]/70 px-3 text-left transition-colors hover:border-[#C9C3B4] hover:bg-[#FBF9F3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#14161A]/10"
           aria-label="Open global search"
         >
-          <Search size={14} className="shrink-0 text-[#9A9995] transition-colors group-hover:text-[#151719]" />
-          <span className="flex-1 truncate text-[12px] font-medium text-[#8A8A87]">
+          <Search size={13} className="shrink-0 text-[#A9A394] transition-colors group-hover:text-[#6E6A61]" />
+          <span className="flex-1 truncate text-[11.5px] text-[#8A8578]">
             Search patients, notes, orders
           </span>
-          <span className="hidden rounded-full bg-[#F1F0ED] px-1.5 py-0.5 text-[9px] font-semibold text-[#9A9995] sm:inline">
+          <span className="hidden rounded-[4px] border border-[#E2DCCD] px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-[0.1em] text-[#A9A394] sm:inline">
             {searchScope === 'Patients' ? '⌘K' : searchScope}
           </span>
         </button>
       </div>
 
       {/* Controls */}
-      <div className="flex shrink-0 items-center gap-2">
-        <ProtonStatusChip className="hidden md:inline-flex" />
+      <div className="flex shrink-0 items-center gap-1.5">
+        <ProtonStatusChip className="mr-1 hidden md:inline-flex" />
 
         <button
           type="button"
           onClick={() => navigate('/consultation?action=new-patient')}
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-[#151719] text-white shadow-[0_12px_28px_-16px_rgba(20,20,18,0.9)] transition-transform hover:scale-105 active:scale-95 cursor-pointer"
+          className="flex h-8 w-8 items-center justify-center rounded-[6px] bg-[#14161A] text-[#FBF9F3] transition-colors hover:bg-[#2A2D33] cursor-pointer"
           title="Start new patient consultation"
           aria-label="Start new patient consultation"
         >
-          <Plus size={15} strokeWidth={2.2} />
+          <Plus size={14} strokeWidth={2.2} />
         </button>
 
         <button
           type="button"
           onClick={onToggleCopilot}
-          className="hidden h-9 w-9 items-center justify-center rounded-full bg-white/80 text-[#5A5A57] shadow-[0_8px_24px_-18px_rgba(20,20,18,0.6)] transition-all hover:-translate-y-0.5 hover:bg-white hover:text-[#151719] active:translate-y-0 xl:flex cursor-pointer"
+          className="hidden h-8 w-8 items-center justify-center rounded-[6px] border border-[#E2DCCD] text-[#6E6A61] transition-colors hover:bg-[#F1ECDE] hover:text-[#14161A] xl:flex cursor-pointer"
           title="Toggle Proton Copilot (⌥A)"
           aria-label="Toggle Proton Copilot"
         >
-          <Sparkles size={14} />
+          <Sparkles size={13} />
         </button>
 
         <button
           type="button"
           onClick={onOpenNotifications}
-          className="relative flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-[#5A5A57] shadow-[0_8px_24px_-18px_rgba(20,20,18,0.6)] transition-all hover:-translate-y-0.5 hover:bg-white hover:text-[#151719] active:translate-y-0 cursor-pointer"
-          title="Clinical notifications"
-          aria-label="Clinical notifications"
+          className="relative flex h-8 w-8 items-center justify-center rounded-[6px] border border-[#E2DCCD] text-[#6E6A61] transition-colors hover:bg-[#F1ECDE] hover:text-[#14161A] cursor-pointer"
+          title={unreadNotifications > 0 ? `${unreadNotifications} unread clinical notifications` : 'Clinical notifications'}
+          aria-label={unreadNotifications > 0 ? `${unreadNotifications} unread clinical notifications` : 'Clinical notifications'}
         >
-          <Bell size={14} />
-          <LiveDot size={7} color="#E4587A" className="absolute right-2 top-2" />
+          <Bell size={13} />
+          {unreadNotifications > 0 && (
+            <span
+              className={`absolute -right-1 -top-1 flex h-[14px] min-w-[14px] items-center justify-center rounded-full px-1 font-mono text-[8px] font-semibold leading-none text-[#FBF9F3] ring-2 ring-[#F7F4EC] ${
+                criticalNotifications > 0 ? 'bg-[#A63A4E]' : 'bg-[#14161A]'
+              }`}
+            >
+              {unreadNotifications > 9 ? '9+' : unreadNotifications}
+            </span>
+          )}
         </button>
 
         <button
           type="button"
           onClick={onNavigateSettings}
-          className="hidden h-9 w-9 items-center justify-center rounded-full bg-white/80 text-[#5A5A57] shadow-[0_8px_24px_-18px_rgba(20,20,18,0.6)] transition-all hover:-translate-y-0.5 hover:bg-white hover:text-[#151719] active:translate-y-0 sm:flex cursor-pointer"
+          className="hidden h-8 w-8 items-center justify-center rounded-[6px] border border-[#E2DCCD] text-[#6E6A61] transition-colors hover:bg-[#F1ECDE] hover:text-[#14161A] sm:flex cursor-pointer"
           title="Settings"
           aria-label="Settings"
         >
-          <Settings size={14} />
+          <Settings size={13} />
         </button>
 
         <button
           type="button"
           onClick={onNavigateSettings}
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-[#151719] text-[10px] font-semibold tracking-[0.02em] text-white shadow-[0_12px_28px_-16px_rgba(20,20,18,0.9)] transition-transform hover:scale-105 active:scale-95 cursor-pointer"
+          className="ml-0.5 flex h-8 w-8 items-center justify-center rounded-[6px] bg-[#14161A] font-mono text-[9.5px] font-medium tracking-[0.02em] text-[#FBF9F3] transition-colors hover:bg-[#2A2D33] cursor-pointer"
           title={`Physician: ${doctorName}`}
           aria-label={`Physician profile: ${doctorName}`}
         >

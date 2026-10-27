@@ -1,7 +1,5 @@
 import { useState, useEffect, useRef, useMemo, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMedplum } from '@medplum/react';
-import type { Patient } from '@medplum/fhirtypes';
 import { 
   Search, 
   LayoutDashboard, 
@@ -14,8 +12,16 @@ import {
   ShieldCheck,
   Calendar,
   BookOpen,
-  DollarSign
+  DollarSign,
+  LoaderCircle,
+  AlertTriangle
 } from 'lucide-react';
+import {
+  clinicApi,
+  type ClinicAppointment,
+  type ClinicNote,
+  type ClinicPatientSummary
+} from '../../lib/clinicApi';
 
 interface CommandPaletteProps {
   isOpen: boolean;
@@ -34,23 +40,65 @@ interface PaletteAction {
 
 export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   const navigate = useNavigate();
-  const medplum = useMedplum();
   const [query, setQuery] = useState('');
-  const [patients, setPatients] = useState<Patient[]>([]);
+  const [patients, setPatients] = useState<ClinicPatientSummary[]>([]);
+  const [notes, setNotes] = useState<ClinicNote[]>([]);
+  const [appointments, setAppointments] = useState<ClinicAppointment[]>([]);
+  const [searchState, setSearchState] = useState<'idle' | 'loading' | 'error'>('idle');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch patients when opened
+  // Search the durable clinic workspace instead of a frozen roster.
   useEffect(() => {
-    if (isOpen) {
-      setQuery('');
-      setSelectedIndex(0);
-      setTimeout(() => inputRef.current?.focus(), 50);
-      medplum.searchResources('Patient', { _count: 30, _sort: '-_lastUpdated' })
-        .then(setPatients)
-        .catch(console.error);
-    }
-  }, [isOpen, medplum]);
+    if (!isOpen) return;
+    setQuery('');
+    setSelectedIndex(0);
+    setTimeout(() => inputRef.current?.focus(), 50);
+
+    let active = true;
+    setSearchState('loading');
+    clinicApi
+      .listPatients({})
+      .then((result) => {
+        if (!active) return;
+        setPatients(result.patients);
+        setNotes([]);
+        setAppointments([]);
+        setSearchState('idle');
+      })
+      .catch(() => {
+        if (active) setSearchState('error');
+      });
+    return () => {
+      active = false;
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const trimmed = query.trim();
+    if (!trimmed) return;
+    let active = true;
+    const timer = window.setTimeout(() => {
+      setSearchState('loading');
+      clinicApi
+        .search(trimmed)
+        .then((result) => {
+          if (!active) return;
+          setPatients(result.patients);
+          setNotes(result.notes);
+          setAppointments(result.appointments);
+          setSearchState('idle');
+        })
+        .catch(() => {
+          if (active) setSearchState('error');
+        });
+    }, 220);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [isOpen, query]);
 
   // Global Keyboard listener for ⌘K / Ctrl+K
   useEffect(() => {
@@ -70,11 +118,6 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
-
-  const getPatientName = (p: Patient): string => {
-    const n = p.name?.[0];
-    return n ? `${n.given?.join(' ') || ''} ${n.family || ''}`.trim() : 'Patient ' + (p.id?.slice(0, 8) || '');
-  };
 
   // Compile actions
   const actions = useMemo<PaletteAction[]>(() => {
@@ -202,31 +245,55 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
       list.push(...matchedWorkflows);
     }
 
-    // Patient Results
-    const matchingPatients = patients.filter(p => {
-      if (!q) return true;
-      const name = getPatientName(p).toLowerCase();
-      const mrn = (p.id || '').toLowerCase();
-      return name.includes(q) || mrn.includes(q);
-    }).slice(0, 8);
+    // Patient, note and appointment results from the live clinic index.
+    const patientResults: PaletteAction[] = [];
 
-    matchingPatients.forEach(p => {
-      const name = getPatientName(p);
-      list.push({
-        id: `pat-${p.id}`,
+    patients.slice(0, 6).forEach((patient) => {
+      patientResults.push({
+        id: `pat-${patient.id}`,
         category: 'PATIENT',
-        title: name,
-        subtitle: `DOB: ${p.birthDate || 'Unknown'} • MRN: ${p.id?.slice(0, 8)} • Open Profile`,
+        title: patient.name,
+        subtitle: `${patient.mrn || 'MRN pending'} · ${patient.age}y ${patient.gender} · ${patient.primaryCondition || patient.chiefComplaint || 'No condition recorded'}`,
         icon: <Stethoscope size={16} className="text-brand-600" />,
         onSelect: () => {
-          navigate(`/patients/${p.id}`);
+          navigate(`/patients/${patient.id}`);
           onClose();
         }
       });
     });
 
+    notes.slice(0, 3).forEach((note) => {
+      patientResults.push({
+        id: `note-${note.id}`,
+        category: 'PATIENT',
+        title: note.title,
+        subtitle: `${note.patientName} · ${note.status === 'SIGNED' ? 'Signed note' : 'Unsigned draft'} · ${note.updatedAt.slice(0, 10)}`,
+        icon: <FileText size={16} className="text-amber-600" />,
+        onSelect: () => {
+          navigate(`/consultation?patient=${note.patientId}`);
+          onClose();
+        }
+      });
+    });
+
+    appointments.slice(0, 3).forEach((appointment) => {
+      patientResults.push({
+        id: `apt-${appointment.id}`,
+        category: 'PATIENT',
+        title: `${appointment.patientName} · ${appointment.time}`,
+        subtitle: `${appointment.date} · ${appointment.appointmentType} · ${appointment.roomOrVirtual}`,
+        icon: <Calendar size={16} className="text-[#1E40AF]" />,
+        onSelect: () => {
+          navigate('/schedule');
+          onClose();
+        }
+      });
+    });
+
+    list.push(...patientResults.slice(0, 10));
+
     return list;
-  }, [query, patients, navigate, onClose]);
+  }, [query, patients, notes, appointments, navigate, onClose]);
 
   // Reset selected index when actions change
   useEffect(() => {
@@ -286,6 +353,18 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
 
         {/* Results List */}
         <div className="overflow-y-auto divide-y divide-slate-100 flex-1 p-2">
+          {searchState === 'loading' && (
+            <div className="flex items-center gap-2 px-3.5 py-2 text-[11px] text-slate-500">
+              <LoaderCircle size={12} className="animate-spin" />
+              Searching the clinic record…
+            </div>
+          )}
+          {searchState === 'error' && (
+            <div className="flex items-center gap-2 px-3.5 py-2 text-[11px] text-amber-800">
+              <AlertTriangle size={12} />
+              Search is unavailable. Check that the clinic API is running.
+            </div>
+          )}
           {actions.length === 0 ? (
             <div className="p-8 text-center text-slate-500 text-xs">
               No matching patients or actions found.

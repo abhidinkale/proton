@@ -36,6 +36,9 @@ import PrescriptionPDFModal from '../components/PrescriptionPDFModal';
 import { operationsService } from '../services/operationsService';
 import type { OperationalTask } from '../types/operations';
 import ProvenanceBadge from '../components/ui/ProvenanceBadge';
+import { TODAY_CLINIC_SCHEDULE } from '../data/clinicSchedule';
+import { clinicApi, type ClinicNote, type PatientChart } from '../lib/clinicApi';
+import { authService } from '../services/auth';
 
 type ProfileTab = 'overview' | 'timeline' | 'documents';
 type TimelineFilter = 'all' | 'consultations' | 'prescriptions' | 'labs' | 'documents';
@@ -94,6 +97,8 @@ export default function PatientProfile() {
   const [observations, setObservations] = useState<Observation[]>([]);
   const [documents, setDocuments] = useState<DocumentReference[]>([]);
   const [operationalTasks, setOperationalTasks] = useState<OperationalTask[]>([]);
+  const [clinicChart, setClinicChart] = useState<PatientChart | null>(null);
+  const [clinicNotes, setClinicNotes] = useState<ClinicNote[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Progressive Disclosure Tab state: Overview, Timeline, Documents
@@ -183,7 +188,187 @@ export default function PatientProfile() {
           if (timer) clearTimeout(timer);
         };
       } catch (err) {
-        console.error(err);
+        // The durable clinic workspace is authoritative for clinic-created and
+        // clinic-edited patients. Try it before the frozen synthetic cohort.
+        try {
+          const chart = await clinicApi.getPatient(id);
+          const record = chart.patient;
+          const nameParts = String(record.name || '').trim().split(/\s+/);
+          const family = nameParts.length > 1 ? nameParts[nameParts.length - 1] : nameParts[0] || '';
+          const given = nameParts.length > 1 ? nameParts.slice(0, -1) : [nameParts[0] || ''];
+
+          setClinicChart(chart);
+          setClinicNotes(chart.notes || []);
+
+          setPatient({
+            resourceType: 'Patient',
+            id: record.id,
+            name: [{ family, given }],
+            gender: (String(record.gender || 'unknown').toLowerCase() as Patient['gender']),
+            birthDate: record.dob || undefined,
+            telecom: record.patientPhone ? [{ system: 'phone', value: String(record.patientPhone) }] : undefined
+          });
+
+          const conditionList = (record.conditions || []).filter(Boolean);
+          setConditions(conditionList.map((condition, index) => ({
+            resourceType: 'Condition',
+            id: `clinic-cond-${index}`,
+            code: { text: String(condition) },
+            clinicalStatus: { coding: [{ code: 'active' }] },
+            subject: { reference: `Patient/${record.id}` }
+          })));
+
+          const allergyList = (record.allergies || []).filter(Boolean);
+          setAllergies(allergyList.map((allergy, index) => {
+            const label = String(allergy);
+            return {
+              resourceType: 'AllergyIntolerance',
+              id: `clinic-allergy-${index}`,
+              code: { text: label },
+              criticality: /anaphyla|penicillin|severe/i.test(label) ? 'high' : 'low',
+              patient: { reference: `Patient/${record.id}` }
+            } as AllergyIntolerance;
+          }));
+
+          const medicationList = (record.medications || []).filter(Boolean);
+          setMedicationRequests(medicationList.map((medication, index) => ({
+            resourceType: 'MedicationRequest',
+            id: `clinic-med-${index}`,
+            status: 'active',
+            intent: 'order',
+            medicationCodeableConcept: { text: String(medication) },
+            subject: { reference: `Patient/${record.id}` }
+          })));
+
+          const vitals = (record.vitals || {}) as Record<string, string>;
+          const vitalsObs: Observation[] = Object.entries(vitals)
+            .filter(([, value]) => Boolean(value))
+            .map(([key, value], index) => ({
+              resourceType: 'Observation',
+              id: `clinic-vital-${index}`,
+              code: { text: key },
+              valueString: String(value),
+              status: 'final',
+              subject: { reference: `Patient/${record.id}` }
+            }));
+
+          const labObs: Observation[] = ((record.recentLabs || []) as Array<Record<string, unknown>>).map((lab, index) => {
+            const abnormal = ['high', 'low', 'abnormal', 'critical'].includes(String(lab.status || '').toLowerCase());
+            return {
+              resourceType: 'Observation',
+              id: `clinic-lab-${index}`,
+              code: { text: String(lab.name || 'Lab result') },
+              valueString: String(lab.value || ''),
+              status: 'final',
+              interpretation: abnormal
+                ? [{ coding: [{ code: String(lab.status).toUpperCase().startsWith('H') ? 'H' : 'L' }] }]
+                : undefined,
+              note: lab.note ? [{ text: String(lab.note) }] : undefined,
+              subject: { reference: `Patient/${record.id}` }
+            } as Observation;
+          });
+          setObservations([...vitalsObs, ...labObs]);
+
+          // Every persisted encounter note becomes a signed or draft visit.
+          setEncounters((chart.notes || []).map((note) => ({
+            resourceType: 'Encounter',
+            id: note.id,
+            status: note.status === 'SIGNED' ? 'finished' : 'in-progress',
+            class: { code: 'AMB', display: 'Ambulatory' },
+            type: [{ text: note.title }],
+            reasonCode: [{ text: note.note?.assessment || note.note?.plan || 'Clinical encounter' }],
+            subject: { reference: `Patient/${record.id}` },
+            period: { start: note.signedAt || note.updatedAt || note.createdAt }
+          })));
+
+          setDocuments([]);
+        } catch (clinicError) {
+          console.warn('No durable clinic chart for this patient, checking local clinic schedule...', clinicError);
+          const localMatch = TODAY_CLINIC_SCHEDULE.find(
+            s => s.id === id || (s.id && id && (s.id.includes(id) || id.includes(s.id))) ||
+                 s.name.toLowerCase() === id?.toLowerCase()
+          );
+          if (localMatch) {
+            const parts = localMatch.name.split(' ');
+            const family = parts.length > 1 ? parts[parts.length - 1] : parts[0];
+            const given = parts.length > 1 ? parts.slice(0, -1) : [parts[0]];
+            const synthPatient: Patient = {
+              resourceType: 'Patient',
+              id: localMatch.id,
+              name: [{ family, given }],
+              gender: localMatch.gender.toLowerCase() as any,
+              birthDate: localMatch.dob,
+              telecom: [{ system: 'phone', value: localMatch.patientPhone || '555-010-0000' }]
+            };
+            setPatient(synthPatient);
+
+            setConditions(localMatch.conditions.map((c, idx) => ({
+              resourceType: 'Condition',
+              id: `cond-${idx}`,
+              code: { text: c },
+              clinicalStatus: { coding: [{ code: 'active' }] },
+              subject: { reference: `Patient/${localMatch.id}` }
+            })));
+
+            setAllergies(localMatch.allergies.map((a, idx) => ({
+              resourceType: 'AllergyIntolerance',
+              id: `all-${idx}`,
+              code: { text: a },
+              criticality: a.toLowerCase().includes('anaphylaxis') || a.toLowerCase().includes('penicillin') ? 'high' : 'low',
+              patient: { reference: `Patient/${localMatch.id}` }
+            })));
+
+            setMedicationRequests(localMatch.medications.map((m, idx) => ({
+              resourceType: 'MedicationRequest',
+              id: `med-${idx}`,
+              status: 'active',
+              intent: 'order',
+              medicationCodeableConcept: { text: m },
+              subject: { reference: `Patient/${localMatch.id}` }
+            })));
+
+            const synthObs: Observation[] = [
+              {
+                resourceType: 'Observation',
+                id: 'obs-bp',
+                code: { text: 'Blood Pressure' },
+                valueString: localMatch.vitals.bp,
+                status: 'final',
+                subject: { reference: `Patient/${localMatch.id}` }
+              },
+              {
+                resourceType: 'Observation',
+                id: 'obs-hr',
+                code: { text: 'Heart Rate' },
+                valueString: localMatch.vitals.hr,
+                status: 'final',
+                subject: { reference: `Patient/${localMatch.id}` }
+              },
+              ...localMatch.recentLabs.map((l, idx) => ({
+                resourceType: 'Observation' as const,
+                id: `obs-lab-${idx}`,
+                code: { text: l.name },
+                valueString: l.value,
+                status: 'final' as const,
+                note: l.note ? [{ text: l.note }] : undefined,
+                subject: { reference: `Patient/${localMatch.id}` }
+              }))
+            ];
+            setObservations(synthObs);
+
+            setEncounters([
+              {
+                resourceType: 'Encounter',
+                id: localMatch.encounterId || `enc-${localMatch.id}`,
+                status: 'finished',
+                class: { code: 'AMB', display: 'Ambulatory' },
+                type: [{ text: localMatch.visitType || 'Clinical Consultation' }],
+                subject: { reference: `Patient/${localMatch.id}` },
+                period: { start: new Date(Date.now() - 3 * 24 * 3600 * 1000).toISOString() }
+              }
+            ]);
+          }
+        }
       } finally {
         setLoading(false);
       }
@@ -226,7 +411,7 @@ export default function PatientProfile() {
   }, [patient, encounters, impressions, conditions, medStatements, medicationRequests, allergies, observations, documents]);
 
   const calculateAge = (dob?: string) => {
-    if (!dob) return 68;
+    if (!dob) return 0;
     const birth = new Date(dob);
     const now = new Date();
     let a = now.getFullYear() - birth.getFullYear();
@@ -303,19 +488,25 @@ export default function PatientProfile() {
           mr.encounter?.reference === `Encounter/${enc.id}` || 
           mr.meta?.lastUpdated === enc.meta?.lastUpdated
         );
+        const clinicNote = clinicNotes.find((note) => note.id === enc.id);
+        const signed = clinicNote ? clinicNote.status === 'SIGNED' : enc.status === 'finished';
 
         events.push({
           id: enc.id as string,
           date: new Date(d),
           type: 'consultation',
-          provenance: 'CLINICIAN_FACT',
+          provenance: signed ? 'CLINICIAN_FACT' : 'AI_SUGGESTION',
           title: enc.type?.[0]?.text || 'Clinical Consultation',
           description: enc.reasonCode?.[0]?.text || 'Outpatient encounter & medication review',
-          badge: { text: 'Signed by MD', variant: 'approved' },
+          badge: signed
+            ? { text: 'Signed by MD', variant: 'approved' }
+            : { text: 'Draft · unsigned', variant: 'draft' },
           consultationData: {
-            doctor: 'Dr. Aris Thorne, MD',
+            doctor: clinicNote?.signature?.actorName || authService.getCurrentUser()?.displayName || 'Unassigned clinician',
             type: enc.type?.[0]?.text || 'Outpatient',
-            summary: enc.reasonCode?.[0]?.text,
+            summary: clinicNote
+              ? [clinicNote.note?.subjective, clinicNote.note?.assessment, clinicNote.note?.plan].filter(Boolean).join('\n\n')
+              : enc.reasonCode?.[0]?.text,
             linkedPrescriptions: linkedMeds
           },
           resource: enc
@@ -482,20 +673,20 @@ export default function PatientProfile() {
     (o.code?.text || '').toLowerCase().includes('a1c') || 
     (o.code?.coding?.[0]?.display || '').toLowerCase().includes('a1c')
   );
-  const a1cVal = a1cObs ? (a1cObs.valueQuantity ? `${a1cObs.valueQuantity.value}%` : a1cObs.valueString || '8.2%') : (id?.includes('eleanor') ? '8.2%' : '7.1%');
+  const a1cVal = a1cObs ? (a1cObs.valueQuantity ? `${a1cObs.valueQuantity.value}%` : a1cObs.valueString || '—') : '—';
   const a1cElevated = a1cVal.includes('8.') || a1cVal.includes('9.') || a1cVal.includes('10.');
 
   const bpObs = observations.find(o => 
     (o.code?.text || '').toLowerCase().includes('blood pressure') || 
     (o.code?.coding?.[0]?.display || '').toLowerCase().includes('blood pressure')
   );
-  const bpVal = bpObs ? (bpObs.valueString || '138 / 84') : (id?.includes('eleanor') ? '138 / 84' : '124 / 82');
+  const bpVal = bpObs ? (bpObs.valueString || '—') : '—';
 
   const renalObs = observations.find(o => 
     (o.code?.text || '').toLowerCase().includes('egfr') || 
     (o.code?.coding?.[0]?.display || '').toLowerCase().includes('egfr')
   );
-  const renalVal = renalObs ? (renalObs.valueQuantity ? `eGFR ${renalObs.valueQuantity.value}` : renalObs.valueString || 'eGFR 68') : (id?.includes('eleanor') ? 'eGFR 68' : 'eGFR 88');
+  const renalVal = renalObs ? (renalObs.valueQuantity ? `eGFR ${renalObs.valueQuantity.value}` : renalObs.valueString || '—') : '—';
 
   const allTimelineEvents = getTimeline();
   const filteredTimeline = allTimelineEvents.filter(event => {
@@ -547,9 +738,17 @@ export default function PatientProfile() {
               </div>
 
               <div className="flex items-center gap-2 text-xs text-[#6E767E] flex-wrap">
-                <span>DOB: {patient.birthDate || '1956-04-12'}</span>
+                <span>DOB: {patient.birthDate || 'Not recorded'}</span>
                 <span>•</span>
-                <span>Attending: Dr. Aris Thorne, MD</span>
+                <span>Attending: {authService.getCurrentUser()?.displayName || 'Unassigned'}</span>
+                {clinicChart?.appointments?.[0] && (
+                  <>
+                    <span>•</span>
+                    <span>
+                      {clinicChart.appointments[0].date} · {clinicChart.appointments[0].time} · {clinicChart.appointments[0].roomOrVirtual}
+                    </span>
+                  </>
+                )}
               </div>
 
               {/* Clean condition chips */}
@@ -740,6 +939,43 @@ export default function PatientProfile() {
                 </div>
               </div>
             </div>
+
+            {/* Durable encounter notes from /api/clinic */}
+            {clinicNotes.length > 0 && (
+              <div className="p-5 bg-white border border-[#EAE8E3] rounded-2xl shadow-2xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <FileText size={14} className="text-[#111315]" />
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-[#111315]">Encounter notes</h3>
+                  </div>
+                  <span className="text-xs text-[#6E767E]">{clinicNotes.length} on file</span>
+                </div>
+                <div className="divide-y divide-[#F2F1EC]">
+                  {clinicNotes.map((note) => (
+                    <button
+                      key={note.id}
+                      type="button"
+                      onClick={() => navigate(`/consultation?patient=${patient.id}`)}
+                      className="flex w-full items-start justify-between gap-3 py-2.5 text-left cursor-pointer hover:bg-[#FAF9F6]"
+                    >
+                      <div className="min-w-0">
+                        <div className="text-xs font-semibold text-[#111315]">{note.title}</div>
+                        <div className="mt-0.5 line-clamp-2 text-[11px] text-[#6E767E]">
+                          {note.note?.assessment || note.note?.plan || 'No assessment recorded'}
+                        </div>
+                      </div>
+                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.06em] ${
+                        note.status === 'SIGNED'
+                          ? 'bg-emerald-50 text-emerald-800'
+                          : 'bg-amber-50 text-amber-800'
+                      }`}>
+                        {note.status}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Quick Consultation CTA */}
             <div className="p-5 bg-[#FAF9F6] border border-[#EAE8E3] rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">

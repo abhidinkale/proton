@@ -128,21 +128,16 @@ export default function ProtonCopilot({
   // Minimized Pill in bottom right
   if (mode === 'minimized') {
     return (
-      <div className="fixed bottom-6 right-6 z-40">
+      <div className="fixed bottom-5 right-5 z-40">
         <button
           type="button"
           onClick={() => setCopilotMode('floating')}
-          className="group flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-[#151619] text-white shadow-xl hover:shadow-2xl hover:scale-[1.02] active:scale-95 transition-all cursor-pointer border border-[#23252B]"
-          title="Open Proton AI Copilot (⌥A)"
+          className="group flex h-9 w-9 items-center justify-center rounded-[7px] border border-[#2A2D33] bg-[#14161A] text-[#FBF9F3] transition-colors hover:bg-[#23262C] cursor-pointer"
+          title="Open Proton Copilot (⌥A)"
+          aria-label="Open Proton Copilot"
         >
-          <div className="w-5 h-5 rounded-full bg-[#FCE7F3] text-[#9D174D] flex items-center justify-center">
-            <Sparkles size={11} className="group-hover:rotate-12 transition-transform" />
-          </div>
-          <span className="text-xs font-semibold tracking-tight">Proton Copilot</span>
-          <span className="text-[10px] font-mono text-[#88909A] px-1.5 py-0.5 rounded-full bg-white/10 hidden sm:inline">
-            ⌥A
-          </span>
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <Sparkles size={13} className="text-[#C9C3B4] transition-transform group-hover:rotate-12" />
+          <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-[#7FB07A] ring-2 ring-[#F7F4EC]" />
         </button>
       </div>
     );

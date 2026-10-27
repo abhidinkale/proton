@@ -229,20 +229,9 @@ class OperationsService {
     }
   }
 
-  private currentPersona: string = 'physician-lin';
-
-  public setDevPersona(persona: string): void {
-    this.currentPersona = persona;
-  }
-
-  public getDevPersona(): string {
-    return this.currentPersona;
-  }
-
   private getAuthHeaders(extraHeaders: Record<string, string> = {}): Record<string, string> {
     return {
       'Content-Type': 'application/json',
-      'X-Proton-Dev-Persona': this.currentPersona,
       ...extraHeaders
     };
   }
@@ -640,12 +629,6 @@ class OperationsService {
       }
     } catch {}
     return { success: false };
-  }
-
-  public resetToSyntheticCohort(): OperationalTask[] {
-    localTasksCache = seedLocalCohort();
-    this.persistLocalTasks();
-    return localTasksCache;
   }
 }
 

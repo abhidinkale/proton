@@ -91,6 +91,73 @@
   --radius-dialog: 0.75rem;
 }
 
+/* ── Accent system ──────────────────────────────────────────────────────────
+ * One accent per clinician, chosen on the dashboard and stored per user.
+ * Anything that used to hardcode blue reads these tokens instead, so switching
+ * accent restyles the chart, primary actions, focus rings and selected
+ * calendar day together. Set via <html data-accent="…">.
+ * ────────────────────────────────────────────────────────────────────────── */
+:root,
+[data-accent='blue'] {
+  --accent: #2f5ae0;
+  --accent-strong: #1f3fad;
+  --accent-ink: #16276b;
+  --accent-wash: #eef2fe;
+  --accent-line: #c9d6f7;
+  --accent-on: #ffffff;
+}
+
+[data-accent='teal'] {
+  --accent: #0f766e;
+  --accent-strong: #0b5a54;
+  --accent-ink: #083f3b;
+  --accent-wash: #e9f6f4;
+  --accent-line: #b9ded9;
+  --accent-on: #ffffff;
+}
+
+[data-accent='violet'] {
+  --accent: #6a4cd9;
+  --accent-strong: #5236b6;
+  --accent-ink: #38217f;
+  --accent-wash: #f1eefe;
+  --accent-line: #d6cbf7;
+  --accent-on: #ffffff;
+}
+
+[data-accent='amber'] {
+  --accent: #b26a0b;
+  --accent-strong: #8c5308;
+  --accent-ink: #5f3805;
+  --accent-wash: #fdf4e5;
+  --accent-line: #ecd3a8;
+  --accent-on: #fffdf8;
+}
+
+[data-accent='rose'] {
+  --accent: #b23a5a;
+  --accent-strong: #8e2b46;
+  --accent-ink: #5f1c2e;
+  --accent-wash: #fdefef;
+  --accent-line: #eec9d1;
+  --accent-on: #ffffff;
+}
+
+[data-accent='graphite'] {
+  --accent: #2a2e33;
+  --accent-strong: #14161a;
+  --accent-ink: #14161a;
+  --accent-wash: #f0efeb;
+  --accent-line: #d8d4c9;
+  --accent-on: #fbf9f3;
+}
+
+/* A single focus treatment, in the current accent. */
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 /* ── Base Styles (Modern Geometric Clinical Workspace) ── */
 html, body {
   background-color: #F7F6F2;
@@ -3755,4 +3822,29 @@ html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) :is(
     animation: none;
     transform: scaleY(0.55);
   }
+}
+
+/* ── Working preferences ──────────────────────────────────────────────── */
+/* Compact density tightens the vertical rhythm without hiding content. */
+html[data-density="compact"] {
+  font-size: 15px;
+}
+
+html[data-density="compact"] .proton-card {
+  padding: 1.25rem;
+}
+
+html[data-density="compact"] .proton-workspace-shell main,
+html[data-density="compact"] .proton-classic-shell main {
+  --proton-density-gap: 0.75rem;
+}
+
+/* Explicit reduced-motion setting, independent of the OS preference. */
+html[data-reduce-motion="true"] *,
+html[data-reduce-motion="true"] *::before,
+html[data-reduce-motion="true"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
 }

@@ -225,8 +225,8 @@ export const PDS_TOKENS = {
 
   // Typography Typography Scale & Rules
   typography: {
-    fontFamily: '"Source Sans 3 Variable", "Source Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-    fontDisplay: '"Plus Jakarta Sans", "Source Sans 3 Variable", sans-serif',
+    fontFamily: '"Outfit", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "SF Pro Rounded", "SF Pro Display", sans-serif',
+    fontDisplay: '"Outfit", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "SF Pro Rounded", "SF Pro Display", sans-serif',
     fontMono: '"JetBrains Mono", "SF Mono", ui-monospace, monospace',
     tabularNums: 'font-variant-numeric: tabular-nums',
     weights: {

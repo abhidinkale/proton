@@ -3,7 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { useMedplum } from '@medplum/react';
 import { 
   ArrowLeft, Check, X, FileText, UploadCloud, Loader2, AlertTriangle, 
-  ShieldAlert, CheckCircle2 
+  ShieldAlert, CheckCircle2, Layers 
 } from 'lucide-react';
 import Layout from '../components/Layout';
 import type { Bundle, Patient } from '@medplum/fhirtypes';
@@ -11,6 +11,7 @@ import { verifyExtractedFact } from '../services/verification';
 import { auditService } from '../services/audit';
 import { API_BASE_URL } from '../config';
 import ProvenanceBadge from '../components/ui/ProvenanceBadge';
+import TesseractLabStudio from '../components/TesseractLabStudio';
 
 interface Fact {
   category: "medication" | "diagnosis" | "lab" | "procedure" | "allergy" | "other";
@@ -36,6 +37,7 @@ export default function DocumentReview() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [selectedPatientId, setSelectedPatientId] = useState<string>(patientId || '');
   const [aiProvider, setAiProvider] = useState<string>('');
+  const [showLabStudio, setShowLabStudio] = useState<boolean>(false);
 
   useEffect(() => {
     fetch(`${API_BASE_URL}/health/ai`)
@@ -319,8 +321,25 @@ export default function DocumentReview() {
                 <span>Committing Transaction Bundle...</span>
               </button>
             )}
+            <button
+              onClick={() => setShowLabStudio(!showLabStudio)}
+              className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#151619] hover:bg-[#2A2E38] transition-all flex items-center gap-2 cursor-pointer shadow-sm"
+            >
+              <Layers size={14} className="text-emerald-400" />
+              <span>{showLabStudio ? 'Hide Lab Studio' : 'Launch Tesseract Lab Studio'}</span>
+            </button>
           </div>
         </header>
+
+        {/* Tesseract Lab Studio Inspector */}
+        {showLabStudio && (
+          <div className="mb-6 animate-in fade-in slide-in-from-top-4 duration-300">
+            <TesseractLabStudio
+              patientId={effectivePatientId}
+              onClose={() => setShowLabStudio(false)}
+            />
+          </div>
+        )}
 
         {/* Content Body */}
         {status === 'idle' || status === 'extracting' || status === 'error' ? (

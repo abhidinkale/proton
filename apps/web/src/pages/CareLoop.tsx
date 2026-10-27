@@ -1,0 +1,1249 @@
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  AlertTriangle,
+  Check,
+  Loader2,
+  MessageSquare,
+  RefreshCw,
+  Send,
+  X
+} from 'lucide-react';
+import Layout from '../components/Layout';
+import { authService } from '../services/auth';
+import { ApiError } from '../lib/api';
+import {
+  careLoopApi,
+  formatAgo,
+  formatClock,
+  formatDayLabel,
+  type AttentionSeverity,
+  type LiveAppointment,
+  type LiveAttentionItem,
+  type LiveOverview,
+  type LiveThread,
+  type LiveThreadSummary
+} from '../lib/careLoopApi';
+
+/**
+ * The clinician half of the patient loop.
+ *
+ * Everything rendered here came from the same Postgres rows the phone writes:
+ * a booking made in airplane mode appears after the phone reconnects, and a
+ * reply typed here is on the phone at its next pull (~15s, or immediately when
+ * the app is reopened). There is no seeded workspace in this view.
+ *
+ * Visual language: a clinical day sheet, not a dashboard. Warm paper, ink,
+ * hairline rules, editorial serif for names, mono for anything measured. The
+ * only saturated colour is clinical signal (critical, warning, confirmed).
+ */
+
+const POLL_MS = 3000;
+
+const SEVERITY_STYLE: Record<
+  AttentionSeverity,
+  { bar: string; tint: string; ink: string; label: string }
+> = {
+  critical: {
+    bar: 'bg-[#A63A4E]',
+    tint: 'bg-[#FAF1F2]',
+    ink: 'text-[#A63A4E]',
+    label: 'Critical'
+  },
+  warning: {
+    bar: 'bg-[#B07A2A]',
+    tint: 'bg-[#FBF5E9]',
+    ink: 'text-[#9A6224]',
+    label: 'Warning'
+  },
+  info: {
+    bar: 'bg-[#BDB6A6]',
+    tint: 'bg-transparent',
+    ink: 'text-[#6E6A61]',
+    label: 'Routine'
+  }
+};
+
+/** "Dr. Sarah Lin, MD" -> "Lin". Falls back to the whole name. */
+function surnameOf(displayName: string): string {
+  const cleaned = displayName
+    .replace(/^Dr\.?\s+/i, '')
+    .split(',')[0]
+    .trim();
+  const parts = cleaned.split(/\s+/).filter(Boolean);
+  return parts.length > 1 ? parts[parts.length - 1] : parts[0] || 'Doctor';
+}
+
+function greetingFor(now: Date): string {
+  const hour = now.getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
+export default function CareLoop() {
+  const [overview, setOverview] = useState<LiveOverview | null>(null);
+  const [error, setError] = useState<unknown>(null);
+  const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [activePatientId, setActivePatientId] = useState<string | null>(null);
+  const [thread, setThread] = useState<LiveThread | null>(null);
+  const [draft, setDraft] = useState('');
+  const [movingId, setMovingId] = useState<string | null>(null);
+  const [moveValue, setMoveValue] = useState('');
+  const [focusedId, setFocusedId] = useState<string | null>(null);
+  const [now, setNow] = useState(() => new Date());
+
+  const mounted = useRef(true);
+  const focusTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  const loadOverview = useCallback(async () => {
+    try {
+      const data = await careLoopApi.overview();
+      if (!mounted.current) return;
+      setOverview(data);
+      setError(null);
+      setNow(new Date());
+    } catch (err) {
+      if (!mounted.current) return;
+      setError(err);
+    }
+  }, []);
+
+  // A self-scheduling poll instead of setInterval: a slow request can never
+  // stack up behind the next tick.
+  useEffect(() => {
+    mounted.current = true;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let stopped = false;
+
+    const tick = async () => {
+      if (stopped) return;
+      await loadOverview();
+      if (!stopped) timer = setTimeout(tick, POLL_MS);
+    };
+
+    tick();
+
+    return () => {
+      stopped = true;
+      mounted.current = false;
+      if (timer) clearTimeout(timer);
+      if (focusTimer.current) clearTimeout(focusTimer.current);
+    };
+  }, [loadOverview]);
+
+  // The open conversation is kept live too, so a patient's check-in and a
+  // colleague's reply both show up without closing the panel.
+  useEffect(() => {
+    if (!activePatientId) {
+      setThread(null);
+      return;
+    }
+
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    const tick = async () => {
+      try {
+        const data = await careLoopApi.thread(activePatientId);
+        if (!stopped) setThread(data);
+      } catch {
+        // A thread that vanished is not worth an error banner over the panel;
+        // the overview poll still reports connectivity.
+      }
+      if (!stopped) timer = setTimeout(tick, POLL_MS);
+    };
+
+    tick();
+
+    return () => {
+      stopped = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [activePatientId]);
+
+  const runAction = async (key: string, action: () => Promise<unknown>) => {
+    setBusyKey(key);
+    try {
+      await action();
+      await loadOverview();
+    } catch (err) {
+      setError(err);
+    } finally {
+      setBusyKey(null);
+    }
+  };
+
+  const sendReply = async () => {
+    if (!activePatientId || !draft.trim()) return;
+    const body = draft.trim();
+    setBusyKey('reply');
+    try {
+      await careLoopApi.reply(activePatientId, body);
+      setDraft('');
+      const data = await careLoopApi.thread(activePatientId);
+      setThread(data);
+      await loadOverview();
+    } catch (err) {
+      setError(err);
+    } finally {
+      setBusyKey(null);
+    }
+  };
+
+  const markHandled = async (patientId: string) => {
+    setBusyKey(`resolve-${patientId}`);
+    try {
+      await careLoopApi.resolve({ patientId });
+      await loadOverview();
+      if (activePatientId === patientId) {
+        const data = await careLoopApi.thread(patientId).catch(() => null);
+        setThread(data);
+      }
+    } catch (err) {
+      setError(err);
+    } finally {
+      setBusyKey(null);
+    }
+  };
+
+  const focusAppointment = (id: string) => {
+    setFocusedId(id);
+    requestAnimationFrame(() => {
+      document.getElementById(`appt-${id}`)?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      });
+    });
+    if (focusTimer.current) clearTimeout(focusTimer.current);
+    focusTimer.current = setTimeout(() => setFocusedId(null), 2400);
+  };
+
+  const unavailable = error instanceof ApiError && error.code === 'CLINIC_LIVE_UNAVAILABLE';
+  const appointments = (overview?.appointments ?? []).filter((a) => a.status !== 'CANCELLED');
+  const metrics = overview?.metrics;
+  const threads = overview?.threads ?? [];
+
+  const clinicianName = authService.getCurrentUser()?.displayName || 'Dr. Sarah Lin, MD';
+  const clinicianSurname = surnameOf(clinicianName);
+  const visits = metrics?.scheduled ?? 0;
+  const awaiting = metrics?.unconfirmed ?? 0;
+  const waiting = metrics?.needsAttention ?? 0;
+
+  const summary = !overview
+    ? 'Reading the clinic database…'
+    : waiting > 0
+      ? `${visits} ${visits === 1 ? 'visit' : 'visits'} on the board${
+          awaiting > 0 ? `, ${awaiting} awaiting your confirmation` : ''
+        }. ${waiting} open ${waiting === 1 ? 'item' : 'items'} in triage.`
+      : `${visits} ${visits === 1 ? 'visit' : 'visits'} on the board${
+          awaiting > 0 ? `, ${awaiting} awaiting your confirmation` : ''
+        }. Triage is clear.`;
+
+  return (
+    <Layout>
+      <div className="pb-4 pt-1">
+        {/* ---------------------------------------------------------------- */}
+        {/* Masthead                                                          */}
+        {/* ---------------------------------------------------------------- */}
+        <header className="mb-6 border-b border-[#DCD6C8] pb-5">
+          <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2 font-mono text-[9px] uppercase tracking-[0.18em] text-[#8A8578]">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#4C7A45] opacity-60 motion-reduce:hidden" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#4C7A45]" />
+                </span>
+                <span className="text-[#4C7A45]">Live</span>
+                <span className="text-[#C9C3B4]">/</span>
+                <span>Care Loop</span>
+                <span className="text-[#C9C3B4]">/</span>
+                <span>{overview?.persistence ?? 'postgres'}</span>
+              </div>
+
+              <h1 className="mt-3 font-editorial text-[38px] leading-[1.02] tracking-[-0.01em] text-[#14161A] sm:text-[50px]">
+                {greetingFor(now)}, Dr. {clinicianSurname}.
+              </h1>
+
+              <p className="mt-2 max-w-xl text-[12.5px] leading-relaxed text-[#6E6A61]">
+                {summary}
+              </p>
+            </div>
+
+            <div className="flex flex-col items-start gap-2 sm:items-end">
+              <p className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-[#8A8578]">
+                {now.toLocaleDateString([], {
+                  weekday: 'long',
+                  day: 'numeric',
+                  month: 'long'
+                })}
+              </p>
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-[9.5px] tabular-nums text-[#A9A394]">
+                  {overview ? `updated ${formatClock(overview.generatedAt)}` : 'connecting…'}
+                </span>
+                <DeskAction
+                  onClick={() => runAction('refresh', loadOverview)}
+                  busy={busyKey === 'refresh'}
+                >
+                  <RefreshCw className={`h-3 w-3 ${busyKey === 'refresh' ? 'animate-spin' : ''}`} />
+                  Refresh
+                </DeskAction>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {unavailable && <SetupNotice />}
+
+        {error !== null && !unavailable && (
+          <div className="mb-5 flex items-start gap-3 border-l-2 border-[#A63A4E] bg-[#FAF1F2] px-4 py-3">
+            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#A63A4E]" />
+            <div>
+              <p className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-[#A63A4E]">
+                Clinic link interrupted
+              </p>
+              <p className="mt-1 text-[11.5px] leading-relaxed text-[#6E5A5E]">
+                {error instanceof Error
+                  ? error.message
+                  : 'Could not reach the clinic database.'}{' '}
+                The view keeps the last known state and retries every 3 seconds.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* ---------------------------------------------------------------- */}
+        {/* Vitals strip                                                      */}
+        {/* ---------------------------------------------------------------- */}
+        {metrics && (
+          <section
+            aria-label="Today at a glance"
+            className="mb-6 grid grid-cols-2 gap-px overflow-hidden rounded-[14px] border border-[#DCD6C8] bg-[#E3DED2] sm:grid-cols-4"
+          >
+            <Vital label="On the schedule" value={metrics.scheduled} note="next 24h" />
+            <Vital label="Awaiting confirmation" value={metrics.unconfirmed} note="reception" />
+            <Vital
+              label="Needs attention"
+              value={metrics.needsAttention}
+              note="triage"
+              tone={metrics.needsAttention > 0 ? 'critical' : 'ink'}
+            />
+            <Vital label="Patients today" value={metrics.patients} note="distinct" />
+          </section>
+        )}
+
+        {/* ---------------------------------------------------------------- */}
+        {/* The day                                                           */}
+        {/* ---------------------------------------------------------------- */}
+        {overview && (
+          <DayBoard
+            appointments={appointments}
+            from={overview.window.from}
+            to={overview.window.to}
+            now={now}
+            onFocus={focusAppointment}
+          />
+        )}
+
+        {/* ---------------------------------------------------------------- */}
+        {/* Two columns: ledger + triage                                      */}
+        {/* ---------------------------------------------------------------- */}
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.8fr)]">
+          <section aria-label="Today's schedule">
+            <SectionLabel
+              title="Today & next 24 hours"
+              meta={`${appointments.length} scheduled`}
+            />
+
+            {!overview && !error && <BoardSkeleton rows={2} />}
+
+            {overview && appointments.length === 0 && (
+              <Paper>
+                <p className="font-editorial text-[20px] leading-tight text-[#14161A]">
+                  Nothing on the board.
+                </p>
+                <p className="mt-1 text-[11.5px] leading-relaxed text-[#6E6A61]">
+                  A booking made on a patient's phone appears here as soon as that phone reaches
+                  the server — no refresh needed.
+                </p>
+              </Paper>
+            )}
+
+            {appointments.length > 0 && (
+              <div className="overflow-hidden rounded-[14px] border border-[#DCD6C8] bg-[#FBF9F3]">
+                {appointments.map((appointment) => (
+                  <AppointmentLine
+                    key={appointment.id}
+                    appointment={appointment}
+                    now={now}
+                    busyKey={busyKey}
+                    focused={focusedId === appointment.id}
+                    moving={movingId === appointment.id}
+                    moveValue={moveValue}
+                    onMoveValue={setMoveValue}
+                    onToggleMove={() => {
+                      setMovingId(movingId === appointment.id ? null : appointment.id);
+                      setMoveValue(toLocalInput(appointment.scheduledFor));
+                    }}
+                    onConfirm={() =>
+                      runAction(`confirm-${appointment.id}`, () =>
+                        careLoopApi.confirm(appointment.id)
+                      )
+                    }
+                    onSaveMove={() => {
+                      const iso = fromLocalInput(moveValue);
+                      if (!iso) return;
+                      runAction(`move-${appointment.id}`, () =>
+                        careLoopApi.reschedule(appointment.id, iso)
+                      ).then(() => setMovingId(null));
+                    }}
+                    onCancelMove={() => setMovingId(null)}
+                    onMessage={() => setActivePatientId(appointment.patientId)}
+                    onCancel={() => {
+                      if (!window.confirm(`Cancel ${appointment.patientName}'s appointment?`)) return;
+                      runAction(`cancel-${appointment.id}`, () =>
+                        careLoopApi.cancel(appointment.id)
+                      );
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+
+          <aside className="space-y-6">
+            <section aria-label="Needs attention">
+              <SectionLabel
+                title="Needs attention"
+                meta={`${overview?.attention.length ?? 0} open`}
+                tone={waiting > 0 ? 'critical' : 'ink'}
+              />
+
+              {!overview && !error && <BoardSkeleton rows={2} />}
+
+              {overview && overview.attention.length === 0 && (
+                <Paper>
+                  <p className="font-editorial text-[20px] leading-tight text-[#14161A]">
+                    Triage is clear.
+                  </p>
+                  <p className="mt-1 text-[11.5px] leading-relaxed text-[#6E6A61]">
+                    A follow-up check-in or refill request lands here the moment a patient
+                    submits it.
+                  </p>
+                </Paper>
+              )}
+
+              {overview && overview.attention.length > 0 && (
+                <div className="overflow-hidden rounded-[14px] border border-[#DCD6C8] bg-[#FBF9F3]">
+                  {overview.attention.map((item, index) => (
+                    <TriageEntry
+                      key={item.id}
+                      item={item}
+                      index={index}
+                      now={now}
+                      busy={busyKey === `resolve-${item.patientId}`}
+                      onOpen={() => setActivePatientId(item.patientId)}
+                      onResolve={() => markHandled(item.patientId)}
+                    />
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section aria-label="Recent patient messages">
+              <SectionLabel title="Recent messages" meta={`${threads.length}`} />
+
+              {overview && threads.length === 0 && (
+                <Paper>
+                  <p className="text-[11.5px] leading-relaxed text-[#6E6A61]">
+                    No patient messages yet. A reply you send here appears in the app's
+                    “From your clinic” inbox within 15 seconds.
+                  </p>
+                </Paper>
+              )}
+
+              {threads.length > 0 && (
+                <div className="overflow-hidden rounded-[14px] border border-[#DCD6C8] bg-[#FBF9F3]">
+                  {threads.map((entry) => (
+                    <ThreadLine
+                      key={entry.patientId}
+                      thread={entry}
+                      now={now}
+                      onOpen={() => setActivePatientId(entry.patientId)}
+                    />
+                  ))}
+                </div>
+              )}
+            </section>
+          </aside>
+        </div>
+
+        <footer className="mt-8 flex flex-wrap items-center justify-between gap-2 border-t border-[#DCD6C8] pt-3 font-mono text-[8.5px] uppercase tracking-[0.16em] text-[#A9A394]">
+          <span>One database · patient app ⇄ clinic</span>
+          <span>Poll 3s · every write attributed</span>
+        </footer>
+      </div>
+
+      {activePatientId && (
+        <ConversationSheet
+          thread={thread}
+          draft={draft}
+          onDraftChange={setDraft}
+          sending={busyKey === 'reply'}
+          onSend={sendReply}
+          onClose={() => {
+            setActivePatientId(null);
+            setDraft('');
+          }}
+          onResolve={() => markHandled(activePatientId)}
+          resolving={busyKey === `resolve-${activePatientId}`}
+        />
+      )}
+    </Layout>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Pieces
+// ---------------------------------------------------------------------------
+
+function Vital({
+  label,
+  value,
+  note,
+  tone = 'ink'
+}: {
+  label: string;
+  value: number;
+  note: string;
+  tone?: 'ink' | 'critical';
+}) {
+  return (
+    <div className="bg-[#FBF9F3] px-5 py-4">
+      <p className="font-mono text-[8.5px] uppercase tracking-[0.16em] text-[#8A8578]">
+        {label}
+      </p>
+      <div className="mt-2 flex items-baseline gap-2">
+        <span
+          className={`font-mono text-[27px] leading-none tracking-[-0.05em] ${
+            tone === 'critical' && value > 0 ? 'text-[#A63A4E]' : 'text-[#14161A]'
+          }`}
+        >
+          {value}
+        </span>
+        <span className="font-mono text-[8.5px] uppercase tracking-[0.12em] text-[#A9A394]">
+          {note}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function SectionLabel({
+  title,
+  meta,
+  tone = 'ink'
+}: {
+  title: string;
+  meta: string;
+  tone?: 'ink' | 'critical';
+}) {
+  return (
+    <div className="mb-2 flex items-baseline justify-between gap-3">
+      <h2 className="font-mono text-[9.5px] uppercase tracking-[0.18em] text-[#6E6A61]">
+        {title}
+      </h2>
+      <span
+        className={`font-mono text-[9px] uppercase tracking-[0.14em] ${
+          tone === 'critical' ? 'text-[#A63A4E]' : 'text-[#A9A394]'
+        }`}
+        aria-live="polite"
+      >
+        {meta}
+      </span>
+    </div>
+  );
+}
+
+function Paper({ children }: { children: ReactNode }) {
+  return (
+    <div className="rounded-[14px] border border-[#DCD6C8] bg-[#FBF9F3] px-5 py-4">
+      {children}
+    </div>
+  );
+}
+
+function DayBoard({
+  appointments,
+  from,
+  to,
+  now,
+  onFocus
+}: {
+  appointments: LiveAppointment[];
+  from: string;
+  to: string;
+  now: Date;
+  onFocus: (id: string) => void;
+}) {
+  const fromMs = new Date(from).getTime();
+  const toMs = new Date(to).getTime();
+  const span = Math.max(toMs - fromMs, 1);
+  const pct = (time: number) =>
+    Math.min(100, Math.max(0, ((time - fromMs) / span) * 100));
+
+  // Two-hour ticks, aligned to the clock rather than to the window.
+  const first = new Date(fromMs);
+  first.setMinutes(0, 0, 0);
+  if (first.getHours() % 2 !== 0) first.setHours(first.getHours() + 1);
+  const ticks: number[] = [];
+  for (let t = first.getTime(); t <= toMs; t += 2 * 60 * 60 * 1000) ticks.push(t);
+
+  const sorted = [...appointments].sort(
+    (a, b) => new Date(a.scheduledFor).getTime() - new Date(b.scheduledFor).getTime()
+  );
+
+  // The window crosses midnight once. Mark that edge so "02" can never be read
+  // as two o'clock today.
+  const dayBoundary = new Date(fromMs);
+  dayBoundary.setHours(24, 0, 0, 0);
+  const boundaryMs = dayBoundary.getTime();
+  const nowPct = pct(now.getTime());
+
+  return (
+    <section
+      aria-label="Next 24 hours"
+      className="mb-6 overflow-hidden rounded-[14px] border border-[#DCD6C8] bg-[#FBF9F3]"
+    >
+      <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[#E3DED2] px-5 py-3">
+        <h2 className="font-mono text-[9.5px] uppercase tracking-[0.18em] text-[#6E6A61]">
+          The day
+        </h2>
+        <p className="font-mono text-[8.5px] uppercase tracking-[0.14em] text-[#A9A394]">
+          next 24 hours · {appointments.length} on the board
+        </p>
+      </div>
+
+      <div className="px-5 pb-2 pt-2.5">
+        {/* Hour rule, shared by every row below. */}
+        <div className="flex items-center gap-4">
+          <div className="w-[126px] shrink-0 font-mono text-[8px] uppercase tracking-[0.16em] text-[#B3AD9D]">
+            Patient
+          </div>
+          <div className="relative h-5 flex-1">
+            {ticks.map((tick) => {
+              const left = pct(tick);
+              if (left < 2 || left > 98) return null;
+              return (
+                <span
+                  key={tick}
+                  className="absolute bottom-0 -translate-x-1/2 font-mono text-[8.5px] tabular-nums text-[#A9A394]"
+                  style={{ left: `${left}%` }}
+                >
+                  {new Date(tick).toLocaleTimeString([], {
+                    hour: '2-digit',
+                    hour12: false
+                  })}
+                </span>
+              );
+            })}
+            {nowPct >= 1 && nowPct <= 99 && (
+              <span
+                className="absolute bottom-0 -translate-x-1/2 translate-y-[-1px] bg-[#FBF9F3] px-1 font-mono text-[8px] uppercase tracking-[0.14em] text-[#A63A4E]"
+                style={{ left: `${nowPct}%` }}
+              >
+                now
+              </span>
+            )}
+          </div>
+        </div>
+
+        {sorted.length === 0 ? (
+          <p className="mt-1 border-t border-[#E9E4D8] py-6 text-[11.5px] leading-relaxed text-[#6E6A61]">
+            No visits in the next 24 hours. A booking made on a patient's phone lands here the
+            moment that phone reaches the server.
+          </p>
+        ) : (
+          <div className="relative mt-1">
+            {/* Vertical rules sit behind the rows. */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 left-[142px] right-0"
+            >
+              {ticks.map((tick) => {
+                const left = pct(tick);
+                if (left < 1 || left > 99) return null;
+                return (
+                  <span
+                    key={tick}
+                    className="absolute inset-y-0 w-px bg-[#EFEADB]"
+                    style={{ left: `${left}%` }}
+                  />
+                );
+              })}
+              {boundaryMs > fromMs && boundaryMs < toMs && (
+                <span
+                  className="absolute inset-y-0 border-l border-dashed border-[#DCD6C8]"
+                  style={{ left: `${pct(boundaryMs)}%` }}
+                />
+              )}
+              {nowPct >= 0 && nowPct <= 100 && (
+                <span
+                  className="absolute inset-y-0 w-px bg-[#A63A4E]"
+                  style={{ left: `${nowPct}%` }}
+                />
+              )}
+            </div>
+
+            {sorted.map((appointment) => {
+              const start = new Date(appointment.scheduledFor).getTime();
+              const left = pct(start);
+              const width = Math.max(
+                (appointment.durationMinutes * 60_000 / span) * 100,
+                0.45
+              );
+              const confirmed = appointment.status === 'CONFIRMED';
+              const completed = appointment.status === 'COMPLETED';
+              const barClass = confirmed
+                ? 'bg-[#14161A]'
+                : completed
+                  ? 'bg-[#C9C3B4]'
+                  : 'border border-[#B07A2A] bg-[#FBF5E9]';
+              return (
+                <div
+                  key={appointment.id}
+                  className="group flex items-center gap-4 border-t border-[#EFEADB] first:border-t-0"
+                >
+                  <button
+                    type="button"
+                    onClick={() => onFocus(appointment.id)}
+                    className="w-[126px] shrink-0 py-2 text-left"
+                  >
+                    <span className="block font-mono text-[8.5px] uppercase tracking-[0.12em] tabular-nums text-[#A9A394]">
+                      {formatClock(appointment.scheduledFor)} · {appointment.durationMinutes} min
+                    </span>
+                    <span className="mt-0.5 block truncate font-editorial text-[15px] leading-tight text-[#14161A] group-hover:underline group-hover:decoration-[#BDB6A6] group-hover:underline-offset-2">
+                      {appointment.patientName}
+                    </span>
+                  </button>
+
+                  <div className="relative h-[46px] flex-1">
+                    <button
+                      type="button"
+                      onClick={() => onFocus(appointment.id)}
+                      aria-label={`${appointment.patientName}, ${formatClock(
+                        appointment.scheduledFor
+                      )}, ${appointment.status.toLowerCase()}`}
+                      className="absolute top-1/2 flex -translate-y-1/2 items-center"
+                      style={{ left: `${left}%`, width: `${width}%`, minWidth: '14px' }}
+                    >
+                      <span
+                        className={`h-[7px] w-full rounded-full transition-transform group-hover:scale-y-[1.6] ${barClass}`}
+                      />
+                      {!confirmed && !completed && (
+                        <span className="absolute -left-[7px] h-[7px] w-[7px] rounded-full border border-[#B07A2A] bg-[#FBF9F3]" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function AppointmentLine({
+  appointment,
+  now,
+  busyKey,
+  focused,
+  moving,
+  moveValue,
+  onMoveValue,
+  onToggleMove,
+  onConfirm,
+  onSaveMove,
+  onCancelMove,
+  onMessage,
+  onCancel
+}: {
+  appointment: LiveAppointment;
+  now: Date;
+  busyKey: string | null;
+  focused: boolean;
+  moving: boolean;
+  moveValue: string;
+  onMoveValue: (value: string) => void;
+  onToggleMove: () => void;
+  onConfirm: () => void;
+  onSaveMove: () => void;
+  onCancelMove: () => void;
+  onMessage: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <article
+      id={`appt-${appointment.id}`}
+      className={`relative border-b border-[#E3DED2] px-5 py-4 transition-colors last:border-b-0 ${
+        focused ? 'bg-[#F3EFE3]' : 'bg-transparent'
+      }`}
+    >
+      <div className="flex gap-4">
+        <div className="w-[66px] shrink-0 pt-0.5 text-right">
+          <p className="font-mono text-[14px] leading-none tabular-nums text-[#14161A]">
+            {formatClock(appointment.scheduledFor)}
+          </p>
+          <p className="mt-1 font-mono text-[8px] uppercase tracking-[0.12em] text-[#A9A394]">
+            {formatDayLabel(appointment.scheduledFor, now)}
+          </p>
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <p className="font-editorial text-[22px] leading-none text-[#14161A]">
+              {appointment.patientName}
+            </p>
+            <StatusMark status={appointment.status} />
+            {appointment.needsAttention && (
+              <span className="inline-flex items-center gap-1 font-mono text-[8.5px] uppercase tracking-[0.12em] text-[#A63A4E]">
+                <MessageSquare className="h-2.5 w-2.5" />
+                {appointment.openMessageCount} open
+              </span>
+            )}
+          </div>
+
+          <p className="mt-1.5 text-[11.5px] text-[#6E6A61]">
+            {appointment.durationMinutes} min
+            {appointment.reason ? ` · ${appointment.reason}` : ''}
+          </p>
+
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+            {appointment.status === 'BOOKED' && (
+              <DeskButton
+                onClick={onConfirm}
+                loading={busyKey === `confirm-${appointment.id}`}
+              >
+                <Check className="h-3 w-3" />
+                Confirm
+              </DeskButton>
+            )}
+            <DeskAction onClick={onToggleMove} busy={false}>
+              Move
+            </DeskAction>
+            <DeskAction onClick={onMessage} busy={false}>
+              <MessageSquare className="h-3 w-3" />
+              Message
+            </DeskAction>
+            <DeskAction
+              onClick={onCancel}
+              busy={busyKey === `cancel-${appointment.id}`}
+              tone="danger"
+            >
+              Cancel
+            </DeskAction>
+          </div>
+
+          {moving && (
+            <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[#E3DED2] pt-3">
+              <label
+                htmlFor={`move-${appointment.id}`}
+                className="font-mono text-[8.5px] uppercase tracking-[0.12em] text-[#8A8578]"
+              >
+                New time
+              </label>
+              <input
+                id={`move-${appointment.id}`}
+                type="datetime-local"
+                value={moveValue}
+                onChange={(event) => onMoveValue(event.target.value)}
+                className="h-8 rounded-[6px] border border-[#DCD6C8] bg-[#FBF9F3] px-2 font-mono text-[11px] text-[#14161A] outline-none focus:border-[#14161A]"
+              />
+              <DeskButton
+                onClick={onSaveMove}
+                loading={busyKey === `move-${appointment.id}`}
+                disabled={!moveValue}
+              >
+                Save time
+              </DeskButton>
+              <DeskAction onClick={onCancelMove} busy={false}>
+                Back
+              </DeskAction>
+            </div>
+          )}
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function StatusMark({ status }: { status: LiveAppointment['status'] }) {
+  const map: Record<LiveAppointment['status'], [string, string]> = {
+    BOOKED: ['Awaiting confirmation', '#B07A2A'],
+    CONFIRMED: ['Confirmed', '#4C7A45'],
+    COMPLETED: ['Completed', '#8A8578'],
+    CANCELLED: ['Cancelled', '#A9A394'],
+    NO_SHOW: ['No show', '#A63A4E']
+  };
+  const [label, color] = map[status];
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 font-mono text-[8.5px] uppercase tracking-[0.12em]"
+      style={{ color }}
+    >
+      <span className="h-1 w-1 rounded-full" style={{ backgroundColor: color }} />
+      {label}
+    </span>
+  );
+}
+
+function TriageEntry({
+  item,
+  index,
+  now,
+  busy,
+  onOpen,
+  onResolve
+}: {
+  item: LiveAttentionItem;
+  index: number;
+  now: Date;
+  busy: boolean;
+  onOpen: () => void;
+  onResolve: () => void;
+}) {
+  const style = SEVERITY_STYLE[item.severity];
+  return (
+    <article
+      className={`relative border-b border-[#E3DED2] px-5 py-4 last:border-b-0 ${style.tint}`}
+    >
+      <span className={`absolute inset-y-0 left-0 w-[3px] ${style.bar}`} aria-hidden="true" />
+      <div className="flex items-baseline justify-between gap-3">
+        <p className={`font-mono text-[8.5px] uppercase tracking-[0.14em] ${style.ink}`}>
+          {String(index + 1).padStart(2, '0')} · {style.label} · {item.title}
+        </p>
+        <span className="shrink-0 font-mono text-[8.5px] tabular-nums text-[#A9A394]">
+          {formatAgo(item.createdAt, now)}
+        </span>
+      </div>
+
+      <p className="mt-1.5 font-editorial text-[21px] leading-tight text-[#14161A]">
+        {item.patientName}
+      </p>
+      <p className="mt-1 line-clamp-3 text-[11.5px] leading-relaxed text-[#5F5B52]">
+        {item.body}
+      </p>
+
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        <DeskButton onClick={onOpen}>
+          <MessageSquare className="h-3 w-3" />
+          Open &amp; reply
+        </DeskButton>
+        <DeskAction onClick={onResolve} busy={busy}>
+          <Check className="h-3 w-3" />
+          Mark handled
+        </DeskAction>
+      </div>
+    </article>
+  );
+}
+
+function ThreadLine({
+  thread,
+  now,
+  onOpen
+}: {
+  thread: LiveThreadSummary;
+  now: Date;
+  onOpen: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="flex w-full items-baseline gap-3 border-b border-[#E3DED2] px-5 py-3 text-left transition-colors last:border-b-0 hover:bg-white/60"
+    >
+      <span className="w-[62px] shrink-0 font-mono text-[8.5px] uppercase tracking-[0.1em] text-[#A9A394]">
+        {formatAgo(thread.lastMessageAt, now)}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-baseline justify-between gap-2">
+          <span className="truncate font-editorial text-[16px] leading-tight text-[#14161A]">
+            {thread.patientName}
+          </span>
+          {thread.openCount > 0 && (
+            <span className="shrink-0 font-mono text-[8.5px] text-[#A63A4E]">
+              {thread.openCount} open
+            </span>
+          )}
+        </span>
+        <span className="mt-0.5 block truncate text-[11px] leading-relaxed text-[#6E6A61]">
+          {thread.lastMessage}
+        </span>
+      </span>
+    </button>
+  );
+}
+
+function ConversationSheet({
+  thread,
+  draft,
+  onDraftChange,
+  sending,
+  onSend,
+  onClose,
+  onResolve,
+  resolving
+}: {
+  thread: LiveThread | null;
+  draft: string;
+  onDraftChange: (value: string) => void;
+  sending: boolean;
+  onSend: () => void;
+  onClose: () => void;
+  onResolve: () => void;
+  resolving: boolean;
+}) {
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex justify-end bg-[#14161A]/25"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Conversation"
+    >
+      <button
+        type="button"
+        className="absolute inset-0 cursor-default"
+        aria-label="Close conversation"
+        onClick={onClose}
+      />
+
+      <div className="relative flex h-full w-full max-w-[470px] flex-col border-l border-[#DCD6C8] bg-[#FBF9F3]">
+        <header className="border-b border-[#DCD6C8] px-5 py-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="font-mono text-[8.5px] uppercase tracking-[0.18em] text-[#8A8578]">
+                Chart thread · {thread?.openCount ?? 0} open
+              </p>
+              <p className="mt-1.5 truncate font-editorial text-[27px] leading-none text-[#14161A]">
+                {thread?.patientName ?? 'Conversation'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="-mr-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px] text-[#6E6A61] transition-colors hover:bg-[#EFEAD9] hover:text-[#14161A]"
+              aria-label="Close"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          <p className="mt-2 font-mono text-[8.5px] uppercase tracking-[0.12em] text-[#A9A394]">
+            Every entry is a row in the clinic database
+          </p>
+        </header>
+
+        <div className="flex-1 overflow-y-auto px-5">
+          {!thread && (
+            <p className="py-6 font-mono text-[10px] uppercase tracking-[0.14em] text-[#A9A394]">
+              Reading the thread…
+            </p>
+          )}
+
+          {thread && thread.messages.length === 0 && (
+            <p className="py-6 text-[11.5px] leading-relaxed text-[#6E6A61]">
+              No messages yet. A check-in or a reply will appear here.
+            </p>
+          )}
+
+          {thread?.messages.map((message) => {
+            const clinic = message.direction === 'CLINIC';
+            return (
+              <div
+                key={message.id}
+                className={`border-b border-[#E9E4D8] py-4 pl-3 ${
+                  clinic ? 'border-l-2 border-l-[#14161A]' : 'border-l-2 border-l-transparent'
+                }`}
+              >
+                <div className="flex items-baseline justify-between gap-3">
+                  <span
+                    className={`font-mono text-[8.5px] uppercase tracking-[0.14em] ${
+                      clinic ? 'text-[#14161A]' : 'text-[#8A8578]'
+                    }`}
+                  >
+                    {clinic ? message.authorName || 'Clinic' : 'Patient'}
+                  </span>
+                  <span className="font-mono text-[8.5px] tabular-nums text-[#A9A394]">
+                    {formatClock(message.createdAt)}
+                    {message.resolvedAt ? ' · handled' : ''}
+                  </span>
+                </div>
+                <p className="mt-1.5 whitespace-pre-wrap text-[12px] leading-relaxed text-[#24262B]">
+                  {message.body}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+
+        <footer className="border-t border-[#DCD6C8] px-5 py-4">
+          <label
+            htmlFor="chart-reply"
+            className="font-mono text-[8.5px] uppercase tracking-[0.14em] text-[#8A8578]"
+          >
+            Reply on the record
+          </label>
+          <textarea
+            id="chart-reply"
+            value={draft}
+            onChange={(event) => onDraftChange(event.target.value)}
+            onKeyDown={(event) => {
+              if ((event.metaKey || event.ctrlKey) && event.key === 'Enter' && draft.trim()) {
+                event.preventDefault();
+                onSend();
+              }
+            }}
+            rows={3}
+            maxLength={4000}
+            placeholder={`Reply to ${thread?.patientName ?? 'the patient'}…`}
+            className="mt-1.5 w-full resize-none rounded-[8px] border border-[#DCD6C8] bg-[#F6F3EA] px-3 py-2.5 text-[12px] leading-relaxed text-[#14161A] outline-none placeholder:text-[#A9A394] focus:border-[#14161A]"
+          />
+          <div className="mt-2.5 flex items-center justify-between gap-2">
+            <DeskAction
+              onClick={onResolve}
+              busy={resolving}
+              disabled={!thread?.openCount}
+            >
+              <Check className="h-3 w-3" />
+              Mark handled
+            </DeskAction>
+            <DeskButton
+              onClick={onSend}
+              loading={sending}
+              disabled={!draft.trim()}
+            >
+              <Send className="h-3 w-3" />
+              Send reply
+            </DeskButton>
+          </div>
+          <p className="mt-2 text-[10px] leading-relaxed text-[#A9A394]">
+            The patient sees this in their app's “From your clinic” inbox, usually within 15
+            seconds.
+          </p>
+        </footer>
+      </div>
+    </div>
+  );
+}
+
+function SetupNotice() {
+  return (
+    <div className="mb-5 border-l-2 border-[#B07A2A] bg-[#FBF5E9] px-4 py-3">
+      <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-[#9A6224]">
+        The live loop needs PostgreSQL
+      </p>
+      <p className="mt-1 text-[11.5px] leading-relaxed text-[#7A643F]">
+        Start the database, set <code className="font-mono">DATABASE_URL</code> in{' '}
+        <code className="font-mono">apps/api/.env</code>, then restart the API. The patient sync
+        endpoints use the same database, so both halves come online together.
+      </p>
+    </div>
+  );
+}
+
+function BoardSkeleton({ rows }: { rows: number }) {
+  return (
+    <div
+      className="overflow-hidden rounded-[14px] border border-[#DCD6C8] bg-[#FBF9F3]"
+      aria-hidden="true"
+    >
+      {Array.from({ length: rows }).map((_, index) => (
+        <div
+          key={index}
+          className={`animate-pulse px-5 py-5 ${index > 0 ? 'border-t border-[#E3DED2]' : ''}`}
+        >
+          <div className="h-2.5 w-24 rounded-full bg-[#E9E4D6]" />
+          <div className="mt-3 h-2 w-40 rounded-full bg-[#EFEAD9]" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function DeskButton({
+  children,
+  onClick,
+  loading = false,
+  disabled = false
+}: {
+  children: ReactNode;
+  onClick?: () => void;
+  loading?: boolean;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled || loading}
+      className="inline-flex h-7 items-center gap-1.5 rounded-[6px] border border-[#14161A] bg-[#14161A] px-2.5 font-mono text-[9px] uppercase tracking-[0.12em] text-[#FBF9F3] transition-colors hover:bg-[#2A2D33] disabled:cursor-not-allowed disabled:opacity-40"
+    >
+      {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : children}
+    </button>
+  );
+}
+
+function DeskAction({
+  children,
+  onClick,
+  busy = false,
+  disabled = false,
+  tone = 'neutral'
+}: {
+  children: ReactNode;
+  onClick: () => void;
+  busy?: boolean;
+  disabled?: boolean;
+  tone?: 'neutral' | 'danger';
+}) {
+  const toneClass =
+    tone === 'danger'
+      ? 'border-[#E7CDD2] text-[#A63A4E] hover:bg-[#FAF1F2]'
+      : 'border-[#DCD6C8] text-[#5F5B52] hover:bg-white/70 hover:text-[#14161A]';
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled || busy}
+      className={`inline-flex h-7 items-center gap-1.5 rounded-[6px] border bg-transparent px-2.5 font-mono text-[9px] uppercase tracking-[0.12em] transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${toneClass}`}
+    >
+      {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : children}
+    </button>
+  );
+}
+
+/** `2026-10-26T16:40:00.000Z` -> the value a datetime-local input expects. */
+function toLocalInput(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '';
+  const pad = (value: number) => String(value).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(
+    date.getHours()
+  )}:${pad(date.getMinutes())}`;
+}
+
+function fromLocalInput(value: string): string | null {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}

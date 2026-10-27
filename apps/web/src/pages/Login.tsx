@@ -8,36 +8,24 @@ import { authService } from '../services/auth';
 import { LiveDot, Reveal } from '../design-system/motion/primitives';
 
 export default function Login() {
-  const [email, setEmail] = useState('admin@example.com');
-  const [password, setPassword] = useState('medplum_admin');
+  const [email, setEmail] = useState('dr.lin@proton.health');
+  const [password, setPassword] = useState('valid_password_2026!');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [authMode, setAuthMode] = useState<'synthetic' | 'medplum'>('synthetic');
   const [showHowItWorks, setShowHowItWorks] = useState(false);
 
-  const activateSyntheticSession = () => {
-    const doctorUser = {
-      id: 'dr-aris-thorne',
-      email: 'dr.thorne@proton.clinical',
-      displayName: 'Dr. Aris Thorne, MD',
-      role: 'attending_physician' as const,
-      organizationId: 'proton-synthetic-beta-org',
-      practitionerReference: 'Practitioner/dr-aris-thorne',
-      authMode: 'synthetic_development' as const,
-      isSyntheticEvaluator: true,
-      specialty: 'Internal Medicine & Cardiology',
-      npi: '1841290481',
-      cohort: 'SYNTHETIC_VALIDATION_V1',
-      timestamp: new Date().toISOString()
-    };
-    authService.setSessionUser(doctorUser);
-  };
-
-  const handle1ClickLaunch = () => {
+  const handle1ClickLaunch = async () => {
     setIsLoading(true);
     setError('');
-    activateSyntheticSession();
-    window.location.href = '/';
+    try {
+      await authService.loginDemo();
+      window.location.href = '/';
+    } catch (err: any) {
+      setError(err?.message || 'Could not establish a clinical session.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleClinicalSignIn = async (e: React.FormEvent) => {
@@ -46,17 +34,10 @@ export default function Login() {
     setError('');
 
     try {
-      if (authMode === 'synthetic') {
-        activateSyntheticSession();
-        window.location.href = '/';
-      } else {
-        await authService.login({ email, password });
-        window.location.href = '/';
-      }
-    } catch (err: any) {
-      console.warn('Authentication fallback invoked:', err);
-      activateSyntheticSession();
+      await authService.login({ email, password });
       window.location.href = '/';
+    } catch (err: any) {
+      setError(err?.message || 'Sign-in failed. Check your credentials and that the clinical API is running.');
     } finally {
       setIsLoading(false);
     }
@@ -202,14 +183,15 @@ export default function Login() {
               <div className="mt-5 flex items-center justify-between gap-3 rounded-2xl border border-emerald-300/60 bg-emerald-50/70 px-3.5 py-2.5">
                 <span className="flex items-center gap-1.5 text-[11.5px] font-medium text-emerald-900">
                   <Sparkles size={14} className="text-emerald-700" />
-                  Attending pass ready
+                  Evaluation physician pass
                 </span>
                 <button
                   type="button"
                   onClick={handle1ClickLaunch}
-                  className="flex items-center gap-1 rounded-full bg-emerald-700 px-3 py-1.5 text-[11px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-emerald-800 active:translate-y-0 cursor-pointer"
+                  disabled={isLoading}
+                  className="flex items-center gap-1 rounded-full bg-emerald-700 px-3 py-1.5 text-[11px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-emerald-800 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
                 >
-                  Instant pass
+                  {isLoading ? 'Signing in…' : 'Instant pass'}
                   <ArrowRight size={12} />
                 </button>
               </div>
@@ -226,7 +208,7 @@ export default function Login() {
                       : 'text-[#6E757C] hover:text-[#111315]'
                   }`}
                 >
-                  1-click attending pass
+                  Evaluation pass
                 </button>
                 <button
                   type="button"
@@ -238,7 +220,7 @@ export default function Login() {
                       : 'text-[#6E757C] hover:text-[#111315]'
                   }`}
                 >
-                  Medplum credentials
+                  Clinician credentials
                 </button>
               </div>
 
@@ -250,23 +232,23 @@ export default function Login() {
                       <Stethoscope size={19} />
                     </span>
                     <div>
-                      <div className="text-[13px] font-semibold">Dr. Aris Thorne, MD</div>
-                      <div className="text-[11px] text-[#7A8188]">Attending · Cardiology &amp; IM</div>
+                      <div className="text-[13px] font-semibold">Dr. Sarah Lin, MD</div>
+                      <div className="text-[11px] text-[#7A8188]">Attending · Internal Medicine</div>
                     </div>
                   </div>
                   <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 font-mono-clinical text-[8.5px] font-semibold uppercase tracking-[0.08em] text-emerald-800">
-                    Pre-verified
+                    API verified
                   </span>
                 </div>
 
                 <dl className="mt-3 space-y-1 rounded-xl border border-black/[0.05] bg-white/50 px-3 py-2.5 text-[11px]">
                   <div className="flex items-center justify-between gap-3">
                     <dt className="text-[#7A8188]">Active cohort</dt>
-                    <dd className="text-right font-medium text-[#111315]">Vance (68F), Pendelton (74M)</dd>
+                    <dd className="text-right font-medium text-[#111315]">11 synthetic patients</dd>
                   </div>
                   <div className="flex items-center justify-between gap-3">
-                    <dt className="text-[#7A8188]">Authorizations</dt>
-                    <dd className="text-right font-medium text-[#111315]">SOAP · Vision · Rx sign-off</dd>
+                    <dt className="text-[#7A8188]">Session</dt>
+                    <dd className="text-right font-medium text-[#111315]">Signed · revocable · 24h</dd>
                   </div>
                 </dl>
 
@@ -286,11 +268,12 @@ export default function Login() {
                 <form onSubmit={handleClinicalSignIn} className="mt-4 space-y-3.5">
                   <div>
                     <label htmlFor="login-email" className="mb-1.5 block text-[11px] font-medium text-[#50575F]">
-                      Clinician email / practitioner ID
+                      Clinician email
                     </label>
                     <input
                       id="login-email"
                       type="email"
+                      autoComplete="username"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="w-full rounded-xl border border-white/80 bg-white/80 px-3.5 py-2.5 text-[13px] outline-none transition-colors focus:border-[#0F4C81]/40 focus:ring-2 focus:ring-[#0F4C81]/15"
@@ -305,6 +288,7 @@ export default function Login() {
                     <input
                       id="login-password"
                       type="password"
+                      autoComplete="current-password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="w-full rounded-xl border border-white/80 bg-white/80 px-3.5 py-2.5 text-[13px] outline-none transition-colors focus:border-[#0F4C81]/40 focus:ring-2 focus:ring-[#0F4C81]/15"
@@ -320,6 +304,13 @@ export default function Login() {
                     <span>{isLoading ? 'Verifying…' : 'Sign in with credentials'}</span>
                     <ArrowRight className="h-3.5 w-3.5" />
                   </button>
+
+                  <p className="rounded-xl border border-black/[0.06] bg-white/55 px-3 py-2 text-[10.5px] leading-relaxed text-[#6E757C]">
+                    Evaluation accounts: <span className="font-mono-clinical text-[#111315]">dr.lin@proton.health</span>,{' '}
+                    <span className="font-mono-clinical text-[#111315]">dr.morgan@proton.health</span>,{' '}
+                    <span className="font-mono-clinical text-[#111315]">marcus.ops@proton.health</span> · password{' '}
+                    <span className="font-mono-clinical text-[#111315]">valid_password_2026!</span>
+                  </p>
                 </form>
               )}
 

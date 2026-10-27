@@ -1,4 +1,4 @@
-import { useState, useEffect, type ReactNode } from 'react';
+import { useState, useEffect, useCallback, type ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useMedplum } from '@medplum/react';
 import { Sidebar } from './Sidebar';
@@ -8,11 +8,13 @@ import { authService } from '../../services/auth';
 import CommandPalette from '../../components/ui/CommandPalette';
 import ProtonShortcutsModal from '../../components/proton/ProtonShortcutsModal';
 import ProtonCopilot, { type CopilotMode } from '../../components/proton/ProtonCopilot';
-import { Bell, AlertTriangle, X, LogOut } from 'lucide-react';
+import { AttentionQueue } from '../../components/clinic/AttentionQueue';
+import { Bell, X, LogOut } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { MotionConfig } from 'motion/react';
 import { PageTransition } from '../motion/primitives';
 import { SESSION_EXPIRED_EVENT } from '../../lib/api';
+import { clinicApi, type ClinicNotification } from '../../lib/clinicApi';
 import { DEFAULT_GENERAL_NAV, DEFAULT_TOOLS_NAV } from './Sidebar';
 
 export interface AppShellProps {
@@ -37,11 +39,106 @@ export function AppShell({
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState<ClinicNotification[]>([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [notificationsError, setNotificationsError] = useState<string | null>(null);
   const [copilotMode, setCopilotMode] = useState<CopilotMode>('minimized');
   const [searchScope, setSearchScope] = useState<'Patients' | 'Education' | 'Prescriptions' | 'Test results'>('Patients');
 
   const currentUser = authService.getCurrentUser();
-  const doctorName = currentUser?.displayName || 'Dr. Olivia';
+  const doctorName = currentUser?.displayName || 'Dr. Sarah Lin, MD';
+
+  const refreshNotifications = useCallback(async () => {
+    setNotificationsLoading(true);
+    setNotificationsError(null);
+    try {
+      const result = await clinicApi.listNotifications({ limit: 30 });
+      setNotifications(result.notifications);
+    } catch (err) {
+      setNotificationsError((err as Error).message || 'Could not reach the clinic API.');
+    } finally {
+      setNotificationsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshNotifications();
+    const interval = window.setInterval(() => { void refreshNotifications(); }, 60_000);
+    return () => window.clearInterval(interval);
+  }, [refreshNotifications]);
+
+  // Apply persisted working preferences on every shell mount so a fast reload
+  // keeps the clinician's theme, density and motion settings.
+  useEffect(() => {
+    let active = true;
+    clinicApi
+      .getPreferences()
+      .then(({ preferences }) => {
+        if (!active) return;
+        if (preferences.appearance !== 'system') {
+          localStorage.setItem('proton_appearance', preferences.appearance);
+          document.documentElement.dataset.theme = preferences.appearance;
+          document.documentElement.style.colorScheme = preferences.appearance;
+        }
+        document.documentElement.dataset.density = preferences.density;
+        document.documentElement.dataset.reduceMotion = String(preferences.reduceMotion);
+      })
+      .catch(() => {
+        // Preferences are an enhancement; the default theme still renders.
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isNotificationsOpen) void refreshNotifications();
+  }, [isNotificationsOpen, refreshNotifications]);
+
+  const markNotificationRead = async (notification: ClinicNotification) => {
+    if (!notification.readAt) {
+      setNotifications((current) => current.map((entry) => (
+        entry.id === notification.id ? { ...entry, readAt: new Date().toISOString() } : entry
+      )));
+      try {
+        await clinicApi.markNotificationRead(notification.id);
+      } catch {
+        // The optimistic state is replaced on the next refresh.
+      }
+    }
+    if (notification.actionPath) {
+      setIsNotificationsOpen(false);
+      navigate(notification.actionPath);
+    }
+  };
+
+  const resolveNotification = async (notification: ClinicNotification) => {
+    setNotifications((current) => current.map((entry) => (
+      entry.id === notification.id
+        ? { ...entry, readAt: entry.readAt || new Date().toISOString(), resolvedAt: new Date().toISOString() }
+        : entry
+    )));
+    try {
+      await clinicApi.resolveNotification(notification.id);
+    } catch {
+      void refreshNotifications();
+    }
+  };
+
+  const unreadCount = notifications.filter((notification) => !notification.readAt && !notification.resolvedAt).length;
+  const criticalCount = notifications.filter((notification) => notification.severity === 'critical' && !notification.resolvedAt).length;
+
+  const markAllRead = async () => {
+    const now = new Date().toISOString();
+    setNotifications((current) => current.map((notification) => (
+      notification.readAt ? notification : { ...notification, readAt: now }
+    )));
+    try {
+      await clinicApi.markAllNotificationsRead();
+    } catch {
+      void refreshNotifications();
+    }
+  };
 
   // Global Keyboard Shortcuts (⌘K, ⌘/)
   useEffect(() => {
@@ -89,13 +186,10 @@ export function AppShell({
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className={`relative min-h-screen w-full bg-[#EDECEA] text-[#151719] flex flex-col font-sans antialiased selection:bg-[#DDF25B] selection:text-[#26320A] ${className}`}>
+      <div className={`relative min-h-screen w-full bg-[#F7F4EC] text-[#14161A] flex flex-col font-sans antialiased selection:bg-[#E8E2D0] selection:text-[#14161A] ${className}`}>
 
-      {/* Ambient light: a soft studio falloff rather than coloured orbs. */}
+      {/* Paper, not chrome: one flat warm ground with a whisper of grain. */}
       <div className="proton-workspace-ambient" aria-hidden="true">
-        <div className="proton-orb -top-56 left-1/2 h-[46rem] w-[52rem] -translate-x-1/2 bg-white/70" />
-        <div className="proton-orb -right-48 top-1/4 h-[34rem] w-[34rem] bg-[#F5E7EA]/45" />
-        <div className="proton-orb -left-48 bottom-0 h-[30rem] w-[30rem] bg-[#E6EDF5]/45" />
         <div className="proton-grain absolute inset-0" />
       </div>
 
@@ -116,6 +210,8 @@ export function AppShell({
           {/* TopBar */}
           <TopBar
             doctorName={doctorName}
+            unreadNotifications={unreadCount}
+            criticalNotifications={criticalCount}
             onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
             onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
             onOpenNotifications={() => setIsNotificationsOpen(true)}
@@ -126,7 +222,7 @@ export function AppShell({
           />
 
           {/* Workspace Body */}
-          <main className={`flex-1 overflow-y-auto px-4 sm:px-7 pb-12 ${fillCanvas ? 'p-0' : fullBleed ? 'p-2' : ''}`}>
+          <main className={`flex-1 overflow-y-auto px-4 pb-24 sm:px-7 ${fillCanvas ? 'p-0' : fullBleed ? 'p-2' : ''}`}>
             <div className="max-w-[1560px] mx-auto">
               <PageTransition routeKey={location.pathname} className="w-full">
                 {children}
@@ -150,69 +246,15 @@ export function AppShell({
         }
         width="md"
       >
-        <div className="space-y-3">
-          {/* Critical notification */}
-          <div className="p-3.5 rounded-2xl bg-[#FEF2F2] border border-[#FECACA] space-y-1.5">
-            <div className="flex items-center justify-between text-[11px] font-bold text-[#991B1B]">
-              <span className="flex items-center gap-1">
-                <AlertTriangle className="w-3.5 h-3.5" />
-                Critical Lab Alert
-              </span>
-              <span>5 min ago</span>
-            </div>
-            <p className="text-xs font-semibold text-[#151719]">
-              Eleanor Vance: HbA1c escalated to 8.2% (+1.1% delta)
-            </p>
-            <p className="text-[11px] text-[#575D65]">
-              Microalbumin/creatinine ratio flagged. Review cardiorenal treatment plan.
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                setIsNotificationsOpen(false);
-                navigate('/consultation?patient=demo-scenario-b-eleanor');
-              }}
-              className="w-full mt-2 py-1.5 rounded-xl bg-[#991B1B] text-white text-[11px] font-semibold text-center cursor-pointer hover:bg-[#7F1D1D]"
-            >
-              Review Patient Record
-            </button>
-          </div>
-
-          {/* Medication Interaction Alert */}
-          <div className="p-3.5 rounded-2xl bg-[#FEF08A]/70 border border-[#FDE047] space-y-1.5">
-            <div className="flex items-center justify-between text-[11px] font-bold text-[#854D0E]">
-              <span>Safety Stop Intercept</span>
-              <span>18 min ago</span>
-            </div>
-            <p className="text-xs font-semibold text-[#151719]">
-              Robert Hayes: Penicillin Anaphylaxis Guard
-            </p>
-            <p className="text-[11px] text-[#575D65]">
-              Prescription draft Amoxicillin hard-blocked by deterministic safety engine.
-            </p>
-          </div>
-
-          {/* Unsigned note */}
-          <div className="p-3.5 rounded-2xl bg-[#F9F8F5] border border-[#E8E5DC] space-y-1.5">
-            <div className="flex items-center justify-between text-[11px] font-bold text-[#575D65]">
-              <span>Documentation</span>
-              <span>1h ago</span>
-            </div>
-            <p className="text-xs font-semibold text-[#151719]">
-              Arthur Pendelton: 1 encounter note awaiting physician sign-off
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                setIsNotificationsOpen(false);
-                navigate('/consultation?patient=demo-scenario-d-arthur');
-              }}
-              className="text-xs font-bold text-[#151719] hover:underline"
-            >
-              Open Sign-off →
-            </button>
-          </div>
-        </div>
+        <AttentionQueue
+          notifications={notifications}
+          loading={notificationsLoading}
+          error={notificationsError}
+          onRefresh={() => { void refreshNotifications(); }}
+          onOpen={(notification) => { void markNotificationRead(notification); }}
+          onResolve={(notification) => { void resolveNotification(notification); }}
+          onMarkAllRead={() => { void markAllRead(); }}
+        />
       </Drawer>
 
       {/* Mobile Overlay Menu */}
@@ -222,13 +264,13 @@ export function AppShell({
             className="fixed inset-0 bg-black/40 backdrop-blur-2xs"
             onClick={() => setIsMobileMenuOpen(false)}
           />
-          <div className="relative z-10 flex h-full w-72 flex-col gap-5 bg-[#F4F3F1] p-4 shadow-2xl">
+          <div className="relative z-10 flex h-full w-72 flex-col gap-5 border-r border-[#E2DCCD] bg-[#F7F4EC] p-4 shadow-2xl">
             <div className="flex items-center justify-between px-1 pb-1">
               <div className="flex items-center gap-2">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#151719] text-[13px] font-semibold text-white">
+                <span className="flex h-8 w-8 items-center justify-center rounded-[7px] bg-[#14161A] text-[13px] font-semibold text-[#FBF9F3]">
                   p
                 </span>
-                <span className="text-[19px] font-semibold lowercase tracking-[-0.045em] text-[#111110]">proton</span>
+                <span className="font-editorial text-[24px] lowercase leading-none tracking-[-0.01em] text-[#14161A]">proton</span>
               </div>
               <button
                 type="button"
@@ -242,7 +284,7 @@ export function AppShell({
 
             <nav className="flex-1 space-y-4 overflow-y-auto">
               <div className="space-y-1">
-                <div className="px-3 pb-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-[#A5A4A0]">Workspace</div>
+                <div className="px-3 pb-1 font-mono text-[8.5px] uppercase tracking-[0.18em] text-[#A9A394]">Clinical</div>
                 {DEFAULT_GENERAL_NAV.map((item) => (
                   <NavLink
                     key={item.to}
@@ -250,10 +292,10 @@ export function AppShell({
                     end={item.end}
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={({ isActive }) =>
-                      `flex h-11 items-center gap-3 rounded-full px-3.5 text-[12.5px] font-medium transition-colors ${
+                      `flex h-10 items-center gap-3 rounded-[7px] px-3 text-[12.5px] font-medium transition-colors ${
                         isActive
-                          ? 'bg-white text-[#151719] shadow-[0_10px_30px_-22px_rgba(20,20,18,0.6)]'
-                          : 'text-[#777774] hover:bg-white/60 hover:text-[#151719]'
+                          ? 'bg-[#EBE5D5] text-[#14161A]'
+                          : 'text-[#6E6A61] hover:bg-[#F1ECDE] hover:text-[#14161A]'
                       }`
                     }
                   >
@@ -264,17 +306,17 @@ export function AppShell({
               </div>
 
               <div className="space-y-1">
-                <div className="px-3 pb-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-[#A5A4A0]">Tools</div>
+                <div className="px-3 pb-1 font-mono text-[8.5px] uppercase tracking-[0.18em] text-[#A9A394]">Tools</div>
                 {DEFAULT_TOOLS_NAV.map((item) => (
                   <NavLink
                     key={item.to}
                     to={item.to}
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={({ isActive }) =>
-                      `flex h-11 items-center gap-3 rounded-full px-3.5 text-[12.5px] font-medium transition-colors ${
+                      `flex h-10 items-center gap-3 rounded-[7px] px-3 text-[12.5px] font-medium transition-colors ${
                         isActive
-                          ? 'bg-white text-[#151719] shadow-[0_10px_30px_-22px_rgba(20,20,18,0.6)]'
-                          : 'text-[#777774] hover:bg-white/60 hover:text-[#151719]'
+                          ? 'bg-[#EBE5D5] text-[#14161A]'
+                          : 'text-[#6E6A61] hover:bg-[#F1ECDE] hover:text-[#14161A]'
                       }`
                     }
                   >
@@ -285,12 +327,12 @@ export function AppShell({
               </div>
             </nav>
 
-            <div className="rounded-[22px] bg-white/70 p-3">
-              <span className="rounded-full bg-[#DDF25B] px-2 py-0.5 text-[8.5px] font-bold uppercase tracking-[0.08em] text-[#26320A]">
+            <div className="rounded-[10px] border border-[#E2DCCD] bg-[#F1ECDE] p-3">
+              <span className="inline-flex items-center gap-1.5 rounded-[4px] border border-[#D8C99B] px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-[0.12em] text-[#8A6A1F]">
                 Synthetic
               </span>
-              <p className="mt-2 text-[11px] font-semibold text-[#2A2A28]">Validation cohort</p>
-              <p className="mt-0.5 text-[9.5px] leading-relaxed text-[#9A9995]">
+              <p className="mt-2 font-editorial text-[15px] leading-tight text-[#14161A]">Validation cohort</p>
+              <p className="mt-0.5 text-[9.5px] leading-relaxed text-[#8A8578]">
                 No real PHI. Every write needs a signature.
               </p>
             </div>

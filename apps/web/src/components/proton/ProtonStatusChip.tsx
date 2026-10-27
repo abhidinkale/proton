@@ -59,12 +59,12 @@ export default function ProtonStatusChip({ className = '' }: ProtonStatusChipPro
 
   return (
     <div 
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-[#F0FDF4] text-[#166534] border border-[#DCFCE7] select-none ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-[5px] border border-[#D9E3D2] bg-[#F4F8F1] px-2 py-[3px] select-none ${className}`}
       role="status"
       aria-label="Proton is securely connected to FHIR clinical server"
     >
-      <span className="w-2 h-2 rounded-full bg-[#16A34A] animate-pulse" />
-      <span className="font-semibold text-[11px] tracking-wide">Connected</span>
+      <span className="h-1.5 w-1.5 rounded-full bg-[#5C8A55]" />
+      <span className="font-mono text-[8.5px] uppercase tracking-[0.14em] text-[#4E7449]">Connected</span>
     </div>
   );
 }

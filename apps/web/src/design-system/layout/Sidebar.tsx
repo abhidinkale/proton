@@ -14,7 +14,8 @@ import {
   Settings,
   LogOut,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Activity
 } from 'lucide-react';
 
 export interface NavItem {
@@ -27,6 +28,7 @@ export interface NavItem {
 
 export const DEFAULT_GENERAL_NAV: NavItem[] = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { to: '/care-loop', label: 'Care Loop', icon: Activity },
   { to: '/schedule', label: 'Schedule', icon: Calendar },
   { to: '/patients', label: 'Patients', icon: Users },
   { to: '/consultation', label: 'Consultation', icon: Stethoscope },
@@ -72,39 +74,37 @@ export function Sidebar({
         end={item.end}
         title={isCollapsed ? item.label : undefined}
         aria-current={active ? 'page' : undefined}
-        className={`group relative flex h-11 items-center rounded-full transition-colors duration-200 ${
-          isCollapsed ? 'justify-center px-0' : 'gap-3 pl-3.5 pr-2'
+        className={`group relative flex h-9 items-center rounded-[7px] transition-colors duration-200 ${
+          isCollapsed ? 'justify-center px-0' : 'gap-3 pl-3 pr-2'
         } ${
           active
-            ? 'text-[#151719]'
-            : 'text-[#777774] hover:bg-white/60 hover:text-[#151719]'
+            ? 'bg-[#EBE5D5] text-[#14161A]'
+            : 'text-[#6E6A61] hover:bg-[#F1ECDE] hover:text-[#14161A]'
         }`}
       >
         {active && (
           <motion.span
             layoutId={layoutId}
-            className="absolute inset-0 rounded-full bg-white shadow-[0_10px_30px_-20px_rgba(20,20,18,0.55),0_1px_0_rgba(255,255,255,0.9)_inset]"
+            className="absolute inset-0 rounded-[7px] bg-[#EBE5D5]"
             transition={PROTON_SPRING}
           />
         )}
 
         <item.icon
-          size={16}
-          strokeWidth={active ? 2 : 1.7}
-          className={`relative z-10 shrink-0 ${active ? 'text-[#151719]' : 'text-[#8A8A87] group-hover:text-[#151719]'}`}
+          size={15}
+          strokeWidth={active ? 1.9 : 1.6}
+          className={`relative z-10 shrink-0 ${active ? 'text-[#14161A]' : 'text-[#8A8578] group-hover:text-[#14161A]'}`}
         />
 
         {!isCollapsed && (
           <>
-            <span className="relative z-10 flex-1 truncate text-[12.5px] font-medium tracking-[-0.01em]">
+            <span className="relative z-10 flex-1 truncate text-[12.5px] font-medium tracking-[-0.005em]">
               {item.label}
             </span>
             {active ? (
-              <span className="relative z-10 flex h-7 w-7 items-center justify-center rounded-full bg-[#F1F0ED] text-[#9A9995]">
-                <ChevronRight size={12} strokeWidth={2} />
-              </span>
+              <span className="relative z-10 h-1 w-1 rounded-full bg-[#14161A]" />
             ) : item.badge ? (
-              <span className="relative z-10 rounded-full bg-white/80 px-2 py-0.5 text-[9px] font-semibold text-[#9A9995]">
+              <span className="relative z-10 font-mono text-[8.5px] text-[#A9A394]">
                 {item.badge}
               </span>
             ) : null}
@@ -116,7 +116,7 @@ export function Sidebar({
 
   return (
     <aside
-      className={`hidden lg:flex flex-col shrink-0 select-none transition-[width] duration-300 relative ${
+      className={`hidden lg:flex flex-col shrink-0 select-none transition-[width] duration-300 relative border-r border-[#E2DCCD] ${
         isCollapsed ? 'w-[76px]' : 'w-[228px]'
       } ${className}`}
       aria-label="Sidebar Navigation"
@@ -125,22 +125,22 @@ export function Sidebar({
       <button
         type="button"
         onClick={onToggleCollapse}
-        className="absolute right-[-11px] top-8 z-40 flex h-6 w-6 items-center justify-center rounded-full border border-white/80 bg-white text-[#8A8A87] shadow-[0_6px_18px_-10px_rgba(20,20,18,0.5)] transition-transform hover:scale-110 hover:text-[#151719] active:scale-95 cursor-pointer"
+        className="absolute right-[-11px] top-8 z-40 flex h-[22px] w-[22px] items-center justify-center rounded-full border border-[#E2DCCD] bg-[#FBF9F3] text-[#8A8578] transition-colors hover:border-[#C9C3B4] hover:text-[#14161A] cursor-pointer"
         title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
-        {isCollapsed ? <ChevronRight size={13} strokeWidth={2.2} /> : <ChevronLeft size={13} strokeWidth={2.2} />}
+        {isCollapsed ? <ChevronRight size={12} strokeWidth={2} /> : <ChevronLeft size={12} strokeWidth={2} />}
       </button>
 
       {/* Wordmark */}
-      <div className={`flex h-[72px] items-center ${isCollapsed ? 'justify-center px-0' : 'px-4'}`}>
+      <div className={`flex h-[72px] items-center ${isCollapsed ? 'justify-center px-0' : 'px-5'}`}>
         <NavLink to="/" className="group flex items-center gap-2" aria-label="Proton home">
           {isCollapsed ? (
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#151719] text-[13px] font-semibold text-white">
+            <span className="flex h-7 w-7 items-center justify-center rounded-[6px] bg-[#14161A] text-[12px] font-semibold text-[#FBF9F3]">
               p
             </span>
           ) : (
-            <span className="text-[20px] font-semibold lowercase tracking-[-0.045em] text-[#111110]">
+            <span className="font-editorial text-[27px] lowercase leading-none tracking-[-0.01em] text-[#14161A]">
               proton
             </span>
           )}
@@ -149,18 +149,23 @@ export function Sidebar({
 
       {/* Navigation */}
       <nav className={`flex-1 overflow-y-auto overflow-x-hidden pb-2 ${isCollapsed ? 'px-3' : 'px-3'}`}>
-        <div className="space-y-1">
+        {!isCollapsed && (
+          <div className="px-2.5 pb-1.5 font-mono text-[8px] uppercase tracking-[0.18em] text-[#A9A394]">
+            Clinical
+          </div>
+        )}
+        <div className="space-y-0.5">
           {generalNav.map((item) => renderItem(item, 'proton-pill-active'))}
         </div>
 
-        <div className="my-4 h-px bg-[#151719]/[0.06]" />
+        <div className="my-4 h-px bg-[#E2DCCD]" />
 
         {!isCollapsed && (
-          <div className="px-3.5 pb-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-[#A5A4A0]">
+          <div className="px-2.5 pb-1.5 font-mono text-[8px] uppercase tracking-[0.18em] text-[#A9A394]">
             Tools
           </div>
         )}
-        <div className="space-y-1">
+        <div className="space-y-0.5">
           {toolsNav.map((item) => renderItem(item, 'proton-pill-active-tools'))}
         </div>
       </nav>
@@ -168,22 +173,22 @@ export function Sidebar({
       {/* Footer */}
       <div className={`pb-3 ${isCollapsed ? 'px-3' : 'px-3'}`}>
         {!isCollapsed ? (
-          <div className="relative rounded-[22px] bg-white/70 p-3 shadow-[0_18px_40px_-32px_rgba(20,20,18,0.5)]">
+          <div className="rounded-[10px] border border-[#E2DCCD] bg-[#F1ECDE] p-3">
             <div className="flex items-start justify-between">
-              <span className="rounded-full bg-[#DDF25B] px-2 py-0.5 text-[8.5px] font-bold uppercase tracking-[0.08em] text-[#26320A]">
+              <span className="inline-flex items-center rounded-[4px] border border-[#D8C99B] px-1.5 py-0.5 font-mono text-[7.5px] uppercase tracking-[0.12em] text-[#8A6A1F]">
                 Synthetic
               </span>
-              <LiveDot size={6} color="#5AC46A" />
+              <LiveDot size={6} color="#5C8A55" />
             </div>
-            <p className="mt-2 text-[11px] font-semibold leading-snug text-[#2A2A28]">
+            <p className="mt-2 font-editorial text-[15px] leading-tight text-[#14161A]">
               Validation cohort
             </p>
-            <p className="mt-0.5 text-[9.5px] leading-relaxed text-[#9A9995]">
+            <p className="mt-1 text-[9.5px] leading-relaxed text-[#8A8578]">
               No real PHI. Every write needs a signature.
             </p>
             <NavLink
               to="/settings"
-              className="mt-2.5 flex items-center justify-center rounded-full bg-[#F1F0ED] py-1.5 text-[10px] font-semibold text-[#3A3A38] transition-colors hover:bg-[#E8E7E4]"
+              className="mt-2.5 flex items-center justify-center rounded-[6px] border border-[#E2DCCD] bg-[#FBF9F3] py-1.5 font-mono text-[8.5px] uppercase tracking-[0.14em] text-[#6E6A61] transition-colors hover:border-[#C9C3B4] hover:text-[#14161A]"
             >
               Controls
             </NavLink>
@@ -191,22 +196,22 @@ export function Sidebar({
         ) : (
           <NavLink
             to="/settings"
-            className="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-white/70 text-[#8A8A87]"
+            className="mx-auto flex h-9 w-9 items-center justify-center rounded-[7px] bg-[#F1ECDE] text-[#8A8578]"
             title="Synthetic controls"
           >
-            <LiveDot size={7} color="#5AC46A" />
+            <LiveDot size={7} color="#5C8A55" />
           </NavLink>
         )}
 
         <button
           type="button"
           onClick={onLogout}
-          className={`mt-2 flex h-10 w-full items-center rounded-full text-[11.5px] font-medium text-[#8A8A87] transition-colors hover:bg-white/60 hover:text-[#C0483F] cursor-pointer ${
-            isCollapsed ? 'justify-center px-0' : 'gap-3 pl-3.5 pr-2'
+          className={`mt-2 flex h-9 w-full items-center rounded-[7px] text-[11.5px] font-medium text-[#8A8578] transition-colors hover:bg-[#F1ECDE] hover:text-[#A63A4E] cursor-pointer ${
+            isCollapsed ? 'justify-center px-0' : 'gap-3 pl-3 pr-2'
           }`}
           title="Log out"
         >
-          <LogOut size={15} />
+          <LogOut size={14} />
           {!isCollapsed && <span>Log out</span>}
         </button>
       </div>

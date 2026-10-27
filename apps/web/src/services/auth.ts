@@ -31,6 +31,8 @@ export interface ProtonDoctorUser {
   practitionerReference?: string;
   authMode: AuthMode;
   isSyntheticEvaluator: boolean;
+  npi?: string;
+  specialty?: string;
 }
 
 export interface AuthSessionState {
@@ -175,10 +177,97 @@ class ProtonAuthenticationService implements IAuthenticationService {
   }
 
   /**
+   * Real credential sign-in against the Proton session API.
+   *
+   * This is the primary path: the API verifies the password hash with a
+   * timing-safe comparison and returns a signed, revocable session token. The
+   * browser stores that token and every subsequent clinical call is scoped to
+   * the verified actor and tenant.
+   */
+  public async loginWithCredentials(email: string, password: string): Promise<ProtonDoctorUser> {
+    if (!email) throw new Error('Email is required');
+    if (!password) throw new Error('Password is required');
+
+    let response: Response;
+    try {
+      response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+    } catch {
+      throw new Error(
+        `The Proton clinical API is unreachable at ${API_BASE_URL}. Start it with "npm run dev" in apps/api, then try again.`
+      );
+    }
+
+    const body = await response.json().catch(() => null) as {
+      success?: boolean;
+      token?: string;
+      actor?: { actorId?: string; actorRole?: string; actorName?: string; tenantId?: string; npi?: string | null };
+      error?: string;
+      code?: string;
+      mfaRequired?: boolean;
+    } | null;
+
+    if (!response.ok || !body?.success || typeof body.token !== 'string') {
+      const message = body?.mfaRequired
+        ? 'Multi-factor authentication is required for this account, but no MFA challenge was completed.'
+        : (body?.error || `Sign-in failed (HTTP ${response.status}).`);
+      throw new Error(message);
+    }
+
+    setSessionToken(body.token);
+
+    const actor = body.actor || {};
+    const role: ProtonDoctorUser['role'] =
+      actor.actorRole === 'physician' ? 'attending_physician'
+        : actor.actorRole === 'resident' ? 'resident'
+          : 'clinical_evaluator';
+
+    const user: ProtonDoctorUser = {
+      id: actor.actorId || 'proton-user',
+      email,
+      displayName: actor.actorName || email.split('@')[0],
+      role,
+      organizationId: actor.tenantId || 'org-default',
+      practitionerReference: actor.actorId ? `Practitioner/${actor.actorId}` : undefined,
+      authMode: 'synthetic_development',
+      isSyntheticEvaluator: true,
+      npi: actor.npi || undefined
+    };
+
+    this.setSessionUser(user);
+
+    telemetry.track('physician_login', {
+      status: 'success',
+      provider: 'proton_session_api'
+    });
+
+    return user;
+  }
+
+  /** One-click evaluation pass. Still performs a real, revocable login. */
+  public async loginDemo(): Promise<ProtonDoctorUser> {
+    return this.loginWithCredentials('dr.lin@proton.health', 'valid_password_2026!');
+  }
+
+  /**
    * Authenticate physician using the configured boundary.
-   * In synthetic beta mode, verifies against Medplum local/hosted instance.
+   *
+   * The Proton credential API is authoritative. Medplum OIDC is only used when
+   * the deployment explicitly opts into it with VITE_AUTH_PROVIDER=medplum.
    */
   public async login(credentials: LoginCredentials): Promise<ProtonDoctorUser> {
+    if (import.meta.env?.VITE_AUTH_PROVIDER === 'medplum') {
+      return this.loginWithMedplum(credentials);
+    }
+    if (!credentials.email) throw new Error('Email is required');
+    if (!credentials.password) throw new Error('Password is required');
+    return this.loginWithCredentials(credentials.email, credentials.password);
+  }
+
+  private async loginWithMedplum(credentials: LoginCredentials): Promise<ProtonDoctorUser> {
     const { email, password } = credentials;
     if (!email) throw new Error('Email is required');
     if (!password) throw new Error('Password is required');
@@ -294,6 +383,20 @@ class ProtonAuthenticationService implements IAuthenticationService {
 
   public async logout(): Promise<void> {
     telemetry.track('physician_logout', { status: 'success' });
+
+    const token = getSessionToken();
+    if (token) {
+      try {
+        await fetch(`${API_BASE_URL}/api/auth/logout`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ token })
+        });
+      } catch {
+        // Revocation is best-effort offline; the local credential is still cleared.
+      }
+    }
+
     this.currentUser = null;
     clearSessionToken();
     sessionStorage.removeItem('proton_auth_session');

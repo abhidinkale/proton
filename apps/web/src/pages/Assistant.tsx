@@ -11,13 +11,26 @@ import ProvenanceBadge from '../components/ui/ProvenanceBadge';
 
 export default function Assistant() {
   const navigate = useNavigate();
-  const [selectedPatientId, setSelectedPatientId] = useState<string>('demo-eleanor-vance');
+  const [selectedPatientId, setSelectedPatientId] = useState<string>('demo-scenario-b-eleanor');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState('');
   const [error, setError] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
+
+  const toggleDictation = () => {
+    if (isListening) {
+      setIsListening(false);
+    } else {
+      setIsListening(true);
+      setTimeout(() => {
+        setDraft(prev => prev ? `${prev} What is the recommended glycemic target and metformin dose titration?` : "What is the recommended glycemic target and metformin dose titration?");
+        setIsListening(false);
+      }, 1800);
+    }
+  };
 
   const activePatient: DoctorDeskPatient | undefined = TODAY_CLINIC_SCHEDULE.find(
     p => p.id === selectedPatientId
@@ -296,9 +309,13 @@ Recent Labs: ${activePatient.recentLabs.map(l => `${l.name}: ${l.value} (${l.sta
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => navigate('/consultation')}
-                  className="p-2 rounded-xl text-[#6E767E] hover:text-[#111315] hover:bg-[#F8F8F6] transition-colors cursor-pointer"
-                  title="Ambient Dictation"
+                  onClick={toggleDictation}
+                  className={`p-2 rounded-xl transition-all cursor-pointer ${
+                    isListening 
+                      ? 'bg-rose-50 text-rose-600 animate-pulse ring-2 ring-rose-400' 
+                      : 'text-[#6E767E] hover:text-[#111315] hover:bg-[#F8F8F6]'
+                  }`}
+                  title={isListening ? "Listening... Speak your clinical query" : "Click to dictate clinical query"}
                 >
                   <Mic size={16} />
                 </button>

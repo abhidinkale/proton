@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { API_BASE_URL } from '../../config';
 import { apiFetch } from '../../lib/api';
+import { authService } from '../../services/auth';
 
 interface BillingCodingAdvisorProps {
   note: {
@@ -41,6 +42,7 @@ export default function BillingCodingAdvisor({
 }: BillingCodingAdvisorProps) {
   const [loading, setLoading] = useState(false);
   const [billingData, setBillingData] = useState<any>(null);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [showPriorAuthModal, setShowPriorAuthModal] = useState(false);
   const [priorAuthPacket, setPriorAuthPacket] = useState<any>(null);
   const [generatingPa, setGeneratingPa] = useState(false);
@@ -52,6 +54,7 @@ export default function BillingCodingAdvisor({
 
   const fetchBillingAnalysis = async () => {
     setLoading(true);
+    setAnalysisError(null);
     try {
       const res = await apiFetch(`${API_BASE_URL}/api/clinical/billing/analyze`, {
         method: 'POST',
@@ -63,12 +66,18 @@ export default function BillingCodingAdvisor({
           isNewPatient: false
         })
       });
-      if (res.ok) {
-        const data = await res.json();
-        setBillingData(data);
+      if (!res.ok) {
+        throw new Error(`Billing analysis failed (${res.status}).`);
       }
+      const data = await res.json();
+      if (!data?.cptCode) {
+        throw new Error('The billing engine returned an incomplete analysis.');
+      }
+      setBillingData(data);
     } catch (err) {
       console.error('Failed to analyze billing:', err);
+      setBillingData(null);
+      setAnalysisError((err as Error).message || 'Billing analysis is unavailable.');
     } finally {
       setLoading(false);
     }
@@ -81,12 +90,12 @@ export default function BillingCodingAdvisor({
   const handleGeneratePriorAuth = async () => {
     setGeneratingPa(true);
     try {
-      const targetMed = prescriptions.find(p => 
-        p.name.toLowerCase().includes('empagliflozin') || 
-        p.name.toLowerCase().includes('jardiance') ||
-        p.name.toLowerCase().includes('prednisone') ||
-        p.name.toLowerCase().includes('statin')
-      )?.name || 'Empagliflozin 10 mg';
+      const targetMed = prescriptions[0]?.name;
+      if (!targetMed) {
+        throw new Error('Add a prescription before generating a prior authorization packet.');
+      }
+      const currentUser = authService.getCurrentUser();
+      const primaryDiagnosis = billingData?.icd10Codes?.[0];
 
       const res = await apiFetch(`${API_BASE_URL}/api/clinical/billing/prior-auth`, {
         method: 'POST',
@@ -94,20 +103,27 @@ export default function BillingCodingAdvisor({
         body: JSON.stringify({
           patient,
           targetMedication: targetMed,
-          diagnosisCode: billingData?.icd10Codes?.[0]?.code || 'E11.65',
-          diagnosisDescription: billingData?.icd10Codes?.[0]?.description || 'Type 2 Diabetes Mellitus with Hyperglycemia',
-          note
+          diagnosisCode: primaryDiagnosis?.code || 'Z00.00',
+          diagnosisDescription: primaryDiagnosis?.description || patient.conditions?.[0] || 'Clinical evaluation',
+          note,
+          prescriber: {
+            name: currentUser?.displayName || 'Attending physician',
+            npi: currentUser?.npi || 'Not recorded',
+            clinic: currentUser?.organizationId || 'Proton clinic'
+          }
         })
       });
-      if (res.ok) {
-        const data = await res.json();
-        setPriorAuthPacket(data);
-        setEdiResult(null);
-        setAppealResult(null);
-        setShowPriorAuthModal(true);
+      if (!res.ok) {
+        throw new Error(`Prior authorization generation failed (${res.status}).`);
       }
+      const data = await res.json();
+      setPriorAuthPacket(data);
+      setEdiResult(null);
+      setAppealResult(null);
+      setShowPriorAuthModal(true);
     } catch (err) {
       console.error('Failed to generate prior auth:', err);
+      alert((err as Error).message || 'Prior authorization generation failed.');
     } finally {
       setGeneratingPa(false);
     }
@@ -122,12 +138,14 @@ export default function BillingCodingAdvisor({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ packet: priorAuthPacket })
       });
-      if (res.ok) {
-        const data = await res.json();
-        setEdiResult(data);
+      if (!res.ok) {
+        throw new Error(`EDI preview failed (${res.status}).`);
       }
+      const data = await res.json();
+      setEdiResult(data);
     } catch (err) {
-      console.error('EDI 278 Transmission failed:', err);
+      console.error('EDI 278 preview failed:', err);
+      alert((err as Error).message || 'The EDI 278 preview could not be generated.');
     } finally {
       setTransmittingEdi(false);
     }
@@ -146,12 +164,14 @@ export default function BillingCodingAdvisor({
           carcCode: 'CARC-197: Precertification/authorization absent or denied.'
         })
       });
-      if (res.ok) {
-        const data = await res.json();
-        setAppealResult(data);
+      if (!res.ok) {
+        throw new Error(`Appeal generation failed (${res.status}).`);
       }
+      const data = await res.json();
+      setAppealResult(data);
     } catch (err) {
       console.error('Appeal generation failed:', err);
+      alert((err as Error).message || 'The appeal draft could not be generated.');
     } finally {
       setGeneratingAppeal(false);
     }
@@ -172,23 +192,25 @@ export default function BillingCodingAdvisor({
     );
   }
 
-  const { cptCode, overallMdm, estimatedPayment, wRVU, mdmBreakdown, icd10Codes, denialDefense, optimizationTips } = billingData || {
-    cptCode: '99214',
-    overallMdm: 'Moderate',
-    estimatedPayment: 133.60,
-    wRVU: 1.92,
-    mdmBreakdown: {
-      problems: { level: 'Moderate', rationale: 'Multiple chronic conditions or progression' },
-      data: { level: 'Moderate', rationale: 'Lab & test review analyzed' },
-      risk: { level: 'Moderate', rationale: 'Prescription drug management' }
-    },
-    icd10Codes: [
-      { code: 'E11.65', description: 'Type 2 diabetes mellitus with hyperglycemia' },
-      { code: 'I10', description: 'Essential (primary) hypertension' }
-    ],
-    denialDefense: { auditPassScore: '98%', status: 'CLEAN_FOR_BILLING', flags: [] },
-    optimizationTips: []
-  };
+  if (!billingData) {
+    return (
+      <div className="p-8 text-center text-slate-300">
+        <p className="text-sm font-semibold text-white">Coding analysis unavailable</p>
+        <p className="mx-auto mt-1 max-w-sm text-xs text-slate-400">
+          {analysisError || 'The billing engine could not evaluate this encounter. No code has been assumed.'}
+        </p>
+        <button
+          type="button"
+          onClick={fetchBillingAnalysis}
+          className="mt-3 rounded-lg bg-slate-800 px-3.5 py-2 text-xs font-semibold text-white hover:bg-slate-700 cursor-pointer"
+        >
+          Retry analysis
+        </button>
+      </div>
+    );
+  }
+
+  const { cptCode, overallMdm, estimatedPayment, wRVU, mdmBreakdown, icd10Codes, denialDefense, optimizationTips } = billingData;
 
   return (
     <div className="space-y-4 text-slate-200">
@@ -434,14 +456,14 @@ export default function BillingCodingAdvisor({
                   <div className="flex items-center justify-between">
                     <span className="text-emerald-300 font-bold flex items-center gap-1.5">
                       <CheckCircle2 size={16} className="text-emerald-400" />
-                      Simulated EDI 278 Adjudication: {ediResult.adjudicationStatus} (Test Mock)
+                      EDI 278 preview response (not transmitted): {ediResult.adjudicationStatus}
                     </span>
                     <span className="font-mono text-xs bg-emerald-900/80 px-2 py-0.5 rounded text-emerald-200">
                       {ediResult.referenceNumber}
                     </span>
                   </div>
                   <div className="text-slate-300 text-[11px] space-y-1">
-                    <div>Payer Auth Code: <strong className="text-white">{ediResult.approvalCode}</strong> (Simulated)</div>
+                    <div>Preview auth code: <strong className="text-white">{ediResult.approvalCode}</strong></div>
                     <div>Coverage Period: {ediResult.effectiveStartDate} &rarr; {ediResult.effectiveEndDate}</div>
                     <div className="text-slate-400 italic">"{ediResult.payerNotes}"</div>
                   </div>
@@ -467,7 +489,6 @@ export default function BillingCodingAdvisor({
                     <button
                       onClick={() => {
                         copyToClipboard(appealResult.letter, 'appeal');
-                        alert('Level 1 Expedited Appeal Letter copied to clipboard!');
                       }}
                       className="text-xs bg-amber-700 hover:bg-amber-600 text-white px-3 py-1 rounded font-semibold cursor-pointer"
                     >
@@ -484,7 +505,7 @@ export default function BillingCodingAdvisor({
                 disabled={generatingAppeal}
                 className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-800/40 rounded-lg text-xs font-semibold cursor-pointer transition-all"
               >
-                {generatingAppeal ? 'Generating Appeal...' : 'Simulate Denial & Draft Appeal'}
+                {generatingAppeal ? 'Generating Appeal...' : 'Draft denial appeal'}
               </button>
 
               <div className="flex items-center gap-2">
@@ -500,7 +521,7 @@ export default function BillingCodingAdvisor({
                   className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-md transition-all"
                 >
                   <Send size={13} />
-                  {transmittingEdi ? 'Simulating EDI 278...' : 'Simulate Clearinghouse EDI 278'}
+                  {transmittingEdi ? 'Building preview...' : 'Preview EDI 278 response'}
                 </button>
               </div>
             </div>

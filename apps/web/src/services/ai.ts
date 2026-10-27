@@ -306,6 +306,10 @@ export async function approveEncounterProvenance(payload: {
   provenanceEnvelope: any;
   physicianDirective?: string;
   comments?: string;
+  clinicalArtifact?: unknown;
+  patientId?: string;
+  encounterId?: string;
+  version?: number;
 }): Promise<any> {
   const res = await apiFetch(`${API_BASE_URL}/api/ai/approve`, {
     method: 'POST',
