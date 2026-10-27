@@ -51,6 +51,8 @@ const REQUIRES_POSTGRES = new Set([
   'durable_booking_validation.cjs',
   'tenant_isolation_validation.cjs',
   'patient_sync_validation.cjs',
+  'patient_documents_validation.cjs',
+  'patient_prescriptions_validation.cjs',
   'clinic_live_validation.cjs'
 ]);
 
