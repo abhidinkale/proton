@@ -118,3 +118,6 @@ repomix-output.*.xml
 
 # 11. Patient document store (bytes live on the host, not in the repo)
 apps/api/var/
+
+# Icon generator scratch output
+apps/dork-android/tools/launcher-icon/out/
