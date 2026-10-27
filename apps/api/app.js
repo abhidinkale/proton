@@ -56,6 +56,8 @@ if (cleanupInterval.unref) cleanupInterval.unref();
 function createRateLimiter({ windowMs, maxRequests, message, code }) {
   return (req, res, next) => {
     if (process.env.NODE_ENV === 'test') return next();
+    // CORS preflight is not an application request and must never consume the budget.
+    if (req.method === 'OPTIONS') return next();
     const key = req.actor?.actorId || req.ip || req.connection?.remoteAddress || 'anonymous';
     const now = Date.now();
     let record = rateLimitMap.get(key);
@@ -99,10 +101,6 @@ const loginLimiter = createRateLimiter({
   code: 'AUTH_RATE_LIMIT_EXCEEDED'
 });
 
-app.use(generalLimiter);
-app.use(['/api/transcribe', '/api/generate-note', '/api/chat', '/api/extract-documents'], aiLimiter);
-app.use(['/api/auth/login', '/auth/login', '/api/auth/exchange'], loginLimiter);
-
 const defaultLocalOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
@@ -142,6 +140,12 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id', 'X-Trace-Id', 'X-Idempotency-Key', 'Idempotency-Key', 'X-Proton-Dev-Persona'],
   exposedHeaders: ['X-Request-Id', 'X-Trace-Id', 'X-Idempotent-Replay', 'X-Cache-Lookup']
 }));
+
+// Rate limiters run after CORS so that 429 responses still carry CORS headers
+// and a browser sees the real error instead of an opaque network failure.
+app.use(generalLimiter);
+app.use(['/api/transcribe', '/api/generate-note', '/api/chat', '/api/extract-documents'], aiLimiter);
+app.use(['/api/auth/login', '/auth/login', '/api/auth/exchange'], loginLimiter);
 
 const { telemetryMiddleware } = require('./middleware/telemetry');
 const { resolveActorMiddleware } = require('./middleware/rbac');
@@ -191,23 +195,46 @@ app.use([
   '/api/vision',
   '/api/jobs',
   '/api/pilot',
+  // Root-level aliases. `['/api/pilot/feedback', '/pilot/feedback']` registers
+  // both paths; mounting only `/api/pilot` left the root alias world-readable.
+  '/pilot',
   '/api/fhir',
   '/api/memory',
   '/api/agents',
   '/api/encounter',
   '/api/note-templates',
   '/api/consultation',
+  '/api/clinic',
   '/api/workflow'
 ], resolveActorMiddleware);
 
-// Deliberately NOT gated above:
-//   /api/patient/*  patient-facing booking and intake (no clinician session exists)
-//   /api/capture/*  mobile capture, authenticated by a per-session pairing token
-//   /api/smart/*    SMART on FHIR OAuth discovery and token exchange
-//   /health*        liveness/readiness probes
+// Deliberately NOT gated by clinician actor resolution above:
+//   /api/patient/auth/*  unauthenticated by design (mints the patient session)
+//   /api/patient/*       authenticated by requirePatientAuth on each route below
+//   /api/capture/*       mobile capture, authenticated by a per-session pairing token
+//   /api/smart/*         SMART on FHIR OAuth discovery and token exchange
+//   /health*             liveness/readiness probes
+
+// Patient self-service identity: OTP -> signed patient session token.
+app.use('/api/patient/auth', require('./routes/patientAuth'));
+
+// Multi-tenant organization provisioning, branding and membership.
+// The router applies resolveActorMiddleware to every route that needs a session;
+// `POST /api/organizations` (self-service signup) is intentionally session-free
+// and rate-limited inside the router.
+app.use('/api/organizations', require('./routes/organizations'));
+
+// Patient ↔ clinic sync. Every route inside requires a patient session.
+app.use('/api/patient/sync', require('./routes/patientSync'));
 
 // Durable clinical workflow (encounter state machine, booking, outbox, audit).
 app.use('/api/workflow', require('./api/workflow'));
+
+// Durable clinic workspace: patients, schedule, notes, attention queue, audit.
+// The live loop is mounted first: it is the patient-app-facing half of the same
+// database, and must not be shadowed by the legacy workspace router.
+app.use('/api/clinic/live', require('./routes/clinicLive'));
+app.use('/api/clinic', require('./api/clinic'));
 
 // --- SAFE NON-PHI TELEMETRY LOGGER ---
 function logAiTelemetry({ provider, operation, status, latencyMs, inputBytes, outputBytes, model, errorCategory, tokens }) {
@@ -236,6 +263,10 @@ app.get(['/health', '/api/health'], (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
+
+// One-time-code delivery readiness. Returns 503 when OTP_DELIVERY=email but the
+// provider key/sender is missing, because patients then cannot sign in at all.
+app.use(['/health/email', '/api/health/email'], require('./routes/healthEmail'));
 
 // Phase 15: Developer / Admin AI Status endpoint
 app.get(['/health/ai', '/api/health/ai'], async (req, res) => {
@@ -1295,18 +1326,85 @@ app.post('/api/ai/synthesize', (req, res) => {
   }
 });
 
+// Mint a real provenance envelope for a clinical draft. The envelope carries a
+// SHA-256 tamper hash over the model metadata, input context and draft payload.
+app.post('/api/ai/provenance', resolveActorMiddleware, (req, res) => {
+  try {
+    const {
+      agentId = req.actor?.actorId || 'ambient-scribe',
+      specialty = 'General',
+      modelId = 'active-model',
+      modelVersion = '1.0',
+      inputContext = {},
+      sources = [],
+      draftPayload = {}
+    } = req.body || {};
+
+    const envelope = provenanceSystem.createEnvelope({
+      agentId,
+      specialty,
+      modelId,
+      modelVersion,
+      inputContext,
+      sources,
+      draftPayload,
+      tenantId: req.actor?.tenantId || 'org-default'
+    });
+
+    res.status(201).json({ success: true, envelope });
+  } catch (err) {
+    res.status(err.status || 400).json({ error: err.code || 'PROVENANCE_CREATE_FAILED', message: err.message });
+  }
+});
+
 // Cryptographic Provenance Inspection
 app.get('/api/ai/provenance/:id', (req, res) => {
   try {
-    const provenanceId = req.params.id;
+    const envelope = provenanceSystem.getEnvelope(req.params.id);
+    if (!envelope) {
+      return res.status(404).json({
+        error: 'PROVENANCE_NOT_FOUND',
+        message: `No provenance envelope named ${req.params.id} exists in this process.`,
+        code: 'PROVENANCE_NOT_FOUND'
+      });
+    }
+    const integrityValid = provenanceSystem.verifyIntegrity(envelope);
     res.json({
       success: true,
-      provenanceId,
-      verified: true
+      provenanceId: envelope.provenanceId,
+      verified: integrityValid,
+      status: envelope.status,
+      generatedAt: envelope.generatedAt,
+      agentId: envelope.agentId,
+      modelId: envelope.modelId,
+      physicianId: envelope.physicianId,
+      tamperHash: envelope.tamperHash,
+      envelope
     });
   } catch (err) {
     res.status(err.status || 404).json({ error: err.code || 'PROVENANCE_NOT_FOUND', message: err.message });
   }
+});
+
+// Verify a caller-supplied provenance envelope without persisting it.
+app.post('/api/ai/provenance/verify', (req, res) => {
+  const envelope = (req.body || {}).envelope;
+  if (!envelope || !envelope.provenanceId) {
+    return res.status(400).json({
+      error: 'PROVENANCE_REQUIRED',
+      message: 'A provenance envelope is required.',
+      code: 'PROVENANCE_REQUIRED'
+    });
+  }
+  const integrityValid = provenanceSystem.verifyIntegrity(envelope);
+  res.status(integrityValid ? 200 : 409).json({
+    success: integrityValid,
+    provenanceId: envelope.provenanceId,
+    verified: integrityValid,
+    status: envelope.status,
+    error: integrityValid ? undefined : 'TAMPER_DETECTED',
+    message: integrityValid ? undefined : 'The envelope hash does not match its contents.'
+  });
 });
 
 // Explicit Physician Review and Approval Gate
@@ -3120,82 +3218,179 @@ app.post('/api/encounter/approve-and-sign', async (req, res) => {
 // Phase 1: Smart Appointment Booking & Intake
 // Durable path: patient -> appointment row -> encounter(BOOKED) in one transaction.
 // The old handler returned a fabricated id and never persisted anything.
+//
+// Identity is taken exclusively from the verified patient session. body.patientId
+// and body.tenantId are never trusted; requirePatientSelf() rejects a mismatched
+// body id with 403 instead of silently using it.
 const { bookAppointment, BookingError } = require('./services/scheduling/durableBooking');
+const { requirePatientAuth, requirePatientSelf } = require('./middleware/patientAuth');
 
-app.post('/api/patient/appointment-booking', async (req, res) => {
-  const body = req.body || {};
+app.post(
+  '/api/patient/appointment-booking',
+  requirePatientAuth,
+  requirePatientSelf('patientId'),
+  async (req, res) => {
+    const body = req.body || {};
 
-  try {
-    const result = await bookAppointment({
-      tenantId: body.tenantId || 'org-default',
-      patientId: body.patientId,
-      clinicianId: body.clinicianId,
-      scheduledFor: body.scheduledFor,
-      date: body.date || body.preferredDate,
-      time: body.time || body.preferredTime,
-      durationMinutes: body.durationMinutes,
-      reason: body.reason || body.chiefComplaint,
-      patient: body.patient,
-      patientName: body.patientName,
-      idempotencyKey: req.headers['idempotency-key'] || body.idempotencyKey,
-      source: 'patient-app'
-    });
+    try {
+      const result = await bookAppointment({
+        tenantId: req.patient.tenantId,
+        patientId: req.patient.id,
+        clinicianId: body.clinicianId,
+        scheduledFor: body.scheduledFor,
+        date: body.date || body.preferredDate,
+        time: body.time || body.preferredTime,
+        durationMinutes: body.durationMinutes,
+        reason: body.reason || body.chiefComplaint,
+        patient: body.patient,
+        patientName: body.patientName,
+        idempotencyKey: req.headers['idempotency-key'] || body.idempotencyKey,
+        source: 'patient-app'
+      });
 
-    res.status(result.idempotent ? 200 : 201).json({
-      success: true,
-      appointmentId: result.appointment.id,
-      encounterId: result.encounter?.id || null,
-      patientId: result.patient?.id || result.appointment.patient_id,
-      status: result.appointment.status,
-      scheduledFor: result.appointment.scheduled_for,
-      durationMinutes: result.appointment.duration_minutes,
-      chiefComplaint: result.appointment.reason,
-      idempotent: result.idempotent,
-      createdPatient: result.createdPatient,
-      preVisitInterviewRequired: true,
-      nextStep: 'Complete the pre-visit intake questionnaire before arrival.'
-    });
-  } catch (err) {
-    if (err instanceof BookingError) {
-      return res.status(err.status).json({ error: err.message, code: err.code });
+      res.status(result.idempotent ? 200 : 201).json({
+        success: true,
+        appointmentId: result.appointment.id,
+        encounterId: result.encounter?.id || null,
+        patientId: result.patient?.id || result.appointment.patient_id,
+        status: result.appointment.status,
+        scheduledFor: result.appointment.scheduled_for,
+        durationMinutes: result.appointment.duration_minutes,
+        chiefComplaint: result.appointment.reason,
+        idempotent: result.idempotent,
+        createdPatient: result.createdPatient,
+        preVisitInterviewRequired: true,
+        nextStep: 'Complete the pre-visit intake questionnaire before arrival.'
+      });
+    } catch (err) {
+      if (err instanceof BookingError) {
+        return res.status(err.status).json({ error: err.message, code: err.code });
+      }
+      console.error('[booking] durable booking failed:', err.message);
+      return res.status(500).json({
+        error: 'The appointment could not be booked. No appointment was created.',
+        code: 'APPOINTMENT_BOOKING_FAILED'
+      });
     }
-    console.error('[booking] durable booking failed:', err.message);
-    return res.status(500).json({
-      error: 'The appointment could not be booked. No appointment was created.',
-      code: 'APPOINTMENT_BOOKING_FAILED'
-    });
   }
-});
+);
 
 // Phase 1: Pre-Visit AI Interview (OLDCARTS Framework)
-app.post('/api/patient/pre-visit-interview', (req, res) => {
-  try {
-    const { patientId = 'PAT-007', symptoms, onset, triggers } = req.body;
-    res.json({
-      success: true,
-      patientId,
-      status: 'INTAKE_COMPILED',
-      compiledSummary: {
-        chiefComplaints: Array.isArray(symptoms) ? symptoms : [symptoms || 'Acute symptoms'],
-        onset: onset || '1 day ago',
-        suspectedTriggers: Array.isArray(triggers) ? triggers : [triggers || 'None reported']
-      },
-      message: 'Intake answers saved to clinical staging. Your physician team will review before rooming.'
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message, code: 'PRE_VISIT_INTERVIEW_FAILED' });
+//
+// This used to return a fabricated "INTAKE_COMPILED" summary and persist nothing.
+// It now validates the submission against the intake questionnaire catalog and
+// persists a FHIR QuestionnaireResponse (+ Observation/Provenance) through
+// services/intake. If required answers are missing, it returns 400 instead of
+// pretending the intake was saved.
+app.post(
+  '/api/patient/pre-visit-interview',
+  requirePatientAuth,
+  requirePatientSelf('patientId'),
+  async (req, res) => {
+    const body = req.body || {};
+
+    try {
+      const answers =
+        body.answers && typeof body.answers === 'object' && !Array.isArray(body.answers)
+          ? { ...body.answers }
+          : {};
+
+      // Backwards-compatible mapping of the old flat fields into the general
+      // intake questionnaire. Only values the patient actually supplied are
+      // copied; nothing is invented.
+      if (answers.reason_for_visit === undefined) {
+        if (body.symptoms !== undefined) {
+          answers.reason_for_visit = Array.isArray(body.symptoms)
+            ? body.symptoms.join(', ')
+            : String(body.symptoms);
+        } else if (body.reasonForVisit !== undefined) {
+          answers.reason_for_visit = String(body.reasonForVisit);
+        } else if (body.chiefComplaint !== undefined) {
+          answers.reason_for_visit = String(body.chiefComplaint);
+        }
+      }
+
+      if (answers.duration === undefined) {
+        const duration = body.duration !== undefined ? body.duration : body.onset;
+        if (duration !== undefined) answers.duration = String(duration);
+      }
+
+      if (answers.emergency_symptoms === undefined) {
+        const emergency =
+          body.emergencySymptoms !== undefined
+            ? body.emergencySymptoms
+            : body.emergency_symptoms;
+        if (emergency !== undefined) answers.emergency_symptoms = Boolean(emergency);
+      }
+
+      const submission = {
+        // The authenticated patient id only. body.patientId was already checked
+        // for scope and is never used as the write target.
+        patientId: req.patient.id,
+        answers,
+        patientContext: { tenantId: req.patient.tenantId }
+      };
+      if (body.items !== undefined) submission.items = body.items;
+      if (body.item !== undefined) submission.item = body.item;
+
+      const result = await intakeService.submitResponse({
+        questionnaireId: body.questionnaireId || 'questionnaire-general-v1',
+        submission,
+        actor: {
+          actorId: req.patient.id,
+          actorRole: 'patient',
+          tenantId: req.patient.tenantId
+        },
+        tenantId: req.patient.tenantId
+      });
+
+      res.status(201).json({
+        success: true,
+        patientId: req.patient.id,
+        status: 'INTAKE_RECORDED',
+        questionnaireResponseId: result.questionnaireResponseId,
+        questionnaireId: result.questionnaireId,
+        escalation: result.escalation
+          ? {
+              escalationLevel: result.escalation.escalationLevel,
+              requiresEscalation: result.escalation.requiresEscalation
+            }
+          : null,
+        message: 'Your answers were recorded for your care team to review before your visit.'
+      });
+    } catch (err) {
+      const status = err.status || err.statusCode || 400;
+      return res.status(status).json({
+        error: err.message,
+        code: err.code || 'PRE_VISIT_INTERVIEW_FAILED'
+      });
+    }
   }
-});
+);
 
 // Phase 6: Post-Visit Patient Check-In & Two-Branch Routing
-app.post('/api/patient/follow-up-response', (req, res) => {
-  try {
-    const result = closedLoopEncounterService.handlePatientFollowUpCheckIn(req.body);
-    res.json(result);
-  } catch (err) {
-    res.status(500).json({ error: err.message, code: 'FOLLOW_UP_RESPONSE_FAILED' });
+//
+// The patient id is always the authenticated identity. Encounter routing remains
+// in closedLoopEncounterService; body.patientId cannot retarget the check-in.
+app.post(
+  '/api/patient/follow-up-response',
+  requirePatientAuth,
+  requirePatientSelf('patientId'),
+  (req, res) => {
+    const body = req.body || {};
+
+    try {
+      const result = closedLoopEncounterService.handlePatientFollowUpCheckIn({
+        ...body,
+        patientId: req.patient.id
+      });
+      res.json(result);
+    } catch (err) {
+      console.error('[follow-up] response failed:', err.message);
+      res.status(500).json({ error: err.message, code: 'FOLLOW_UP_RESPONSE_FAILED' });
+    }
   }
-});
+);
 
 // Safe Express error handling with internal path and secret scrubbing
 app.use((err, req, res, next) => {

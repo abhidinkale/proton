@@ -334,7 +334,11 @@ function getScopedPatientContext(patientId, domain = 'triage') {
   return { patientId, found: true, domain, provenanceMap };
 }
 
+const { specialistConsensusCouncil } = require('./specialistConsensusCouncil');
+
 module.exports = {
   getScopedPatientContext,
-  CLINICAL_BRAIN_REGISTRY
+  CLINICAL_BRAIN_REGISTRY,
+  specialistConsensusCouncil,
+  conveneSpecialistCouncil: (params) => specialistConsensusCouncil.conveneCouncil(params)
 };
