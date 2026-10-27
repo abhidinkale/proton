@@ -12,9 +12,14 @@ import health.dork.app.core.data.model.BloodGroup
 import health.dork.app.core.data.model.ConsultationType
 import health.dork.app.core.data.model.HealthRecordItem
 import health.dork.app.core.data.model.HealthRecordType
+import health.dork.app.core.data.model.LoopStage
 import health.dork.app.core.data.model.MedicationDose
+import health.dork.app.core.data.model.NextAction
+import health.dork.app.core.data.model.NextActionKind
+import health.dork.app.core.data.model.NextActionUrgency
 import health.dork.app.core.data.model.PatientProfile
 import health.dork.app.core.designsystem.DorkTheme
+import health.dork.app.core.loop.CareLoopState
 import health.dork.app.core.designsystem.components.AppointmentStatus
 import health.dork.app.core.designsystem.components.MedicationDoseState
 import org.junit.Rule
@@ -23,6 +28,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import java.time.LocalDate
 
 /**
  * Renders the home surface off-device so the editorial layout can be inspected
@@ -49,7 +55,8 @@ class HomeScreenshotTest {
           onNavigateToRecords = {},
           onNavigateToAi = {},
           onNavigateToMedications = {},
-          onAppointmentClick = {}
+          onAppointmentClick = {},
+          onProfileClick = {}
         )
       }
     }
@@ -80,6 +87,7 @@ class HomeScreenshotTest {
             onNavigateToAi = {},
             onNavigateToMedications = {},
             onAppointmentClick = {},
+            onProfileClick = {},
             modifier = androidx.compose.ui.Modifier.padding(paddingValues)
           )
         }
@@ -110,6 +118,8 @@ class HomeScreenshotTest {
   }
 
   private fun sampleState(): HomeUiState {
+    val today = LocalDate.now()
+
     val patient = PatientProfile(
       id = "patient-primary",
       fullName = "Amara Okafor",
@@ -130,7 +140,7 @@ class HomeScreenshotTest {
       doctorName = "Dr. Sarah Chen",
       specialty = "Cardiology",
       dateTimeString = "Today · 4:30 PM",
-      dateIso = "2026-10-24T16:30:00",
+      dateIso = today.atTime(16, 30).toString(),
       clinicLocation = "Sunrise Clinic · Suite 4",
       consultationType = ConsultationType.IN_PERSON,
       status = AppointmentStatus.Confirmed,
@@ -143,10 +153,16 @@ class HomeScreenshotTest {
       name = "Lisinopril",
       dosage = "10 mg",
       scheduledTime = "8:00 PM",
-      dateIso = "2026-10-24",
+      dateIso = today.toString(),
       state = MedicationDoseState.Due,
       instructions = "Take with water, after dinner",
       prescribingDoctor = "Dr. Sarah Chen"
+    )
+
+    val doses = listOf(
+      dose.copy(id = "dose-0a", scheduledTime = "8:00 AM", state = MedicationDoseState.Taken, takenAtTimestamp = 1L),
+      dose.copy(id = "dose-0b", scheduledTime = "2:00 PM", state = MedicationDoseState.Taken, takenAtTimestamp = 2L),
+      dose
     )
 
     val records = listOf(
@@ -186,13 +202,31 @@ class HomeScreenshotTest {
       patient = patient,
       nextAppointment = appointment,
       nextDose = dose,
+      todayAppointments = listOf(appointment),
+      todayDoses = doses,
       recentRecords = records,
       checkInStatus = "Feeling good",
-      restingHeartRateBpm = 68,
-      todayAppointmentCount = 2,
-      todayDoseCount = 4,
-      takenDoseCount = 3,
+      todayAppointmentCount = 1,
+      todayDoseCount = 3,
+      takenDoseCount = 2,
       skippedDoseCount = 0,
+      isDemoMode = true,
+      loop = CareLoopState(
+        stage = LoopStage.PREPARE,
+        nextAction = NextAction(
+          kind = NextActionKind.COMPLETE_INTAKE,
+          headline = "Prepare for Dr. Sarah Chen",
+          supporting = "Today · 4:30 PM. Two minutes now saves ten at the desk.",
+          ctaLabel = "Start check-in",
+          urgency = NextActionUrgency.TODAY,
+          reason = "Pre-visit intake is incomplete",
+          appointmentId = appointment.id
+        ),
+        upcomingAppointment = appointment,
+        daysToAppointment = 0,
+        openFollowUp = null,
+        intakeForUpcoming = null
+      ),
       isLoading = false
     )
   }

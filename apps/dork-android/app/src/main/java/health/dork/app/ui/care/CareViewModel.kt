@@ -5,32 +5,60 @@ import androidx.lifecycle.viewModelScope
 import health.dork.app.core.data.model.AppointmentItem
 import health.dork.app.core.data.model.ConsultationType
 import health.dork.app.core.data.model.Doctor
-import health.dork.app.core.data.model.PreConsultationData
+import health.dork.app.core.data.model.FollowUpCheckIn
 import health.dork.app.core.data.repository.CareRepository
+import health.dork.app.core.data.repository.FollowUpRepository
+import health.dork.app.core.data.repository.PatientRepository
+import health.dork.app.core.data.repository.SettingsRepository
+import health.dork.app.core.data.util.SlotOption
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+
+data class BookingUiState(
+  val doctor: Doctor? = null,
+  val openDays: List<LocalDate> = emptyList(),
+  val selectedDate: LocalDate? = null,
+  val slots: List<SlotOption> = emptyList(),
+  val selectedSlotIso: String? = null,
+  val consultationType: ConsultationType = ConsultationType.IN_PERSON,
+  val reason: String = "",
+  val error: String? = null,
+  val isWorking: Boolean = false,
+  val confirmation: AppointmentItem? = null,
+  val reschedulingAppointmentId: String? = null
+) {
+  val isReschedule: Boolean
+    get() = reschedulingAppointmentId != null
+
+  val selectedSlot: SlotOption?
+    get() = slots.find { it.startIso == selectedSlotIso }
+}
 
 data class CareUiState(
   val searchQuery: String = "",
   val selectedSpecialty: String = "All Specialties",
   val doctors: List<Doctor> = emptyList(),
   val filteredDoctors: List<Doctor> = emptyList(),
-  val selectedDoctor: Doctor? = null,
-  val selectedSlot: String? = null,
-  val selectedConsultationType: ConsultationType = ConsultationType.IN_PERSON,
-  val bookingReason: String = "General follow-up and clinical consultation",
-  val bookingSuccessAppointment: AppointmentItem? = null,
-  val isBookingInProgress: Boolean = false
+  val appointments: List<AppointmentItem> = emptyList(),
+  val checkIns: List<FollowUpCheckIn> = emptyList(),
+  val showMessagesEntry: Boolean = true
 )
 
 class CareViewModel(
-  private val careRepository: CareRepository
+  private val careRepository: CareRepository,
+  private val patientRepository: PatientRepository,
+  private val settingsRepository: SettingsRepository,
+  private val followUpRepository: FollowUpRepository
 ) : ViewModel() {
 
   private val _uiState = MutableStateFlow(CareUiState())
   val uiState: StateFlow<CareUiState> = _uiState.asStateFlow()
+
+  private val _booking = MutableStateFlow(BookingUiState())
+  val booking: StateFlow<BookingUiState> = _booking.asStateFlow()
 
   val specialties: List<String> = careRepository.specialties
 
@@ -39,100 +67,173 @@ class CareViewModel(
       careRepository.doctors.collect { doctorsList ->
         _uiState.value = _uiState.value.copy(
           doctors = doctorsList,
-          filteredDoctors = filterDoctors(doctorsList, _uiState.value.selectedSpecialty, _uiState.value.searchQuery)
+          filteredDoctors = filterDoctors(
+            doctorsList,
+            _uiState.value.selectedSpecialty,
+            _uiState.value.searchQuery
+          )
         )
+      }
+    }
+    viewModelScope.launch {
+      careRepository.appointments.collect { appointments ->
+        _uiState.value = _uiState.value.copy(appointments = appointments)
+        followUpRepository.syncWithAppointments(appointments)
+      }
+    }
+    viewModelScope.launch {
+      followUpRepository.checkIns.collect { checkIns ->
+        _uiState.value = _uiState.value.copy(checkIns = checkIns)
+      }
+    }
+    viewModelScope.launch {
+      settingsRepository.messageNotifications.collect { enabled ->
+        _uiState.value = _uiState.value.copy(showMessagesEntry = enabled)
       }
     }
   }
 
-  private fun filterDoctors(doctors: List<Doctor>, specialty: String, query: String): List<Doctor> {
-    return doctors.filter { doc ->
-      val matchesSpecialty = specialty == "All Specialties" || doc.specialty.contains(specialty, ignoreCase = true)
-      val matchesQuery = query.isBlank() ||
-        doc.name.contains(query, ignoreCase = true) ||
-        doc.specialty.contains(query, ignoreCase = true) ||
-        doc.clinicName.contains(query, ignoreCase = true)
-      matchesSpecialty && matchesQuery
-    }
-  }
+  // ---- discovery -----------------------------------------------------------
+
+  fun nextSlotLabel(doctor: Doctor): String = careRepository.nextSlotLabel(doctor.id)
 
   fun onSearchQueryChange(query: String) {
-    val s = _uiState.value
-    _uiState.value = s.copy(
+    val state = _uiState.value
+    _uiState.value = state.copy(
       searchQuery = query,
-      filteredDoctors = filterDoctors(s.doctors, s.selectedSpecialty, query)
+      filteredDoctors = filterDoctors(state.doctors, state.selectedSpecialty, query)
     )
   }
 
   fun onSpecialtySelected(specialty: String) {
-    val s = _uiState.value
-    _uiState.value = s.copy(
+    val state = _uiState.value
+    _uiState.value = state.copy(
       selectedSpecialty = specialty,
-      filteredDoctors = filterDoctors(s.doctors, specialty, s.searchQuery)
+      filteredDoctors = filterDoctors(state.doctors, specialty, state.searchQuery)
     )
   }
 
-  fun onDoctorSelected(doctor: Doctor) {
-    _uiState.value = _uiState.value.copy(
-      selectedDoctor = doctor,
-      selectedSlot = doctor.availableSlots.firstOrNull(),
-      bookingSuccessAppointment = null
+  fun followUpDueFor(appointmentId: String): Boolean {
+    val checkIn = _uiState.value.checkIns.find { it.appointmentId == appointmentId }
+    return checkIn != null && checkIn.answer == null
+  }
+
+  private fun filterDoctors(doctors: List<Doctor>, specialty: String, query: String): List<Doctor> =
+    doctors.filter { doctor ->
+      val matchesSpecialty = specialty == "All Specialties" ||
+        doctor.specialty.contains(specialty, ignoreCase = true)
+      val matchesQuery = query.isBlank() ||
+        doctor.name.contains(query, ignoreCase = true) ||
+        doctor.specialty.contains(query, ignoreCase = true) ||
+        doctor.clinicName.contains(query, ignoreCase = true)
+      matchesSpecialty && matchesQuery
+    }
+
+  // ---- booking -------------------------------------------------------------
+
+  fun startBooking(doctor: Doctor) {
+    val days = careRepository.openDays(doctor.id)
+    val firstDay = days.firstOrNull()
+    _booking.value = BookingUiState(
+      doctor = doctor,
+      openDays = days,
+      selectedDate = firstDay,
+      slots = firstDay?.let { careRepository.slotsFor(doctor.id, it) }.orEmpty(),
+      selectedSlotIso = null,
+      consultationType = doctor.consultationTypes.firstOrNull() ?: ConsultationType.IN_PERSON,
+      reason = ""
     )
   }
 
-  fun onSlotSelected(slot: String) {
-    _uiState.value = _uiState.value.copy(selectedSlot = slot)
+  fun startReschedule(appointmentId: String) {
+    val appointment = _uiState.value.appointments.find { it.id == appointmentId } ?: return
+    val doctor = _uiState.value.doctors.find { it.id == appointment.doctorId } ?: return
+    val days = careRepository.openDays(doctor.id)
+    val firstDay = days.firstOrNull()
+    _booking.value = BookingUiState(
+      doctor = doctor,
+      openDays = days,
+      selectedDate = firstDay,
+      slots = firstDay?.let { careRepository.slotsFor(doctor.id, it) }.orEmpty(),
+      selectedSlotIso = null,
+      consultationType = appointment.consultationType,
+      reason = appointment.reasonForVisit,
+      reschedulingAppointmentId = appointmentId
+    )
+  }
+
+  fun onDateSelected(date: LocalDate) {
+    val state = _booking.value
+    val doctor = state.doctor ?: return
+    _booking.value = state.copy(
+      selectedDate = date,
+      slots = careRepository.slotsFor(doctor.id, date),
+      selectedSlotIso = null,
+      error = null
+    )
+  }
+
+  fun onSlotSelected(startIso: String) {
+    _booking.value = _booking.value.copy(selectedSlotIso = startIso, error = null)
   }
 
   fun onConsultationTypeSelected(type: ConsultationType) {
-    _uiState.value = _uiState.value.copy(selectedConsultationType = type)
+    _booking.value = _booking.value.copy(consultationType = type)
   }
 
   fun onReasonChange(reason: String) {
-    _uiState.value = _uiState.value.copy(bookingReason = reason)
+    _booking.value = _booking.value.copy(reason = reason, error = null)
+  }
+
+  fun dismissBooking() {
+    _booking.value = BookingUiState()
   }
 
   fun confirmBooking(onSuccess: (AppointmentItem) -> Unit) {
-    val doc = _uiState.value.selectedDoctor ?: return
-    val slot = _uiState.value.selectedSlot ?: "Tomorrow · 10:00 AM"
-
-    viewModelScope.launch {
-      _uiState.value = _uiState.value.copy(isBookingInProgress = true)
-      val res = careRepository.bookAppointment(
-        doctorId = doc.id,
-        timeSlot = slot,
-        consultationType = _uiState.value.selectedConsultationType,
-        reason = _uiState.value.bookingReason,
-        symptoms = listOf("Clinical check-in")
-      )
-      _uiState.value = _uiState.value.copy(isBookingInProgress = false)
-      if (res.isSuccess) {
-        val appt = res.getOrThrow()
-        _uiState.value = _uiState.value.copy(bookingSuccessAppointment = appt)
-        onSuccess(appt)
-      }
+    val state = _booking.value
+    val doctor = state.doctor ?: return
+    val slotIso = state.selectedSlotIso
+    if (slotIso == null) {
+      _booking.value = state.copy(error = "Choose a time.")
+      return
     }
-  }
+    if (state.reason.isBlank()) {
+      _booking.value = state.copy(error = "Add a reason for the visit.")
+      return
+    }
 
-  fun submitPreConsultation(
-    appointmentId: String,
-    complaint: String,
-    onset: String,
-    severity: Int,
-    symptoms: List<String>
-  ) {
     viewModelScope.launch {
-      careRepository.submitPreConsultation(
-        PreConsultationData(
-          appointmentId = appointmentId,
-          chiefComplaint = complaint,
-          onsetDuration = onset,
-          severityScale = severity,
-          selectedSymptoms = symptoms,
-          currentMedications = "Amoxicillin 500mg",
-          allergies = "Penicillin"
+      _booking.value = _booking.value.copy(isWorking = true, error = null)
+      val result = if (state.isReschedule) {
+        careRepository.rescheduleAppointment(state.reschedulingAppointmentId!!, slotIso)
+      } else {
+        careRepository.bookAppointment(
+          doctorId = doctor.id,
+          startIso = slotIso,
+          consultationType = state.consultationType,
+          reason = state.reason.trim()
         )
+      }
+      _booking.value = _booking.value.copy(isWorking = false)
+      result.fold(
+        onSuccess = { appointment ->
+          _booking.value = _booking.value.copy(confirmation = appointment, error = null)
+          onSuccess(appointment)
+        },
+        onFailure = { error ->
+          _booking.value = _booking.value.copy(
+            error = error.message ?: "Could not book that time.",
+            // A failed booking usually means the slot vanished, so refresh it.
+            slots = state.selectedDate?.let { careRepository.slotsFor(doctor.id, it) }.orEmpty()
+          )
+        }
       )
     }
   }
+
+  fun cancelAppointment(appointmentId: String) {
+    viewModelScope.launch { careRepository.cancelAppointment(appointmentId) }
+  }
+
+  fun patientName(): String = patientRepository.profile.value.fullName
 }

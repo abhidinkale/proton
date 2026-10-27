@@ -41,6 +41,7 @@ import health.dork.app.core.designsystem.components.DorkTopBar
 @Composable
 fun DoctorDetailScreen(
   doctor: Doctor,
+  nextSlotLabel: String,
   onBackClick: () -> Unit,
   onBookClick: () -> Unit,
   modifier: Modifier = Modifier
@@ -189,9 +190,7 @@ fun DoctorDetailScreen(
       Row(
         horizontalArrangement = Arrangement.spacedBy(DorkSpacing.xs)
       ) {
-        doctor.availableSlots.take(2).forEach { slot ->
-          DorkChip(label = slot, selected = false, onClick = onBookClick)
-        }
+        DorkChip(label = nextSlotLabel, selected = false, onClick = onBookClick)
       }
 
       Spacer(modifier = Modifier.height(DorkSpacing.xl))

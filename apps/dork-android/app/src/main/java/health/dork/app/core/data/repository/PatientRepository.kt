@@ -1,5 +1,6 @@
 package health.dork.app.core.data.repository
 
+import health.dork.app.core.data.local.DorkStore
 import health.dork.app.core.data.model.EmergencyContact
 import health.dork.app.core.data.model.EmergencyMedicalId
 import health.dork.app.core.data.model.PatientProfile
@@ -17,47 +18,74 @@ interface PatientRepository {
   suspend fun updateEmergencyContact(contact: EmergencyContact)
 }
 
-class DorkPatientRepository : PatientRepository {
-  private val _profile = MutableStateFlow(DorkSeedData.samplePatient)
+class DorkPatientRepository(
+  private val store: DorkStore = DorkStore()
+) : PatientRepository {
+
+  private val _profile = MutableStateFlow(
+    store.read(KEY_PROFILE, PatientProfile.serializer()) ?: DorkSeedData.samplePatient
+  )
   override val profile: StateFlow<PatientProfile> = _profile.asStateFlow()
 
-  private val _emergencyMedicalId = MutableStateFlow(DorkSeedData.emergencyMedicalId)
+  private val _emergencyMedicalId = MutableStateFlow(
+    store.read(KEY_MEDICAL_ID, EmergencyMedicalId.serializer())
+      ?: DorkSeedData.emergencyMedicalId
+  )
   override val emergencyMedicalId: StateFlow<EmergencyMedicalId> = _emergencyMedicalId.asStateFlow()
 
   override suspend fun updateProfile(updated: PatientProfile) {
     _profile.value = updated
-    syncEmergencyMedicalId(updated)
+    persistProfile(updated)
   }
 
   override suspend fun updateAuthoritativeDob(birthDateIso: String) {
-    val current = _profile.value
-    val updated = current.copy(birthDate = birthDateIso)
+    val updated = _profile.value.copy(birthDate = birthDateIso)
     _profile.value = updated
-    syncEmergencyMedicalId(updated)
+    persistProfile(updated)
   }
 
   override suspend fun updateBodyMetrics(heightCm: Double, weightKg: Double) {
-    val current = _profile.value
-    val updated = current.copy(heightCm = heightCm, weightKg = weightKg)
+    val updated = _profile.value.copy(heightCm = heightCm, weightKg = weightKg)
     _profile.value = updated
+    persistProfile(updated)
   }
 
   override suspend fun updateEmergencyContact(contact: EmergencyContact) {
-    val current = _profile.value
-    val updated = current.copy(emergencyContact = contact)
+    val updated = _profile.value.copy(emergencyContact = contact)
     _profile.value = updated
-    syncEmergencyMedicalId(updated)
+    persistProfile(updated)
+  }
+
+  private fun persistProfile(profile: PatientProfile) {
+    store.write(KEY_PROFILE, PatientProfile.serializer(), profile)
+    syncEmergencyMedicalId(profile)
   }
 
   private fun syncEmergencyMedicalId(profile: PatientProfile) {
-    _emergencyMedicalId.value = _emergencyMedicalId.value.copy(
+    val existing = _emergencyMedicalId.value
+    val isDifferentPatient = existing.patientName != profile.fullName
+    val updated = existing.copy(
       patientName = profile.fullName,
       birthDate = profile.birthDate,
       calculatedAge = profile.calculatedAge,
       bloodGroup = profile.bloodGroup.display,
+      criticalConditions = profile.conditions.ifEmpty { listOf("None recorded") },
+      severeAllergies = profile.allergies.ifEmpty { listOf("None recorded") },
+      activeMedications = profile.currentMedications.ifEmpty { listOf("None recorded") },
       emergencyContactName = profile.emergencyContact?.name ?: "Not specified",
       emergencyContactPhone = profile.emergencyContact?.phoneNumber ?: "Not specified",
-      emergencyContactRelation = profile.emergencyContact?.relationship ?: "Not specified"
+      emergencyContactRelation = profile.emergencyContact?.relationship ?: "Not specified",
+      // Donation and hospital preferences belong to the person using the app.
+      // Do not inherit the synthetic record's answers when a new account is made.
+      organDonorStatus = if (isDifferentPatient) "Not recorded" else existing.organDonorStatus,
+      hospitalPreference = if (isDifferentPatient) "Not recorded" else existing.hospitalPreference
     )
+    _emergencyMedicalId.value = updated
+    store.write(KEY_MEDICAL_ID, EmergencyMedicalId.serializer(), updated)
+  }
+
+  private companion object {
+    const val KEY_PROFILE = "patient:profile"
+    const val KEY_MEDICAL_ID = "patient:medical_id"
   }
 }

@@ -18,6 +18,7 @@ import androidx.compose.material.icons.automirrored.rounded.TrendingUp
 import androidx.compose.material.icons.rounded.CalendarToday
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Medication
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.TrendingUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -39,6 +40,7 @@ import health.dork.app.core.designsystem.components.DorkStatusType
 @Composable
 fun MedicationsScreen(
   viewModel: MedicationsViewModel,
+  onRequestRefill: (String) -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   val uiState by viewModel.uiState.collectAsState()
@@ -106,7 +108,11 @@ fun MedicationsScreen(
         Spacer(modifier = Modifier.height(DorkSpacing.s))
 
         Text(
-          text = "${uiState.totalDosesTaken} of ${uiState.totalDosesScheduled} scheduled doses completed this month. Keep up your healthy routine.",
+          text = if (uiState.totalDosesScheduled == 0) {
+            "No dose history is recorded yet. Mark a dose taken or skipped to begin tracking."
+          } else {
+            "${uiState.totalDosesTaken} of ${uiState.totalDosesScheduled} recorded doses marked taken · ${uiState.takenToday} of ${uiState.todayDoses.size} today. Missed doses are not penalised."
+          },
           style = MaterialTheme.typography.bodySmall,
           color = DorkTheme.colors.textSecondary
         )
@@ -124,17 +130,27 @@ fun MedicationsScreen(
     Spacer(modifier = Modifier.height(DorkSpacing.s))
 
     Column(verticalArrangement = Arrangement.spacedBy(DorkSpacing.s)) {
-      uiState.todayDoses.forEach { dose ->
-        DorkMedicationCard(
-          name = dose.name,
-          dosage = dose.dosage,
-          scheduledTime = dose.scheduledTime,
-          state = dose.state,
-          instructions = dose.instructions,
-          prescribedBy = dose.prescribingDoctor,
-          onTakenClick = { viewModel.markDoseTaken(dose.id) },
-          onSkipClick = { viewModel.skipDose(dose.id) }
-        )
+      if (uiState.todayDoses.isEmpty()) {
+        DorkCard(contentPadding = DorkSpacing.m) {
+          Text(
+            text = "No doses are scheduled for today. Add a prescription to build a schedule.",
+            style = MaterialTheme.typography.bodySmall,
+            color = DorkTheme.colors.textSecondary
+          )
+        }
+      } else {
+        uiState.todayDoses.forEach { dose ->
+          DorkMedicationCard(
+            name = dose.name,
+            dosage = dose.dosage,
+            scheduledTime = dose.scheduledTime,
+            state = dose.state,
+            instructions = dose.instructions,
+            prescribedBy = dose.prescribingDoctor,
+            onTakenClick = { viewModel.markDoseTaken(dose.id) },
+            onSkipClick = { viewModel.skipDose(dose.id) }
+          )
+        }
       }
     }
 
@@ -149,8 +165,17 @@ fun MedicationsScreen(
     Spacer(modifier = Modifier.height(DorkSpacing.s))
 
     Column(verticalArrangement = Arrangement.spacedBy(DorkSpacing.s)) {
-      uiState.plans.forEach { plan ->
+      if (uiState.plans.isEmpty()) {
         DorkCard(contentPadding = DorkSpacing.m) {
+          Text(
+            text = "No active medication plans on this device.",
+            style = MaterialTheme.typography.bodySmall,
+            color = DorkTheme.colors.textSecondary
+          )
+        }
+      } else {
+        uiState.plans.forEach { plan ->
+          DorkCard(contentPadding = DorkSpacing.m) {
           Column(modifier = Modifier.fillMaxWidth()) {
             Row(
               modifier = Modifier.fillMaxWidth(),
@@ -197,8 +222,28 @@ fun MedicationsScreen(
                 color = DorkTheme.colors.textTertiary
               )
             }
+
+            Spacer(modifier = Modifier.height(DorkSpacing.xs))
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+              androidx.compose.material3.TextButton(onClick = { onRequestRefill(plan.id) }) {
+                Icon(
+                  imageVector = Icons.Rounded.Refresh,
+                  contentDescription = null,
+                  tint = MaterialTheme.colorScheme.primary,
+                  modifier = Modifier.size(15.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                  text = "Request refill",
+                  style = MaterialTheme.typography.labelSmall,
+                  color = MaterialTheme.colorScheme.primary
+                )
+              }
+            }
           }
         }
+      }
       }
     }
 

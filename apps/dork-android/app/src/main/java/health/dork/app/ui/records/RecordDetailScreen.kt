@@ -1,5 +1,8 @@
 package health.dork.app.ui.records
 
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,9 +19,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.Biotech
 import androidx.compose.material.icons.rounded.CalendarToday
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -29,7 +34,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import health.dork.app.core.data.model.HealthDocument
 import health.dork.app.core.data.model.HealthRecordItem
 import health.dork.app.core.data.model.HealthRecordType
 import health.dork.app.core.data.model.LabStatus
@@ -48,10 +55,12 @@ fun RecordDetailScreen(
   viewModel: RecordsViewModel,
   onBackClick: () -> Unit,
   onViewPrescriptionClick: (() -> Unit)? = null,
+  document: HealthDocument? = null,
   modifier: Modifier = Modifier
 ) {
   val uiState by viewModel.uiState.collectAsState()
   val scrollState = rememberScrollState()
+  val context = LocalContext.current
 
   Column(
     modifier = modifier
@@ -136,6 +145,88 @@ fun RecordDetailScreen(
           text = "View full prescription & schedule",
           onClick = onViewPrescriptionClick
         )
+      }
+
+      // If Document, expose the original file that the patient stored.
+      if (record.type == HealthRecordType.DOCUMENT) {
+        Text(
+          text = "Original document",
+          style = MaterialTheme.typography.titleMedium,
+          color = DorkTheme.colors.textPrimary
+        )
+        Spacer(modifier = Modifier.height(DorkSpacing.s))
+
+        DorkCard(contentPadding = DorkSpacing.m) {
+          Column(modifier = Modifier.fillMaxWidth()) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+              Box(
+                modifier = Modifier
+                  .size(40.dp)
+                  .clip(CircleShape)
+                  .background(DorkTheme.colors.surfaceSecondary),
+                contentAlignment = Alignment.Center
+              ) {
+                Icon(
+                  imageVector = Icons.Rounded.Description,
+                  contentDescription = null,
+                  tint = MaterialTheme.colorScheme.primary,
+                  modifier = Modifier.size(20.dp)
+                )
+              }
+              Spacer(modifier = Modifier.width(DorkSpacing.s))
+              Column(modifier = Modifier.weight(1f)) {
+                Text(
+                  text = document?.title ?: record.title,
+                  style = MaterialTheme.typography.titleSmall,
+                  color = DorkTheme.colors.textPrimary
+                )
+                Text(
+                  text = document?.fileSizeText
+                    ?: "The original file is not stored on this device.",
+                  style = MaterialTheme.typography.bodySmall,
+                  color = DorkTheme.colors.textSecondary
+                )
+              }
+            }
+
+            if (document != null) {
+              Spacer(modifier = Modifier.height(DorkSpacing.s))
+              DorkButton(
+                text = "Open original file",
+                onClick = {
+                  val uri = Uri.parse(document.originalUri)
+                  val intent = Intent(Intent.ACTION_VIEW).apply {
+                    setDataAndType(uri, context.contentResolver.getType(uri) ?: "*/*")
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                  }
+                  runCatching { context.startActivity(intent) }
+                    .onFailure {
+                      Toast.makeText(
+                        context,
+                        "No app on this device can open that file.",
+                        Toast.LENGTH_SHORT
+                      ).show()
+                    }
+                },
+                variant = health.dork.app.core.designsystem.components.DorkButtonVariant.Secondary,
+                leadingIcon = {
+                  Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.OpenInNew,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                  )
+                }
+              )
+            } else {
+              Spacer(modifier = Modifier.height(DorkSpacing.xs))
+              Text(
+                text = "This entry describes a document from your history. Dork never claimed to extract its contents.",
+                style = MaterialTheme.typography.bodySmall,
+                color = DorkTheme.colors.textTertiary
+              )
+            }
+          }
+        }
       }
 
       Spacer(modifier = Modifier.height(DorkSpacing.giant))

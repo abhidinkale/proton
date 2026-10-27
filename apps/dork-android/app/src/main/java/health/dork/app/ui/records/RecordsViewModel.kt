@@ -86,35 +86,77 @@ class RecordsViewModel(
     _uiState.value = _uiState.value.copy(selectedRecord = record)
   }
 
-  fun uploadDocument(title: String, category: DocumentCategory, uri: String) {
+  /**
+   * Finds the stored file behind a timeline entry. Only patient-uploaded
+   * documents have one; seeded historical summaries deliberately return null.
+   */
+  fun documentForRecord(record: HealthRecordItem): HealthDocument? =
+    _uiState.value.documents.firstOrNull { doc ->
+      doc.title == record.title && doc.uploadDate == record.displayDate
+    }
+
+  fun uploadDocument(
+    title: String,
+    category: DocumentCategory,
+    uri: String,
+    fileSizeText: String,
+    onComplete: (Result<HealthDocument>) -> Unit = {}
+  ) {
     viewModelScope.launch {
       _uiState.value = _uiState.value.copy(isUploading = true)
-      val res = recordRepository.uploadDocument(title, category, uri, "1.4 MB PDF")
-      _uiState.value = _uiState.value.copy(isUploading = false)
-      if (res.isSuccess) {
-        _uiState.value = _uiState.value.copy(uploadSuccessDocument = res.getOrThrow())
-      }
+      val res = recordRepository.uploadDocument(title, category, uri, fileSizeText)
+      _uiState.value = _uiState.value.copy(
+        isUploading = false,
+        uploadSuccessDocument = res.getOrNull()
+      )
+      onComplete(res)
     }
+  }
+
+  fun clearUploadResult() {
+    _uiState.value = _uiState.value.copy(uploadSuccessDocument = null)
   }
 
   fun addPrescriptionToMedicationSchedule(prescription: PrescriptionDetail, onDone: () -> Unit) {
     viewModelScope.launch {
-      prescription.medications.forEach { med ->
-        medicationRepository.addMedicationPlan(
-          MedicationPlan(
-            id = "med-${System.currentTimeMillis()}-${med.name.lowercase().take(4)}",
-            name = med.name,
-            dosage = med.dose,
-            frequency = med.frequency,
-            duration = med.duration,
-            instructions = med.instructions,
-            prescribingDoctor = prescription.doctorName,
-            startDateIso = "2026-10-18",
-            dailyTimes = listOf("8:00 AM", "2:00 PM", "8:00 PM")
+      val today = java.time.LocalDate.now()
+      val existingNames = medicationRepository.medicationPlans.value.map { it.name.lowercase() }.toSet()
+      prescription.medications
+        .filterNot { existingNames.contains(it.name.lowercase()) }
+        .forEach { med ->
+          val times = dailyTimesFor(med.frequency)
+          val days = Regex("(\\d+)\\s*day", RegexOption.IGNORE_CASE)
+            .find(med.duration)?.groupValues?.getOrNull(1)?.toLongOrNull()
+          medicationRepository.addMedicationPlan(
+            MedicationPlan(
+              id = "med-${System.currentTimeMillis()}-${med.name.lowercase().take(4)}",
+              name = med.name,
+              dosage = med.dose,
+              frequency = med.frequency,
+              duration = med.duration,
+              instructions = med.instructions,
+              prescribingDoctor = prescription.doctorName,
+              startDateIso = today.toString(),
+              endDateIso = days?.let { today.plusDays(it - 1).toString() },
+              dailyTimes = times,
+              totalScheduledDoses = days?.let { (it * times.size).toInt() } ?: times.size,
+              dosesTaken = 0
+            )
           )
-        )
-      }
+        }
       onDone()
+    }
+  }
+
+  private fun dailyTimesFor(frequency: String): List<String> {
+    val normalized = frequency.lowercase()
+    return when {
+      normalized.contains("three") || normalized.contains("3 times") ||
+        normalized.contains("every 8") -> listOf("8:00 AM", "2:00 PM", "8:00 PM")
+      normalized.contains("twice") || normalized.contains("two times") ||
+        normalized.contains("every 12") -> listOf("8:00 AM", "8:00 PM")
+      normalized.contains("bedtime") || normalized.contains("night") -> listOf("9:00 PM")
+      else -> listOf("9:00 AM")
     }
   }
 }

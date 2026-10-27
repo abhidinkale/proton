@@ -17,8 +17,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Send
-import androidx.compose.material.icons.rounded.DoneAll
-import androidx.compose.material.icons.rounded.Shield
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -31,7 +31,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import health.dork.app.core.data.model.DeliveryStatus
 import health.dork.app.core.data.model.MessageSender
 import health.dork.app.core.designsystem.DorkShapes
 import health.dork.app.core.designsystem.DorkSpacing
@@ -66,7 +65,7 @@ fun ChatScreen(
       onBackClick = onBackClick
     )
 
-    // Care Context Security Notice
+    // Honest local-message notice
     Surface(
       color = DorkTheme.colors.surfaceSecondary,
       modifier = Modifier.fillMaxWidth()
@@ -76,14 +75,14 @@ fun ChatScreen(
         verticalAlignment = Alignment.CenterVertically
       ) {
         Icon(
-          imageVector = Icons.Rounded.Shield,
+          imageVector = Icons.Rounded.Lock,
           contentDescription = null,
           tint = MaterialTheme.colorScheme.primary,
           modifier = Modifier.size(16.dp)
         )
         Spacer(modifier = Modifier.width(DorkSpacing.xs))
         Text(
-          text = "Secure end-to-end clinical channel. Part of your permanent medical record.",
+          text = "Local care inbox. Messages are saved on this device and are not sent to a clinic in this build.",
           style = MaterialTheme.typography.bodySmall,
           color = DorkTheme.colors.textSecondary
         )
@@ -134,9 +133,9 @@ fun ChatScreen(
                 if (isMe) {
                   Spacer(modifier = Modifier.width(4.dp))
                   Icon(
-                    imageVector = Icons.Rounded.DoneAll,
-                    contentDescription = "Read",
-                    tint = if (msg.deliveryStatus == DeliveryStatus.READ) DorkTheme.colors.accentSlate else MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f),
+                    imageVector = Icons.Rounded.Check,
+                    contentDescription = "Saved on this device",
+                    tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f),
                     modifier = Modifier.size(14.dp)
                   )
                 }

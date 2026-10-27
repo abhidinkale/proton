@@ -1,6 +1,10 @@
 package health.dork.app.ui.records
 
-import androidx.compose.animation.AnimatedVisibility
+import android.content.Intent
+import android.net.Uri
+import android.provider.OpenableColumns
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,17 +18,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.CameraAlt
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Description
-import androidx.compose.material.icons.rounded.Folder
-import androidx.compose.material.icons.rounded.PhotoLibrary
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material.icons.rounded.FolderOpen
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -37,6 +38,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import health.dork.app.core.data.model.DocumentCategory
 import health.dork.app.core.data.model.HealthDocument
@@ -51,6 +54,12 @@ import health.dork.app.core.designsystem.components.DorkStatusType
 import health.dork.app.core.designsystem.components.DorkTextField
 import health.dork.app.core.designsystem.components.DorkTopBar
 
+private data class PickedFile(
+  val uri: String,
+  val displayName: String,
+  val sizeText: String
+)
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DocumentUploadScreen(
@@ -60,19 +69,38 @@ fun DocumentUploadScreen(
   modifier: Modifier = Modifier
 ) {
   val uiState by viewModel.uiState.collectAsState()
+  val context = LocalContext.current
   val scrollState = rememberScrollState()
 
-  var docTitle by remember { mutableStateOf("Chest X-Ray / Spirometry Analysis") }
-  var selectedCategory by remember { mutableStateOf(DocumentCategory.IMAGING_REPORT) }
-  var selectedSource by remember { mutableStateOf("File Picker") }
-  var uploadedDocResult by remember { mutableStateOf<HealthDocument?>(null) }
+  var pickedFile by remember { mutableStateOf<PickedFile?>(null) }
+  var docTitle by remember { mutableStateOf("") }
+  var selectedCategory by remember { mutableStateOf(DocumentCategory.LAB_REPORT) }
+  var errorMessage by remember { mutableStateOf<String?>(null) }
+  var uploadedDoc by remember { mutableStateOf<HealthDocument?>(null) }
 
-  if (uploadedDocResult != null) {
-    // OCR & Structured Extraction Summary
-    OcrExtractionSummaryView(
-      doc = uploadedDocResult!!,
-      onDone = onUploadDone
-    )
+  val picker = rememberLauncherForActivityResult(
+    contract = ActivityResultContracts.OpenDocument()
+  ) { uri: Uri? ->
+    if (uri == null) return@rememberLauncherForActivityResult
+    // Ask the system to keep the read grant across app restarts where the
+    // provider supports it, so the stored reference does not rot silently.
+    runCatching {
+      context.contentResolver.takePersistableUriPermission(
+        uri,
+        Intent.FLAG_GRANT_READ_URI_PERMISSION
+      )
+    }
+
+    val (name, size) = readFileMetadata(context, uri)
+    pickedFile = PickedFile(uri = uri.toString(), displayName = name, sizeText = size)
+    if (docTitle.isBlank()) {
+      docTitle = name.substringBeforeLast('.').replace('_', ' ').replace('-', ' ').trim()
+    }
+    errorMessage = null
+  }
+
+  if (uploadedDoc != null) {
+    StoredDocumentView(doc = uploadedDoc!!, onDone = onUploadDone)
     return
   }
 
@@ -82,8 +110,8 @@ fun DocumentUploadScreen(
       .background(MaterialTheme.colorScheme.background)
   ) {
     DorkTopBar(
-      title = "Upload document",
-      subtitle = "Original document is always preserved",
+      title = "Add a document",
+      subtitle = "The original file stays on this device",
       onBackClick = onBackClick
     )
 
@@ -94,37 +122,68 @@ fun DocumentUploadScreen(
         .padding(horizontal = DorkSpacing.screenHorizontalPadding, vertical = DorkSpacing.m)
     ) {
       Text(
-        text = "Select source",
+        text = "Choose a file",
         style = MaterialTheme.typography.titleMedium,
         color = DorkTheme.colors.textPrimary
       )
+      Spacer(modifier = Modifier.height(DorkSpacing.xs))
+      Text(
+        text = "Pick a PDF, image or scan from your device. Dork stores a reference to it and shows it in your timeline. Nothing is uploaded anywhere.",
+        style = MaterialTheme.typography.bodySmall,
+        color = DorkTheme.colors.textSecondary
+      )
+
       Spacer(modifier = Modifier.height(DorkSpacing.s))
 
-      Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(DorkSpacing.s)
+      DorkCard(
+        contentPadding = DorkSpacing.l,
+        backgroundColor = if (pickedFile != null) MaterialTheme.colorScheme.primaryContainer else DorkTheme.colors.surfaceSecondary,
+        borderColor = if (pickedFile != null) MaterialTheme.colorScheme.primary else DorkTheme.colors.surfaceBorderSubtle,
+        onClick = {
+          picker.launch(
+            arrayOf(
+              "application/pdf",
+              "image/*"
+            )
+          )
+        }
       ) {
-        SourceCard(
-          title = "Camera",
-          icon = Icons.Rounded.CameraAlt,
-          selected = selectedSource == "Camera",
-          onClick = { selectedSource = "Camera" },
-          modifier = Modifier.weight(1f)
-        )
-        SourceCard(
-          title = "Gallery",
-          icon = Icons.Rounded.PhotoLibrary,
-          selected = selectedSource == "Gallery",
-          onClick = { selectedSource = "Gallery" },
-          modifier = Modifier.weight(1f)
-        )
-        SourceCard(
-          title = "File",
-          icon = Icons.Rounded.Folder,
-          selected = selectedSource == "File Picker",
-          onClick = { selectedSource = "File Picker" },
-          modifier = Modifier.weight(1f)
-        )
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          Box(
+            modifier = Modifier
+              .size(48.dp)
+              .clip(CircleShape)
+              .background(MaterialTheme.colorScheme.surface),
+            contentAlignment = Alignment.Center
+          ) {
+            Icon(
+              imageVector = if (pickedFile == null) Icons.Rounded.FolderOpen else Icons.Rounded.Description,
+              contentDescription = null,
+              tint = MaterialTheme.colorScheme.primary,
+              modifier = Modifier.size(24.dp)
+            )
+          }
+          Spacer(modifier = Modifier.size(DorkSpacing.m))
+          Column(modifier = Modifier.weight(1f)) {
+            Text(
+              text = pickedFile?.displayName ?: "Browse this device",
+              style = MaterialTheme.typography.titleSmall,
+              color = DorkTheme.colors.textPrimary
+            )
+            Text(
+              text = pickedFile?.sizeText ?: "No file selected yet",
+              style = MaterialTheme.typography.bodySmall,
+              color = DorkTheme.colors.textSecondary
+            )
+          }
+          DorkStatusBadge(
+            text = if (pickedFile == null) "Required" else "Selected",
+            type = if (pickedFile == null) DorkStatusType.Warning else DorkStatusType.Success
+          )
+        }
       }
 
       Spacer(modifier = Modifier.height(DorkSpacing.l))
@@ -138,7 +197,7 @@ fun DocumentUploadScreen(
       DorkTextField(
         value = docTitle,
         onValueChange = { docTitle = it },
-        placeholder = "e.g. CBC Laboratory Report, Knee MRI..."
+        placeholder = "e.g. CBC Laboratory Report, Knee MRI"
       )
 
       Spacer(modifier = Modifier.height(DorkSpacing.l))
@@ -163,29 +222,61 @@ fun DocumentUploadScreen(
         }
       }
 
+      Spacer(modifier = Modifier.height(DorkSpacing.m))
+
+      DorkCard(
+        contentPadding = DorkSpacing.m,
+        backgroundColor = DorkTheme.colors.surfaceSecondary
+      ) {
+        Row(verticalAlignment = Alignment.Top) {
+          Icon(
+            imageVector = Icons.Rounded.Info,
+            contentDescription = null,
+            tint = DorkTheme.colors.textTertiary,
+            modifier = Modifier.size(18.dp)
+          )
+          Spacer(modifier = Modifier.size(DorkSpacing.s))
+          Text(
+            text = "This build does not run OCR or extract clinical values from uploads. You are storing the original document, and any information in it is not added to your lab results automatically.",
+            style = MaterialTheme.typography.bodySmall,
+            color = DorkTheme.colors.textSecondary
+          )
+        }
+      }
+
+      if (errorMessage != null) {
+        Spacer(modifier = Modifier.height(DorkSpacing.s))
+        Text(
+          text = errorMessage.orEmpty(),
+          style = MaterialTheme.typography.bodySmall,
+          color = DorkTheme.colors.critical
+        )
+      }
+
       Spacer(modifier = Modifier.height(DorkSpacing.xl))
 
       DorkButton(
-        text = "Upload & process with OCR",
+        text = "Store document",
         onClick = {
+          val file = pickedFile
+          if (file == null) {
+            errorMessage = "Choose a file before storing it."
+            return@DorkButton
+          }
           viewModel.uploadDocument(
-            title = docTitle,
+            title = docTitle.ifBlank { file.displayName.substringBeforeLast('.') },
             category = selectedCategory,
-            uri = "content://dork.health/docs/${System.currentTimeMillis()}.pdf"
-          )
-          uploadedDocResult = HealthDocument(
-            id = "doc-${System.currentTimeMillis()}",
-            title = docTitle,
-            category = selectedCategory,
-            uploadDate = "Today",
-            fileSizeText = "1.8 MB PDF",
-            originalUri = "content://dork.health/user/doc.pdf",
-            isOcrProcessed = true,
-            extractedText = "Automated OCR extraction complete: Diagnostic scan reviewed. Lung fields clear. No focal consolidation.",
-            structuredEntities = listOf("Imaging: Bilateral Lung Fields", "Impression: No focal consolidation", "Extraction: Verified AI Pipeline")
-          )
+            uri = file.uri,
+            fileSizeText = file.sizeText
+          ) { result ->
+            result.fold(
+              onSuccess = { uploadedDoc = it },
+              onFailure = { errorMessage = it.message ?: "Could not store that file." }
+            )
+          }
         },
-        loading = uiState.isUploading
+        loading = uiState.isUploading,
+        enabled = pickedFile != null && !uiState.isUploading
       )
 
       Spacer(modifier = Modifier.height(DorkSpacing.xxl))
@@ -194,42 +285,7 @@ fun DocumentUploadScreen(
 }
 
 @Composable
-private fun SourceCard(
-  title: String,
-  icon: androidx.compose.ui.graphics.vector.ImageVector,
-  selected: Boolean,
-  onClick: () -> Unit,
-  modifier: Modifier = Modifier
-) {
-  DorkCard(
-    modifier = modifier,
-    contentPadding = DorkSpacing.m,
-    onClick = onClick,
-    backgroundColor = if (selected) MaterialTheme.colorScheme.primaryContainer else DorkTheme.colors.surfaceSecondary,
-    borderColor = if (selected) MaterialTheme.colorScheme.primary else DorkTheme.colors.surfaceBorderSubtle
-  ) {
-    Column(
-      horizontalAlignment = Alignment.CenterHorizontally,
-      modifier = Modifier.fillMaxWidth()
-    ) {
-      Icon(
-        imageVector = icon,
-        contentDescription = null,
-        tint = if (selected) MaterialTheme.colorScheme.primary else DorkTheme.colors.textSecondary,
-        modifier = Modifier.size(24.dp)
-      )
-      Spacer(modifier = Modifier.height(4.dp))
-      Text(
-        text = title,
-        style = MaterialTheme.typography.labelSmall,
-        color = if (selected) MaterialTheme.colorScheme.primary else DorkTheme.colors.textPrimary
-      )
-    }
-  }
-}
-
-@Composable
-private fun OcrExtractionSummaryView(
+private fun StoredDocumentView(
   doc: HealthDocument,
   onDone: () -> Unit
 ) {
@@ -259,36 +315,33 @@ private fun OcrExtractionSummaryView(
     Spacer(modifier = Modifier.height(DorkSpacing.m))
 
     Text(
-      text = "Document stored & processed",
+      text = "Document stored",
       style = MaterialTheme.typography.headlineLarge,
       color = DorkTheme.colors.textPrimary
     )
 
     Spacer(modifier = Modifier.height(DorkSpacing.xs))
 
-    DorkStatusBadge(text = "AI / OCR Extracted Information", type = DorkStatusType.Info)
+    DorkStatusBadge(text = "On this device only", type = DorkStatusType.Success)
 
     Spacer(modifier = Modifier.height(DorkSpacing.l))
 
     DorkCard(contentPadding = DorkSpacing.m) {
       Column(modifier = Modifier.fillMaxWidth()) {
         Text(text = doc.title, style = MaterialTheme.typography.titleMedium, color = DorkTheme.colors.textPrimary)
-        Text(text = "${doc.category.label} · ${doc.fileSizeText}", style = MaterialTheme.typography.bodySmall, color = DorkTheme.colors.textSecondary)
-
-        Spacer(modifier = Modifier.height(DorkSpacing.s))
-
-        Text(text = "Extracted summary:", style = MaterialTheme.typography.labelSmall, color = DorkTheme.colors.textTertiary)
         Text(
-          text = doc.extractedText ?: "No text extracted.",
-          style = MaterialTheme.typography.bodyMedium,
-          color = DorkTheme.colors.textPrimary
+          text = "${doc.category.label} · ${doc.fileSizeText} · ${doc.uploadDate}",
+          style = MaterialTheme.typography.bodySmall,
+          color = DorkTheme.colors.textSecondary
         )
 
         Spacer(modifier = Modifier.height(DorkSpacing.s))
 
-        doc.structuredEntities.forEach { entity ->
-          Text(text = "• $entity", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
-        }
+        Text(
+          text = "The original file has been added to your records timeline. Dork has not read, interpreted or classified its contents.",
+          style = MaterialTheme.typography.bodyMedium,
+          color = DorkTheme.colors.textPrimary
+        )
       }
     }
 
@@ -299,4 +352,39 @@ private fun OcrExtractionSummaryView(
       onClick = onDone
     )
   }
+}
+
+private fun readFileMetadata(context: android.content.Context, uri: Uri): Pair<String, String> {
+  var name = uri.lastPathSegment?.substringAfterLast('/') ?: "Medical document"
+  var sizeBytes: Long? = null
+
+  runCatching {
+    context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+      if (cursor.moveToFirst()) {
+        val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+        if (nameIndex >= 0) {
+          name = cursor.getString(nameIndex) ?: name
+        }
+        val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
+        if (sizeIndex >= 0 && !cursor.isNull(sizeIndex)) {
+          sizeBytes = cursor.getLong(sizeIndex)
+        }
+      }
+    }
+  }
+
+  val resolvedType = context.contentResolver.getType(uri)
+  val extension = resolvedType?.substringAfterLast('/')?.uppercase()
+    ?: name.substringAfterLast('.', "").uppercase().ifBlank { "FILE" }
+
+  val sizeText = when (val bytes = sizeBytes) {
+    null -> extension
+    else -> when {
+      bytes >= 1024 * 1024 -> String.format("%.1f MB %s", bytes / (1024.0 * 1024.0), extension)
+      bytes >= 1024 -> String.format("%.0f KB %s", bytes / 1024.0, extension)
+      else -> "$bytes bytes $extension"
+    }
+  }
+
+  return name to sizeText
 }

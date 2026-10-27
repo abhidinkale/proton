@@ -9,6 +9,9 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 
 /**
  * Unit tests covering Specification Section 27, 28, 29, 71:
@@ -21,7 +24,7 @@ class MedicationRepositoryTest {
 
   @Test
   fun testMarkDoseTakenUpdatesStateAndAdherence() = runTest {
-    val repository = DorkMedicationRepository()
+    val repository = fixedClockRepository()
     val initialDoses = repository.todayDoses.first()
     val dueDose = initialDoses.first { it.state == MedicationDoseState.Due }
 
@@ -38,7 +41,7 @@ class MedicationRepositoryTest {
 
   @Test
   fun testMarkDoseSkippedUpdatesState() = runTest {
-    val repository = DorkMedicationRepository()
+    val repository = fixedClockRepository()
     val initialDoses = repository.todayDoses.first()
     val upcomingDose = initialDoses.first { it.state == MedicationDoseState.Upcoming }
 
@@ -49,6 +52,16 @@ class MedicationRepositoryTest {
     val updatedDose = updatedDoses.first { it.id == upcomingDose.id }
 
     assertEquals(MedicationDoseState.Skipped, updatedDose.state)
+  }
+
+  /**
+   * The seed schedules are anchored to the real day, so the clock is fixed to
+   * 3:00 PM on that same day. That guarantees at least one dose has passed
+   * (Due) and at least one is still ahead (Upcoming) whenever the suite runs.
+   */
+  private fun fixedClockRepository(): DorkMedicationRepository {
+    val fixedNow = LocalDateTime.of(LocalDate.now(), LocalTime.of(15, 0))
+    return DorkMedicationRepository(now = { fixedNow })
   }
 
   @Test

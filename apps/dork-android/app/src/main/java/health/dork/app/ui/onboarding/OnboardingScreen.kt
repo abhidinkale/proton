@@ -38,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import health.dork.app.core.data.model.BiologicalSex
 import health.dork.app.core.data.model.BloodGroup
@@ -112,9 +113,20 @@ fun OnboardingScreen(
 
       Spacer(modifier = Modifier.height(DorkSpacing.xl))
 
+      if (uiState.errorMessage != null) {
+        Text(
+          text = uiState.errorMessage.orEmpty(),
+          style = MaterialTheme.typography.bodySmall,
+          color = DorkTheme.colors.critical,
+          modifier = Modifier.padding(bottom = DorkSpacing.s, start = 4.dp)
+        )
+      }
+
       DorkButton(
         text = if (uiState.currentStep == 13) "Complete & enter Dork" else "Continue",
-        onClick = viewModel::nextStep
+        onClick = viewModel::nextStep,
+        loading = uiState.isSubmitting,
+        enabled = !uiState.isSubmitting
       )
     }
   }
@@ -167,9 +179,38 @@ private fun StepAccount(uiState: OnboardingUiState, viewModel: OnboardingViewMod
   Column(modifier = Modifier.fillMaxWidth()) {
     Text(text = "Create your account", style = MaterialTheme.typography.headlineLarge, color = DorkTheme.colors.textPrimary)
     Spacer(modifier = Modifier.height(DorkSpacing.xs))
-    Text(text = "Your identity is encrypted and private.", style = MaterialTheme.typography.bodyMedium, color = DorkTheme.colors.textSecondary)
+    Text(
+      text = "Your account is verified on this device. Your password is stretched with PBKDF2 and never stored in plain text.",
+      style = MaterialTheme.typography.bodyMedium,
+      color = DorkTheme.colors.textSecondary
+    )
     Spacer(modifier = Modifier.height(DorkSpacing.xl))
-    DorkTextField(value = uiState.email, onValueChange = viewModel::onEmailChange, label = "Email address")
+    DorkTextField(
+      value = uiState.email,
+      onValueChange = viewModel::onEmailChange,
+      label = "Email address",
+      placeholder = "you@example.com",
+      keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+    )
+    Spacer(modifier = Modifier.height(DorkSpacing.m))
+    DorkTextField(
+      value = uiState.password,
+      onValueChange = viewModel::onPasswordChange,
+      label = "Password",
+      placeholder = "At least 8 characters",
+      visualTransformation = PasswordVisualTransformation(),
+      helperText = "Use at least 8 characters. You will need this to sign in again.",
+      keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+    )
+    Spacer(modifier = Modifier.height(DorkSpacing.m))
+    DorkTextField(
+      value = uiState.confirmPassword,
+      onValueChange = viewModel::onConfirmPasswordChange,
+      label = "Confirm password",
+      placeholder = "Repeat your password",
+      visualTransformation = PasswordVisualTransformation(),
+      keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+    )
   }
 }
 
@@ -197,7 +238,11 @@ private fun StepDateOfBirth(uiState: OnboardingUiState, viewModel: OnboardingVie
       onValueChange = viewModel::onDobChange,
       label = "Date of birth (YYYY-MM-DD)",
       placeholder = "1998-05-12",
-      helperText = "Formatted: ${uiState.formattedBirthDate} · Dynamically calculated age: ${uiState.calculatedAge} years"
+      helperText = if (uiState.birthDateIso.isBlank()) {
+        "Example: 1998-05-12"
+      } else {
+        "Formatted: ${uiState.formattedBirthDate} · Calculated age: ${uiState.calculatedAge} years"
+      }
     )
   }
 }
@@ -231,9 +276,10 @@ private fun StepHeight(uiState: OnboardingUiState, viewModel: OnboardingViewMode
     Text(text = "Used alongside weight to track body metrics and medication dosages.", style = MaterialTheme.typography.bodyMedium, color = DorkTheme.colors.textSecondary)
     Spacer(modifier = Modifier.height(DorkSpacing.xl))
     DorkTextField(
-      value = uiState.heightCm.toString(),
+      value = if (uiState.heightCm > 0.0) uiState.heightCm.toString() else "",
       onValueChange = { it.toDoubleOrNull()?.let(viewModel::onHeightChange) },
       label = "Height (cm)",
+      placeholder = "e.g. 172",
       keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
     )
   }
@@ -251,9 +297,10 @@ private fun StepWeight(uiState: OnboardingUiState, viewModel: OnboardingViewMode
     )
     Spacer(modifier = Modifier.height(DorkSpacing.xl))
     DorkTextField(
-      value = uiState.weightKg.toString(),
+      value = if (uiState.weightKg > 0.0) uiState.weightKg.toString() else "",
       onValueChange = { it.toDoubleOrNull()?.let(viewModel::onWeightChange) },
       label = "Weight (kg)",
+      placeholder = "e.g. 68.5",
       keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
     )
   }
@@ -436,8 +483,14 @@ private fun StepComplete(uiState: OnboardingUiState) {
     DorkCard(contentPadding = DorkSpacing.m) {
       Column {
         Text(text = uiState.fullName, style = MaterialTheme.typography.titleMedium, color = DorkTheme.colors.textPrimary)
-        Text(text = "DOB: ${uiState.formattedBirthDate} (${uiState.calculatedAge} yrs) · Blood: ${uiState.bloodGroup.display}", style = MaterialTheme.typography.bodySmall, color = DorkTheme.colors.textSecondary)
-        Text(text = "Height: ${uiState.heightCm} cm · Weight: ${uiState.weightKg} kg (BMI: ${uiState.bmi ?: "--"})", style = MaterialTheme.typography.bodySmall, color = DorkTheme.colors.textSecondary)
+        Text(text = uiState.email, style = MaterialTheme.typography.bodySmall, color = DorkTheme.colors.textSecondary)
+        Text(text = "DOB: ${uiState.formattedBirthDate} · Blood: ${uiState.bloodGroup.display}", style = MaterialTheme.typography.bodySmall, color = DorkTheme.colors.textSecondary)
+        Text(
+          text = "Height: ${if (uiState.heightCm > 0) "${uiState.heightCm} cm" else "not set"} · " +
+            "Weight: ${if (uiState.weightKg > 0) "${uiState.weightKg} kg" else "not set"}",
+          style = MaterialTheme.typography.bodySmall,
+          color = DorkTheme.colors.textSecondary
+        )
       }
     }
   }

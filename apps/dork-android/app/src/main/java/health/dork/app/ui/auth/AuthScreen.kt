@@ -21,11 +21,11 @@ import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Mail
 import androidx.compose.material.icons.rounded.Shield
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material.icons.rounded.Visibility
+import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -35,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import health.dork.app.core.designsystem.DorkSpacing
 import health.dork.app.core.designsystem.DorkTheme
@@ -49,7 +50,7 @@ fun AuthScreen(
   modifier: Modifier = Modifier
 ) {
   val uiState by viewModel.uiState.collectAsState()
-  val isDemoMode by viewModel.isDemoMode.collectAsState()
+  val registeredEmail by viewModel.registeredEmail.collectAsState()
   val scrollState = rememberScrollState()
 
   Column(
@@ -61,7 +62,6 @@ fun AuthScreen(
     horizontalAlignment = Alignment.CenterHorizontally,
     verticalArrangement = Arrangement.Center
   ) {
-    // App Logo / Symbol
     Box(
       modifier = Modifier
         .size(68.dp)
@@ -94,17 +94,25 @@ fun AuthScreen(
 
     Spacer(modifier = Modifier.height(DorkSpacing.xxl))
 
-    DorkCard(
-      contentPadding = DorkSpacing.xl
-    ) {
+    DorkCard(contentPadding = DorkSpacing.xl) {
       Column(modifier = Modifier.fillMaxWidth()) {
         Text(
-          text = "Sign In",
+          text = "Sign in",
           style = MaterialTheme.typography.headlineMedium,
           color = DorkTheme.colors.textPrimary
         )
+        Spacer(modifier = Modifier.height(DorkSpacing.xxs))
+        Text(
+          text = if (registeredEmail == null) {
+            "This device has no patient account yet. Create one to start."
+          } else {
+            "Account on this device: $registeredEmail"
+          },
+          style = MaterialTheme.typography.bodySmall,
+          color = DorkTheme.colors.textSecondary
+        )
 
-        Spacer(modifier = Modifier.height(DorkSpacing.s))
+        Spacer(modifier = Modifier.height(DorkSpacing.m))
 
         DorkTextField(
           value = uiState.emailInput,
@@ -128,8 +136,12 @@ fun AuthScreen(
           value = uiState.passwordInput,
           onValueChange = viewModel::onPasswordChange,
           label = "Password",
-          placeholder = "••••••••",
-          visualTransformation = PasswordVisualTransformation(),
+          placeholder = "At least 8 characters",
+          visualTransformation = if (uiState.passwordVisible) {
+            VisualTransformation.None
+          } else {
+            PasswordVisualTransformation()
+          },
           leadingIcon = {
             Icon(
               imageVector = Icons.Rounded.Lock,
@@ -138,6 +150,20 @@ fun AuthScreen(
               modifier = Modifier.size(18.dp)
             )
           },
+          trailingIcon = {
+            IconButton(onClick = viewModel::togglePasswordVisibility) {
+              Icon(
+                imageVector = if (uiState.passwordVisible) {
+                  Icons.Rounded.VisibilityOff
+                } else {
+                  Icons.Rounded.Visibility
+                },
+                contentDescription = if (uiState.passwordVisible) "Hide password" else "Show password",
+                tint = DorkTheme.colors.textTertiary,
+                modifier = Modifier.size(18.dp)
+              )
+            }
+          },
           errorMessage = uiState.errorMessage,
           keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
         )
@@ -145,7 +171,7 @@ fun AuthScreen(
         Spacer(modifier = Modifier.height(DorkSpacing.l))
 
         DorkButton(
-          text = "Sign in to Dork",
+          text = "Sign in",
           onClick = viewModel::signIn,
           loading = uiState.isLoading,
           variant = DorkButtonVariant.Primary
@@ -154,7 +180,7 @@ fun AuthScreen(
         Spacer(modifier = Modifier.height(DorkSpacing.s))
 
         DorkButton(
-          text = "New to Dork? Create account",
+          text = "Create a new account",
           onClick = viewModel::startSignUp,
           variant = DorkButtonVariant.Ghost
         )
@@ -163,20 +189,12 @@ fun AuthScreen(
 
     Spacer(modifier = Modifier.height(DorkSpacing.xl))
 
-    // Demo Mode Card
     DorkCard(
       contentPadding = DorkSpacing.m,
-      backgroundColor = DorkTheme.colors.surfaceSecondary.copy(alpha = 0.6f)
+      backgroundColor = DorkTheme.colors.surfaceSecondary
     ) {
-      Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-      ) {
-        Row(
-          verticalAlignment = Alignment.CenterVertically,
-          modifier = Modifier.weight(1f)
-        ) {
+      Column(modifier = Modifier.fillMaxWidth()) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
           Icon(
             imageVector = Icons.Rounded.Shield,
             contentDescription = null,
@@ -184,29 +202,35 @@ fun AuthScreen(
             modifier = Modifier.size(20.dp)
           )
           Spacer(modifier = Modifier.width(DorkSpacing.s))
-          Column {
-            Text(
-              text = "Demo Synthetic Mode",
-              style = MaterialTheme.typography.titleSmall,
-              color = DorkTheme.colors.textPrimary
-            )
-            Text(
-              text = "Pre-loaded with Alex Morgan synthetic patient data",
-              style = MaterialTheme.typography.bodySmall,
-              color = DorkTheme.colors.textSecondary
-            )
-          }
-        }
-
-        Switch(
-          checked = isDemoMode,
-          onCheckedChange = viewModel::toggleDemoMode,
-          colors = SwitchDefaults.colors(
-            checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-            checkedTrackColor = MaterialTheme.colorScheme.primary
+          Text(
+            text = "Synthetic demo patient",
+            style = MaterialTheme.typography.titleSmall,
+            color = DorkTheme.colors.textPrimary
           )
+        }
+        Spacer(modifier = Modifier.height(DorkSpacing.xxs))
+        Text(
+          text = "Open Alex Morgan's fictional record to explore scheduling, doses, records and the on-device assistant. No real patient data is involved.",
+          style = MaterialTheme.typography.bodySmall,
+          color = DorkTheme.colors.textSecondary
+        )
+        Spacer(modifier = Modifier.height(DorkSpacing.s))
+        DorkButton(
+          text = "Open demo record",
+          onClick = viewModel::signInDemo,
+          variant = DorkButtonVariant.Secondary,
+          enabled = !uiState.isLoading
         )
       }
     }
+
+    Spacer(modifier = Modifier.height(DorkSpacing.l))
+
+    Text(
+      text = "Accounts are verified on this device. Profile data never leaves it.",
+      style = MaterialTheme.typography.bodySmall,
+      color = DorkTheme.colors.textTertiary,
+      modifier = Modifier.padding(horizontal = DorkSpacing.m)
+    )
   }
 }

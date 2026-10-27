@@ -1,5 +1,7 @@
 package health.dork.app.ui.profile
 
+import android.content.Context
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -20,31 +22,36 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material.icons.rounded.DarkMode
+import androidx.compose.material.icons.rounded.DeleteForever
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.Emergency
-import androidx.compose.material.icons.rounded.Favorite
-import androidx.compose.material.icons.rounded.Group
 import androidx.compose.material.icons.rounded.Lock
-import androidx.compose.material.icons.rounded.Logout
+import androidx.compose.material.icons.rounded.LocalHospital
 import androidx.compose.material.icons.rounded.Medication
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.Shield
-import androidx.compose.material.icons.rounded.Watch
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import health.dork.app.core.designsystem.DorkSpacing
 import health.dork.app.core.designsystem.DorkTheme
@@ -61,12 +68,16 @@ fun ProfileScreen(
   onNavigateToMedicalId: () -> Unit,
   onNavigateToMedications: () -> Unit,
   onNavigateToDocuments: () -> Unit,
+  onNavigateToClinic: () -> Unit,
   onLogout: () -> Unit,
+  onEraseAllData: () -> Unit,
   modifier: Modifier = Modifier
 ) {
   val uiState by viewModel.uiState.collectAsState()
   val profile = uiState.profile ?: return
+  val context = LocalContext.current
   val scrollState = rememberScrollState()
+  var showEraseDialog by remember { mutableStateOf(false) }
 
   Column(
     modifier = modifier
@@ -221,13 +232,19 @@ fun ProfileScreen(
       SettingsRow(title = "My Health Profile", subtitle = "Vitals, conditions, allergies & history", icon = Icons.Rounded.Person, onClick = onNavigateToHealthProfile)
       SettingsRow(title = "My Medications", subtitle = "Current schedules & reminders", icon = Icons.Rounded.Medication, onClick = onNavigateToMedications)
       SettingsRow(title = "My Documents", subtitle = "Uploaded lab reports & discharge notes", icon = Icons.Rounded.Description, onClick = onNavigateToDocuments)
+      SettingsRow(
+        title = "My clinic",
+        subtitle = "Link a clinic code and hand over your record",
+        icon = Icons.Rounded.LocalHospital,
+        onClick = onNavigateToClinic
+      )
     }
 
     Spacer(modifier = Modifier.height(DorkSpacing.xl))
 
-    // ECOSYSTEM PREVIEW (Section 38 & 39)
+    // DATA & SHARING
     Text(
-      text = "Ecosystem Integration",
+      text = "Data & sharing",
       style = MaterialTheme.typography.titleMedium,
       color = DorkTheme.colors.textSecondary
     )
@@ -235,16 +252,26 @@ fun ProfileScreen(
 
     Column(verticalArrangement = Arrangement.spacedBy(DorkSpacing.xs)) {
       SettingsRow(
-        title = "Family & Dependents",
-        subtitle = "Architecture ready with isolated clinical boundaries",
-        icon = Icons.Rounded.Group,
-        badgeText = "Preview"
+        title = "Share health summary",
+        subtitle = "Send a plain-text snapshot to any app you choose",
+        icon = Icons.Rounded.Share,
+        onClick = {
+          shareText(
+            context = context,
+            subject = "Health summary — ${profile.fullName}",
+            text = viewModel.buildHealthSummary()
+          )
+        }
       )
       SettingsRow(
-        title = "Android Health Connect",
-        subtitle = "Wearables, steps, sleep, and heart biometrics",
-        icon = Icons.Rounded.Watch,
-        badgeText = "Connected"
+        title = if (uiState.isDemoMode) "Synthetic record" else "Stored on this device",
+        subtitle = if (uiState.isDemoMode) {
+          "Fictional data for evaluation. Nothing leaves the device unless you share it."
+        } else {
+          "Profile, records and messages are local. No clinic server is connected."
+        },
+        icon = Icons.Rounded.Shield,
+        badgeText = if (uiState.isDemoMode) "Demo" else "Local"
       )
     }
 
@@ -252,7 +279,7 @@ fun ProfileScreen(
 
     // PREFERENCES & SECURITY
     Text(
-      text = "Preferences & Security",
+      text = "Preferences & security",
       style = MaterialTheme.typography.titleMedium,
       color = DorkTheme.colors.textSecondary
     )
@@ -265,14 +292,26 @@ fun ProfileScreen(
           horizontalArrangement = Arrangement.SpaceBetween,
           verticalAlignment = Alignment.CenterVertically
         ) {
-          Column {
-            Text(text = "Medication reminders", style = MaterialTheme.typography.titleSmall, color = DorkTheme.colors.textPrimary)
-            Text(text = "Push alerts when a dose is due", style = MaterialTheme.typography.bodySmall, color = DorkTheme.colors.textSecondary)
+          Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+            Icon(
+              imageVector = Icons.Rounded.DarkMode,
+              contentDescription = null,
+              tint = MaterialTheme.colorScheme.primary,
+              modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(DorkSpacing.s))
+            Column {
+              Text(text = "Dark appearance", style = MaterialTheme.typography.titleSmall, color = DorkTheme.colors.textPrimary)
+              Text(text = "Warm charcoal, saved across launches", style = MaterialTheme.typography.bodySmall, color = DorkTheme.colors.textSecondary)
+            }
           }
           Switch(
-            checked = uiState.notificationRemindersEnabled,
-            onCheckedChange = viewModel::toggleNotificationReminders,
-            colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.onPrimary, checkedTrackColor = MaterialTheme.colorScheme.primary)
+            checked = uiState.isDarkTheme,
+            onCheckedChange = { viewModel.toggleTheme() },
+            colors = SwitchDefaults.colors(
+              checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+              checkedTrackColor = MaterialTheme.colorScheme.primary
+            )
           )
         }
 
@@ -283,14 +322,77 @@ fun ProfileScreen(
           horizontalArrangement = Arrangement.SpaceBetween,
           verticalAlignment = Alignment.CenterVertically
         ) {
-          Column {
-            Text(text = "Synthetic Demo Mode", style = MaterialTheme.typography.titleSmall, color = DorkTheme.colors.textPrimary)
-            Text(text = "Use synthetic patient data (Alex Morgan)", style = MaterialTheme.typography.bodySmall, color = DorkTheme.colors.textSecondary)
+          Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+            Icon(
+              imageVector = Icons.Rounded.Medication,
+              contentDescription = null,
+              tint = MaterialTheme.colorScheme.primary,
+              modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(DorkSpacing.s))
+            Column {
+              Text(text = "Medication reminders", style = MaterialTheme.typography.titleSmall, color = DorkTheme.colors.textPrimary)
+              Text(text = "Show due-dose prompts inside the app", style = MaterialTheme.typography.bodySmall, color = DorkTheme.colors.textSecondary)
+            }
           }
           Switch(
-            checked = uiState.isDemoMode,
-            onCheckedChange = viewModel::toggleDemoMode,
-            colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.onPrimary, checkedTrackColor = MaterialTheme.colorScheme.primary)
+            checked = uiState.notificationRemindersEnabled,
+            onCheckedChange = viewModel::toggleNotificationReminders,
+            colors = SwitchDefaults.colors(
+              checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+              checkedTrackColor = MaterialTheme.colorScheme.primary
+            )
+          )
+        }
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = DorkSpacing.s), color = DorkTheme.colors.surfaceBorderSubtle)
+
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.SpaceBetween,
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+            Icon(
+              imageVector = Icons.Rounded.Notifications,
+              contentDescription = null,
+              tint = MaterialTheme.colorScheme.primary,
+              modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(DorkSpacing.s))
+            Column {
+              Text(text = "Care messages", style = MaterialTheme.typography.titleSmall, color = DorkTheme.colors.textPrimary)
+              Text(text = "Show the local care inbox in the app", style = MaterialTheme.typography.bodySmall, color = DorkTheme.colors.textSecondary)
+            }
+          }
+          Switch(
+            checked = uiState.notificationDoctorMessagesEnabled,
+            onCheckedChange = viewModel::toggleNotificationChat,
+            colors = SwitchDefaults.colors(
+              checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+              checkedTrackColor = MaterialTheme.colorScheme.primary
+            )
+          )
+        }
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = DorkSpacing.s), color = DorkTheme.colors.surfaceBorderSubtle)
+
+        Row(verticalAlignment = Alignment.CenterVertically) {
+          Icon(
+            imageVector = Icons.Rounded.Lock,
+            contentDescription = null,
+            tint = DorkTheme.colors.textTertiary,
+            modifier = Modifier.size(18.dp)
+          )
+          Spacer(modifier = Modifier.width(DorkSpacing.s))
+          Text(
+            text = if (uiState.registeredEmail != null) {
+              "Signed in as ${uiState.registeredEmail} on this device."
+            } else {
+              "Synthetic demo session. Sign out to create a device account."
+            },
+            style = MaterialTheme.typography.bodySmall,
+            color = DorkTheme.colors.textSecondary
           )
         }
       }
@@ -310,7 +412,45 @@ fun ProfileScreen(
       }
     )
 
+    Spacer(modifier = Modifier.height(DorkSpacing.s))
+
+    DorkButton(
+      text = "Erase all data on this device",
+      onClick = { showEraseDialog = true },
+      variant = DorkButtonVariant.Critical,
+      leadingIcon = {
+        Icon(imageVector = Icons.Rounded.DeleteForever, contentDescription = null, modifier = Modifier.size(16.dp))
+      }
+    )
+
     Spacer(modifier = Modifier.height(DorkSpacing.xxl))
+  }
+
+  if (showEraseDialog) {
+    AlertDialog(
+      onDismissRequest = { showEraseDialog = false },
+      title = { Text("Erase all data?") },
+      text = {
+        Text(
+          "This permanently deletes your account, health profile, medications, appointments, documents, messages and settings from this device. It cannot be undone."
+        )
+      },
+      confirmButton = {
+        TextButton(
+          onClick = {
+            showEraseDialog = false
+            onEraseAllData()
+          }
+        ) {
+          Text("Erase everything", color = DorkTheme.colors.critical)
+        }
+      },
+      dismissButton = {
+        TextButton(onClick = { showEraseDialog = false }) {
+          Text("Cancel")
+        }
+      }
+    )
   }
 }
 
@@ -345,4 +485,14 @@ private fun SettingsRow(
       }
     }
   }
+}
+
+private fun shareText(context: Context, subject: String, text: String) {
+  if (text.isBlank()) return
+  val intent = Intent(Intent.ACTION_SEND).apply {
+    type = "text/plain"
+    putExtra(Intent.EXTRA_SUBJECT, subject)
+    putExtra(Intent.EXTRA_TEXT, text)
+  }
+  context.startActivity(Intent.createChooser(intent, "Share health summary"))
 }

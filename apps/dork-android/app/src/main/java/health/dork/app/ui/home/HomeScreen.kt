@@ -29,18 +29,21 @@ import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material.icons.rounded.MedicalServices
 import androidx.compose.material.icons.rounded.Medication
-import androidx.compose.material.icons.rounded.MonitorHeart
 import androidx.compose.material.icons.rounded.NotificationsNone
 import androidx.compose.material.icons.rounded.Scale
 import androidx.compose.material.icons.rounded.Upload
 import androidx.compose.material.icons.rounded.Videocam
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -53,6 +56,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import health.dork.app.core.data.model.ConsultationType
 import health.dork.app.core.data.model.HealthRecordItem
+import health.dork.app.core.data.model.MedicationDose
+import health.dork.app.core.data.model.LoopStage
+import health.dork.app.core.data.model.NextAction
+import health.dork.app.core.data.model.NextActionKind
+import health.dork.app.core.data.model.NextActionUrgency
+import health.dork.app.core.data.util.DateCalculators
 import health.dork.app.core.designsystem.DorkColors
 import health.dork.app.core.designsystem.DorkShapes
 import health.dork.app.core.designsystem.DorkSpacing
@@ -65,7 +74,10 @@ import health.dork.app.core.designsystem.components.DorkTag
 import health.dork.app.core.designsystem.components.DorkTagTone
 import health.dork.app.core.designsystem.components.DotNumber
 import health.dork.app.core.designsystem.components.DotSparkline
+import health.dork.app.core.designsystem.components.MedicationDoseState
 import kotlin.math.roundToInt
+import java.time.LocalDateTime
+import java.time.LocalTime
 
 /**
  * Patient home, rebuilt around the editorial instrument language:
@@ -81,6 +93,8 @@ fun HomeScreen(
   onNavigateToAi: () -> Unit,
   onNavigateToMedications: () -> Unit,
   onAppointmentClick: (String) -> Unit,
+  onProfileClick: () -> Unit,
+  onNextAction: (NextAction) -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   val uiState by viewModel.uiState.collectAsState()
@@ -93,13 +107,17 @@ fun HomeScreen(
   HomeContent(
     uiState = uiState,
     onCheckIn = viewModel::onCheckInClick,
-    onDoseTaken = viewModel::markNextDoseTaken,
-    onDoseSkipped = viewModel::skipNextDose,
+    onDoseTaken = viewModel::markDoseTaken,
+    onDoseSkipped = viewModel::skipDose,
     onNavigateToCare = onNavigateToCare,
     onNavigateToRecords = onNavigateToRecords,
     onNavigateToAi = onNavigateToAi,
     onNavigateToMedications = onNavigateToMedications,
     onAppointmentClick = onAppointmentClick,
+    onProfileClick = onProfileClick,
+    onNextAction = { action ->
+      if (!viewModel.performInPlace(action)) onNextAction(action)
+    },
     modifier = modifier
   )
 }
@@ -117,9 +135,12 @@ fun HomeContent(
   onNavigateToAi: () -> Unit,
   onNavigateToMedications: () -> Unit,
   onAppointmentClick: (String) -> Unit,
+  onProfileClick: () -> Unit,
+  onNextAction: (NextAction) -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   val scrollState = rememberScrollState()
+  var showReminders by remember { mutableStateOf(false) }
 
   val patientName = uiState.patient?.fullName?.split(" ")?.firstOrNull() ?: "there"
   val nextAppointment = uiState.nextAppointment
@@ -128,7 +149,59 @@ fun HomeContent(
   val adherence = if (uiState.todayDoseCount > 0) {
     (uiState.takenDoseCount * 100) / uiState.todayDoseCount
   } else {
-    100
+    0
+  }
+
+  val greeting = when (LocalTime.now().hour) {
+    in 5..11 -> "GOOD MORNING"
+    in 12..17 -> "GOOD AFTERNOON"
+    else -> "GOOD EVENING"
+  }
+
+  val timelineEvents = buildList {
+    uiState.todayDoses.forEach { dose ->
+      DateCalculators.parseClinicTime(dose.scheduledTime)?.let { time ->
+        add(
+          TimelineEvent(
+            fraction = time.toSecondOfDay() / 86_400f,
+            color = when (dose.state) {
+              MedicationDoseState.Taken, MedicationDoseState.Completed -> DorkColors.SageInk
+              MedicationDoseState.Skipped -> DorkColors.TextTertiaryLight
+              MedicationDoseState.Due -> DorkColors.PeachInk
+              MedicationDoseState.Upcoming -> DorkColors.AccentInk
+            }
+          )
+        )
+      }
+    }
+    uiState.todayAppointments.forEach { appointment ->
+      runCatching { LocalDateTime.parse(appointment.dateIso).toLocalTime() }.getOrNull()?.let { time ->
+        add(TimelineEvent(time.toSecondOfDay() / 86_400f, DorkColors.PinkInk))
+      }
+    }
+  }.sortedBy { it.fraction }
+
+  val doseSeries = doseSeries(uiState.todayDoses)
+  val adherenceSeries = adherenceSeries(uiState.todayDoses)
+
+  val dayTimes = buildList {
+    uiState.todayDoses.forEach { dose ->
+      DateCalculators.parseClinicTime(dose.scheduledTime)?.let(::add)
+    }
+    uiState.todayAppointments.forEach { appointment ->
+      runCatching { LocalDateTime.parse(appointment.dateIso).toLocalTime() }
+        .getOrNull()?.let(::add)
+    }
+  }.sorted()
+
+  val axisTimes = if (dayTimes.isEmpty()) {
+    listOf(LocalTime.of(8, 0), LocalTime.of(13, 0), LocalTime.of(20, 0))
+  } else {
+    listOf(
+      dayTimes.first(),
+      dayTimes[dayTimes.size / 2],
+      dayTimes.last()
+    ).distinct()
   }
 
   Column(
@@ -167,13 +240,16 @@ fun HomeContent(
       ) {
         CircleIconButton(
           icon = Icons.Rounded.NotificationsNone,
-          contentDescription = "Notifications"
+          contentDescription = "Reminders",
+          showIndicator = uiState.todayDoseCount > uiState.takenDoseCount || uiState.todayAppointments.isNotEmpty(),
+          onClick = { showReminders = true }
         )
         Box(
           modifier = Modifier
             .size(38.dp)
             .clip(CircleShape)
-            .background(DorkTheme.colors.textPrimary),
+            .background(DorkTheme.colors.textPrimary)
+            .clickable(onClick = onProfileClick),
           contentAlignment = Alignment.Center
         ) {
           Text(
@@ -189,7 +265,7 @@ fun HomeContent(
 
     // ── Greeting ────────────────────────────────────────────────────────
     Text(
-      text = "GOOD MORNING",
+      text = greeting,
       style = DorkType.eyebrow,
       color = DorkTheme.colors.textTertiary
     )
@@ -202,12 +278,17 @@ fun HomeContent(
     Spacer(modifier = Modifier.height(8.dp))
     Text(
       text = buildString {
-        append(uiState.todayAppointmentCount.coerceAtLeast(1))
-        append(if (uiState.todayAppointmentCount == 1) " visit" else " visits")
-        append(" today · ")
+        if (uiState.todayAppointmentCount == 0) {
+          append("No visits today")
+        } else {
+          append(uiState.todayAppointmentCount)
+          append(if (uiState.todayAppointmentCount == 1) " visit" else " visits")
+          append(" today")
+        }
+        append(" · ")
         append(uiState.todayDoseCount)
         append(if (uiState.todayDoseCount == 1) " dose" else " doses")
-        append(" scheduled. Everything in one calm place.")
+        append(" scheduled.")
       },
       style = MaterialTheme.typography.bodyMedium,
       color = DorkTheme.colors.textSecondary
@@ -215,15 +296,28 @@ fun HomeContent(
 
     Spacer(modifier = Modifier.height(24.dp))
 
+    // ── Next step (the loop's single decision) ──────────────────────────
+    uiState.nextAction?.let { action ->
+      NextStepCard(
+        action = action,
+        onAction = { onNextAction(action) }
+      )
+      Spacer(modifier = Modifier.height(14.dp))
+      uiState.loop?.let { loop ->
+        LoopStrip(stage = loop.stage)
+      }
+      Spacer(modifier = Modifier.height(22.dp))
+    }
+
     // ── Metric grid ─────────────────────────────────────────────────────
     Row(
       modifier = Modifier.fillMaxWidth(),
       horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
       MetricCell(
-        value = uiState.todayAppointmentCount.coerceAtLeast(1).toString(),
+        value = uiState.todayAppointmentCount.toString(),
         tag = "Visits",
-        caption = nextAppointment?.dateTimeString ?: "Nothing booked",
+        caption = nextAppointment?.displayDateTime ?: "Nothing booked",
         modifier = Modifier.weight(1f)
       )
       MetricCell(
@@ -239,15 +333,15 @@ fun HomeContent(
       horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
       MetricCell(
-        value = uiState.recentRecords.size.toString(),
-        tag = "Records",
-        caption = "Latest results",
+        value = uiState.takenDoseCount.toString(),
+        tag = "Taken",
+        caption = if (uiState.todayDoseCount == 0) "No doses due" else "$adherence% of today",
         modifier = Modifier.weight(1f)
       )
       MetricCell(
-        value = uiState.restingHeartRateBpm.toString(),
-        tag = "Bpm",
-        caption = "Resting, normal",
+        value = uiState.recentRecords.size.toString(),
+        tag = "Records",
+        caption = "Latest results",
         modifier = Modifier.weight(1f)
       )
     }
@@ -260,10 +354,14 @@ fun HomeContent(
       horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
       ScoreCard(
-        title = "Balance",
-        value = "${uiState.takenDoseCount}/${uiState.todayDoseCount.coerceAtLeast(1)}",
-        caption = if (adherence >= 80) "On track" else "Needs a nudge",
-        series = listOf(0.22f, 0.3f, 0.28f, 0.42f, 0.5f, 0.46f, 0.62f, 0.7f, 0.66f, 0.78f),
+        title = "Doses",
+        value = "${uiState.takenDoseCount}/${uiState.todayDoseCount}",
+        caption = when {
+          uiState.todayDoseCount == 0 -> "Nothing scheduled"
+          uiState.takenDoseCount >= uiState.todayDoseCount -> "All taken"
+          else -> "${uiState.todayDoseCount - uiState.takenDoseCount} left today"
+        },
+        series = doseSeries,
         gradient = listOf(
           DorkColors.GradientGreenStart,
           DorkColors.GradientGreenMid,
@@ -278,15 +376,15 @@ fun HomeContent(
         title = "Adherence",
         value = adherence.toString(),
         suffix = "%",
-        caption = "Last 7 days",
-        series = listOf(0.55f, 0.62f, 0.58f, 0.7f, 0.74f, 0.7f, 0.82f, 0.86f, 0.84f, 0.92f),
+        caption = "Taken today",
+        series = adherenceSeries,
         gradient = listOf(
           DorkColors.GradientEmberStart,
           DorkColors.GradientEmberMid,
           DorkColors.GradientEmberAccent,
           DorkColors.GradientEmberEnd
         ),
-        badge = "Stable",
+        badge = "Today",
         modifier = Modifier.weight(1f)
       )
     }
@@ -317,7 +415,11 @@ fun HomeContent(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        DayTimeline(modifier = Modifier.fillMaxWidth())
+        DayTimeline(
+          events = timelineEvents,
+          nowFraction = LocalTime.now().toSecondOfDay() / 86_400f,
+          modifier = Modifier.fillMaxWidth()
+        )
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -325,9 +427,13 @@ fun HomeContent(
           modifier = Modifier.fillMaxWidth(),
           horizontalArrangement = Arrangement.SpaceBetween
         ) {
-          Text(text = "08:00", style = DorkType.mono, color = DorkTheme.colors.textTertiary)
-          Text(text = "13:00", style = DorkType.mono, color = DorkTheme.colors.textTertiary)
-          Text(text = "20:00", style = DorkType.mono, color = DorkTheme.colors.textTertiary)
+          axisTimes.forEach { time ->
+            Text(
+              text = DateCalculators.formatTimeOfDay(time),
+              style = DorkType.mono,
+              color = DorkTheme.colors.textTertiary
+            )
+          }
         }
       }
     }
@@ -409,7 +515,7 @@ fun HomeContent(
           ) {
             MetaLine(
               icon = Icons.Rounded.CalendarToday,
-              text = nextAppointment.dateTimeString,
+              text = nextAppointment.displayDateTime,
               modifier = Modifier.weight(1f)
             )
             MetaLine(
@@ -485,7 +591,7 @@ fun HomeContent(
     Spacer(modifier = Modifier.height(22.dp))
 
     // ── Next dose ───────────────────────────────────────────────────────
-    if (nextDose != null) {
+    if (nextDose != null && uiState.medicationRemindersEnabled) {
       SectionHeader(
         title = "Next dose",
         action = "Schedule",
@@ -641,17 +747,19 @@ fun HomeContent(
       SnapshotCard(
         label = "Weight",
         icon = Icons.Rounded.Scale,
-        value = formatWeight(uiState.patient?.weightKg ?: 68.5),
-        unit = "kg",
-        caption = "BMI ${uiState.patient?.bmi?.let { formatWeight(it) } ?: "23.2"} · ${uiState.patient?.bmiCategory ?: "Healthy"}",
+        value = uiState.patient?.let { formatWeight(it.weightKg) } ?: "—",
+        unit = if (uiState.patient != null) "kg" else "",
+        caption = uiState.patient?.let { patient ->
+          patient.bmi?.let { bmi -> "BMI ${formatWeight(bmi)} · ${patient.bmiCategory}" }
+        } ?: "Not recorded",
         modifier = Modifier.weight(1f)
       )
       SnapshotCard(
-        label = "Resting",
-        icon = Icons.Rounded.MonitorHeart,
-        value = uiState.restingHeartRateBpm.toString(),
-        unit = "bpm",
-        caption = "Normal resting range",
+        label = "Adherence",
+        icon = Icons.Rounded.Check,
+        value = adherence.toString(),
+        unit = "%",
+        caption = "${uiState.takenDoseCount} of ${uiState.todayDoseCount} taken today",
         modifier = Modifier.weight(1f)
       )
     }
@@ -689,16 +797,168 @@ fun HomeContent(
       horizontalArrangement = Arrangement.Center,
       verticalAlignment = Alignment.CenterVertically
     ) {
-      DorkTag(text = "Synthetic", tone = DorkTagTone.Lime)
+      DorkTag(
+        text = if (uiState.isDemoMode) "Synthetic" else "On-device",
+        tone = DorkTagTone.Lime
+      )
       Spacer(modifier = Modifier.width(8.dp))
       Text(
-        text = "Your clinician signs every clinical write.",
+        text = if (uiState.isDemoMode) {
+          "Fictional record for evaluation."
+        } else {
+          "Your data stays on this device."
+        },
         style = MaterialTheme.typography.labelSmall,
         color = DorkTheme.colors.textTertiary
       )
     }
 
     Spacer(modifier = Modifier.height(8.dp))
+  }
+
+  if (showReminders) {
+    RemindersSheet(
+      uiState = uiState,
+      onDismiss = { showReminders = false },
+      onNavigateToCare = {
+        showReminders = false
+        onNavigateToCare()
+      },
+      onNavigateToMedications = {
+        showReminders = false
+        onNavigateToMedications()
+      }
+    )
+  }
+}
+
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+private fun RemindersSheet(
+  uiState: HomeUiState,
+  onDismiss: () -> Unit,
+  onNavigateToCare: () -> Unit,
+  onNavigateToMedications: () -> Unit
+) {
+  val dueDoses = uiState.todayDoses.filter {
+    it.state == MedicationDoseState.Due || it.state == MedicationDoseState.Upcoming
+  }
+  val hasAnything = uiState.todayAppointments.isNotEmpty() ||
+    dueDoses.isNotEmpty() ||
+    uiState.recentRecords.isNotEmpty()
+
+  ModalBottomSheet(onDismissRequest = onDismiss) {
+    Column(
+      modifier = Modifier
+        .fillMaxWidth()
+        .padding(horizontal = DorkSpacing.screenHorizontalPadding)
+        .padding(bottom = 28.dp)
+    ) {
+      Text(
+        text = "Today",
+        style = MaterialTheme.typography.headlineMedium,
+        color = DorkTheme.colors.textPrimary
+      )
+      Spacer(modifier = Modifier.height(4.dp))
+      Text(
+        text = "In-app reminders only. This build does not post system notifications.",
+        style = MaterialTheme.typography.bodySmall,
+        color = DorkTheme.colors.textSecondary
+      )
+
+      Spacer(modifier = Modifier.height(16.dp))
+
+      if (!hasAnything) {
+        Text(
+          text = "Nothing is scheduled today.",
+          style = MaterialTheme.typography.bodyMedium,
+          color = DorkTheme.colors.textSecondary
+        )
+      }
+
+      uiState.todayAppointments.forEach { appointment ->
+        ReminderRow(
+          icon = Icons.Rounded.CalendarToday,
+          title = appointment.doctorName,
+          subtitle = "${appointment.displayDateTime} · ${appointment.clinicLocation}"
+        )
+      }
+
+      dueDoses.forEach { dose ->
+        ReminderRow(
+          icon = Icons.Rounded.Medication,
+          title = "${dose.name} · ${dose.dosage}",
+          subtitle = "${dose.scheduledTime} · ${dose.state.name.lowercase()}"
+        )
+      }
+
+      if (uiState.todayAppointments.isNotEmpty()) {
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+          text = "Open care",
+          style = MaterialTheme.typography.labelLarge,
+          color = MaterialTheme.colorScheme.primary,
+          modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onNavigateToCare)
+            .padding(vertical = 10.dp)
+        )
+      }
+
+      if (dueDoses.isNotEmpty()) {
+        Text(
+          text = "Open medication schedule",
+          style = MaterialTheme.typography.labelLarge,
+          color = MaterialTheme.colorScheme.primary,
+          modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onNavigateToMedications)
+            .padding(vertical = 10.dp)
+        )
+      }
+    }
+  }
+}
+
+@Composable
+private fun ReminderRow(
+  icon: ImageVector,
+  title: String,
+  subtitle: String
+) {
+  Row(
+    modifier = Modifier
+      .fillMaxWidth()
+      .padding(vertical = 8.dp),
+    verticalAlignment = Alignment.CenterVertically
+  ) {
+    Box(
+      modifier = Modifier
+        .size(34.dp)
+        .clip(CircleShape)
+        .background(DorkTheme.colors.surfaceSecondary),
+      contentAlignment = Alignment.Center
+    ) {
+      Icon(
+        imageVector = icon,
+        contentDescription = null,
+        tint = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.size(17.dp)
+      )
+    }
+    Spacer(modifier = Modifier.width(12.dp))
+    Column(modifier = Modifier.weight(1f)) {
+      Text(
+        text = title,
+        style = MaterialTheme.typography.titleSmall,
+        color = DorkTheme.colors.textPrimary
+      )
+      Text(
+        text = subtitle,
+        style = MaterialTheme.typography.bodySmall,
+        color = DorkTheme.colors.textSecondary
+      )
+    }
   }
 }
 
@@ -814,8 +1074,17 @@ private fun ScoreCard(
   }
 }
 
+private data class TimelineEvent(
+  val fraction: Float,
+  val color: Color
+)
+
 @Composable
-private fun DayTimeline(modifier: Modifier = Modifier) {
+private fun DayTimeline(
+  events: List<TimelineEvent>,
+  nowFraction: Float,
+  modifier: Modifier = Modifier
+) {
   Canvas(modifier = modifier.height(34.dp)) {
     val centerY = size.height / 2f
     val dotRadius = 3.4.dp.toPx()
@@ -827,26 +1096,45 @@ private fun DayTimeline(modifier: Modifier = Modifier) {
       strokeWidth = 1.dp.toPx()
     )
 
-    val events = listOf(
-      0.10f to DorkColors.SageInk,
-      0.28f to DorkColors.PeachInk,
-      0.46f to DorkColors.AccentInk,
-      0.64f to DorkColors.PinkInk,
-      0.84f to DorkColors.SageInk
-    )
-
-    events.forEach { (fraction, color) ->
-      val center = Offset(fraction * size.width, centerY)
+    events.forEach { event ->
+      val center = Offset(event.fraction.coerceIn(0.02f, 0.98f) * size.width, centerY)
       drawCircle(color = Color.White, radius = dotRadius + 2.2.dp.toPx(), center = center)
-      drawCircle(color = color, radius = dotRadius, center = center)
+      drawCircle(color = event.color, radius = dotRadius, center = center)
     }
 
+    // The now marker is always shown so the day reads as a live instrument.
     drawCircle(
       color = DorkColors.Lime,
       radius = dotRadius + 1.2.dp.toPx(),
-      center = Offset(0.55f * size.width, centerY)
+      center = Offset(nowFraction.coerceIn(0.02f, 0.98f) * size.width, centerY)
     )
   }
+}
+
+private fun isDoseTaken(dose: MedicationDose): Boolean =
+  dose.state == MedicationDoseState.Taken || dose.state == MedicationDoseState.Completed
+
+private fun doseSeries(doses: List<MedicationDose>): List<Float> {
+  if (doses.isEmpty()) return listOf(0.12f, 0.12f)
+  val values = doses.map { dose ->
+    when (dose.state) {
+      MedicationDoseState.Taken, MedicationDoseState.Completed -> 0.92f
+      MedicationDoseState.Skipped -> 0.25f
+      MedicationDoseState.Due -> 0.55f
+      MedicationDoseState.Upcoming -> 0.35f
+    }
+  }
+  return if (values.size >= 2) values else values + values
+}
+
+private fun adherenceSeries(doses: List<MedicationDose>): List<Float> {
+  if (doses.isEmpty()) return listOf(0.12f, 0.12f)
+  var taken = 0
+  val running = doses.mapIndexed { index, dose ->
+    if (isDoseTaken(dose)) taken++
+    taken.toFloat() / (index + 1).toFloat()
+  }
+  return if (running.size >= 2) running else running + running
 }
 
 @Composable
@@ -883,21 +1171,34 @@ private fun SectionHeader(
 @Composable
 private fun CircleIconButton(
   icon: ImageVector,
-  contentDescription: String
+  contentDescription: String,
+  onClick: () -> Unit,
+  showIndicator: Boolean = false
 ) {
-  Surface(
-    shape = CircleShape,
-    color = DorkTheme.colors.card,
-    modifier = Modifier
-      .size(38.dp)
-      .clickable { }
-  ) {
-    Box(contentAlignment = Alignment.Center) {
-      Icon(
-        imageVector = icon,
-        contentDescription = contentDescription,
-        tint = DorkTheme.colors.textSecondary,
-        modifier = Modifier.size(17.dp)
+  Box {
+    Surface(
+      shape = CircleShape,
+      color = DorkTheme.colors.card,
+      modifier = Modifier
+        .size(38.dp)
+        .clickable(onClick = onClick)
+    ) {
+      Box(contentAlignment = Alignment.Center) {
+        Icon(
+          imageVector = icon,
+          contentDescription = contentDescription,
+          tint = DorkTheme.colors.textSecondary,
+          modifier = Modifier.size(17.dp)
+        )
+      }
+    }
+    if (showIndicator) {
+      Box(
+        modifier = Modifier
+          .align(Alignment.TopEnd)
+          .size(9.dp)
+          .clip(CircleShape)
+          .background(DorkTheme.colors.lime)
       )
     }
   }
@@ -1135,4 +1436,174 @@ private fun recordTypeLabel(record: HealthRecordItem): String = when (record.typ
 private fun formatWeight(value: Double): String {
   val rounded = (value * 10).roundToInt() / 10.0
   return if (rounded % 1.0 == 0.0) rounded.toInt().toString() else rounded.toString()
+}
+
+// ---------------------------------------------------------------------------
+// The loop: one decision, and where it sits on the path
+// ---------------------------------------------------------------------------
+
+/**
+ * The hero of the home screen.
+ *
+ * Deliberately a single action with a single button. The app's value is not how
+ * much it shows, it is that the patient never has to work out what matters next.
+ * Rendered in ink with a lime action so it reads as the loudest object on a page
+ * of quiet cards.
+ */
+@Composable
+private fun NextStepCard(action: NextAction, onAction: () -> Unit) {
+  val isClear = action.kind == NextActionKind.ALL_CLEAR
+  val background = if (isClear) DorkTheme.colors.card else DorkTheme.colors.textPrimary
+  val titleColor = if (isClear) DorkTheme.colors.textPrimary else Color.White
+  val bodyColor = if (isClear) DorkTheme.colors.textSecondary else Color.White.copy(alpha = 0.72f)
+
+  Surface(
+    modifier = Modifier.fillMaxWidth(),
+    shape = DorkShapes.hero,
+    color = background
+  ) {
+    Column(modifier = Modifier.padding(22.dp)) {
+      Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+          modifier = Modifier
+            .size(6.dp)
+            .clip(CircleShape)
+            .background(urgencyColor(action.urgency, isClear))
+        )
+        Spacer(modifier = Modifier.width(7.dp))
+        Text(
+          text = "NEXT STEP",
+          style = DorkType.eyebrow,
+          color = if (isClear) DorkTheme.colors.textTertiary else Color.White.copy(alpha = 0.6f)
+        )
+      }
+
+      Spacer(modifier = Modifier.height(10.dp))
+
+      Text(
+        text = action.headline,
+        style = MaterialTheme.typography.headlineMedium,
+        color = titleColor
+      )
+
+      Spacer(modifier = Modifier.height(6.dp))
+
+      Text(
+        text = action.supporting,
+        style = MaterialTheme.typography.bodySmall,
+        color = bodyColor
+      )
+
+      Spacer(modifier = Modifier.height(16.dp))
+
+      Surface(
+        onClick = onAction,
+        shape = DorkShapes.pill,
+        color = if (isClear) DorkTheme.colors.surfaceSecondary else DorkTheme.colors.lime
+      ) {
+        Row(
+          modifier = Modifier.padding(horizontal = 18.dp, vertical = 11.dp),
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          Text(
+            text = action.ctaLabel,
+            style = MaterialTheme.typography.labelLarge,
+            color = if (isClear) DorkTheme.colors.textPrimary else DorkTheme.colors.limeInk
+          )
+          Spacer(modifier = Modifier.width(6.dp))
+          Icon(
+            imageVector = Icons.Rounded.ChevronRight,
+            contentDescription = null,
+            tint = if (isClear) DorkTheme.colors.textPrimary else DorkTheme.colors.limeInk,
+            modifier = Modifier.size(16.dp)
+          )
+        }
+      }
+    }
+  }
+}
+
+@Composable
+private fun LoopStrip(stage: LoopStage) {
+  val stages = LoopStage.entries
+  val currentIndex = stages.indexOf(stage)
+  val trackColor = DorkTheme.colors.surfaceBorder
+  val progressColor = DorkTheme.colors.textTertiary
+
+  Column(modifier = Modifier.fillMaxWidth()) {
+    Box(modifier = Modifier.fillMaxWidth().height(18.dp)) {
+      // The track is drawn behind the dots so the four stages read as one
+      // continuous path instead of four labels with uneven gaps between them.
+      Canvas(modifier = Modifier.fillMaxSize()) {
+        val inset = size.width / (stages.size * 2f)
+        val y = size.height / 2f
+        drawLine(
+          color = trackColor,
+          start = Offset(inset, y),
+          end = Offset(size.width - inset, y),
+          strokeWidth = 1.dp.toPx()
+        )
+        if (currentIndex > 0) {
+          val progress = inset + (size.width - inset * 2f) *
+            (currentIndex / (stages.size - 1f))
+          drawLine(
+            color = progressColor,
+            start = Offset(inset, y),
+            end = Offset(progress, y),
+            strokeWidth = 1.5.dp.toPx()
+          )
+        }
+      }
+
+      Row(
+        modifier = Modifier.fillMaxSize(),
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        stages.forEachIndexed { index, _ ->
+          Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+            Box(
+              modifier = Modifier
+                .size(if (index == currentIndex) 9.dp else 6.dp)
+                .clip(CircleShape)
+                .background(
+                  when {
+                    index == currentIndex -> DorkTheme.colors.textPrimary
+                    index < currentIndex -> DorkTheme.colors.textTertiary
+                    else -> DorkTheme.colors.surfaceBorder
+                  }
+                )
+            )
+          }
+        }
+      }
+    }
+
+    Spacer(modifier = Modifier.height(6.dp))
+
+    Row(modifier = Modifier.fillMaxWidth()) {
+      stages.forEachIndexed { index, item ->
+        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.TopCenter) {
+          Text(
+            text = item.label,
+            style = MaterialTheme.typography.labelSmall,
+            color = when {
+              index == currentIndex -> DorkTheme.colors.textPrimary
+              index < currentIndex -> DorkTheme.colors.textTertiary
+              else -> DorkTheme.colors.textTertiary.copy(alpha = 0.7f)
+            },
+            maxLines = 1,
+            softWrap = false
+          )
+        }
+      }
+    }
+  }
+}
+
+@Composable
+private fun urgencyColor(urgency: NextActionUrgency, isClear: Boolean): Color = when {
+  isClear -> DorkTheme.colors.success
+  urgency == NextActionUrgency.NOW -> DorkColors.GradientPinkEnd
+  urgency == NextActionUrgency.TODAY -> DorkColors.GradientEmberAccent
+  else -> DorkTheme.colors.lime
 }

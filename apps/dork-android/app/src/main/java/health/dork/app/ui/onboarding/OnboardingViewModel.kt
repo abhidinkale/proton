@@ -16,26 +16,30 @@ import kotlinx.coroutines.launch
 
 data class OnboardingUiState(
   val currentStep: Int = 1,
-  val fullName: String = "Alex Morgan",
-  val email: String = "alex.morgan@dork.health",
-  val birthDateIso: String = "1998-05-12",
-  val sex: BiologicalSex = BiologicalSex.FEMALE,
-  val heightCm: Double = 172.0,
-  val weightKg: Double = 68.5,
-  val bloodGroup: BloodGroup = BloodGroup.O_POS,
-  val selectedConditions: Set<String> = setOf("Asthma"),
-  val selectedAllergies: Set<String> = setOf("Penicillin"),
+  val fullName: String = "",
+  val email: String = "",
+  val password: String = "",
+  val confirmPassword: String = "",
+  val birthDateIso: String = "",
+  val sex: BiologicalSex = BiologicalSex.PREFER_NOT_TO_SAY,
+  val heightCm: Double = 0.0,
+  val weightKg: Double = 0.0,
+  val bloodGroup: BloodGroup = BloodGroup.UNKNOWN,
+  val selectedConditions: Set<String> = emptySet(),
+  val selectedAllergies: Set<String> = emptySet(),
   val customAllergyInput: String = "",
-  val currentMedications: String = "Amoxicillin 500mg, Fluticasone Inhaler",
-  val emergencyContactName: String = "Jordan Morgan",
-  val emergencyContactRelation: String = "Spouse",
-  val emergencyContactPhone: String = "+1 (555) 889-1204"
+  val currentMedications: String = "",
+  val emergencyContactName: String = "",
+  val emergencyContactRelation: String = "",
+  val emergencyContactPhone: String = "",
+  val errorMessage: String? = null,
+  val isSubmitting: Boolean = false
 ) {
   val calculatedAge: Int
     get() = DateCalculators.calculateAgeFromString(birthDateIso) ?: 0
 
   val formattedBirthDate: String
-    get() = DateCalculators.formatDisplayDate(birthDateIso)
+    get() = if (birthDateIso.isBlank()) "Not set" else DateCalculators.formatDisplayDate(birthDateIso)
 
   val bmi: Double?
     get() = DateCalculators.calculateBmi(heightCm, weightKg)
@@ -49,13 +53,41 @@ class OnboardingViewModel(
   private val _uiState = MutableStateFlow(OnboardingUiState())
   val uiState: StateFlow<OnboardingUiState> = _uiState.asStateFlow()
 
-  fun onNameChange(name: String) { _uiState.value = _uiState.value.copy(fullName = name) }
-  fun onEmailChange(email: String) { _uiState.value = _uiState.value.copy(email = email) }
-  fun onDobChange(dobIso: String) { _uiState.value = _uiState.value.copy(birthDateIso = dobIso) }
-  fun onSexChange(sex: BiologicalSex) { _uiState.value = _uiState.value.copy(sex = sex) }
-  fun onHeightChange(height: Double) { _uiState.value = _uiState.value.copy(heightCm = height) }
-  fun onWeightChange(weight: Double) { _uiState.value = _uiState.value.copy(weightKg = weight) }
-  fun onBloodGroupChange(bg: BloodGroup) { _uiState.value = _uiState.value.copy(bloodGroup = bg) }
+  fun onNameChange(name: String) {
+    _uiState.value = _uiState.value.copy(fullName = name, errorMessage = null)
+  }
+
+  fun onEmailChange(email: String) {
+    _uiState.value = _uiState.value.copy(email = email, errorMessage = null)
+  }
+
+  fun onPasswordChange(password: String) {
+    _uiState.value = _uiState.value.copy(password = password, errorMessage = null)
+  }
+
+  fun onConfirmPasswordChange(password: String) {
+    _uiState.value = _uiState.value.copy(confirmPassword = password, errorMessage = null)
+  }
+
+  fun onDobChange(dobIso: String) {
+    _uiState.value = _uiState.value.copy(birthDateIso = dobIso, errorMessage = null)
+  }
+
+  fun onSexChange(sex: BiologicalSex) {
+    _uiState.value = _uiState.value.copy(sex = sex)
+  }
+
+  fun onHeightChange(height: Double) {
+    _uiState.value = _uiState.value.copy(heightCm = height)
+  }
+
+  fun onWeightChange(weight: Double) {
+    _uiState.value = _uiState.value.copy(weightKg = weight)
+  }
+
+  fun onBloodGroupChange(bg: BloodGroup) {
+    _uiState.value = _uiState.value.copy(bloodGroup = bg)
+  }
 
   fun toggleCondition(condition: String) {
     val current = _uiState.value.selectedConditions.toMutableSet()
@@ -101,9 +133,15 @@ class OnboardingViewModel(
   }
 
   fun nextStep() {
-    val current = _uiState.value.currentStep
-    if (current < 13) {
-      _uiState.value = _uiState.value.copy(currentStep = current + 1)
+    val s = _uiState.value
+    val validationError = validateStep(s.currentStep, s)
+    if (validationError != null) {
+      _uiState.value = s.copy(errorMessage = validationError)
+      return
+    }
+
+    if (s.currentStep < 13) {
+      _uiState.value = s.copy(currentStep = s.currentStep + 1, errorMessage = null)
     } else {
       completeOnboarding()
     }
@@ -112,18 +150,25 @@ class OnboardingViewModel(
   fun previousStep() {
     val current = _uiState.value.currentStep
     if (current > 1) {
-      _uiState.value = _uiState.value.copy(currentStep = current - 1)
+      _uiState.value = _uiState.value.copy(currentStep = current - 1, errorMessage = null)
     }
   }
 
   fun completeOnboarding() {
     val s = _uiState.value
+    if (s.isSubmitting) return
+    val validationError = validateStep(2, s) ?: validateStep(3, s) ?: validateStep(4, s)
+    if (validationError != null) {
+      _uiState.value = s.copy(errorMessage = validationError)
+      return
+    }
+
     val profile = PatientProfile(
       id = "patient-${System.currentTimeMillis()}",
-      fullName = s.fullName,
-      email = s.email,
-      phone = "+1 (555) 234-8901",
-      birthDate = s.birthDateIso,
+      fullName = s.fullName.trim(),
+      email = s.email.trim().lowercase(),
+      phone = "",
+      birthDate = s.birthDateIso.trim(),
       sex = s.sex,
       bloodGroup = s.bloodGroup,
       heightCm = s.heightCm,
@@ -131,16 +176,55 @@ class OnboardingViewModel(
       conditions = s.selectedConditions.filter { it != "None" },
       allergies = s.selectedAllergies.toList(),
       currentMedications = s.currentMedications.split(",").map { it.trim() }.filter { it.isNotBlank() },
-      emergencyContact = EmergencyContact(
-        name = s.emergencyContactName,
-        relationship = s.emergencyContactRelation,
-        phoneNumber = s.emergencyContactPhone
-      )
+      emergencyContact = if (s.emergencyContactName.isBlank()) {
+        null
+      } else {
+        EmergencyContact(
+          name = s.emergencyContactName.trim(),
+          relationship = s.emergencyContactRelation.ifBlank { "Contact" },
+          phoneNumber = s.emergencyContactPhone.trim()
+        )
+      }
     )
 
     viewModelScope.launch {
+      _uiState.value = _uiState.value.copy(isSubmitting = true, errorMessage = null)
       patientRepository.updateProfile(profile)
-      authRepository.completeOnboarding(profile)
+      val result = authRepository.completeOnboarding(profile, s.password)
+      _uiState.value = if (result.isFailure) {
+        _uiState.value.copy(
+          isSubmitting = false,
+          errorMessage = result.exceptionOrNull()?.message ?: "Could not create the account."
+        )
+      } else {
+        _uiState.value.copy(isSubmitting = false, password = "", confirmPassword = "")
+      }
+    }
+  }
+
+  private fun validateStep(step: Int, s: OnboardingUiState): String? {
+    return when (step) {
+      2 -> {
+        val email = s.email.trim()
+        when {
+          !email.contains("@") || email.length < 5 -> "Enter a valid email address."
+          s.password.length < 8 -> "Use a password with at least 8 characters."
+          s.password != s.confirmPassword -> "The passwords do not match."
+          else -> null
+        }
+      }
+      3 -> if (s.fullName.trim().length < 2) "Enter your full name." else null
+      4 -> {
+        val age = DateCalculators.calculateAgeFromString(s.birthDateIso.trim())
+        when {
+          s.birthDateIso.isBlank() -> "Enter your date of birth as YYYY-MM-DD."
+          age == null -> "That date of birth is not valid. Use YYYY-MM-DD."
+          age < 13 -> "This app is intended for patients aged 13 and over."
+          age > 120 -> "Check the year in your date of birth."
+          else -> null
+        }
+      }
+      else -> null
     }
   }
 }

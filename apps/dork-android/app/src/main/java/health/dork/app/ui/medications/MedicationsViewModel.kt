@@ -14,9 +14,10 @@ import kotlinx.coroutines.launch
 data class MedicationsUiState(
   val plans: List<MedicationPlan> = emptyList(),
   val todayDoses: List<MedicationDose> = emptyList(),
-  val overallAdherence: Int = 85,
-  val totalDosesScheduled: Int = 50,
-  val totalDosesTaken: Int = 41
+  val overallAdherence: Int = 0,
+  val totalDosesScheduled: Int = 0,
+  val totalDosesTaken: Int = 0,
+  val takenToday: Int = 0
 )
 
 class MedicationsViewModel(
@@ -29,14 +30,19 @@ class MedicationsViewModel(
   ) { plans, doses ->
     val scheduled = plans.sumOf { it.totalScheduledDoses }
     val taken = plans.sumOf { it.dosesTaken }
-    val adherence = if (scheduled > 0) (taken * 100) / scheduled else 100
+    val adherence = if (scheduled > 0) (taken * 100) / scheduled else 0
+    val takenToday = doses.count {
+      it.state == health.dork.app.core.designsystem.components.MedicationDoseState.Taken ||
+        it.state == health.dork.app.core.designsystem.components.MedicationDoseState.Completed
+    }
 
     MedicationsUiState(
       plans = plans,
       todayDoses = doses,
       overallAdherence = adherence,
       totalDosesScheduled = scheduled,
-      totalDosesTaken = taken
+      totalDosesTaken = taken,
+      takenToday = takenToday
     )
   }.stateIn(
     scope = viewModelScope,

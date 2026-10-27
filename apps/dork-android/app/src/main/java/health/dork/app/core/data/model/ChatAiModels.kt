@@ -39,6 +39,6 @@ data class EmergencyMedicalId(
   val emergencyContactName: String,
   val emergencyContactPhone: String,
   val emergencyContactRelation: String,
-  val organDonorStatus: String = "Registered Donor",
-  val hospitalPreference: String = "Nearest Emergency Center"
+  val organDonorStatus: String = "Not recorded",
+  val hospitalPreference: String = "Not recorded"
 )

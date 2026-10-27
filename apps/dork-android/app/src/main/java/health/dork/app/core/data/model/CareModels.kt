@@ -1,5 +1,6 @@
 package health.dork.app.core.data.model
 
+import health.dork.app.core.data.util.DateCalculators
 import health.dork.app.core.designsystem.components.AppointmentStatus
 import kotlinx.serialization.Serializable
 
@@ -8,6 +9,18 @@ enum class ConsultationType(val label: String) {
   IN_PERSON("In-person clinic visit"),
   VIDEO("Video consultation")
 }
+
+/**
+ * Recurring clinic hours for one weekday. Stored as minutes-from-midnight so it
+ * serialises cleanly and cannot drift with locale or daylight saving.
+ */
+@Serializable
+data class ClinicDayHours(
+  val dayOfWeek: String, // java.time.DayOfWeek name, e.g. "MONDAY"
+  val startMinute: Int,
+  val endMinute: Int,
+  val slotMinutes: Int = 30
+)
 
 @Serializable
 data class Doctor(
@@ -23,9 +36,25 @@ data class Doctor(
   val rating: Double,
   val reviewCount: Int,
   val consultationTypes: List<ConsultationType>,
-  val availableSlots: List<String>,
-  val aboutBio: String
-)
+  /**
+   * Legacy display strings from the first build. Kept so previously persisted
+   * doctors still deserialize; real availability now comes from [weeklyHours].
+   */
+  val availableSlots: List<String> = emptyList(),
+  val aboutBio: String,
+  val weeklyHours: List<ClinicDayHours> = emptyList()
+) {
+  /** Clinic hours, falling back to a sane weekday schedule when none are set. */
+  val effectiveHours: List<ClinicDayHours>
+    get() = weeklyHours.ifEmpty {
+      listOf("MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY").map {
+        ClinicDayHours(dayOfWeek = it, startMinute = 9 * 60, endMinute = 17 * 60)
+      }
+    }
+
+  val slotMinutes: Int
+    get() = effectiveHours.firstOrNull()?.slotMinutes ?: 30
+}
 
 @Serializable
 data class AppointmentItem(
@@ -41,7 +70,11 @@ data class AppointmentItem(
   val reasonForVisit: String,
   val symptoms: List<String> = emptyList(),
   val preConsultationSummary: String? = null
-)
+) {
+  /** Relative label that stays accurate when the appointment is loaded on a later day. */
+  val displayDateTime: String
+    get() = DateCalculators.formatSlotDisplay(dateIso, dateTimeString)
+}
 
 @Serializable
 data class PreConsultationData(

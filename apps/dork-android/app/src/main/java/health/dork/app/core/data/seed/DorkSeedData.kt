@@ -4,6 +4,7 @@ import health.dork.app.core.data.model.AppointmentItem
 import health.dork.app.core.data.model.BiologicalSex
 import health.dork.app.core.data.model.BloodGroup
 import health.dork.app.core.data.model.ChatMessage
+import health.dork.app.core.data.model.ClinicDayHours
 import health.dork.app.core.data.model.ConsultationType
 import health.dork.app.core.data.model.DeliveryStatus
 import health.dork.app.core.data.model.Doctor
@@ -21,14 +22,26 @@ import health.dork.app.core.data.model.MessageSender
 import health.dork.app.core.data.model.PatientProfile
 import health.dork.app.core.data.model.PrescriptionDetail
 import health.dork.app.core.data.model.PrescriptionMedicineItem
+import health.dork.app.core.data.util.DateCalculators
 import health.dork.app.core.designsystem.components.AppointmentStatus
 import health.dork.app.core.designsystem.components.MedicationDoseState
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 /**
  * Realistic Synthetic Seed Data for Dork Patient Healthcare Application.
  * Follows Specification Sections 74 & 75 (Alex Morgan, DOB 1998-05-12, Blood O+).
+ *
+ * Historical clinical records keep fixed dates (they are history), while
+ * schedules, appointments and doses are anchored to the day the app is opened
+ * so "today" never silently means October 2026.
  */
 object DorkSeedData {
+
+  private val today: LocalDate = LocalDate.now()
 
   // Patient Profile (Alex Morgan, 12 May 1998)
   val samplePatient = PatientProfile(
@@ -73,7 +86,14 @@ object DorkSeedData {
       reviewCount = 184,
       consultationTypes = listOf(ConsultationType.IN_PERSON, ConsultationType.VIDEO),
       availableSlots = listOf("Today · 4:30 PM", "Tomorrow · 10:00 AM", "Tomorrow · 2:15 PM"),
-      aboutBio = "Board-certified internist specializing in preventative medicine, respiratory health, and chronic illness management. Committed to collaborative, patient-first care."
+      aboutBio = "Board-certified internist specializing in preventative medicine, respiratory health, and chronic illness management. Committed to collaborative, patient-first care.",
+      weeklyHours = listOf(
+        ClinicDayHours("MONDAY", 9 * 60, 17 * 60, 30),
+        ClinicDayHours("TUESDAY", 9 * 60, 13 * 60, 30),
+        ClinicDayHours("WEDNESDAY", 9 * 60, 17 * 60, 30),
+        ClinicDayHours("THURSDAY", 9 * 60, 13 * 60, 30),
+        ClinicDayHours("FRIDAY", 9 * 60, 17 * 60, 30)
+      )
     ),
     Doctor(
       id = "doc-2",
@@ -89,7 +109,13 @@ object DorkSeedData {
       reviewCount = 240,
       consultationTypes = listOf(ConsultationType.IN_PERSON, ConsultationType.VIDEO),
       availableSlots = listOf("Thursday · 11:30 AM", "Friday · 9:00 AM", "Next Mon · 3:00 PM"),
-      aboutBio = "Cardiologist with clinical focus on preventative cardiology, lipid management, hypertension, and wearable biometric integration."
+      aboutBio = "Cardiologist with clinical focus on preventative cardiology, lipid management, hypertension, and wearable biometric integration.",
+      weeklyHours = listOf(
+        ClinicDayHours("MONDAY", 10 * 60, 16 * 60, 20),
+        ClinicDayHours("TUESDAY", 10 * 60, 16 * 60, 20),
+        ClinicDayHours("WEDNESDAY", 10 * 60, 16 * 60, 20),
+        ClinicDayHours("THURSDAY", 10 * 60, 16 * 60, 20)
+      )
     ),
     Doctor(
       id = "doc-3",
@@ -105,19 +131,26 @@ object DorkSeedData {
       reviewCount = 129,
       consultationTypes = listOf(ConsultationType.IN_PERSON, ConsultationType.VIDEO),
       availableSlots = listOf("Today · 6:00 PM", "Wednesday · 1:30 PM", "Friday · 10:15 AM"),
-      aboutBio = "Specialist in inflammatory dermatoses, allergy patch testing, eczema, and skin cancer surveillance. Warm and evidence-based approach."
+      aboutBio = "Specialist in inflammatory dermatoses, allergy patch testing, eczema, and skin cancer surveillance. Warm and evidence-based approach.",
+      weeklyHours = listOf(
+        ClinicDayHours("TUESDAY", 11 * 60, 18 * 60, 30),
+        ClinicDayHours("WEDNESDAY", 11 * 60, 18 * 60, 30),
+        ClinicDayHours("THURSDAY", 11 * 60, 18 * 60, 30),
+        ClinicDayHours("FRIDAY", 11 * 60, 18 * 60, 30),
+        ClinicDayHours("SATURDAY", 10 * 60, 14 * 60, 30)
+      )
     )
   )
 
-  // 5 Realistic Appointments
-  val appointments = listOf(
+  // Appointments anchored to the current day. Historical visits stay in the past.
+  val appointments: List<AppointmentItem> = listOf(
     AppointmentItem(
       id = "apt-1",
       doctorId = "doc-1",
       doctorName = "Dr. Sarah Chen",
       specialty = "General Medicine",
       dateTimeString = "Today · 4:30 PM",
-      dateIso = "2026-10-18T16:30:00",
+      dateIso = today.atTime(16, 30).toString(),
       clinicLocation = "Beacon Hill Family Health",
       consultationType = ConsultationType.IN_PERSON,
       status = AppointmentStatus.Confirmed,
@@ -130,8 +163,8 @@ object DorkSeedData {
       doctorId = "doc-2",
       doctorName = "Dr. Marcus Vance",
       specialty = "Cardiology",
-      dateTimeString = "Thursday · 11:30 AM",
-      dateIso = "2026-10-22T11:30:00",
+      dateTimeString = "Tomorrow · 11:30 AM",
+      dateIso = today.plusDays(1).atTime(11, 30).toString(),
       clinicLocation = "Telehealth Video Room",
       consultationType = ConsultationType.VIDEO,
       status = AppointmentStatus.Booked,
@@ -139,12 +172,25 @@ object DorkSeedData {
       symptoms = emptyList()
     ),
     AppointmentItem(
+      id = "apt-6",
+      doctorId = "doc-1",
+      doctorName = "Dr. Sarah Chen",
+      specialty = "General Medicine",
+      dateTimeString = "Three days ago",
+      dateIso = today.minusDays(3).atTime(9, 30).toString(),
+      clinicLocation = "Beacon Hill Family Health",
+      consultationType = ConsultationType.IN_PERSON,
+      status = AppointmentStatus.Fulfilled,
+      reasonForVisit = "Chest tightness in cold air and inhaler review",
+      symptoms = listOf("Dry cough")
+    ),
+    AppointmentItem(
       id = "apt-3",
       doctorId = "doc-3",
       doctorName = "Dr. Priya Patel",
       specialty = "Dermatology",
-      dateTimeString = "03 Sep 2026 · 10:00 AM",
-      dateIso = "2026-09-03T10:00:00",
+      dateTimeString = "Last month",
+      dateIso = today.minusMonths(1).atTime(10, 0).toString(),
       clinicLocation = "Clearwater Skin Clinic",
       consultationType = ConsultationType.IN_PERSON,
       status = AppointmentStatus.Fulfilled,
@@ -156,8 +202,8 @@ object DorkSeedData {
       doctorId = "doc-1",
       doctorName = "Dr. Sarah Chen",
       specialty = "General Medicine",
-      dateTimeString = "15 Jun 2026 · 2:00 PM",
-      dateIso = "2026-06-15T14:00:00",
+      dateTimeString = "Four months ago",
+      dateIso = today.minusMonths(4).atTime(14, 0).toString(),
       clinicLocation = "Beacon Hill Family Health",
       consultationType = ConsultationType.IN_PERSON,
       status = AppointmentStatus.Fulfilled,
@@ -169,8 +215,8 @@ object DorkSeedData {
       doctorId = "doc-2",
       doctorName = "Dr. Marcus Vance",
       specialty = "Cardiology",
-      dateTimeString = "12 Jan 2026 · 9:30 AM",
-      dateIso = "2026-01-12T09:30:00",
+      dateTimeString = "Nine months ago",
+      dateIso = today.minusMonths(9).atTime(9, 30).toString(),
       clinicLocation = "Metropolitan Heart & Vascular Center",
       consultationType = ConsultationType.IN_PERSON,
       status = AppointmentStatus.Fulfilled,
@@ -179,8 +225,8 @@ object DorkSeedData {
     )
   )
 
-  // 3 Medications with daily schedules
-  val medicationPlans = listOf(
+  // 3 Medications with daily schedules anchored to today.
+  val medicationPlans: List<MedicationPlan> = listOf(
     MedicationPlan(
       id = "med-1",
       name = "Amoxicillin",
@@ -189,8 +235,8 @@ object DorkSeedData {
       duration = "7 days",
       instructions = "Take with food at regular 8-hour intervals until prescription is finished",
       prescribingDoctor = "Dr. Sarah Chen",
-      startDateIso = "2026-10-15",
-      endDateIso = "2026-10-22",
+      startDateIso = today.minusDays(2).toString(),
+      endDateIso = today.plusDays(4).toString(),
       dailyTimes = listOf("8:00 AM", "2:00 PM", "8:00 PM"),
       totalScheduledDoses = 21,
       dosesTaken = 16
@@ -203,7 +249,7 @@ object DorkSeedData {
       duration = "Ongoing",
       instructions = "Inhale 2 puffs morning and evening. Rinse mouth after use",
       prescribingDoctor = "Dr. Sarah Chen",
-      startDateIso = "2026-08-01",
+      startDateIso = today.minusMonths(2).toString(),
       dailyTimes = listOf("8:00 AM", "8:00 PM"),
       totalScheduledDoses = 60,
       dosesTaken = 54
@@ -216,60 +262,48 @@ object DorkSeedData {
       duration = "90 days",
       instructions = "Take in the morning with a healthy fat meal",
       prescribingDoctor = "Dr. Sarah Chen",
-      startDateIso = "2026-09-01",
+      startDateIso = today.minusDays(20).toString(),
       dailyTimes = listOf("9:00 AM"),
       totalScheduledDoses = 45,
       dosesTaken = 41
     )
   )
 
-  val todayDoses = listOf(
-    MedicationDose(
-      id = "dose-1",
-      medicationId = "med-1",
-      name = "Amoxicillin",
-      dosage = "500 mg",
-      scheduledTime = "8:00 AM",
-      dateIso = "2026-10-18",
-      state = MedicationDoseState.Taken,
-      instructions = "Take after breakfast with water",
-      prescribingDoctor = "Dr. Sarah Chen",
-      takenAtTimestamp = 1792306800000L
-    ),
-    MedicationDose(
-      id = "dose-2",
-      medicationId = "med-1",
-      name = "Amoxicillin",
-      dosage = "500 mg",
-      scheduledTime = "2:00 PM",
-      dateIso = "2026-10-18",
-      state = MedicationDoseState.Due,
-      instructions = "Take after lunch with water",
-      prescribingDoctor = "Dr. Sarah Chen"
-    ),
-    MedicationDose(
-      id = "dose-3",
-      medicationId = "med-1",
-      name = "Amoxicillin",
-      dosage = "500 mg",
-      scheduledTime = "8:00 PM",
-      dateIso = "2026-10-18",
-      state = MedicationDoseState.Upcoming,
-      instructions = "Take after dinner with water",
-      prescribingDoctor = "Dr. Sarah Chen"
-    ),
-    MedicationDose(
-      id = "dose-4",
-      medicationId = "med-2",
-      name = "Fluticasone Inhaler",
-      dosage = "110 mcg (2 puffs)",
-      scheduledTime = "8:00 PM",
-      dateIso = "2026-10-18",
-      state = MedicationDoseState.Upcoming,
-      instructions = "Rinse mouth after inhalation",
-      prescribingDoctor = "Dr. Sarah Chen"
-    )
-  )
+  /**
+   * Builds today's dose list from the active plans. State is derived from the
+   * clock: a dose becomes Due at its scheduled time and stays Due if it was
+   * missed. Nothing is pre-marked as taken on the patient's behalf.
+   */
+  fun dosesFor(
+    date: LocalDate = today,
+    now: LocalDateTime = LocalDateTime.now(),
+    plans: List<MedicationPlan> = medicationPlans
+  ): List<MedicationDose> {
+    return plans
+      .filter { plan ->
+        val start = runCatching { LocalDate.parse(plan.startDateIso) }.getOrDefault(date)
+        val end = plan.endDateIso?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+        !date.isBefore(start) && (end == null || !date.isAfter(end))
+      }
+      .flatMap { plan ->
+        plan.dailyTimes.mapIndexedNotNull { index, timeLabel ->
+          val time = runCatching { LocalTime.parse(timeLabel.trim(), DateTimeFormatter.ofPattern("h:mm a", Locale.US)) }.getOrNull()
+            ?: return@mapIndexedNotNull null
+          val scheduled = LocalDateTime.of(date, time)
+          MedicationDose(
+            id = "dose-${plan.id}-$date-$index",
+            medicationId = plan.id,
+            name = plan.name,
+            dosage = plan.dosage.substringBefore(" ("),
+            scheduledTime = timeLabel,
+            dateIso = date.toString(),
+            state = if (scheduled.isAfter(now)) MedicationDoseState.Upcoming else MedicationDoseState.Due,
+            instructions = plan.instructions,
+            prescribingDoctor = plan.prescribingDoctor
+          )
+        }
+      }
+  }
 
   // 5 Longitudinal Health Records
   val healthRecords = listOf(
@@ -398,9 +432,9 @@ object DorkSeedData {
       uploadDate = "15 Oct 2026",
       fileSizeText = "1.2 MB PDF",
       originalUri = "content://dork.health/docs/cbc_oct2026.pdf",
-      isOcrProcessed = true,
-      extractedText = "Specimen: Whole Blood. Hemoglobin: 13.8 g/dL. Platelets: 245K. Impression: Normal.",
-      structuredEntities = listOf("Hemoglobin: 13.8 g/dL", "WBC: 6.4", "Platelets: 245K")
+      isOcrProcessed = false,
+      extractedText = null,
+      structuredEntities = emptyList()
     ),
     HealthDocument(
       id = "doc-ref-2",
@@ -409,9 +443,9 @@ object DorkSeedData {
       uploadDate = "17 Oct 2026",
       fileSizeText = "480 KB PNG",
       originalUri = "content://dork.health/docs/rx_amox.png",
-      isOcrProcessed = true,
-      extractedText = "Rx: Amoxicillin 500mg PO TID x 7d. Sig: Take with meals. Refills: 0. Dr. Sarah Chen MD.",
-      structuredEntities = listOf("Drug: Amoxicillin 500mg", "Sig: 3 times daily", "Duration: 7 days")
+      isOcrProcessed = false,
+      extractedText = null,
+      structuredEntities = emptyList()
     ),
     HealthDocument(
       id = "doc-ref-3",
@@ -420,9 +454,9 @@ object DorkSeedData {
       uploadDate = "14 Aug 2018",
       fileSizeText = "2.8 MB PDF",
       originalUri = "content://dork.health/docs/appendectomy_discharge.pdf",
-      isOcrProcessed = true,
-      extractedText = "Laparoscopic appendectomy uncomplicated. Pathology: Acute non-perforated appendicitis. Healed.",
-      structuredEntities = listOf("Procedure: Laparoscopic Appendectomy", "Status: Fully healed")
+      isOcrProcessed = false,
+      extractedText = null,
+      structuredEntities = emptyList()
     )
   )
 
@@ -431,7 +465,7 @@ object DorkSeedData {
     id = "rx-active-1",
     doctorName = "Dr. Sarah Chen",
     clinicName = "Beacon Hill Family Health",
-    dateIssued = "17 Oct 2026",
+    dateIssued = DateCalculators.formatDisplayDate(today.minusDays(1).toString()),
     diagnosisReason = "Acute mild bronchospasm with suspected secondary respiratory infection",
     medications = listOf(
       PrescriptionMedicineItem(
@@ -478,7 +512,7 @@ object DorkSeedData {
     ChatMessage(
       id = "ai-1",
       sender = MessageSender.DORK_AI,
-      text = "Hello Alex. I am Dork AI, your personal health assistant. I can explain your lab results, summarize your prescriptions, or help you prepare for your consultation with Dr. Chen today.",
+      text = "Hello Alex. I am Dork AI, your personal health assistant. I can explain your lab results, summarize your prescriptions, or help you prepare for an upcoming consultation.",
       timestamp = "Today · 8:00 AM",
       isClinicalCitation = false
     )

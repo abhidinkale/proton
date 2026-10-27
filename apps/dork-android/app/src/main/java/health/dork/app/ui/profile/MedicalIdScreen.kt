@@ -20,6 +20,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material.icons.rounded.Emergency
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -42,6 +43,8 @@ import health.dork.app.core.designsystem.components.DorkCard
 import health.dork.app.core.designsystem.components.DorkStatusBadge
 import health.dork.app.core.designsystem.components.DorkStatusType
 import health.dork.app.core.designsystem.components.DorkTopBar
+import health.dork.app.core.data.model.EmergencyMedicalId
+import health.dork.app.core.data.util.DateCalculators
 
 @Composable
 fun MedicalIdScreen(
@@ -106,7 +109,7 @@ fun MedicalIdScreen(
                 color = DorkTheme.colors.critical
               )
               Text(
-                text = "DOB: ${medId.birthDate} (${medId.calculatedAge} yrs) · Blood: ${medId.bloodGroup}",
+                text = "DOB: ${DateCalculators.formatDisplayDate(medId.birthDate)} (${medId.calculatedAge} yrs) · Blood: ${medId.bloodGroup}",
                 style = MaterialTheme.typography.titleSmall,
                 color = DorkTheme.colors.textPrimary
               )
@@ -179,6 +182,53 @@ fun MedicalIdScreen(
               Icon(imageVector = Icons.Rounded.Call, contentDescription = null, modifier = Modifier.size(16.dp))
             }
           )
+
+          Spacer(modifier = Modifier.height(DorkSpacing.s))
+
+          DorkButton(
+            text = "Share Medical ID",
+            onClick = {
+              val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_SUBJECT, "Medical ID — ${medId.patientName}")
+                putExtra(Intent.EXTRA_TEXT, buildMedicalIdText(medId))
+              }
+              context.startActivity(Intent.createChooser(shareIntent, "Share Medical ID"))
+            },
+            variant = DorkButtonVariant.Secondary,
+            leadingIcon = {
+              Icon(imageVector = Icons.Rounded.Share, contentDescription = null, modifier = Modifier.size(16.dp))
+            }
+          )
+        }
+      }
+
+      Spacer(modifier = Modifier.height(DorkSpacing.m))
+
+      DorkCard(contentPadding = DorkSpacing.m) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+          Text(
+            text = "EMERGENCY PREFERENCES",
+            style = MaterialTheme.typography.labelSmall,
+            color = DorkTheme.colors.textSecondary
+          )
+          Spacer(modifier = Modifier.height(DorkSpacing.xs))
+          Text(
+            text = "Organ donor: ${medId.organDonorStatus}",
+            style = MaterialTheme.typography.bodyMedium,
+            color = DorkTheme.colors.textPrimary
+          )
+          Text(
+            text = "Preferred hospital: ${medId.hospitalPreference}",
+            style = MaterialTheme.typography.bodyMedium,
+            color = DorkTheme.colors.textPrimary
+          )
+          Spacer(modifier = Modifier.height(DorkSpacing.xs))
+          Text(
+            text = "Maintained by the patient on this device. Not a clinician-verified record.",
+            style = MaterialTheme.typography.bodySmall,
+            color = DorkTheme.colors.textTertiary
+          )
         }
       }
 
@@ -200,4 +250,27 @@ private fun MedicalIdSection(title: String, content: @Composable () -> Unit) {
       content()
     }
   }
+}
+
+private fun buildMedicalIdText(medId: EmergencyMedicalId): String = buildString {
+  appendLine("EMERGENCY MEDICAL ID")
+  appendLine("Name: ${medId.patientName}")
+  appendLine("Date of birth: ${DateCalculators.formatDisplayDate(medId.birthDate)} (${medId.calculatedAge} years)")
+  appendLine("Blood group: ${medId.bloodGroup}")
+  appendLine()
+  appendLine("Critical conditions:")
+  appendLine(medId.criticalConditions.joinToString("\n") { "• $it" })
+  appendLine()
+  appendLine("Severe allergies:")
+  appendLine(medId.severeAllergies.joinToString("\n") { "• $it" })
+  appendLine()
+  appendLine("Active medications:")
+  appendLine(medId.activeMedications.joinToString("\n") { "• $it" })
+  appendLine()
+  appendLine("Emergency contact: ${medId.emergencyContactName} (${medId.emergencyContactRelation})")
+  appendLine(medId.emergencyContactPhone)
+  appendLine("Organ donor: ${medId.organDonorStatus}")
+  appendLine("Preferred hospital: ${medId.hospitalPreference}")
+  appendLine()
+  appendLine("Patient-maintained on a personal device. Not a clinician-verified record.")
 }

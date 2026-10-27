@@ -112,7 +112,7 @@ fun DorkAiScreen(
         )
         Spacer(modifier = Modifier.width(DorkSpacing.xs))
         Text(
-          text = "Provides information from your health records. Not a substitute for professional medical care.",
+          text = "Answers are assembled on this device from your stored records. Nothing is sent to a remote model. Not a substitute for professional medical care.",
           style = MaterialTheme.typography.bodySmall,
           color = DorkTheme.colors.textSecondary
         )
@@ -228,7 +228,7 @@ fun DorkAiScreen(
             )
             Spacer(modifier = Modifier.width(DorkSpacing.s))
             Text(
-              text = "Reviewing your longitudinal records...",
+              text = "Searching your on-device records…",
               style = MaterialTheme.typography.bodySmall,
               color = DorkTheme.colors.textSecondary
             )

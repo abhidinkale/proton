@@ -268,3 +268,21 @@ data class FhirCommunication(
   val payload: List<FhirCommunicationPayload> = emptyList(),
   val sent: String? = null
 )
+
+// ServiceRequest Resource (Laboratory & Diagnostic Workup Requisition)
+@Serializable
+data class FhirServiceRequest(
+  val resourceType: String = "ServiceRequest",
+  val id: String? = null,
+  val meta: FhirMeta? = null,
+  val status: String, // draft | active | on-hold | revoked | completed | entered-in-error | unknown
+  val intent: String = "order", // proposal | plan | directive | order | original-order | reflex-order | filler-order | instance-order | option
+  val priority: String? = "routine", // routine | urgent | asap | stat
+  val code: FhirCodeableConcept, // LOINC or CPT test code
+  val subject: FhirReference, // Reference to Patient
+  val requester: FhirReference? = null, // Reference to Practitioner or Autonomous Diagnostic Agent
+  val authoredOn: String? = null, // ISO-8601
+  val reasonCode: List<FhirCodeableConcept>? = null, // Clinical indication
+  val supportingInfo: List<FhirReference>? = null,
+  val note: List<FhirAnnotation>? = null
+)

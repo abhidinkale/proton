@@ -3,6 +3,7 @@ package health.dork.app.ui.records
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -144,7 +145,22 @@ fun RecordsScreen(
         )
       }
 
-      Spacer(modifier = Modifier.height(DorkSpacing.giant))
+    if (records.isEmpty()) {
+      Box(
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(horizontal = DorkSpacing.screenHorizontalPadding, vertical = DorkSpacing.xl),
+        contentAlignment = Alignment.Center
+      ) {
+        Text(
+          text = "No records in this category yet.",
+          style = MaterialTheme.typography.bodyMedium,
+          color = DorkTheme.colors.textSecondary
+        )
+      }
+    }
+
+    Spacer(modifier = Modifier.height(DorkSpacing.giant))
     }
   }
 }

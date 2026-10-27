@@ -22,7 +22,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import health.dork.app.core.designsystem.DorkSpacing
 import health.dork.app.core.designsystem.DorkTheme
+import kotlinx.serialization.Serializable
 
+@Serializable
 enum class AppointmentStatus {
   Proposed,
   Pending,

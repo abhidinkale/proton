@@ -69,6 +69,17 @@ data class PrescriptionDetail(
   val followUpRecommendation: String? = null
 )
 
+/**
+ * A timeline record paired with the structured prescription behind it. The
+ * clinic sends these together so the app can keep both representations in step
+ * without inventing a second id space.
+ */
+@Serializable
+data class PrescriptionBundle(
+  val record: HealthRecordItem,
+  val detail: PrescriptionDetail
+)
+
 @Serializable
 enum class DocumentCategory(val label: String) {
   LAB_REPORT("Laboratory Report"),
@@ -88,7 +99,7 @@ data class HealthDocument(
   val uploadDate: String,
   val fileSizeText: String,
   val originalUri: String,
-  val isOcrProcessed: Boolean = true,
+  val isOcrProcessed: Boolean = false,
   val extractedText: String? = null,
   val structuredEntities: List<String> = emptyList()
 )
