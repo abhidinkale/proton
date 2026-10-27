@@ -220,8 +220,85 @@ const RESPIRATORY_INTAKE_QUESTIONNAIRE = {
   ]
 };
 
-const GENERAL_INTAKE_QUESTIONNAIRE = {
+/**
+ * The form the patient app actually renders.
+ *
+ * Its answers are already structured on the device, so this questionnaire must
+ * match that shape exactly. Forcing these answers into the general form would
+ * require inventing an `emergency_symptoms` answer, which is unacceptable: an
+ * unanswered emergency question must never be assumed to be "no".
+ */
+const VISIT_INTAKE_QUESTIONNAIRE = {
   resourceType: 'Questionnaire',
+  id: 'questionnaire-visit-intake-v1',
+  url: 'https://proton.health/fhir/Questionnaire/visit-intake',
+  version: '1.0.0',
+  name: 'VisitIntake',
+  title: 'Pre-visit intake (patient app)',
+  status: 'active',
+  subjectType: ['Patient'],
+  date: '2026-10-26',
+  publisher: 'Proton Health Clinical Operations',
+  description: 'Structured pre-visit intake completed by the patient on their own device.',
+  item: [
+    {
+      linkId: 'reason_for_visit',
+      text: 'Main reason for the visit',
+      type: 'text',
+      required: true
+    },
+    {
+      linkId: 'duration',
+      text: 'How long has this been going on?',
+      type: 'string',
+      required: true
+    },
+    {
+      linkId: 'pattern',
+      text: 'How has it changed?',
+      type: 'text',
+      required: false
+    },
+    {
+      linkId: 'severity',
+      text: 'How severe is it? (0-10)',
+      type: 'integer',
+      required: false
+    },
+    {
+      linkId: 'symptoms',
+      text: 'Other symptoms',
+      type: 'string',
+      required: false
+    },
+    {
+      linkId: 'tried_so_far',
+      text: 'What have you already tried?',
+      type: 'text',
+      required: false
+    },
+    {
+      linkId: 'questions_for_doctor',
+      text: 'Questions for the clinician',
+      type: 'text',
+      required: false
+    },
+    {
+      linkId: 'current_medications',
+      text: 'Current medications',
+      type: 'text',
+      required: false
+    },
+    {
+      linkId: 'allergies',
+      text: 'Allergies',
+      type: 'text',
+      required: false
+    }
+  ]
+};
+
+const GENERAL_INTAKE_QUESTIONNAIRE = {  resourceType: 'Questionnaire',
   id: 'questionnaire-general-v1',
   url: 'https://proton.health/fhir/Questionnaire/general-consultation',
   version: '1.0.0',
@@ -257,7 +334,8 @@ const GENERAL_INTAKE_QUESTIONNAIRE = {
 const CATALOG = new Map([
   [DERMATOLOGY_INTAKE_QUESTIONNAIRE.id, DERMATOLOGY_INTAKE_QUESTIONNAIRE],
   [RESPIRATORY_INTAKE_QUESTIONNAIRE.id, RESPIRATORY_INTAKE_QUESTIONNAIRE],
-  [GENERAL_INTAKE_QUESTIONNAIRE.id, GENERAL_INTAKE_QUESTIONNAIRE]
+  [GENERAL_INTAKE_QUESTIONNAIRE.id, GENERAL_INTAKE_QUESTIONNAIRE],
+  [VISIT_INTAKE_QUESTIONNAIRE.id, VISIT_INTAKE_QUESTIONNAIRE]
 ]);
 
 function getQuestionnaire(id) {
@@ -274,6 +352,7 @@ module.exports = {
   DERMATOLOGY_INTAKE_QUESTIONNAIRE,
   RESPIRATORY_INTAKE_QUESTIONNAIRE,
   GENERAL_INTAKE_QUESTIONNAIRE,
+  VISIT_INTAKE_QUESTIONNAIRE,
   getQuestionnaire,
   listQuestionnaires
 };

@@ -37,6 +37,23 @@ const ALLOWED_STATUSES = [
 ];
 
 class ProvenanceSystem {
+  constructor() {
+    // Envelopes are created by the clinical pipeline and held in process memory
+    // for verification. They are never reconstructed from an ID alone.
+    this.envelopes = new Map();
+  }
+
+  registerEnvelope(envelope) {
+    if (envelope && envelope.provenanceId) {
+      this.envelopes.set(envelope.provenanceId, envelope);
+    }
+    return envelope;
+  }
+
+  getEnvelope(provenanceId) {
+    return this.envelopes.get(provenanceId) || null;
+  }
+
   /**
    * Creates an immutable AI provenance envelope.
    * 
@@ -92,7 +109,7 @@ class ProvenanceSystem {
       status: 'DRAFT'
     });
 
-    return {
+    return this.registerEnvelope({
       provenanceId,
       generatedBy: 'AI',
       agentId,
@@ -115,7 +132,7 @@ class ProvenanceSystem {
       draftPayload,
       tenantId,
       tamperHash
-    };
+    });
   }
 
   /**
@@ -169,6 +186,8 @@ class ProvenanceSystem {
 
     // Re-sign tamper hash with new state
     updated.tamperHash = this._calculateTamperHash(updated);
+
+    this.registerEnvelope(updated);
 
     // Record immutable audit event
     auditService.recordPipelineStage({

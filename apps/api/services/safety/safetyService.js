@@ -9,6 +9,8 @@
  * - Prescription structural completeness (dose, frequency, route)
  */
 
+const { pharmacologyGraph } = require('./pharmacologyGraph');
+
 // Cross-reactivity mapping: allergy token -> contra-indicated medication tokens
 const ALLERGY_CONTRAINDICATIONS = [
   {
@@ -177,7 +179,8 @@ class SafetyService {
         });
       }
 
-      // Allergy Contraindication Check
+      // Allergy Contraindication Check (Rule Table + Pharmacology Knowledge Graph)
+      let allergyMatched = false;
       for (const rule of ALLERGY_CONTRAINDICATIONS) {
         const matchesAllergy = rule.allergyTokens.some(token => 
           normalizedAllergies.some(patientAllergy => patientAllergy.includes(token))
@@ -186,6 +189,7 @@ class SafetyService {
         if (matchesAllergy) {
           for (const conflict of rule.conflictingMedications) {
             if (rxName.includes(conflict.name)) {
+              allergyMatched = true;
               contraindications.push({
                 severity: conflict.severity,
                 type: 'ALLERGY_CONFLICT',
@@ -195,6 +199,24 @@ class SafetyService {
                 ruleId: conflict.ruleId
               });
             }
+          }
+        }
+      }
+
+      // Dynamic Pharmacology Graph Check (handles alias/class-level hierarchy)
+      if (!allergyMatched) {
+        const resolvedConcept = pharmacologyGraph.resolveDrugConcept(rxName);
+        if (resolvedConcept) {
+          const graphConflict = pharmacologyGraph.evaluateAllergyConflict(resolvedConcept, normalizedAllergies);
+          if (graphConflict) {
+            contraindications.push({
+              severity: graphConflict.severity,
+              type: 'ALLERGY_CONFLICT',
+              medication: rx.name,
+              conflictWith: graphConflict.allergyClass,
+              message: graphConflict.message,
+              ruleId: `GRAPH_${graphConflict.conflictType}_${resolvedConcept.name.toUpperCase().replace(/\s+/g, '_')}`
+            });
           }
         }
       }

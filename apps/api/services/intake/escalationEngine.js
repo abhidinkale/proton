@@ -65,7 +65,31 @@ class EscalationEngine {
       }
     }
 
-    // 3. General Red Flags
+    // 3. Patient-app pre-visit intake.
+    // This form deliberately asks no emergency-symptom question, so there is
+    // nothing to assume: only the reported severity and trajectory are assessed.
+    if (cleanId === 'questionnaire-visit-intake-v1') {
+      const severity = map.get('severity');
+      const pattern = String(map.get('pattern') || '').toLowerCase();
+
+      if (typeof severity === 'number' && severity >= 9) {
+        redFlags.push({
+          linkId: 'severity',
+          flag: 'HIGH_SYMPTOM_SEVERITY',
+          severity: 'HIGH',
+          reason: `Patient reported symptom severity ${severity}/10.`
+        });
+      } else if (typeof severity === 'number' && severity >= 7 && pattern.includes('worse')) {
+        redFlags.push({
+          linkId: 'pattern',
+          flag: 'WORSENING_SYMPTOMS',
+          severity: 'HIGH',
+          reason: `Patient reported worsening symptoms at ${severity}/10.`
+        });
+      }
+    }
+
+    // 4. General Red Flags
     if (cleanId === 'questionnaire-general-v1') {
       const emergencySymp = map.get('emergency_symptoms');
       if (emergencySymp === true) {

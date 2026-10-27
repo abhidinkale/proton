@@ -2,7 +2,7 @@
  * Proton Clinical Intake Services Export
  */
 
-const { DERMATOLOGY_INTAKE_QUESTIONNAIRE, RESPIRATORY_INTAKE_QUESTIONNAIRE, GENERAL_INTAKE_QUESTIONNAIRE, getQuestionnaire, listQuestionnaires } = require('./questionnaireCatalog');
+const { DERMATOLOGY_INTAKE_QUESTIONNAIRE, RESPIRATORY_INTAKE_QUESTIONNAIRE, GENERAL_INTAKE_QUESTIONNAIRE, VISIT_INTAKE_QUESTIONNAIRE, getQuestionnaire, listQuestionnaires } = require('./questionnaireCatalog');
 const { BranchingEngine, branchingEngine } = require('./branchingEngine');
 const { ResponseValidator, responseValidator, IntakeValidationError } = require('./responseValidator');
 const { EscalationEngine, escalationEngine } = require('./escalationEngine');
@@ -14,6 +14,7 @@ module.exports = {
   DERMATOLOGY_INTAKE_QUESTIONNAIRE,
   RESPIRATORY_INTAKE_QUESTIONNAIRE,
   GENERAL_INTAKE_QUESTIONNAIRE,
+  VISIT_INTAKE_QUESTIONNAIRE,
   getQuestionnaire,
   listQuestionnaires,
 

@@ -26,18 +26,29 @@ class PriorAuthService {
   }) {
     const packetId = `PA-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
 
-    // Deterministic step therapy analysis
-    const priorMedications = Array.isArray(patient.medications) ? patient.medications : [];
-    const stepTherapyHistory = [
-      {
-        drug: 'Metformin 500 mg BID (Oral)',
-        status: 'SUBMAXIMAL_THERAPEUTIC_RESPONSE',
-        duration: '> 6 months',
-        outcome: 'Escalation of HbA1c from 7.1% to 8.2% despite confirmed compliance and dietary counseling.'
-      }
-    ];
+    // Step therapy comes from the patient's recorded medication list. Nothing is
+    // invented when the chart does not document a prior trial.
+    const priorMedications = (Array.isArray(patient.medications) ? patient.medications : [])
+      .filter((medication) => String(medication).toLowerCase() !== String(targetMedication).toLowerCase());
+    const stepTherapyHistory = priorMedications.length
+      ? priorMedications.slice(0, 6).map((medication) => ({
+          drug: String(medication),
+          status: 'DOCUMENTED_IN_CHART',
+          duration: 'Per medication list',
+          outcome: 'Prior therapy documented in the longitudinal medication record.'
+        }))
+      : [{
+          drug: 'No prior therapy documented',
+          status: 'NOT_DOCUMENTED',
+          duration: 'Unknown',
+          outcome: 'The chart does not document a prior trial. Confirm step-therapy history with the patient before submission.'
+        }];
 
-    const clinicalRationale = `Patient is a ${patient.age || '68'}-year-old ${patient.gender || 'female'} with poorly controlled ${diagnosisDescription} (ICD-10: ${diagnosisCode}). Current HbA1c of 8.2% exceeds individualized glycemic target (<7.0%). In accordance with 2026 ADA Standards of Care and KDIGO 2024 guidelines, initiation of SGLT2 inhibitor therapy (${targetMedication}) is strongly indicated for cardiorenal protection and glycemic control.`;
+    const recentLabs = Array.isArray(patient.recentLabs) ? patient.recentLabs : [];
+    const a1cLab = recentLabs.find((lab) => /a1c|hemoglobin a1c/i.test(String(lab.name || '')));
+    const a1cText = a1cLab ? ` Current HbA1c is ${a1cLab.value} (${a1cLab.date || 'recent'}).` : ' No HbA1c is recorded in the chart; attach the most recent result before submission.';
+
+    const clinicalRationale = `Patient is a ${patient.age ? `${patient.age}-year-old` : 'patient'}${patient.gender ? ` ${patient.gender}` : ''} with ${diagnosisDescription} (ICD-10: ${diagnosisCode}).${a1cText} The request for ${targetMedication} is based on the documented problem list and current treatment plan. Confirm the guideline indication and any contraindications in the encounter note before payer submission.`;
 
     const attachedEvidence = [
       {
@@ -57,16 +68,16 @@ class PriorAuthService {
       status: 'READY_FOR_SUBMISSION',
       generatedAt: new Date().toISOString(),
       patientInfo: {
-        name: patient.name || 'Eleanor Vance',
-        dob: patient.dob || '1956-04-12',
-        mrn: patient.mrn || 'MRN-847291',
-        insuranceId: 'BCBS-PA-99382104',
-        payerName: 'Blue Cross Blue Shield National PPO'
+        name: patient.name || 'Patient not recorded',
+        dob: patient.dob || 'Not recorded',
+        mrn: patient.mrn || 'Not recorded',
+        insuranceId: patient.insuranceId || 'Not recorded',
+        payerName: patient.payer || patient.insurance || 'Self-pay / not recorded'
       },
       prescriberInfo: {
-        name: prescriber.name || 'Dr. Julian Reed, MD',
-        npi: prescriber.npi || '1942084712',
-        clinic: 'Proton Academic Health Network'
+        name: prescriber.name || 'Attending physician',
+        npi: prescriber.npi || 'Not recorded',
+        clinic: prescriber.clinic || 'Proton clinic'
       },
       requestedTreatment: {
         medication: targetMedication,
@@ -78,10 +89,10 @@ class PriorAuthService {
       clinicalRationale,
       attachedEvidence,
       payerFilingChecklist: {
-        stepTherapySatisfied: true,
-        labReportsAttached: true,
-        contraindicationsDocumented: true,
-        icd10Concordant: true
+        stepTherapySatisfied: priorMedications.length > 0,
+        labReportsAttached: recentLabs.length > 0,
+        contraindicationsDocumented: Boolean(note && note.assessment),
+        icd10Concordant: diagnosisCode !== 'Z00.00'
       }
     };
   }
@@ -99,6 +110,8 @@ class PriorAuthService {
     const transmissionTime = new Date().toISOString();
 
     return {
+      preview: true,
+      disclaimer: 'Preview generated locally. No clearinghouse transmission occurred.',
       transactionType: 'X12_278_RESPONSE',
       referenceNumber,
       packetId: packet.packetId || `PA-${Date.now().toString(36)}`,
@@ -128,51 +141,56 @@ class PriorAuthService {
 
     const appealDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
+    const stepTherapyLines = (Array.isArray(packet.stepTherapyHistory) ? packet.stepTherapyHistory : [])
+      .map((step) => `- ${step.drug} — ${step.status}: ${step.outcome}`)
+      .join('\n') || '- No prior therapy is documented in the packet.';
+
+    const evidenceLines = (Array.isArray(packet.attachedEvidence) ? packet.attachedEvidence : [])
+      .map((entry) => `- ${entry.authority}: ${entry.citation}\n  "${entry.excerpt}"`)
+      .join('\n') || '- No supporting references were attached. Add guideline citations before submission.';
+
     const letterBody = `
-URGENT: LEVEL 1 EXPEDITED MEDICAL NECESSITY RECONSIDERATION & APPEAL
-Standard 72-Hour Grievance Filing under 42 CFR § 422.568
+DRAFT: LEVEL 1 MEDICAL NECESSITY RECONSIDERATION & APPEAL
+Prepared under 42 CFR § 422.568 for clinician review before filing
 
 DATE: ${appealDate}
 TO: Prior Authorization Appeals Department — ${p.payerName || 'Health Plan Appeals Committee'}
-PATIENT: ${p.name || 'Eleanor Vance'} | DOB: ${p.dob || '1956-04-12'} | MRN: ${p.mrn || 'MRN-847291'}
-INSURANCE ID: ${p.insuranceId || 'BCBS-PA-99382104'}
-PRESCRIBER: ${doc.name || 'Dr. Julian Reed, MD'} (NPI: ${doc.npi || '1942084712'})
-REQUESTED PHARMACOTHERAPY: ${rx.medication || 'Empagliflozin 10 mg PO Daily'}
-PRIMARY DIAGNOSIS: ${rx.diagnosis || 'Type 2 Diabetes Mellitus with Hyperglycemia'} (ICD-10: ${rx.icd10 || 'E11.65'})
+PATIENT: ${p.name || 'Not recorded'} | DOB: ${p.dob || 'Not recorded'} | MRN: ${p.mrn || 'Not recorded'}
+INSURANCE ID: ${p.insuranceId || 'Not recorded'}
+PRESCRIBER: ${doc.name || 'Attending physician'} (NPI: ${doc.npi || 'Not recorded'})
+REQUESTED PHARMACOTHERAPY: ${rx.medication || 'Not recorded'}
+PRIMARY DIAGNOSIS: ${rx.diagnosis || 'Not recorded'} (ICD-10: ${rx.icd10 || 'Not recorded'})
 
 REASON FOR APPEAL:
-This letter serves as an urgent Level 1 appeal challenging the adverse determination regarding coverage for ${rx.medication}.
-Stated Denial Reason: ${denialReason} (${carcCode})
+This draft challenges the adverse determination regarding coverage for ${rx.medication || 'the requested therapy'}.
+Stated denial reason: ${denialReason} (${carcCode})
 
-CLINICAL JUSTIFICATION & MEDICAL NECESSITY ATTESTATION:
-1. DOCUMENTED STEP-THERAPY FAILURE:
-The patient has undergone an adequate therapeutic trial of first-line metformin (500 mg BID > 6 months), which resulted in persistent glycemic elevation (HbA1c 8.2%) and submaximal therapeutic response. Forcing continued step-therapy on sulfonamides or older generic secretagogues introduces unacceptable risks of hypoglycemia in this patient.
+CLINICAL JUSTIFICATION & MEDICAL NECESSITY:
+1. DOCUMENTED PRIOR THERAPY
+${stepTherapyLines}
 
-2. EVIDENCE-BASED CLINICAL GUIDELINES:
-According to the 2026 American Diabetes Association (ADA) Standards of Care and KDIGO 2024 Clinical Practice Guidelines:
-- SGLT2 inhibitors demonstrate Class I, Level A evidence for reducing the progression of chronic kidney disease and major adverse cardiovascular events (MACE).
-- The landmark EMPA-REG OUTCOME trial (N Engl J Med 2015; 373:2117-2128, PMID: 26378978) demonstrated a 38% relative risk reduction in cardiovascular death and 35% reduction in heart failure hospitalization.
+2. EVIDENCE ATTACHED TO THE PACKET
+${evidenceLines}
 
-3. ADVERSE HEALTH CONSEQUENCES OF DELAY:
-Denial or deferral of this guideline-concordant therapy poses imminent danger to the patient's cardiorenal stability.
+3. CLINICAL CONTEXT
+${packet.clinicalRationale || 'No clinical rationale was recorded in the packet. Add the encounter-based rationale before submission.'}
 
-CONCLUSION & FORMAL DEMAND:
-I request immediate reconsideration and overturn of this denial within 72 hours in compliance with CMS Title 42 CFR § 422.568.
+REVIEW REQUIRED:
+Verify the diagnosis, step-therapy history, laboratory values and guideline citations below before filing. This draft is generated from the recorded packet and is not an adjudicated appeal.
 
 Respectfully submitted,
 
-${doc.name || 'Dr. Julian Reed, MD'}
-Attending Physician, Department of Internal Medicine
-Proton Academic Health Network
-NPI: ${doc.npi || '1942084712'}
+${doc.name || 'Attending physician'}
+${doc.clinic || 'Proton clinic'}
+NPI: ${doc.npi || 'Not recorded'}
 `.trim();
 
     return {
       appealId: `APP-${Date.now().toString(36).toUpperCase()}`,
       packetId: packet.packetId,
-      status: 'APPEAL_READY_FOR_LEGAL_FILING',
+      status: 'DRAFT_READY_FOR_REVIEW',
       filingDeadlineDays: 60,
-      predictedOverturnProbability: '88% (High clinical evidence score)',
+      predictedOverturnProbability: 'Not estimated',
       letter: letterBody
     };
   }
