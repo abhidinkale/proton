@@ -10,6 +10,9 @@
  * Raw client-injected role headers are strictly rejected in all modes.
  */
 
+// Synthetic development personas. These exist ONLY for local/test synthetic
+// mode (`PROTON_SYNTHETIC_MODE`); production and private-beta resolve identity
+// exclusively from signed session tokens. Do not add real tenant data here.
 const CONTROLLED_DEV_PERSONAS = {
   'physician-lin': {
     actorId: 'usr-md-lin-01',
@@ -196,6 +199,73 @@ function validatePatientAndTenantContext(req, res, next) {
 }
 
 /**
+ * Organization capabilities.
+ *
+ * These are deliberately separate from clinical `actorRole`s: a physician can
+ * be an `org:member`, while an operations lead can be an `org:admin`. The
+ * organization service resolves the membership role from `org_members` and
+ * attaches it to the actor as `orgRole` / `membershipRole`; these helpers are
+ * for lightweight route/middleware checks after that resolution.
+ */
+const ORG_CAPABILITIES = Object.freeze({
+  'org:admin': Object.freeze([
+    'org:read',
+    'org:invite',
+    'org:revoke_member',
+    'org:manage_roles',
+    'org:update_branding'
+  ]),
+  'org:member': Object.freeze(['org:read'])
+});
+
+const ORG_ROLE_CAPABILITY = Object.freeze({
+  owner: 'org:admin',
+  admin: 'org:admin',
+  member: 'org:member'
+});
+
+function orgRoleOf(actor) {
+  return actor?.orgRole || actor?.membershipRole || null;
+}
+
+function orgCapabilityForRole(role) {
+  return ORG_ROLE_CAPABILITY[role] || null;
+}
+
+function isSameOrganization(actor, orgId) {
+  if (!actor || !actor.actorId || !orgId) return false;
+  return (actor.tenantId || 'org-default') === orgId;
+}
+
+/**
+ * Returns true when the actor is an active member of the target organization
+ * and is allowed to administer it (owner or admin).
+ *
+ * IMPORTANT: this is a pure check over the actor object. It never queries the
+ * database; callers must pass an actor whose membership role was resolved for
+ * `orgId` by the organization service. Tenant mismatch always wins.
+ */
+function canManageOrg(actor, orgId) {
+  if (!isSameOrganization(actor, orgId)) return false;
+  const role = orgRoleOf(actor);
+  return role === 'owner' || role === 'admin';
+}
+
+/**
+ * Returns true for any active member (owner, admin, or member) of the org.
+ */
+function canAccessOrg(actor, orgId) {
+  if (!isSameOrganization(actor, orgId)) return false;
+  return Boolean(orgCapabilityForRole(orgRoleOf(actor)));
+}
+
+function hasOrgCapability(actor, capability, orgId = null) {
+  if (orgId && !isSameOrganization(actor, orgId)) return false;
+  const capabilitySet = ORG_CAPABILITIES[orgCapabilityForRole(orgRoleOf(actor))];
+  return Boolean(capabilitySet && capabilitySet.includes(capability));
+}
+
+/**
  * Strict Authentication Gate: Requires authoritative signed Bearer token in ALL environments (disables dev persona fallback).
  */
 function requireStrictAuth(req, res, next) {
@@ -227,5 +297,10 @@ module.exports = {
   requireTenantMatch,
   validatePatientAndTenantContext,
   requireStrictAuth,
-  CONTROLLED_DEV_PERSONAS
+  CONTROLLED_DEV_PERSONAS,
+  ORG_CAPABILITIES,
+  ORG_ROLE_CAPABILITY,
+  canManageOrg,
+  canAccessOrg,
+  hasOrgCapability
 };

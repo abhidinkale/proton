@@ -67,6 +67,16 @@ function validateConfig(env = process.env) {
     missing.push('DATABASE_URL (required when PROTON_DB_DRIVER=postgres)');
   }
 
+  // Patient OTP delivery. `email` means every patient login depends on this
+  // provider, so a missing key or sender is fatal at boot rather than a 502 on
+  // the first real sign-in. The default (`simulated`) is allowed in production
+  // only as an explicit operator choice, and it is reported by /health/email.
+  if (isProduction && String(env.OTP_DELIVERY || '').trim().toLowerCase() === 'email') {
+    if (!String(env.EMAIL_PROVIDER || '').trim()) missing.push('EMAIL_PROVIDER (required when OTP_DELIVERY=email)');
+    if (!String(env.EMAIL_API_KEY || '').trim()) missing.push('EMAIL_API_KEY (required when OTP_DELIVERY=email)');
+    if (!String(env.EMAIL_FROM || '').trim()) missing.push('EMAIL_FROM (required when OTP_DELIVERY=email)');
+  }
+
   if (isProduction) {
     if (env.PROTON_FHIR_PERSISTENCE_MODE === 'synthetic') {
       weak.push('PROTON_FHIR_PERSISTENCE_MODE (mock/synthetic FHIR store is strictly prohibited in production)');
