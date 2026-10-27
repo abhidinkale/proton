@@ -23,6 +23,7 @@ Proton is an AI-native clinical operating system and ambient copilot designed fo
 6. **Post-Consultation Memory Gating:** Proposals to update permanent medical memory (e.g., new conditions, resolved problems) require explicit doctor approval before committing to FHIR.
 7. **Document Ingestion with Provenance:** Extracts clinical facts from uploaded medical records with fact-level approve/reject controls and source citations.
 8. **Doctor Command Center & Longitudinal Timeline:** Clinic attention queues, practice metric cards, and filterable timeline navigation.
+9. **Closed-Loop Patient Care:** an Android patient app writes to the *same* Postgres rows the clinic reads — booking, intake, refills, follow-ups and clinic messages that survive airplane mode, land exactly once, and appear in the clinician's attention queue. See [`docs/DEMO.md`](docs/DEMO.md).
 
 ---
 
@@ -55,6 +56,7 @@ Proton is an AI-native clinical operating system and ambient copilot designed fo
 
 - **Frontend (`apps/web`):** React 19, TypeScript, Vite, Tailwind CSS, `@medplum/react`, Lucide Icons.
 - **Backend API (`apps/api`):** Node.js 20+, Express, Multer, Provider Gateway.
+- **Patient App (`apps/dork-android`):** Kotlin, Jetpack Compose, Room-backed durable outbox with per-row idempotency keys, exact-alarm reminders. Syncs over `/api/patient/sync/*`; identity comes from an OTP-issued patient session, never from the request body.
 - **FHIR / Auth:** Medplum OAuth2 PKCE authentication and atomic FHIR R4 batch transactions (`medplum.executeBatch`).
 
 ---
@@ -184,8 +186,12 @@ Detailed step-by-step deployment and clinician invitation procedures are documen
 ## Project Documentation Directory
 
 - [`docs/VALIDATION.md`](docs/VALIDATION.md) — **Single source of truth for test coverage.**
+- [`docs/PILOT_90_DAY_PLAN.md`](docs/PILOT_90_DAY_PLAN.md) — **90-day pilot plan: $0 infrastructure, 1000 patients, 50 hospital design partners.**
+- [`docs/trust/`](docs/trust/) — Hospital-facing trust pack: security questionnaire, subprocessor list, DPA template, BAA stance, privacy policy, incident runbook.
 - [`docs/README.md`](docs/README.md) — Documentation index; explains which reports are historical.
 - [`docs/PRIVATE_SYNTHETIC_BETA_DEPLOYMENT.md`](docs/PRIVATE_SYNTHETIC_BETA_DEPLOYMENT.md) — Remote PaaS deployment guide and physician account setup.
+- [`docs/DEMO.md`](docs/DEMO.md) — The 3-minute phone + laptop demo, and what is actually happening behind it.
+- [`docs/adr/`](docs/adr/) — Decisions that are expensive to reverse, including [ADR 0004](docs/adr/0004-closed-loop-clinical-agents.md): clinical agents propose, the physician attests.
 - [`docs/PROTON_M6_THREAT_MODEL.md`](docs/PROTON_M6_THREAT_MODEL.md) — Threat model and trust boundaries.
 - [`docs/PHYSICIAN_VALIDATION_PROTOCOL.md`](docs/PHYSICIAN_VALIDATION_PROTOCOL.md) — 14-section validation test protocol for practicing physicians.
 

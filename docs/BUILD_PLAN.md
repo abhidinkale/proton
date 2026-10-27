@@ -1,17 +1,29 @@
 # Proton Build Plan — From Cockpit to Durable Clinical Loop
 
-**Status:** in progress — Phase 1 complete; Phase 2 token bridge shipped (codemod 19/23); Phase 3 durable booking shipped
-**Baseline:** current `main` working tree (hardening pass applied)
+**Status:** in progress — Phases 1–2 complete; Phase 3 mostly complete; the live care loop (3b) shipped ahead of schedule; 4–10 open
+**Baseline:** branch `build/vertical-slice`, working tree of 2026-10-27
 **Goal:** one durable, end-to-end, doctor-supervised encounter loop — booking → context → capture → note → diagnosis → prescription → patient app → report → follow-up — that survives a restart and works on real (non-fixture) data.
 
 ## Progress
 
+*Revised 2026-10-27. The previous revision said "1 done, 2–3 partial, 4–10 not
+started"; four things landed after it — patient identity, organization tenancy,
+the live care loop, and the clinical agent stack. This table is now the code's
+status, not the plan's aspiration.*
+
 | Phase | Status | Evidence |
 | --- | --- | --- |
 | 1 — Persistence & durable orchestration | **done** | `docs/adr/0001`, `docs/adr/0002`, `workflow_state_machine_validation.cjs` (29 checks), `workflow_api_validation.cjs` (23 checks) |
-| 2 — One authenticated API client | **partial** | medplum→Proton exchange (`docs/adr/0003`, `medplum_session_exchange_validation.cjs`, 8 checks); `src/lib/api.ts`; 19/23 `fetch` files codemodded; 4 files deferred |
-| 3 — Real booking & patient context | **partial** | durable patient booking (`services/scheduling/durableBooking.js`, `durable_booking_validation.cjs`, 9 checks); FHIR Appointment + fixture replacement still open |
-| 4–10 | not started | — |
+| 2 — One authenticated API client | **done, minus a live-IdP proof** | `docs/adr/0003`; `medplum_session_exchange_validation.cjs` (8 checks); `src/lib/api.ts` + `sessionToken.ts`; `npm run check:api-client` green (all browser calls, 6 allowlisted) |
+| 3 — Real booking & patient context | **partial** | `services/scheduling/durableBooking.js`, `durable_booking_validation.cjs` (9 checks); pre-visit intake now persists; FHIR `Appointment` still unwritten |
+| 3b — The live care loop *(not in the original plan)* | **done** | `patient_auth_validation` (11), `patient_sync_validation` (16), `clinic_live_validation` (14), `clinic_link_validation` (11), `organization_provisioning_validation` (9), `route_auth_coverage_validation`; `docs/DEMO.md` |
+| 4 — Real ambient capture | not started (engine is a stub) | `whisperStreamingEngine.js` is deterministic, not ASR |
+| 5 — Grounded notes & diagnosis | **partial — built ahead of the gate** | `evidence/loop/*`, `diagnosticDoctorAgent`, `specialistConsensusCouncil`; see `docs/adr/0004` for what is missing |
+| 6 — Real medication safety | **partial** | `safety/pharmacologyGraph.js` replaces the pairwise table; still no RxNorm |
+| 7 — One encounter UI | not started | three remain: `DoctorDeskEncounter`, `DoctorGuidedEncounter`, `LegacyEncounterWorkspace` |
+| 8 — Follow-up loop & real channels | **partial** — the loop closes, the channels do not | loop shipped as 3b; EMAIL is `simulated`, SMS has no adapter, no push |
+| 9 — Truthful CI, E2E, observability | **partial** | 49 suites + Android Gradle gate in CI; no Playwright, no OTel |
+| 10 — Pilot hardening | not started | — |
 
 ---
 
@@ -105,7 +117,7 @@ Not done in this phase, carried forward:
 - Multi-process worker behaviour is designed for (`SKIP LOCKED`) but only
   single-process tested.
 
-### Phase 2 — One authenticated API client · 2–3 d · **PARTIAL**
+### Phase 2 — One authenticated API client · 2–3 d · **DONE**
 
 Closes the P0 gap that strict mode exposes.
 
@@ -126,9 +138,10 @@ Shipped:
   API are on different origins, and turns an authenticated 401 into exactly one
   `proton:session-expired` event. The shell reacts once (logout + redirect)
   instead of every panel racing to redirect.
-- **Codemod.** 19 of 23 web files that called `fetch` now use `apiFetch`
-  (64 call sites). `npm run check:api-client` guards the invariant with an
-  explicit allowlist.
+- **Codemod.** All 23 web files that called `fetch` now use `apiFetch` (64 call
+  sites). `npm run check:api-client` guards the invariant; the allowlist is down
+  to 6 files, each with a written reason.
+
 - **Tests.** `medplum_session_exchange_validation.cjs` — 8 checks against a stub
   Medplum, including that the access token is never echoed and that the issued
   token authenticates a protected route with synthetic mode off.
@@ -142,19 +155,15 @@ Deliberately different from the original sketch:
   the standalone `check:api-client` script provides the same gate without a
   plugin dependency.
 
-Remaining before Phase 2 is done:
+Residual, not blocking:
 
-- Codemod the 4 deferred files (actively edited by the UI workstream):
-  `AmbientClinicalCockpit.tsx`, `DoctorGuidedEncounter.tsx`,
-  `MDSpecialistBoardPanel.tsx`, `DocumentReview.tsx`.
-- Remove the hardcoded demo accounts from the request path entirely (currently
-  behind `resolveSyntheticMode()` + `PROTON_ALLOW_DEMO_ACCOUNTS`).
-- Prove the acceptance path against a running Medplum instance: strict-mode login
-  → booking → sign-off with zero 401s. The exchange itself is tested; the
-  end-to-end browser run is not yet possible locally (Medplum is not in compose).
-- Move the doctor profile / token out of `localStorage` into an httpOnly session
-  cookie (tracked for Phase 10; role and tenant already come from the signed
-  token server-side, so storage tampering cannot escalate privileges).
+- Hardcoded demo accounts are still resolvable behind `resolveSyntheticMode()` +
+  `PROTON_ALLOW_DEMO_ACCOUNTS`; they should leave the request path entirely.
+- The acceptance path has not been run in a browser against a live Medplum
+  instance (Medplum is still not in compose). The exchange itself is tested.
+- The doctor profile and token still live in `localStorage`. Role and tenant come
+  from the signed token server-side, so tampering cannot escalate privileges, but
+  an httpOnly session cookie is the right end state (tracked for Phase 10).
 
 ### Phase 3 — Real booking and real patient context · 2–3 d · **PARTIAL**
 
@@ -180,15 +189,57 @@ Still open:
   compose and a practitioner token exchange for server-side FHIR writes.
 - Route booking through `schedulingAgentV2` for slot search/recall/no-show flows;
   the durable row is now the source of truth those flows can build on.
-- Intake still compiles in memory (`/api/patient/pre-visit-interview` returns a
-  fixture-shaped summary); it must create `QuestionnaireResponse` + update the
-  patient context.
-- `clinicSchedule.ts` / `DoctorDeskPatient` fixtures still feed the UI. Replacing
-  them is the next slice, and it is risky while the UI workstream is active.
-- **Acceptance not yet met:** booking is real, but the pre-visit brief still
-  reads fixtures and no code path is fully free of `clinicSchedule`.
+- The pre-visit brief is still assembled from fixtures even though intake now
+  persists; the brief must read the stored `QuestionnaireResponse`.
+- **Acceptance not yet met:** booking is real and the fixture *booking* path is
+  gone, but no code path is fully free of `clinicSchedule`.
+
+Closed since the last revision:
+
+- ~~Intake compiles in memory~~ — `/api/patient/pre-visit-interview` writes a real
+  intake record, and the patient app's intake screen feeds it.
+- ~~`clinicSchedule.ts` feeds the clinic console~~ — the dashboard, schedule and
+  Care Loop read `/api/clinic/live`. The fixture survives in the consultation
+  surfaces only.
+
+### Phase 3b — The live care loop · **DONE** *(added after the plan was written)*
+
+The plan had this as Phase 8. It shipped first, because without it the two halves
+of the product were two products.
+
+One Postgres database, written from both sides:
+
+- Patient: `POST /api/patient/sync/{bookings,cancels,reschedules,intake,follow-ups,refills}`
+  and one `GET /api/patient/sync/pull`. Identity from the signed patient session;
+  a body `tenantId` / `patientId` is ignored.
+- Clinic: `GET /api/clinic/live/overview`, confirm, reply, resolve. Polled every
+  three seconds — honest about being a poll, not dressed as a push.
+- Tenancy: `org_*` tables, six-character link codes hashed at rest, and
+  `route_auth_coverage_validation.cjs` failing the build if a route loses its
+  guard.
+- Delivery: patient sign-in codes go out by email (Brevo/Resend) when configured;
+  a failed send is a 502 and the code is invalidated.
+
+Evidence: `patient_auth_validation` (11), `patient_sync_validation` (16),
+`clinic_live_validation` (14), `clinic_link_validation` (11),
+`organization_provisioning_validation` (9), `otp_email_delivery_validation` (14).
+Stage script: `docs/DEMO.md`.
+
+What this phase deliberately does **not** claim:
+
+- No push (FCM). "Your refill is ready" waits for the patient to open the app.
+- No SMS. Phone-number sign-in is refused rather than silently ignored.
+- Clinical-outbox EMAIL is still recorded `simulated`.
+- A patient who joins two clinics gets two records, one per tenant. Isolation by
+  design, but it must become a product decision before a patient tries it.
 
 ### Phase 4 — Real ambient capture · 4–5 d
+
+**Current state:** `services/voice/whisperStreamingEngine.js` produces
+speaker-labelled turns and millisecond timestamps, but it is a deterministic
+generator — there is no ASR model behind it and no container in the stack. The
+`test_consultation.m4a` fixture at the repo root has never been through it. It is
+a contract, not a capability, and must not be demoed as transcription.
 
 - Containerize `faster-whisper` (MIT) with a small/medium model; optional `WhisperX` + `pyannote.audio` for diarization. Verify model licenses at adoption.
 - Web: `MediaRecorder` → chunked upload over WebSocket/SSE; live partial transcript; speaker labels.
@@ -198,12 +249,28 @@ Still open:
 
 ### Phase 5 — Grounded notes, diagnosis, recommendations · 5–6 d
 
+**Current state:** the evidence-side half is built and gated
+(`services/evidence/loop/`, 28 phases, claim verifier, contradiction engine,
+`pgvectorClinicalMemory`), and the diagnostic agents sit on top
+(`agents/diagnosticDoctorAgent`, `agents/specialistConsensusCouncil`). It was
+built ahead of this phase's other prerequisites and is **not yet bound to a
+clinician attestation** — a differential can be produced without a signature.
+[`adr/0004`](./adr/0004-closed-loop-clinical-agents.md) records the boundary and
+the missing wiring; closing that gap is the first task here, before any further
+agent capability.
+
 - Note generation already calls a real provider; add zod schemas for structured output and server-side validation.
 - Evidence: ingest a licensed/open guideline corpus into pgvector (Europe PMC REST + local PDFs with provenance). Claim verifier must cite a retrieved passage or return `NO_EVIDENCE`.
 - Diagnosis: LLM proposes differential → deterministic red-flag and contraindication gates → physician review. The 68-specialist registry becomes routing metadata, not a reasoning engine.
 - **Acceptance:** 20 synthetic cases, every diagnosis/recommendation either cited or flagged; zero ungrounded citations in the audit report.
 
 ### Phase 6 — Real medication safety · 3–4 d
+
+**Current state:** `services/safety/pharmacologyGraph.js` replaces the pairwise
+interaction table with a class graph (shared mechanism, cross-reactivity, renal
+and hepatic ceilings) and `safety/escalationRouter.js` consumes it. The data is
+still hand-written — no RxNorm, no RxNav, no openFDA — so the graph is only as
+good as the few dozen entries committed with it.
 
 - RxNorm normalization + RxNav interaction API (free, US government). Self-host via RxNav-in-a-Box if offline/air-gapped is required.
 - Renal dosing (CKD-EPI), weight/age pediatric ranges, duplicate-therapy detection.
@@ -212,6 +279,11 @@ Still open:
 
 ### Phase 7 — One encounter UI · 3–4 d
 
+**Current state:** all three UIs are still in the tree — `DoctorDeskEncounter`,
+`DoctorGuidedEncounter` and `LegacyEncounterWorkspace` — and `pages/Consultation.tsx`
+still routes to the legacy one. The dashboard rewrite did not touch the
+consultation surface, so this phase is untouched.
+
 - Keep `DoctorDeskEncounter` (it owns the shared types); delete `LegacyEncounterWorkspace` and fold `DoctorGuidedEncounter` into the desk flow.
 - Split the 2.5k-line component into feature modules (< 400 lines each): transcript, note, orders, safety, sign-off.
 - One design-system primitive set; remove the Mantine/Tailwind/custom overlap.
@@ -219,12 +291,25 @@ Still open:
 
 ### Phase 8 — Follow-up loop and real channels · 3–4 d
 
+**Current state:** the loop half shipped early as Phase 3b; the channel half did
+not. `services/workflow/outboxDispatcher.js` delivers IN_APP for real and records
+EMAIL as `simulated: true`; there is no SMS adapter and no push. `escalationRouter`
+routes red flags into the queue, but the patient app has no path back to it yet.
+What remains here is delivery, not plumbing.
+
 - Transactional outbox → worker → channel adapter. Start with a provider sandbox (Twilio) and a `SyntheticProvider` for tests. Self-host Jambonz if telephony must be open source.
 - Patient check-in → structured symptom capture → deterministic triage → escalation into the physician queue.
 - Appointment reminders and no-show follow-ups as retryable jobs.
 - **Acceptance:** follow-up survives restart, retries with backoff, records delivery status, escalates on red flags.
 
 ### Phase 9 — Truthful CI, E2E, observability · 2–3 d
+
+**Current state:** two of the goals are met and two are not. CI already gates the
+web build, 49 hermetic API suites against a real `postgres:16`, and the Android
+unit tests + debug assemble (`REQUIRE_POSTGRES=1`, so durability cannot silently
+skip). `VALIDATION.md` is the single status page and the historical milestone
+reports are already labelled as such in `docs/README.md`. Still missing: any
+browser E2E, any front-end unit test, and any trace.
 
 - Playwright E2E against a docker-compose stack (Postgres + Medplum + API + web). Add `@playwright/test` and a browser matrix.
 - Vitest for front-end units. Coverage gates on the encounter state machine and safety service.
@@ -295,12 +380,19 @@ A single automated test must prove:
 
 ---
 
-## 6. Decisions needed before Phase 1
+## 6. Decisions taken since this plan was written
 
-1. **Deployment target for the pilot:** local Docker only, or a hosted environment? (Serverless Vercel + in-memory state is incompatible with this plan; it needs a long-lived Postgres.)
-2. **Identity:** Medplum Cloud project available, or should I stand up local Medplum?
-3. **ASR runtime:** local CPU/MPS for the pilot, or a GPU/paid API? This sets the model size and latency budget.
-4. **Language:** English only, or English/Hindi code-switching? This changes model choice and the benchmark set.
-5. **Channels:** which follow-up channel is acceptable for the pilot — email, SMS, WhatsApp Business, or in-app only?
+All five open questions were answered by the pilot plan; recorded here so the
+plan stops asking.
 
-Default if no answer: local Docker, local Medplum, small English model, in-app + email follow-up.
+| # | Question | Answer | Where |
+| --- | --- | --- | --- |
+| 1 | Deployment target | One free VM (Oracle Always Free) behind a Cloudflare Tunnel, Postgres 16 on the same box. Not serverless. | [`PILOT_90_DAY_PLAN.md`](./PILOT_90_DAY_PLAN.md), `deploy/README.md` |
+| 2 | Identity | Medplum as the clinician IdP, exchanged for a Proton session (ADR 0003). Patient identity is separate: OTP → HMAC session. | `docs/adr/0003`, `middleware/patientAuth.js` |
+| 3 | ASR runtime | Not decided, because no ASR exists yet. Phase 4 opens with `faster-whisper` on CPU/MPS; the engine shipped so far is a stub. | this file, Phase 4 |
+| 4 | Language | English only for the pilot. Code-switching is out of scope until WER is measured on real clips. | — |
+| 5 | Channels | Email + in-app. **No SMS** — it is the one thing genuinely not free, so phone-number sign-in is refused rather than faked. No WhatsApp (ToS/ban risk). | `docs/PILOT_90_DAY_PLAN.md` §5 |
+
+Still genuinely open: whether the pilot runs on synthetic data only (it must,
+until a BAA exists), and whether the consult surface is rebuilt before or after
+real ASR lands.

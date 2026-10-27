@@ -6,6 +6,8 @@ Start here:
 | --- | --- |
 | [`BUILD_PLAN.md`](./BUILD_PLAN.md) | **The active plan.** Phases, stack choices, acceptance criteria, current status. |
 | [`VALIDATION.md`](./VALIDATION.md) | **What is actually tested, and what is not.** Read before quoting any test result. |
+| [`DEMO.md`](./DEMO.md) | **The 3-minute phone + laptop demo.** Pre-flight, stage script, failure recovery. |
+| [`PILOT_90_DAY_PLAN.md`](./PILOT_90_DAY_PLAN.md) | The active 90-day pilot: 1,000 patients, 50 clinics, $0 infrastructure. |
 | [`adr/`](./adr/) | Architecture Decision Records — decisions that are expensive to reverse. |
 | [`DEPLOYMENT.md`](./DEPLOYMENT.md) | Deployment and environment configuration. |
 | [`PRIVATE_SYNTHETIC_BETA_DEPLOYMENT.md`](./PRIVATE_SYNTHETIC_BETA_DEPLOYMENT.md) | Synthetic beta deployment posture. |
