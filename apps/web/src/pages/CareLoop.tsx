@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import {
   AlertTriangle,
   Check,
+  FileText,
   Loader2,
   MessageSquare,
   RefreshCw,
@@ -13,13 +14,17 @@ import { authService } from '../services/auth';
 import { ApiError } from '../lib/api';
 import {
   careLoopApi,
+  documentCategoryLabel,
   formatAgo,
+  formatBytes,
   formatClock,
   formatDayLabel,
   type AttentionSeverity,
   type LiveAppointment,
   type LiveAttentionItem,
+  type LiveDocument,
   type LiveOverview,
+  type LivePrescription,
   type LiveThread,
   type LiveThreadSummary
 } from '../lib/careLoopApi';
@@ -86,6 +91,8 @@ export default function CareLoop() {
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [activePatientId, setActivePatientId] = useState<string | null>(null);
   const [thread, setThread] = useState<LiveThread | null>(null);
+  const [patientDocuments, setPatientDocuments] = useState<LiveDocument[]>([]);
+  const [patientPrescriptions, setPatientPrescriptions] = useState<LivePrescription[]>([]);
   const [draft, setDraft] = useState('');
   const [movingId, setMovingId] = useState<string | null>(null);
   const [moveValue, setMoveValue] = useState('');
@@ -94,6 +101,26 @@ export default function CareLoop() {
 
   const mounted = useRef(true);
   const focusTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  const loadPrescriptions = useCallback(async (patientId: string) => {
+    try {
+      const data = await careLoopApi.prescriptions(patientId);
+      setPatientPrescriptions(data.prescriptions);
+    } catch {
+      // A prescription list that failed to load is not worth an error banner
+      // over a working conversation; the panel simply shows none.
+    }
+  }, []);
+
+  // Prescriptions change only when someone signs one, so they are fetched on
+  // open and after a signature rather than on every 3-second poll.
+  useEffect(() => {
+    if (!activePatientId) {
+      setPatientPrescriptions([]);
+      return;
+    }
+    void loadPrescriptions(activePatientId);
+  }, [activePatientId, loadPrescriptions]);
 
   const loadOverview = useCallback(async () => {
     try {
@@ -136,6 +163,7 @@ export default function CareLoop() {
   useEffect(() => {
     if (!activePatientId) {
       setThread(null);
+      setPatientDocuments([]);
       return;
     }
 
@@ -144,8 +172,17 @@ export default function CareLoop() {
 
     const tick = async () => {
       try {
-        const data = await careLoopApi.thread(activePatientId);
-        if (!stopped) setThread(data);
+        // Documents travel with the thread: a patient can attach a report while
+        // the clinician has the sheet open, and it should appear without a
+        // close-and-reopen.
+        const [data, files] = await Promise.all([
+          careLoopApi.thread(activePatientId),
+          careLoopApi.documents(activePatientId).catch(() => ({ documents: [] as LiveDocument[] }))
+        ]);
+        if (!stopped) {
+          setThread(data);
+          setPatientDocuments(files.documents);
+        }
       } catch {
         // A thread that vanished is not worth an error banner over the panel;
         // the overview poll still reports connectivity.
@@ -487,6 +524,11 @@ export default function CareLoop() {
       {activePatientId && (
         <ConversationSheet
           thread={thread}
+          documents={patientDocuments}
+          prescriptions={patientPrescriptions}
+          onPrescribed={() => {
+            if (activePatientId) void loadPrescriptions(activePatientId);
+          }}
           draft={draft}
           onDraftChange={setDraft}
           sending={busyKey === 'reply'}
@@ -989,6 +1031,9 @@ function ThreadLine({
 
 function ConversationSheet({
   thread,
+  documents,
+  prescriptions,
+  onPrescribed,
   draft,
   onDraftChange,
   sending,
@@ -998,6 +1043,9 @@ function ConversationSheet({
   resolving
 }: {
   thread: LiveThread | null;
+  documents: LiveDocument[];
+  prescriptions: LivePrescription[];
+  onPrescribed: () => void;
   draft: string;
   onDraftChange: (value: string) => void;
   sending: boolean;
@@ -1006,6 +1054,8 @@ function ConversationSheet({
   onResolve: () => void;
   resolving: boolean;
 }) {
+  const [openError, setOpenError] = useState<string | null>(null);
+
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
@@ -1052,6 +1102,50 @@ function ConversationSheet({
             Every entry is a row in the clinic database
           </p>
         </header>
+
+        {/* The patient's own paperwork, above the conversation: a report they
+            attached is context for the reply a clinician is about to write. */}
+        {documents.length > 0 && (          <section className="border-b border-[#DCD6C8] bg-[#F3EFE3] px-5 py-3">
+            <p className="font-mono text-[8.5px] uppercase tracking-[0.18em] text-[#8A8578]">
+              Patient files · {documents.length}
+            </p>
+            <ul className="mt-2 space-y-1">
+              {documents.map((document) => (
+                <li key={document.id}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void careLoopApi.openDocument(document).catch((err: unknown) => {
+                        setOpenError(err instanceof Error ? err.message : 'The file could not be opened.');
+                      });
+                    }}
+                    className="group flex w-full items-baseline gap-2 border-b border-[#E9E4D8] py-1.5 text-left last:border-b-0"
+                  >
+                    <FileText className="mt-0.5 h-3 w-3 shrink-0 text-[#8A8578]" />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[11.5px] leading-tight text-[#14161A] group-hover:underline">
+                        {document.title}
+                      </span>
+                      <span className="mt-0.5 block font-mono text-[8.5px] uppercase tracking-[0.1em] text-[#A9A394]">
+                        {documentCategoryLabel(document.category)} · {formatBytes(document.byteSize)} ·{' '}
+                        {formatAgo(document.uploadedAt)}
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+            {openError && (
+              <p className="mt-2 text-[10.5px] leading-snug text-[#B45309]">{openError}</p>
+            )}
+          </section>
+        )}
+
+        <PrescriptionPanel
+          patientId={thread?.patientId || null}
+          items={prescriptions}
+          onPrescribed={onPrescribed}
+        />
 
         <div className="flex-1 overflow-y-auto px-5">
           {!thread && (
@@ -1143,6 +1237,187 @@ function ConversationSheet({
         </footer>
       </div>
     </div>
+  );
+}
+
+/**
+ * Prescribing from the clinic sheet.
+ *
+ * Deliberately a small form and not a protocol builder: the pilot needs one
+ * medicine to reach one phone, and every extra field is a field nobody fills
+ * in at the end of a clinic day.
+ *
+ * The signature is the physician's. The panel says out loud that the
+ * deterministic interaction check did not run, because a screen that implies a
+ * safety check would be worse than one that admits it skipped.
+ */
+function PrescriptionPanel({
+  patientId,
+  items,
+  onPrescribed
+}: {
+  patientId: string | null;
+  items: LivePrescription[];
+  onPrescribed: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [medication, setMedication] = useState('');
+  const [dose, setDose] = useState('');
+  const [frequency, setFrequency] = useState('Twice daily');
+  const [days, setDays] = useState('30');
+  const [reason, setReason] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const sign = async () => {
+    if (!patientId) return;
+    if (!medication.trim() || !dose.trim()) {
+      setError('A medicine and a dose are required before signing.');
+      return;
+    }
+
+    setBusy(true);
+    setError(null);
+    try {
+      await careLoopApi.prescribe({
+        patientId,
+        reason: reason.trim() || undefined,
+        medications: [
+          {
+            medicationName: medication.trim(),
+            dose: dose.trim(),
+            frequency: frequency.trim() || 'Once daily',
+            durationDays: Number(days) > 0 ? Number(days) : undefined
+          }
+        ]
+      });
+      setMedication('');
+      setDose('');
+      setReason('');
+      setOpen(false);
+      onPrescribed();
+    } catch (err) {
+      setError(
+        err instanceof ApiError ? err.message : 'The prescription could not be signed.'
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section className="border-b border-[#DCD6C8] bg-[#FAF7EE] px-5 py-3">
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="font-mono text-[8.5px] uppercase tracking-[0.18em] text-[#8A8578]">
+          Prescriptions · {items.length}
+        </p>
+        <button
+          type="button"
+          onClick={() => {
+            setOpen((value) => !value);
+            setError(null);
+          }}
+          className="font-mono text-[8.5px] uppercase tracking-[0.14em] text-[#6E6A61] underline decoration-[#C9C2B2] underline-offset-2 hover:text-[#14161A]"
+        >
+          {open ? 'Cancel' : 'Prescribe'}
+        </button>
+      </div>
+
+      {items.length > 0 && (
+        <ul className="mt-2 space-y-2">
+          {items.map((item) => (
+            <li key={item.record.id} className="border-b border-[#E9E4D8] pb-2 last:border-b-0 last:pb-0">
+              <p className="text-[11.5px] leading-tight text-[#14161A]">
+                {item.record.title}
+              </p>
+              <p className="mt-0.5 font-mono text-[8.5px] uppercase tracking-[0.1em] text-[#A9A394]">
+                {item.record.displayDate} · {item.detail.doctorName}
+              </p>
+              <ul className="mt-1 space-y-0.5">
+                {item.detail.medications.map((med) => (
+                  <li key={`${item.record.id}-${med.name}`} className="text-[11px] leading-snug text-[#4A463E]">
+                    {med.name} {med.dose} · {med.frequency} · {med.duration}
+                  </li>
+                ))}
+              </ul>
+              {!item.safety.checked && (
+                <p className="mt-1 text-[9.5px] leading-snug text-[#B07A2A]">
+                  Interaction check not run for this signature.
+                </p>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {open && (
+        <div className="mt-3 space-y-2 rounded-[8px] border border-[#E3DED2] bg-[#FFFDF8] p-3">
+          <div className="grid grid-cols-2 gap-2">
+            <label className="block">
+              <span className="font-mono text-[8px] uppercase tracking-[0.14em] text-[#8A8578]">Medicine</span>
+              <input
+                value={medication}
+                onChange={(event) => setMedication(event.target.value)}
+                placeholder="Metformin"
+                className="mt-1 w-full rounded-[5px] border border-[#E3DED2] bg-white px-2 py-1.5 text-[11.5px] text-[#14161A] outline-none focus:border-[#8A8578]"
+              />
+            </label>
+            <label className="block">
+              <span className="font-mono text-[8px] uppercase tracking-[0.14em] text-[#8A8578]">Dose</span>
+              <input
+                value={dose}
+                onChange={(event) => setDose(event.target.value)}
+                placeholder="500 mg"
+                className="mt-1 w-full rounded-[5px] border border-[#E3DED2] bg-white px-2 py-1.5 text-[11.5px] text-[#14161A] outline-none focus:border-[#8A8578]"
+              />
+            </label>
+            <label className="block">
+              <span className="font-mono text-[8px] uppercase tracking-[0.14em] text-[#8A8578]">Frequency</span>
+              <input
+                value={frequency}
+                onChange={(event) => setFrequency(event.target.value)}
+                className="mt-1 w-full rounded-[5px] border border-[#E3DED2] bg-white px-2 py-1.5 text-[11.5px] text-[#14161A] outline-none focus:border-[#8A8578]"
+              />
+            </label>
+            <label className="block">
+              <span className="font-mono text-[8px] uppercase tracking-[0.14em] text-[#8A8578]">Days</span>
+              <input
+                value={days}
+                onChange={(event) => setDays(event.target.value)}
+                inputMode="numeric"
+                className="mt-1 w-full rounded-[5px] border border-[#E3DED2] bg-white px-2 py-1.5 text-[11.5px] text-[#14161A] outline-none focus:border-[#8A8578]"
+              />
+            </label>
+          </div>
+
+          <label className="block">
+            <span className="font-mono text-[8px] uppercase tracking-[0.14em] text-[#8A8578]">Reason</span>
+            <input
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+              placeholder="Type 2 diabetes review"
+              className="mt-1 w-full rounded-[5px] border border-[#E3DED2] bg-white px-2 py-1.5 text-[11.5px] text-[#14161A] outline-none focus:border-[#8A8578]"
+            />
+          </label>
+
+          {error && <p className="text-[10.5px] leading-snug text-[#B45309]">{error}</p>}
+
+          <div className="flex items-center justify-between gap-2 pt-1">
+            <p className="max-w-[62%] text-[9px] leading-snug text-[#A9A394]">
+              Signing sends this to the patient's phone. The interaction check is not run here.
+            </p>
+            <button
+              type="button"
+              onClick={() => void sign()}
+              disabled={busy}
+              className="rounded-[6px] bg-[#14161A] px-3 py-1.5 font-mono text-[8.5px] uppercase tracking-[0.14em] text-[#FBF9F3] transition-opacity disabled:opacity-50"
+            >
+              {busy ? 'Signing…' : 'Sign & send'}
+            </button>
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
 

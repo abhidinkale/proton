@@ -7,7 +7,7 @@
  * easy to render demo data beside real data without noticing.
  */
 
-import { apiJson } from './api';
+import { apiFetch, apiJson } from './api';
 
 export type LiveAppointmentStatus =
   | 'BOOKED'
@@ -80,6 +80,66 @@ export interface LiveThread {
   messages: LiveThreadMessage[];
 }
 
+/** A file the patient attached from their phone. Bytes are served separately. */
+export interface LiveDocument {
+  id: string;
+  patientId: string;
+  patientName: string;
+  title: string;
+  category: string;
+  contentType: string;
+  byteSize: number;
+  sha256: string;
+  source: string;
+  uploadedAt: string;
+  downloadPath: string;
+}
+
+/** A prescription sheet the clinic signed for one patient. */
+export interface LivePrescription {
+  record: {
+    id: string;
+    title: string;
+    subtitle: string;
+    dateIso: string;
+    displayDate: string;
+    doctorOrLab: string;
+    summary: string;
+  };
+  detail: {
+    id: string;
+    doctorName: string;
+    clinicName: string;
+    dateIssued: string;
+    diagnosisReason: string;
+    medications: Array<{
+      name: string;
+      dose: string;
+      route: string;
+      frequency: string;
+      duration: string;
+      instructions: string;
+      refillsAllowed: number;
+    }>;
+  };
+  /**
+   * Recorded truthfully: the console does not run the deterministic interaction
+   * check, so `checked` is false and the UI must say so.
+   */
+  safety: { status: string; checked: boolean; note: string | null };
+}
+
+export interface PrescriptionInput {
+  patientId: string;
+  reason?: string;
+  medications: Array<{
+    medicationName: string;
+    dose: string;
+    frequency: string;
+    durationDays?: number;
+  }>;
+}
+
 export interface LiveOverview {
   generatedAt: string;
   persistence: 'postgres';
@@ -113,6 +173,48 @@ export const careLoopApi = {
     apiJson<LiveThread>(
       `/api/clinic/live/messages?patientId=${encodeURIComponent(patientId)}`
     ),
+
+  /** Files the patient uploaded, scoped to one patient. */
+  documents: (patientId: string) =>
+    apiJson<{ documents: LiveDocument[] }>(
+      `/api/clinic/live/documents?patientId=${encodeURIComponent(patientId)}`
+    ),
+
+  /** Signed prescriptions for one patient, newest first. */
+  prescriptions: (patientId: string) =>
+    apiJson<{ prescriptions: LivePrescription[] }>(
+      `/api/clinic/live/prescriptions?patientId=${encodeURIComponent(patientId)}`
+    ),
+
+  prescribe: (input: PrescriptionInput) =>
+    apiJson<{
+      encounterId: string;
+      prescription: LivePrescription;
+      safety: { checked: boolean; note: string };
+    }>('/api/clinic/live/prescriptions', {
+      method: 'POST',
+      headers: jsonHeaders(),
+      body: JSON.stringify(input)
+    }),
+
+  /**
+   * Opens a stored document in a new tab.
+   *
+   * The file route requires a Bearer token, so a plain `<a href>` would be a
+   * 401. Fetching the bytes and handing the tab a blob URL keeps the
+   * authenticated path intact and never exposes a token in a URL.
+   */
+  openDocument: async (document: Pick<LiveDocument, 'downloadPath' | 'title'>) => {
+    const response = await apiFetch(document.downloadPath);
+    if (!response.ok) {
+      throw new Error(`Could not open “${document.title}” (${response.status}).`);
+    }
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank', 'noopener,noreferrer');
+    // The tab has the bytes; revoke after it has had time to load.
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  },
 
   confirm: (appointmentId: string) =>
     apiJson<{ appointment: LiveAppointment }>(
@@ -184,4 +286,27 @@ export function formatAgo(iso: string, now = new Date()): string {
   const hours = Math.round(minutes / 60);
   if (hours < 24) return `${hours} hr ago`;
   return formatDayLabel(iso, now);
+}
+
+/** "1.2 MB" — a size a clinician can compare at a glance. */
+export function formatBytes(bytes: number): string {
+  const value = Number(bytes);
+  if (!Number.isFinite(value) || value <= 0) return '—';
+  if (value < 1024) return `${value} B`;
+  if (value < 1024 * 1024) return `${Math.round(value / 1024)} KB`;
+  return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/** Turns LAB_REPORT into "Laboratory report" for a label. */
+export function documentCategoryLabel(category: string): string {
+  const labels: Record<string, string> = {
+    LAB_REPORT: 'Laboratory report',
+    PRESCRIPTION: 'Prescription',
+    DISCHARGE_SUMMARY: 'Discharge summary',
+    IMAGING_REPORT: 'Imaging / radiology',
+    REFERRAL: 'Referral letter',
+    INSURANCE: 'Insurance & claims',
+    OTHER: 'Medical document'
+  };
+  return labels[category] || 'Medical document';
 }
