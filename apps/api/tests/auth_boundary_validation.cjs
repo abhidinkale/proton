@@ -7,7 +7,8 @@
  *   - With synthetic mode disabled, clinician-facing routes reject anonymous traffic.
  *   - Hardcoded demo credentials cannot authenticate outside synthetic mode.
  *   - A valid signed session token is accepted; a forged one is rejected.
- *   - Patient-facing routes explicitly remain public.
+ *   - Patient-facing booking/intake routes now require a patient session and
+ *     no longer accept anonymous writes.
  */
 
 const assert = require('assert');
@@ -148,15 +149,19 @@ async function runAuthBoundaryValidation() {
       console.log('✓ Forged session tokens are rejected');
     }
 
-    // 9. Patient-facing intake remains public by design.
+    // 9. Patient-facing intake now requires a patient session. The old
+    //    expectation ("remain public") was the vulnerability: anyone could write
+    //    into any patient record by supplying body.patientId.
     {
       const res = await request(PATIENT_ROUTE, {
         method: 'POST',
         body: JSON.stringify({ patientId: 'PAT-007', symptoms: ['headache'] })
       });
-      assert.strictEqual(res.status, 200, `patient intake must stay public, got ${res.status}`);
+      const body = await res.json();
+      assert.strictEqual(res.status, 401, `patient intake must require auth, got ${res.status}`);
+      assert.strictEqual(body.code, 'PATIENT_AUTH_REQUIRED');
       passed++;
-      console.log('✓ Patient-facing intake routes remain public');
+      console.log('✓ Patient-facing intake routes require a patient session');
     }
   } finally {
     restoreEnv('PROTON_SYNTHETIC_MODE', originalSyntheticMode);

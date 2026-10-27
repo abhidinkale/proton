@@ -96,8 +96,8 @@ async function runValidation() {
 
   assert(appeal.appealId.startsWith('APP-'), 'Appeal ID must start with APP-');
   assert(appeal.letter.includes('42 CFR § 422.568'), 'Appeal letter must cite CMS Title 42 CFR § 422.568');
-  assert(appeal.letter.includes('EMPA-REG OUTCOME trial'), 'Appeal letter must cite landmark RCT evidence');
-  assert(appeal.predictedOverturnProbability.includes('88%'), 'Predicted overturn probability must be calculated');
+  assert(appeal.letter.toLowerCase().includes('empa-reg outcome trial'), 'Appeal letter must cite landmark RCT evidence');
+  assert(appeal.predictedOverturnProbability === 'Not estimated', 'No unvalidated overturn probability should be asserted');
   console.log('✔ Level 1 Appeal generated with 42 CFR § 422.568 and EMPA-REG citations');
 
   // Test 6: Cryptographic SHA-256 Audit Trail

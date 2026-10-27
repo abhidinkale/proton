@@ -12,6 +12,11 @@
  *   - medgemma_e2e_verification.cjs     running API server
  *   - gemini_live_smoke.cjs             GEMINI_API_KEY
  *   - deepseek_live_smoke.cjs           DEEPSEEK_API_KEY
+ *   - milestone4_reality_validation.cjs calls the live Gemini model directly
+ *                                       and asserts its provider identity, so it
+ *                                       cannot pass in demo mode by design. Run
+ *                                       it with a real key before a release:
+ *                                         PROTON_AI_MODE=real node tests/milestone4_reality_validation.cjs
  *
  * PostgreSQL-backed suites are listed in REQUIRES_POSTGRES. They create and
  * drop their own throwaway databases. Locally, if Postgres is unreachable they
@@ -36,13 +41,17 @@ const EXCLUDED = new Set([
   'medgemma_benchmark.cjs',
   'medgemma_e2e_verification.cjs',
   'gemini_live_smoke.cjs',
-  'deepseek_live_smoke.cjs'
+  'deepseek_live_smoke.cjs',
+  'milestone4_reality_validation.cjs'
 ]);
 
 const REQUIRES_POSTGRES = new Set([
   'workflow_state_machine_validation.cjs',
   'workflow_api_validation.cjs',
-  'durable_booking_validation.cjs'
+  'durable_booking_validation.cjs',
+  'tenant_isolation_validation.cjs',
+  'patient_sync_validation.cjs',
+  'clinic_live_validation.cjs'
 ]);
 
 const REQUIRE_POSTGRES = process.env.REQUIRE_POSTGRES === '1';
@@ -110,7 +119,23 @@ async function main() {
 
     const run = spawnSync(process.execPath, [path.join(TESTS_DIR, suite)], {
       cwd: path.join(TESTS_DIR, '..'),
-      env: { ...process.env, NODE_ENV: 'test', REQUIRE_POSTGRES: REQUIRE_POSTGRES ? '1' : '0' },
+      env: {
+        ...process.env,
+        NODE_ENV: 'test',
+        REQUIRE_POSTGRES: REQUIRE_POSTGRES ? '1' : '0',
+        // This suite is defined as hermetic: no network, no provider keys. A
+        // developer .env with a live GEMINI/DEEPSEEK key would otherwise make
+        // these tests call a real model, so a 3s provider timeout becomes a
+        // red build. Demo mode is the mode this gate was written against.
+        // Live-provider coverage lives in the *_live_smoke suites.
+        PROTON_AI_MODE: 'demo',
+        // Same reasoning for patient sign-in codes: a developer who has already
+        // configured a real provider must not make the gate send email, and the
+        // OTP suites rely on the simulated `devCode` to complete a login.
+        // otp_email_delivery_validation.cjs sets this per case against a local
+        // stub server.
+        OTP_DELIVERY: 'simulated'
+      },
       encoding: 'utf8',
       timeout: 180_000
     });

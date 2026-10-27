@@ -61,8 +61,27 @@ async function run() {
   const MD = { 'x-proton-dev-persona': 'physician-lin' };
   const scheduledFor = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
 
+  // Patient identity now comes from a signed session, never from the body.
+  // Mint a synthetic patient token exactly as the app does.
+  const SELF_PATIENT_ID = 'pat-synthetic-a';
+  const devSession = await fetch(`${baseUrl}/api/patient/auth/dev-session`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ patientId: SELF_PATIENT_ID })
+  });
+  const devBody = await devSession.json();
+  assert.ok(devBody.token, `dev-session failed: ${devSession.status} ${JSON.stringify(devBody)}`);
+  const PATIENT_AUTH = { Authorization: `Bearer ${devBody.token}` };
+
+  // A second identity, used to prove one patient cannot act as another.
+  const devSessionB = await fetch(`${baseUrl}/api/patient/auth/dev-session`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ patientId: 'pat-synthetic-b' })
+  });
+  const PATIENT_AUTH_B = { Authorization: `Bearer ${(await devSessionB.json()).token}` };
+
   const bookingBody = {
-    patientId: 'pat-self-booking-1',
     scheduledFor,
     durationMinutes: 30,
     reason: 'Persistent morning cough',
@@ -78,13 +97,16 @@ async function run() {
   let firstEncounterId = null;
 
   await testAsync('Booking persists a real appointment + encounter', async () => {
-    const res = await post('/api/patient/appointment-booking', bookingBody, { 'Idempotency-Key': 'booking-test-1' });
+    const res = await post('/api/patient/appointment-booking', bookingBody, {
+      'Idempotency-Key': 'booking-test-1',
+      ...PATIENT_AUTH
+    });
     const body = await res.json();
     assert.strictEqual(res.status, 201, `expected 201, got ${res.status}: ${JSON.stringify(body)}`);
     assert.ok(body.appointmentId.startsWith('apt-'), 'appointment id must be a persisted id');
     assert.ok(body.encounterId.startsWith('enc-'), 'encounter must be created with the booking');
     assert.strictEqual(body.status, 'BOOKED');
-    assert.strictEqual(body.patientId, 'pat-self-booking-1');
+    assert.strictEqual(body.patientId, SELF_PATIENT_ID);
     assert.strictEqual(body.createdPatient, true);
     assert.strictEqual(new Date(body.scheduledFor).getTime(), new Date(scheduledFor).getTime());
     firstAppointmentId = body.appointmentId;
@@ -113,7 +135,10 @@ async function run() {
   });
 
   await testAsync('Replaying the same booking is idempotent', async () => {
-    const res = await post('/api/patient/appointment-booking', bookingBody, { 'Idempotency-Key': 'booking-test-1' });
+    const res = await post('/api/patient/appointment-booking', bookingBody, {
+      'Idempotency-Key': 'booking-test-1',
+      ...PATIENT_AUTH
+    });
     const body = await res.json();
     assert.strictEqual(res.status, 200, `expected 200 replay, got ${res.status}`);
     assert.strictEqual(body.idempotent, true);
@@ -122,47 +147,48 @@ async function run() {
   });
 
   await testAsync('A booking without an explicit time is rejected, not guessed', async () => {
-    const res = await post('/api/patient/appointment-booking', {
-      patientId: 'pat-self-booking-1',
-      reason: 'Cough'
-    });
+    const res = await post('/api/patient/appointment-booking', { reason: 'Cough' }, PATIENT_AUTH);
     const body = await res.json();
     assert.strictEqual(res.status, 400);
     assert.strictEqual(body.code, 'SCHEDULED_FOR_REQUIRED');
   });
 
   await testAsync('A past appointment is rejected', async () => {
-    const res = await post('/api/patient/appointment-booking', {
-      patientId: 'pat-self-booking-1',
-      scheduledFor: new Date(Date.now() - 60 * 60 * 1000).toISOString()
-    });
+    const res = await post(
+      '/api/patient/appointment-booking',
+      { scheduledFor: new Date(Date.now() - 60 * 60 * 1000).toISOString() },
+      PATIENT_AUTH
+    );
     const body = await res.json();
     assert.strictEqual(res.status, 400);
     assert.strictEqual(body.code, 'SCHEDULED_FOR_IN_PAST');
   });
 
-  await testAsync('An unknown patient is not invented', async () => {
-    const res = await post('/api/patient/appointment-booking', {
-      patientId: 'pat-does-not-exist',
-      scheduledFor
-    });
-    const body = await res.json();
-    assert.strictEqual(res.status, 404);
-    assert.strictEqual(body.code, 'PATIENT_NOT_FOUND');
-  });
-
-  await testAsync('Missing patientId is a validation error', async () => {
+  await testAsync('A booking with no patient session is rejected', async () => {
     const res = await post('/api/patient/appointment-booking', { scheduledFor });
     const body = await res.json();
-    assert.strictEqual(res.status, 400);
-    assert.strictEqual(body.code, 'PATIENT_ID_REQUIRED');
+    assert.strictEqual(res.status, 401);
+    assert.strictEqual(body.code, 'PATIENT_AUTH_REQUIRED');
+  });
+
+  await testAsync('A patient cannot book on behalf of another patient', async () => {
+    // Identity is the session. A body-supplied patientId that differs must be a
+    // hard 403, not a silent switch to the other person's record.
+    const res = await post(
+      '/api/patient/appointment-booking',
+      { patientId: 'pat-synthetic-b', scheduledFor },
+      PATIENT_AUTH
+    );
+    const body = await res.json();
+    assert.strictEqual(res.status, 403);
+    assert.strictEqual(body.code, 'PATIENT_SCOPE_VIOLATION');
   });
 
   await testAsync('Disabled persistence returns 503, not a fake confirmation', async () => {
     const original = process.env.WORKFLOW_PERSISTENCE;
     process.env.WORKFLOW_PERSISTENCE = 'disabled';
     try {
-      const res = await post('/api/patient/appointment-booking', bookingBody);
+      const res = await post('/api/patient/appointment-booking', bookingBody, PATIENT_AUTH);
       const body = await res.json();
       assert.strictEqual(res.status, 503);
       assert.strictEqual(body.code, 'DURABLE_BOOKING_UNAVAILABLE');

@@ -73,7 +73,14 @@ async function runSuite() {
   // Test 3: Prior-Authorization Clinical Packet Generation
   {
     const packet = priorAuthService.generatePriorAuthPacket({
-      patient: { name: 'Eleanor Vance', age: 68, gender: 'female', mrn: 'MRN-847291' },
+      patient: {
+        name: 'Eleanor Vance',
+        age: 68,
+        gender: 'female',
+        mrn: 'MRN-847291',
+        medications: ['Metformin 1000 mg BID'],
+        recentLabs: [{ name: 'HbA1c', value: '8.2%', status: 'high', date: '2026-10-01' }]
+      },
       targetMedication: 'Empagliflozin 10 mg',
       diagnosisCode: 'E11.65',
       diagnosisDescription: 'Type 2 Diabetes Mellitus with Hyperglycemia'
