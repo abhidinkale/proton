@@ -100,11 +100,22 @@ class RecordsViewModel(
     category: DocumentCategory,
     uri: String,
     fileSizeText: String,
+    bytes: ByteArray? = null,
+    mimeType: String = "application/pdf",
+    fileName: String = "document.pdf",
     onComplete: (Result<HealthDocument>) -> Unit = {}
   ) {
     viewModelScope.launch {
       _uiState.value = _uiState.value.copy(isUploading = true)
-      val res = recordRepository.uploadDocument(title, category, uri, fileSizeText)
+      val res = recordRepository.uploadDocument(
+        title = title,
+        category = category,
+        fileUri = uri,
+        fileSizeText = fileSizeText,
+        bytes = bytes,
+        mimeType = mimeType,
+        fileName = fileName
+      )
       _uiState.value = _uiState.value.copy(
         isUploading = false,
         uploadSuccessDocument = res.getOrNull()

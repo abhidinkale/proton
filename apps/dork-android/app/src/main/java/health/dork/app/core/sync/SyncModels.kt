@@ -217,6 +217,24 @@ data class RemoteClinicMessage(
 )
 
 /**
+ * A document the clinic holds for this patient — their own upload, or one a
+ * clinician attached. The bytes are fetched separately through an
+ * authenticated route; this is the index entry.
+ */
+@Serializable
+data class RemoteDocument(
+  val id: String = "",
+  val title: String = "",
+  val category: String = "OTHER",
+  val contentType: String = "",
+  val byteSize: Long = 0,
+  val source: String = "PATIENT_APP",
+  /** ISO instant. */
+  val uploadedAt: String? = null,
+  val downloadPath: String? = null
+)
+
+/**
  * Everything the clinic sends back. Every collection defaults to empty, which
  * is exactly why the merger never treats "absent" as "delete".
  */
@@ -225,6 +243,7 @@ data class SyncPullResponse(
   val serverTime: String? = null,
   val appointments: List<RemoteAppointment> = emptyList(),
   val messages: List<RemoteClinicMessage> = emptyList(),
+  val documents: List<RemoteDocument> = emptyList(),
   val prescriptions: List<PrescriptionBundle> = emptyList(),
   val availability: List<AvailabilityEntry> = emptyList()
 )

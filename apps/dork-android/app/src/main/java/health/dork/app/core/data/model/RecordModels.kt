@@ -101,5 +101,14 @@ data class HealthDocument(
   val originalUri: String,
   val isOcrProcessed: Boolean = false,
   val extractedText: String? = null,
-  val structuredEntities: List<String> = emptyList()
+  val structuredEntities: List<String> = emptyList(),
+  /** The clinic's id for this document, once it has been sent. */
+  val remoteId: String? = null,
+  /**
+   * LOCAL_ONLY — on this phone, never sent (sync off, or not signed in).
+   * SENDING    — an upload was attempted and is not confirmed yet.
+   * SENT       — the clinic holds a copy.
+   * FAILED     — the clinic refused it (wrong type, too large).
+   */
+  val syncState: String = "LOCAL_ONLY"
 )

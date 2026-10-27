@@ -34,6 +34,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,12 +54,38 @@ import health.dork.app.core.designsystem.components.DorkStatusBadge
 import health.dork.app.core.designsystem.components.DorkStatusType
 import health.dork.app.core.designsystem.components.DorkTextField
 import health.dork.app.core.designsystem.components.DorkTopBar
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 private data class PickedFile(
   val uri: String,
   val displayName: String,
   val sizeText: String
 )
+
+/** Matches the clinic route's ceiling; anything larger is refused there. */
+private const val MAX_UPLOAD_BYTES = 15 * 1024 * 1024
+
+/**
+ * Reads the chosen file into memory for upload.
+ *
+ * Returns null when the provider refuses the read, which is a normal outcome
+ * after a reboot on some devices: the patient re-picks the file rather than
+ * being shown a stored document that cannot be opened.
+ */
+/** The bytes and their type, kept together so the call site cannot swap them. */
+private data class UploadPayload(val bytes: ByteArray, val mimeType: String)
+
+private fun readForUpload(
+  context: android.content.Context,
+  file: PickedFile
+): UploadPayload? = runCatching {
+  val uri = Uri.parse(file.uri)
+  val mimeType = context.contentResolver.getType(uri) ?: "application/pdf"
+  val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+  if (bytes == null) null else UploadPayload(bytes, mimeType)
+}.getOrNull()
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -71,6 +98,7 @@ fun DocumentUploadScreen(
   val uiState by viewModel.uiState.collectAsState()
   val context = LocalContext.current
   val scrollState = rememberScrollState()
+  val scope = rememberCoroutineScope()
 
   var pickedFile by remember { mutableStateOf<PickedFile?>(null) }
   var docTitle by remember { mutableStateOf("") }
@@ -111,7 +139,7 @@ fun DocumentUploadScreen(
   ) {
     DorkTopBar(
       title = "Add a document",
-      subtitle = "The original file stays on this device",
+      subtitle = "Saved on this phone; sent to your clinic when sync is on",
       onBackClick = onBackClick
     )
 
@@ -128,7 +156,7 @@ fun DocumentUploadScreen(
       )
       Spacer(modifier = Modifier.height(DorkSpacing.xs))
       Text(
-        text = "Pick a PDF, image or scan from your device. Dork stores a reference to it and shows it in your timeline. Nothing is uploaded anywhere.",
+        text = "Pick a PDF or image from your device. It is saved on this phone, and when clinic sync is on it is also sent to your clinic so your doctor can see it.",
         style = MaterialTheme.typography.bodySmall,
         color = DorkTheme.colors.textSecondary
       )
@@ -263,16 +291,49 @@ fun DocumentUploadScreen(
             errorMessage = "Choose a file before storing it."
             return@DorkButton
           }
-          viewModel.uploadDocument(
-            title = docTitle.ifBlank { file.displayName.substringBeforeLast('.') },
-            category = selectedCategory,
-            uri = file.uri,
-            fileSizeText = file.sizeText
-          ) { result ->
-            result.fold(
-              onSuccess = { uploadedDoc = it },
-              onFailure = { errorMessage = it.message ?: "Could not store that file." }
-            )
+          val resolvedTitle = docTitle.ifBlank { file.displayName.substringBeforeLast('.') }
+          errorMessage = null
+
+          // Reading a scan is disk I/O; doing it here would jank the frame.
+          scope.launch {
+            val payload = withContext(Dispatchers.IO) { readForUpload(context, file) }
+            if (payload == null) {
+              errorMessage = "That file could not be read. Try choosing it again."
+              return@launch
+            }
+
+            if (payload.bytes.size > MAX_UPLOAD_BYTES) {
+              // Too large for the clinic route. Keep the device copy — losing
+              // the patient's only scan because it is big would be worse than
+              // an unsent one.
+              viewModel.uploadDocument(
+                title = resolvedTitle,
+                category = selectedCategory,
+                uri = file.uri,
+                fileSizeText = file.sizeText
+              ) { result ->
+                result.fold(
+                  onSuccess = { uploadedDoc = it },
+                  onFailure = { errorMessage = it.message ?: "Could not store that file." }
+                )
+              }
+              return@launch
+            }
+
+            viewModel.uploadDocument(
+              title = resolvedTitle,
+              category = selectedCategory,
+              uri = file.uri,
+              fileSizeText = file.sizeText,
+              bytes = payload.bytes,
+              mimeType = payload.mimeType,
+              fileName = file.displayName
+            ) { result ->
+              result.fold(
+                onSuccess = { uploadedDoc = it },
+                onFailure = { errorMessage = it.message ?: "Could not store that file." }
+              )
+            }
           }
         },
         loading = uiState.isUploading,
@@ -315,14 +376,22 @@ private fun StoredDocumentView(
     Spacer(modifier = Modifier.height(DorkSpacing.m))
 
     Text(
-      text = "Document stored",
+      text = if (doc.syncState == "SENT") "Document sent" else "Document stored",
       style = MaterialTheme.typography.headlineLarge,
       color = DorkTheme.colors.textPrimary
     )
 
     Spacer(modifier = Modifier.height(DorkSpacing.xs))
 
-    DorkStatusBadge(text = "On this device only", type = DorkStatusType.Success)
+    // Say where the file actually is. "On this device only" is a fact, not a
+    // reassurance, and it is the difference between a doctor having the report
+    // and not.
+    when (doc.syncState) {
+      "SENT" -> DorkStatusBadge(text = "At your clinic", type = DorkStatusType.Success)
+      "SENDING" -> DorkStatusBadge(text = "Will send when online", type = DorkStatusType.Warning)
+      "FAILED" -> DorkStatusBadge(text = "Could not send", type = DorkStatusType.Critical)
+      else -> DorkStatusBadge(text = "On this device only", type = DorkStatusType.Success)
+    }
 
     Spacer(modifier = Modifier.height(DorkSpacing.l))
 

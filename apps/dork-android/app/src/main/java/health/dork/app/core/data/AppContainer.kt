@@ -32,6 +32,7 @@ import health.dork.app.core.reminder.MedicationReminderScheduler
 import health.dork.app.core.sync.AuthClient
 import health.dork.app.core.sync.DefaultSyncEnqueuer
 import health.dork.app.core.sync.OkHttpAuthClient
+import health.dork.app.core.sync.OkHttpDocumentUploader
 import health.dork.app.core.sync.OkHttpSyncClient
 import health.dork.app.core.sync.SyncClient
 import health.dork.app.core.sync.SyncCoordinator
@@ -140,7 +141,9 @@ class DefaultAppContainer(
   }
 
   override val recordRepository: RecordRepository by lazy {
-    DorkRecordRepository(store)
+    // The uploader reads the session and the patient's own sync switch at call
+    // time, so a document is only ever sent while sync is enabled.
+    DorkRecordRepository(store, documentUploader = OkHttpDocumentUploader(syncSettings))
   }
 
   override val chatRepository: ChatRepository by lazy {

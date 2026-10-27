@@ -20,6 +20,7 @@ data class SyncRunReport(
   val pulledAppointments: Int = 0,
   val pulledPrescriptions: Int = 0,
   val pulledMessages: Int = 0,
+  val pulledDocuments: Int = 0,
   val error: String? = null
 )
 
@@ -165,6 +166,7 @@ class SyncEngine(
           protectedIds = protectedIds
         )
         val prescriptions = recordRepository.mergeServerPrescriptions(outcome.data.prescriptions)
+        val documents = recordRepository.mergeServerDocuments(outcome.data.documents)
         careRepository.mergeRemoteAvailability(
           outcome.data.availability.associate { it.doctorId to it.weeklyHours }
         )
@@ -179,7 +181,8 @@ class SyncEngine(
         SyncRunReport(
           pulledAppointments = appointments,
           pulledPrescriptions = prescriptions,
-          pulledMessages = pulledMessages
+          pulledMessages = pulledMessages,
+          pulledDocuments = documents
         )
       }
 
