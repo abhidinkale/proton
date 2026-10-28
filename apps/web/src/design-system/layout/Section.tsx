@@ -32,7 +32,7 @@ export const Section = forwardRef<HTMLElement, SectionProps>(function Section(
 
   return (
     <section ref={ref} className={`space-y-3 ${className}`} {...rest}>
-      <div className="flex items-center justify-between gap-3 pb-1 border-b border-[#F0ECE1]">
+      <div className="flex items-center justify-between gap-3 pb-1 border-b border-rule">
         <div
           onClick={() => collapsible && setIsOpen(!isOpen)}
           className={`flex items-center gap-2.5 min-w-0 ${collapsible ? 'cursor-pointer select-none group' : ''}`}
@@ -40,19 +40,19 @@ export const Section = forwardRef<HTMLElement, SectionProps>(function Section(
           {collapsible && (
             <button
               type="button"
-              className="text-[#88909A] group-hover:text-[#151719] p-0.5 rounded-full"
+              className="text-ink-3 group-hover:text-ink p-0.5 rounded-full"
               aria-label={isOpen ? 'Collapse section' : 'Expand section'}
             >
               {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             </button>
           )}
 
-          <h2 className="text-sm font-bold text-[#151719] tracking-tight truncate">
+          <h2 className="text-sm font-bold text-ink tracking-tight truncate">
             {title}
           </h2>
 
           {count !== undefined && (
-            <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-[#F4F2EC] text-[#575D65]">
+            <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-paper-2 text-ink-2">
               {count}
             </span>
           )}
@@ -68,7 +68,7 @@ export const Section = forwardRef<HTMLElement, SectionProps>(function Section(
       </div>
 
       {subtitle && (
-        <p className="text-xs text-[#575D65] -mt-1 leading-relaxed">
+        <p className="text-xs text-ink-2 -mt-1 leading-relaxed">
           {subtitle}
         </p>
       )}

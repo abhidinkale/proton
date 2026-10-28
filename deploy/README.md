@@ -639,6 +639,24 @@ All required tables present. Restore drill PASSED.
 Record it here in the change log / demo folder:
 
 ```
+Restore drill #0 — LOCAL REHEARSAL, not a VM drill
+  Date: 2026-10-28 (UTC)
+  Dump: pg_dump -Fc of proton_ops (seeded demo clinic), 98,382 bytes
+  Result: PASS — mechanism only; no R2 and no age on the rehearsal host
+  Counts: patients=2 appointments=3 encounters=0 workflow_audit_events=0
+          tables=27 schema_migrations=9 org_organizations=1 org_members=1
+          org_link_codes=1
+  Run by: agent, on the local compose stack built from docker-compose.free.yml
+  Scratch DB: proton_restore_20261027_195704 (dropped after verification)
+```
+
+**What #0 does not prove:** that a dump can leave the box, be encrypted, come back
+from R2, and be decrypted with a key that outlives the VM. That is the part that
+actually fails in a disaster, so drill #1 still has to happen on the VM with real
+R2 and a real age key. #0 only proves `pg_dump`/`pg_restore` agree about this
+schema.
+
+```
 Restore drill #1
   Date: ____________________ (YYYY-MM-DD)
   Dump: ____________________

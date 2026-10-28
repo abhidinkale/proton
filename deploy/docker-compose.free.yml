@@ -134,6 +134,12 @@ services:
       MEDPLUM_BASE_URL: ${MEDPLUM_BASE_URL:-https://api.medplum.com/}
       MEDPLUM_CLIENT_ID: ${MEDPLUM_CLIENT_ID:-}
       MEDPLUM_TOKEN: ${MEDPLUM_TOKEN:-}
+      # Which org a Medplum-authenticated clinician lands in. The exchange
+      # (middleware/medplumExchange.js) falls back to `org-default` when this is
+      # unset, and no seeded org uses that id — so every clinician would see an
+      # empty clinic and conclude the care loop is broken. Set this to the
+      # `organization.id` returned by `POST /api/organizations`, then restart.
+      PROTON_DEFAULT_TENANT_ID: ${PROTON_DEFAULT_TENANT_ID:-org-default}
       # Must include the Cloudflare Pages origin, e.g. https://app.example.com.
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:?CORS_ALLOWED_ORIGINS must list the web origin}
     # Loopback ONLY. Remove entirely if you don't want host debugging; the

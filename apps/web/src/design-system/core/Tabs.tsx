@@ -36,7 +36,7 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
 
   if (variant === 'underline') {
     return (
-      <div ref={ref} className={`flex items-center gap-6 border-b border-[#E8E5DC] ${className}`}>
+      <div ref={ref} className={`flex items-center gap-6 border-b border-rule ${className}`}>
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           return (
@@ -47,15 +47,15 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
               onClick={() => onChange(tab.id)}
               className={`pb-3 font-semibold text-xs flex items-center gap-2 border-b-2 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
                 isActive
-                  ? 'border-[#151619] text-[#151719]'
-                  : 'border-transparent text-[#575D65] hover:text-[#151719] hover:border-[#D5D2C9]'
+                  ? 'border-rule-strong text-ink'
+                  : 'border-transparent text-ink-2 hover:text-ink hover:border-rule-strong'
               }`}
             >
               {tab.icon && <span className="shrink-0">{tab.icon}</span>}
               <span>{tab.label}</span>
               {tab.count !== undefined && (
                 <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
-                  isActive ? 'bg-[#151619] text-white' : 'bg-[#F4F2EC] text-[#575D65]'
+                  isActive ? 'bg-solid text-white' : 'bg-paper-2 text-ink-2'
                 }`}>
                   {tab.count}
                 </span>
@@ -72,7 +72,7 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
     <div
       ref={ref}
       role="tablist"
-      className={`inline-flex items-center gap-1.5 p-1 rounded-full bg-[#F4F2EC] border border-[#E8E5DC] ${className}`}
+      className={`inline-flex items-center gap-1.5 p-1 rounded-full bg-paper-2 border border-rule ${className}`}
     >
       {tabs.map((tab) => {
         const isActive = activeTab === tab.id;
@@ -88,15 +88,15 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
               sizeStyles[size]
             } ${
               isActive
-                ? 'bg-[#151619] text-white shadow-xs'
-                : 'text-[#575D65] hover:text-[#151719] hover:bg-white/60'
+                ? 'bg-solid text-white shadow-xs'
+                : 'text-ink-2 hover:text-ink hover:bg-paper/60'
             }`}
           >
             {tab.icon && <span className="shrink-0">{tab.icon}</span>}
             <span>{tab.label}</span>
             {tab.count !== undefined && (
               <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
-                isActive ? 'bg-white/20 text-white' : 'bg-[#E8E5DC] text-[#575D65]'
+                isActive ? 'bg-paper/20 text-white' : 'bg-paper-2 text-ink-2'
               }`}>
                 {tab.count}
               </span>

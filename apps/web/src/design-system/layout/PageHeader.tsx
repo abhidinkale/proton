@@ -30,14 +30,14 @@ export const PageHeader = forwardRef<HTMLDivElement, PageHeaderProps>(function P
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#151719]">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-ink">
               {title}
             </h1>
             {statusBadge}
           </div>
 
           {subtitle && (
-            <p className="text-xs sm:text-sm text-[#575D65] mt-1 max-w-2xl leading-relaxed">
+            <p className="text-xs sm:text-sm text-ink-2 mt-1 max-w-2xl leading-relaxed">
               {subtitle}
             </p>
           )}

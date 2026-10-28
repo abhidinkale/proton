@@ -224,29 +224,29 @@ export default function PhysicianSignOffModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
       <div 
-        className="w-full max-w-xl bg-white border border-[#e4e4e7] rounded-3xl shadow-2xl overflow-hidden flex flex-col font-sans"
+        className="w-full max-w-xl bg-paper border border-rule rounded-3xl shadow-2xl overflow-hidden flex flex-col font-sans"
         role="dialog"
         aria-modal="true"
         aria-labelledby="signoff-title"
       >
         {/* Header */}
-        <div className="px-6 py-5 border-b border-[#e4e4e7] bg-[#fafaf9] flex items-center justify-between">
+        <div className="px-6 py-5 border-b border-rule bg-canvas flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-teal-900 text-teal-300 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-solid text-settled-on-solid flex items-center justify-center shrink-0">
               <ShieldCheck size={20} />
             </div>
             <div>
-              <h2 id="signoff-title" className="text-base font-bold text-[#09090b] tracking-tight">
+              <h2 id="signoff-title" className="text-base font-bold text-ink tracking-tight">
                 Physician Review & Encounter Sign-Off
               </h2>
-              <p className="text-xs text-[#52525b]">
+              <p className="text-xs text-ink-2">
                 Cryptographic Provenance Sealing &bull; FHIR R4 Persistence Gate
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-[#71717a] hover:text-[#09090b] hover:bg-[#f4f4f5] rounded-full transition-colors cursor-pointer"
+            className="p-2 text-ink-2 hover:text-ink hover:bg-paper-2 rounded-full transition-colors cursor-pointer"
             aria-label="Close signoff dialog"
           >
             <X size={18} />
@@ -256,13 +256,13 @@ export default function PhysicianSignOffModal({
         {/* Content Body */}
         <div className="p-6 space-y-5">
           {/* Patient Card Recap */}
-          <div className="p-3.5 rounded-2xl bg-[#fafaf9] border border-[#e4e4e7] flex items-center justify-between text-xs">
+          <div className="p-3.5 rounded-2xl bg-canvas border border-rule flex items-center justify-between text-xs">
             <div>
-              <div className="font-bold text-[#09090b]">{patient.name} ({patient.age}y &bull; {patient.gender})</div>
-              <div className="text-[11px] text-[#71717a]">MRN: {patient.mrn} &bull; DOB: {patient.dob}</div>
+              <div className="font-bold text-ink">{patient.name} ({patient.age}y &bull; {patient.gender})</div>
+              <div className="text-[11px] text-ink-2">MRN: {patient.mrn} &bull; DOB: {patient.dob}</div>
             </div>
             <div className="text-right">
-              <span className="font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+              <span className="font-semibold text-settled bg-settled-wash border border-settled-line px-2 py-0.5 rounded-md">
                 Attending Review
               </span>
             </div>
@@ -272,18 +272,18 @@ export default function PhysicianSignOffModal({
           {hasContraindication && (
             <div className={`p-3.5 rounded-2xl border text-xs space-y-1.5 ${
               isOverrideSufficient
-                ? 'bg-emerald-50 border-emerald-200 text-emerald-950'
-                : 'bg-rose-50 border-rose-300 text-rose-950'
+                ? 'bg-settled-wash border-settled-line text-settled'
+                : 'bg-critical-wash border-critical-line text-critical'
             }`}>
               <div className="flex items-center gap-2 font-bold uppercase tracking-wider">
                 {isOverrideSufficient ? (
                   <>
-                    <Check size={14} className="text-emerald-700" />
+                    <Check size={14} className="text-settled" />
                     <span>Safety Override Documented</span>
                   </>
                 ) : (
                   <>
-                    <AlertTriangle size={14} className="text-rose-700" />
+                    <AlertTriangle size={14} className="text-critical" />
                     <span>Safety Hard Stop: Documented Override Required</span>
                   </>
                 )}
@@ -298,7 +298,7 @@ export default function PhysicianSignOffModal({
 
           {/* Verification Checklist (Section 22) */}
           <div className="space-y-2">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#52525b] px-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-ink-2 px-1">
               Final Clinical Verification Checklist:
             </span>
 
@@ -315,14 +315,14 @@ export default function PhysicianSignOffModal({
                   key={item.key}
                   type="button"
                   onClick={() => toggleCheck(item.key as keyof typeof checklist)}
-                  className="w-full flex items-center gap-3 p-2.5 rounded-xl border border-[#e4e4e7] bg-white hover:bg-[#fafaf9] text-left transition-colors cursor-pointer text-xs"
+                  className="w-full flex items-center gap-3 p-2.5 rounded-xl border border-rule bg-paper hover:bg-canvas text-left transition-colors cursor-pointer text-xs"
                 >
                   <div className={`w-5 h-5 rounded-lg flex items-center justify-center transition-colors ${
-                    checked ? 'bg-[#111315] text-white' : 'border border-[#d4d4d8] text-transparent'
+                    checked ? 'bg-solid text-white' : 'border border-rule-strong text-transparent'
                   }`}>
                     <Check size={12} strokeWidth={3} />
                   </div>
-                  <span className={`font-medium ${checked ? 'text-[#09090b]' : 'text-[#71717a]'}`}>
+                  <span className={`font-medium ${checked ? 'text-ink' : 'text-ink-2'}`}>
                     {item.label}
                   </span>
                 </button>
@@ -331,17 +331,17 @@ export default function PhysicianSignOffModal({
           </div>
 
           {errorMessage && (
-            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800">
+            <div className="p-3 rounded-xl bg-critical-wash border border-critical-line text-xs text-critical">
               {errorMessage}
             </div>
           )}
         </div>
 
         {/* Footer Actions */}
-        <div className="px-6 py-4 border-t border-[#e4e4e7] bg-[#fafaf9] flex items-center justify-between">
+        <div className="px-6 py-4 border-t border-rule bg-canvas flex items-center justify-between">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold text-[#52525b] hover:text-[#09090b] transition-colors cursor-pointer"
+            className="px-4 py-2 text-xs font-semibold text-ink-2 hover:text-ink transition-colors cursor-pointer"
           >
             Cancel & Return to Note
           </button>
@@ -350,12 +350,12 @@ export default function PhysicianSignOffModal({
             type="button"
             disabled={!canApprove}
             onClick={handleApprove}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#111315] hover:bg-[#262a2e] disabled:opacity-40 text-white text-xs font-bold shadow-md transition-all cursor-pointer"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-solid hover:bg-solid disabled:opacity-40 text-white text-xs font-bold shadow-md transition-all cursor-pointer"
           >
             {isSigning ? (
-              <span className="inline-block animate-spin h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full" />
+              <span className="inline-block animate-spin h-3.5 w-3.5 border-2 border-rule border-t-transparent rounded-full" />
             ) : (
-              <Check size={14} className="text-emerald-400" />
+              <Check size={14} className="text-settled-on-solid" />
             )}
             <span>{isSigning ? 'Sealing Cryptographic Provenance...' : 'Approve & Complete Encounter'}</span>
           </button>

@@ -63,17 +63,17 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(function Modal(
       {/* Dialog Surface */}
       <div
         ref={ref}
-        className={`relative w-full ${sizeStyles[size]} bg-white rounded-3xl shadow-2xl border border-[#E8E5DC] flex flex-col z-10 max-h-[calc(100vh-3rem)] overflow-hidden animate-in zoom-in-95 duration-150 ${className}`}
+        className={`relative w-full ${sizeStyles[size]} bg-paper rounded-3xl shadow-2xl border border-rule flex flex-col z-10 max-h-[calc(100vh-3rem)] overflow-hidden animate-in zoom-in-95 duration-150 ${className}`}
       >
-        <div className="px-6 py-4 border-b border-[#F0ECE1] flex items-center justify-between gap-4 shrink-0">
+        <div className="px-6 py-4 border-b border-rule flex items-center justify-between gap-4 shrink-0">
           <div>
-            <div className="text-base font-bold text-[#151719] tracking-tight">{title}</div>
-            {subtitle && <p className="text-xs text-[#575D65] mt-0.5">{subtitle}</p>}
+            <div className="text-base font-bold text-ink tracking-tight">{title}</div>
+            {subtitle && <p className="text-xs text-ink-2 mt-0.5">{subtitle}</p>}
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-full text-[#88909A] hover:text-[#151719] hover:bg-[#F9F8F5] cursor-pointer"
+            className="p-1 rounded-full text-ink-3 hover:text-ink hover:bg-canvas cursor-pointer"
             aria-label="Close dialog"
           >
             <X size={18} />
@@ -83,7 +83,7 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(function Modal(
         <div className="flex-1 overflow-y-auto p-6">{children}</div>
 
         {footer && (
-          <div className="px-6 py-3.5 border-t border-[#F0ECE1] bg-[#FAF9F6] flex items-center justify-end gap-2.5 shrink-0">
+          <div className="px-6 py-3.5 border-t border-rule bg-canvas flex items-center justify-end gap-2.5 shrink-0">
             {footer}
           </div>
         )}

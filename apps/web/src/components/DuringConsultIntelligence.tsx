@@ -24,13 +24,13 @@ export default function DuringConsultIntelligence({
   if (contexts.length === 0) {
     if (!isRecording) return null;
     return (
-      <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-500 flex items-center justify-between">
+      <div className="bg-paper-2 border border-rule rounded-xl p-3 text-xs text-on-solid0 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Activity size={14} className="text-brand-500" />
-          <span className="font-medium text-slate-600">Clinical Context Stream Active</span>
-          <span className="text-slate-400">&bull; Historical context surfaces when relevant concepts are discussed</span>
+          <span className="font-medium text-ink-2">Clinical Context Stream Active</span>
+          <span className="text-ink-3">&bull; Historical context surfaces when relevant concepts are discussed</span>
         </div>
-        <span className="text-[10px] uppercase font-bold text-slate-400 bg-white border border-slate-200 px-2 py-0.5 rounded">
+        <span className="text-[10px] uppercase font-bold text-ink-3 bg-paper border border-rule px-2 py-0.5 rounded">
           Passive
         </span>
       </div>
@@ -40,27 +40,27 @@ export default function DuringConsultIntelligence({
   const getCategoryIcon = (category: RelevantContext['category']) => {
     switch (category) {
       case 'medication':
-        return <Pill size={13} className="text-emerald-600" />;
+        return <Pill size={13} className="text-settled" />;
       case 'observation':
         return <Activity size={13} className="text-brand-600" />;
       case 'allergy':
-        return <AlertCircle size={13} className="text-red-600" />;
+        return <AlertCircle size={13} className="text-critical" />;
       case 'note':
       case 'encounter':
       default:
-        return <FileText size={13} className="text-purple-600" />;
+        return <FileText size={13} className="text-accent-ink" />;
     }
   };
 
   return (
-    <div className="proton-during-consult-context bg-gradient-to-r from-brand-50/70 via-slate-50 to-brand-50/40 border border-brand-200 rounded-xl p-4 shadow-xs space-y-3 animate-in fade-in duration-150">
+    <div className="proton-during-consult-context bg-gradient-to-r from-brand-50/70 via-paper-2 to-brand-50/40 border border-brand-200 rounded-xl p-4 shadow-xs space-y-3 animate-in fade-in duration-150">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="h-6 w-6 rounded-md bg-brand-100 text-brand-700 flex items-center justify-center">
             <FileText size={14} />
           </div>
           <div>
-            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+            <h3 className="text-xs font-bold text-ink uppercase tracking-wider flex items-center gap-2">
               Relevant History &bull; Clinical Context
               <span className="text-[10px] font-semibold text-brand-700 bg-brand-100 px-2 py-0.5 rounded-full lowercase normal-case">
                 {contexts.length} match{contexts.length > 1 ? 'es' : ''}
@@ -68,7 +68,7 @@ export default function DuringConsultIntelligence({
             </h3>
           </div>
         </div>
-        <span className="text-[10px] font-medium text-slate-500 hidden sm:inline">
+        <span className="text-[10px] font-medium text-on-solid0 hidden sm:inline">
           Doctor in control &bull; Non-intrusive background match
         </span>
       </div>
@@ -77,23 +77,23 @@ export default function DuringConsultIntelligence({
         {contexts.map((ctx) => (
           <div 
             key={ctx.id} 
-            className="bg-white border border-slate-200 rounded-lg p-3 shadow-xs hover:border-brand-300 transition-all flex flex-col justify-between"
+            className="bg-paper border border-rule rounded-lg p-3 shadow-xs hover:border-brand-300 transition-all flex flex-col justify-between"
           >
             <div>
               <div className="flex items-center justify-between gap-1 mb-1.5">
                 <div className="flex items-center gap-1.5 min-w-0">
                   {getCategoryIcon(ctx.category)}
-                  <span className="font-bold text-xs text-slate-900 truncate">
+                  <span className="font-bold text-xs text-ink truncate">
                     {ctx.title}
                   </span>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded uppercase bg-slate-100 text-slate-700 border border-slate-200">
+                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded uppercase bg-paper-2 text-ink-2 border border-rule">
                     {ctx.provenance}
                   </span>
                   <button
                     onClick={() => onDismissContext(ctx.id)}
-                    className="p-1 text-slate-400 hover:text-slate-600 rounded hover:bg-slate-100 cursor-pointer transition-colors"
+                    className="p-1 text-ink-3 hover:text-ink-2 rounded hover:bg-paper-2 cursor-pointer transition-colors"
                     title="Dismiss suggestion"
                   >
                     <X size={12} />
@@ -101,13 +101,13 @@ export default function DuringConsultIntelligence({
                 </div>
               </div>
 
-              <p className="text-[11px] text-slate-700 leading-relaxed font-medium">
+              <p className="text-[11px] text-ink-2 leading-relaxed font-medium">
                 {ctx.statement}
               </p>
             </div>
 
-            <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px]">
-              <span className="text-slate-400 truncate max-w-[140px]">
+            <div className="mt-2.5 pt-2 border-t border-rule flex items-center justify-between text-[10px]">
+              <span className="text-ink-3 truncate max-w-[140px]">
                 {ctx.sourceDate ? `${ctx.sourceDate} &bull; ` : ''}{ctx.source}
               </span>
               <div className="flex items-center gap-2">
@@ -121,7 +121,7 @@ export default function DuringConsultIntelligence({
                 <button
                   type="button"
                   onClick={() => onDismissContext(ctx.id)}
-                  className="text-slate-400 hover:text-slate-600 font-medium cursor-pointer"
+                  className="text-ink-3 hover:text-ink-2 font-medium cursor-pointer"
                 >
                   Dismiss
                 </button>

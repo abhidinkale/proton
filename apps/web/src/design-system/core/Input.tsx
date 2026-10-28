@@ -37,16 +37,16 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       {label && (
         <label
           htmlFor={inputId}
-          className="text-xs font-semibold text-[#151719] flex items-center justify-between"
+          className="text-xs font-semibold text-ink flex items-center justify-between"
         >
           <span>{label}</span>
-          {rest.required && <span className="text-[#991B1B] text-[10px] uppercase font-bold">* Required</span>}
+          {rest.required && <span className="text-critical text-[10px] uppercase font-bold">* Required</span>}
         </label>
       )}
 
       <div className="relative flex items-center">
         {icon && (
-          <div className="absolute left-3.5 text-[#88909A] flex items-center pointer-events-none">
+          <div className="absolute left-3.5 text-ink-3 flex items-center pointer-events-none">
             {icon}
           </div>
         )}
@@ -58,13 +58,13 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
           value={value}
           aria-invalid={!!error}
           aria-describedby={error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined}
-          className={`w-full text-xs font-medium bg-white text-[#151719] placeholder-[#88909A] rounded-full border transition-all duration-150 outline-none ${
+          className={`w-full text-xs font-medium bg-paper text-ink placeholder-ink-3 rounded-full border transition-all duration-150 outline-none ${
             icon ? 'pl-9' : 'pl-4'
           } ${iconRight || clearable ? 'pr-9' : 'pr-4'} py-2 h-9 ${
             error
-              ? 'border-[#FECACA] bg-[#FEF2F2]/30 focus:border-[#EF4444] focus:ring-2 focus:ring-[#EF4444]/20'
-              : 'border-[#E8E5DC] hover:border-[#D5D2C9] focus:border-[#151619] focus:ring-2 focus:ring-[#151619]/10'
-          } disabled:bg-[#F4F2EC] disabled:text-[#88909A] disabled:cursor-not-allowed ${className}`}
+              ? 'border-critical-line bg-critical-wash/30 focus:border-critical-line focus:ring-2 focus:ring-critical-line/20'
+              : 'border-rule hover:border-rule-strong focus:border-rule-strong focus:ring-2 focus:ring-rule-strong/10'
+          } disabled:bg-paper-2 disabled:text-ink-3 disabled:cursor-not-allowed ${className}`}
           {...rest}
         />
 
@@ -72,7 +72,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
           <button
             type="button"
             onClick={onClear}
-            className="absolute right-3 text-[#88909A] hover:text-[#151719] cursor-pointer p-0.5 rounded-full"
+            className="absolute right-3 text-ink-3 hover:text-ink cursor-pointer p-0.5 rounded-full"
             aria-label="Clear input"
           >
             ×
@@ -80,19 +80,19 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         )}
 
         {!clearable && iconRight && (
-          <div className="absolute right-3.5 text-[#88909A] flex items-center pointer-events-none">
+          <div className="absolute right-3.5 text-ink-3 flex items-center pointer-events-none">
             {iconRight}
           </div>
         )}
       </div>
 
       {error ? (
-        <p id={`${inputId}-error`} className="text-[11px] font-semibold text-[#991B1B] flex items-center gap-1 mt-0.5" role="alert">
+        <p id={`${inputId}-error`} className="text-[11px] font-semibold text-critical flex items-center gap-1 mt-0.5" role="alert">
           <AlertCircle size={11} className="shrink-0" />
           <span>{error}</span>
         </p>
       ) : helperText ? (
-        <p id={`${inputId}-helper`} className="text-[11px] text-[#575D65] mt-0.5">
+        <p id={`${inputId}-helper`} className="text-[11px] text-ink-2 mt-0.5">
           {helperText}
         </p>
       ) : null}

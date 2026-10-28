@@ -1,0 +1,324 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+ * Proton palettes
+ *
+ * Six atmospheres, one product. Each sets the same contract:
+ *
+ *   surfaces  --c-canvas  --c-paper  --c-paper-2
+ *   lines     --c-rule    --c-rule-strong
+ *   ink       --c-ink     --c-ink-2   --c-ink-3
+ *   strong    --c-solid   --c-on-solid
+ *   accent    --accent*   (shared with the older accent system)
+ *   signal    --c-critical*, --c-caution*, --c-settled*
+ *   light     --c-ambient-1/2  (the large soft fields behind the page)
+ *
+ * Rules of the house:
+ *   1. Components never name a hex. They name semantics (bg-paper, text-ink).
+ *   2. Movement of hue happens in the accent and the ambient light only.
+ *   3. Signal colours are never decoration. If it's red, something is wrong.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Clinic — warm alabaster, pine ink. The calm default. ─────────────────── */
+:root,
+html[data-theme='clinic'] {
+  color-scheme: light;
+
+  --c-canvas: #f7f6f1;
+  --c-paper: #ffffff;
+  --c-paper-2: #efeee7;
+  --c-rule: #e3e0d6;
+  --c-rule-strong: #cbc6b6;
+
+  --c-ink: #14161a;
+  --c-ink-2: #565c63;
+  --c-ink-3: #6f6b60;
+
+  --c-solid: #14161a;
+  --c-on-solid: #ffffff;
+
+  --accent: #2f5d50;
+  --accent-strong: #24473d;
+  --accent-ink: #1b3a31;
+  --accent-wash: #e9f0ec;
+  --accent-line: #c6d8d0;
+  --accent-on: #ffffff;
+
+  --c-critical: #a3394c;
+  --c-critical-wash: #faf1f2;
+  --c-critical-line: #e8c9ce;
+  --c-caution: #94651c;
+  --c-caution-wash: #fbf4e7;
+  --c-caution-line: #e8d6b4;
+  --c-settled: #3f6b3b;
+  --c-settled-wash: #f0f6ee;
+  --c-settled-line: #ccdec8;
+
+  --c-settled-on-solid: #7ed694;
+  --c-critical-on-solid: #f2879b;
+  --c-caution-on-solid: #e3b465;
+  --c-sheen: rgba(255, 255, 255, 0.55);
+  --c-sheen-soft: rgba(255, 255, 255, 0.12);
+  --c-ambient-1: rgba(214, 205, 184, 0.5);
+  --c-ambient-2: rgba(206, 219, 210, 0.45);
+}
+
+/* ── Dawn — cream, peach, rose. For long mornings. ───────────────────────── */
+html[data-theme='dawn'] {
+  color-scheme: light;
+
+  --c-canvas: #fdf7f1;
+  --c-paper: #ffffff;
+  --c-paper-2: #fbece0;
+  --c-rule: #efdccc;
+  --c-rule-strong: #dcc2ac;
+
+  --c-ink: #2b1f1a;
+  --c-ink-2: #6b5147;
+  --c-ink-3: #7f675b;
+
+  --c-solid: #2b1f1a;
+  --c-on-solid: #fff8f3;
+
+  --accent: #b23a5b;
+  --accent-strong: #8e2c47;
+  --accent-ink: #7a2339;
+  --accent-wash: #fbe7ec;
+  --accent-line: #f0c6d2;
+  --accent-on: #ffffff;
+
+  --c-critical: #a83340;
+  --c-critical-wash: #fbeceb;
+  --c-critical-line: #edc8c8;
+  --c-caution: #96631b;
+  --c-caution-wash: #fbf3e4;
+  --c-caution-line: #e9d3ad;
+  --c-settled: #3f6b3b;
+  --c-settled-wash: #f1f7ee;
+  --c-settled-line: #cddfc7;
+
+  --c-settled-on-solid: #7ed694;
+  --c-critical-on-solid: #f2879b;
+  --c-caution-on-solid: #e3b465;
+  --c-sheen: rgba(255, 255, 255, 0.55);
+  --c-sheen-soft: rgba(255, 255, 255, 0.12);
+  --c-ambient-1: rgba(255, 203, 166, 0.62);
+  --c-ambient-2: rgba(247, 188, 210, 0.55);
+}
+
+/* ── Daylight — soft blue wash, cobalt. The clinical daytime. ─────────────── */
+html[data-theme='daylight'] {
+  color-scheme: light;
+
+  --c-canvas: #f3f7fd;
+  --c-paper: #ffffff;
+  --c-paper-2: #e8effa;
+  --c-rule: #d8e2f1;
+  --c-rule-strong: #bccde5;
+
+  --c-ink: #0f1728;
+  --c-ink-2: #4b5a72;
+  --c-ink-3: #5c6d84;
+
+  --c-solid: #0f1728;
+  --c-on-solid: #ffffff;
+
+  --accent: #2c66c4;
+  --accent-strong: #1f4e9c;
+  --accent-ink: #173c7a;
+  --accent-wash: #e7f0fc;
+  --accent-line: #c4daf6;
+  --accent-on: #ffffff;
+
+  --c-critical: #a3394c;
+  --c-critical-wash: #faf1f2;
+  --c-critical-line: #e8c9ce;
+  --c-caution: #94651c;
+  --c-caution-wash: #fbf4e7;
+  --c-caution-line: #e8d6b4;
+  --c-settled: #3f6b3b;
+  --c-settled-wash: #f0f6ee;
+  --c-settled-line: #ccdec8;
+
+  --c-settled-on-solid: #7ed694;
+  --c-critical-on-solid: #f2879b;
+  --c-caution-on-solid: #e3b465;
+  --c-sheen: rgba(255, 255, 255, 0.55);
+  --c-sheen-soft: rgba(255, 255, 255, 0.12);
+  --c-ambient-1: rgba(178, 205, 240, 0.55);
+  --c-ambient-2: rgba(214, 228, 250, 0.6);
+}
+
+/* ── Sage — calm green-grey. For a quiet room. ────────────────────────────── */
+html[data-theme='sage'] {
+  color-scheme: light;
+
+  --c-canvas: #f4f7f2;
+  --c-paper: #ffffff;
+  --c-paper-2: #e8efe4;
+  --c-rule: #dbe5d5;
+  --c-rule-strong: #c3d3bc;
+
+  --c-ink: #16201a;
+  --c-ink-2: #4c6052;
+  --c-ink-3: #5d6f5c;
+
+  --c-solid: #16201a;
+  --c-on-solid: #ffffff;
+
+  --accent: #3f7a54;
+  --accent-strong: #2f5e40;
+  --accent-ink: #27503a;
+  --accent-wash: #e7f1e8;
+  --accent-line: #c4dcc7;
+  --accent-on: #ffffff;
+
+  --c-critical: #a3394c;
+  --c-critical-wash: #faf1f2;
+  --c-critical-line: #e8c9ce;
+  --c-caution: #94651c;
+  --c-caution-wash: #fbf4e7;
+  --c-caution-line: #e8d6b4;
+  --c-settled: #3f6b3b;
+  --c-settled-wash: #f0f6ee;
+  --c-settled-line: #ccdec8;
+
+  --c-settled-on-solid: #7ed694;
+  --c-critical-on-solid: #f2879b;
+  --c-caution-on-solid: #e3b465;
+  --c-sheen: rgba(255, 255, 255, 0.55);
+  --c-sheen-soft: rgba(255, 255, 255, 0.12);
+  --c-ambient-1: rgba(196, 216, 187, 0.5);
+  --c-ambient-2: rgba(216, 231, 208, 0.55);
+}
+
+/* ── Midnight — deep navy, cyan light. Night shift. ──────────────────────── */
+html[data-theme='midnight'] {
+  color-scheme: dark;
+
+  --c-canvas: #08111f;
+  --c-paper: #0f1b2d;
+  --c-paper-2: #0b1626;
+  --c-rule: #1c2a40;
+  --c-rule-strong: #2a3d5a;
+
+  --c-ink: #e8eef8;
+  --c-ink-2: #a6b6cb;
+  --c-ink-3: #73859c;
+
+  /* Not a literal inversion: a near-black pill would vanish on a navy page.
+     In dark palettes "solid" is the raised surface, ink stays light on it. */
+  --c-solid: #1b2a44;
+  --c-on-solid: #e8eef8;
+
+  --accent: #4c8dff;
+  --accent-strong: #79adff;
+  --accent-ink: #a8c8ff;
+  --accent-wash: #12253f;
+  --accent-line: #21405f;
+  --accent-on: #04101f;
+
+  --c-critical: #f2879b;
+  --c-critical-wash: #2a1620;
+  --c-critical-line: #4a2634;
+  --c-caution: #e0b062;
+  --c-caution-wash: #2a2114;
+  --c-caution-line: #4a3a22;
+  --c-settled: #6fcf97;
+  --c-settled-wash: #12251c;
+  --c-settled-line: #234336;
+
+  --c-settled-on-solid: #8fe3a7;
+  --c-critical-on-solid: #ff9fb0;
+  --c-caution-on-solid: #ecc178;
+  --c-sheen: rgba(255, 255, 255, 0.06);
+  --c-sheen-soft: rgba(255, 255, 255, 0.02);
+  --c-ambient-1: rgba(28, 74, 148, 0.55);
+  --c-ambient-2: rgba(18, 120, 132, 0.35);
+}
+
+/* ── Ink — warm black, amber. The reading lamp. ──────────────────────────── */
+html[data-theme='ink'] {
+  color-scheme: dark;
+
+  --c-canvas: #121110;
+  --c-paper: #1a1816;
+  --c-paper-2: #151312;
+  --c-rule: #2b2723;
+  --c-rule-strong: #3b362f;
+
+  --c-ink: #f3eee7;
+  --c-ink-2: #b4a99b;
+  --c-ink-3: #8c7f70;
+
+  /* Raised, not inverted: 213 buttons pair `bg-solid` with `text-white`, so a
+     cream "solid" would make their labels disappear. */
+  --c-solid: #3a332b;
+  --c-on-solid: #f3eee7;
+
+  --accent: #c8913f;
+  --accent-strong: #e0b063;
+  --accent-ink: #efcb8c;
+  --accent-wash: #241d12;
+  --accent-line: #3e3019;
+  --accent-on: #121110;
+
+  --c-critical: #e88b8b;
+  --c-critical-wash: #2a1717;
+  --c-critical-line: #4a2a2a;
+  --c-caution: #d9a55c;
+  --c-caution-wash: #2a2114;
+  --c-caution-line: #4a3a22;
+  --c-settled: #8fcb8b;
+  --c-settled-wash: #17251a;
+  --c-settled-line: #2c412c;
+
+  --c-settled-on-solid: #8fe3a7;
+  --c-critical-on-solid: #ff9fb0;
+  --c-caution-on-solid: #ecc178;
+  --c-sheen: rgba(255, 255, 255, 0.06);
+  --c-sheen-soft: rgba(255, 255, 255, 0.02);
+  --c-ambient-1: rgba(176, 122, 42, 0.34);
+  --c-ambient-2: rgba(120, 84, 40, 0.28);
+}
+
+/* ── Ground and ambient light ─────────────────────────────────────────────── */
+
+html {
+  background-color: var(--c-canvas);
+  color: var(--c-ink);
+}
+
+body {
+  background-color: var(--c-canvas);
+  color: var(--c-ink);
+}
+
+/*
+ * The two large soft fields from the reference boards: one warm light entering
+ * from the top right, one cooler from the middle left. They sit behind the
+ * content, never over it, and never on a card.
+ */
+.proton-workspace-ambient {
+  background:
+    radial-gradient(1100px 620px at 88% -10%, var(--c-ambient-1), transparent 62%),
+    radial-gradient(820px 520px at 2% 22%, var(--c-ambient-2), transparent 66%);
+}
+
+/* A palette change should feel like a lamp being dimmed, not a repaint. */
+html.palette-anim,
+html.palette-anim *,
+html.palette-anim *::before,
+html.palette-anim *::after {
+  transition:
+    background-color 240ms var(--ease-butter),
+    border-color 240ms var(--ease-butter),
+    color 240ms var(--ease-butter),
+    fill 240ms var(--ease-butter),
+    stroke 240ms var(--ease-butter);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.palette-anim,
+  html.palette-anim * {
+    transition: none;
+  }
+}

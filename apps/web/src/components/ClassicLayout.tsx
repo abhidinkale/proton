@@ -26,7 +26,7 @@ export default function Layout({
   children,
   fullBleed = false,
   fillCanvas = false,
-  canvasBg = 'bg-[#F7F6F2]'
+  canvasBg = 'bg-canvas'
 }: LayoutProps) {
   const medplum = useMedplum();
   const navigate = useNavigate();
@@ -71,25 +71,25 @@ export default function Layout({
   };
 
   return (
-    <div className="proton-classic-shell flex h-screen bg-[#fafaf9] text-zinc-900 font-sans antialiased overflow-hidden">
+    <div className="proton-classic-shell flex h-screen bg-canvas text-ink font-sans antialiased overflow-hidden">
       {/* ── Sidebar (Calm Clinical Workspace Shell) ── */}
-      <aside className="w-56 bg-white border-r border-zinc-200 flex flex-col shrink-0">
+      <aside className="w-56 bg-paper border-r border-rule flex flex-col shrink-0">
         
         {/* Brand Header */}
-        <div className="px-5 py-4 border-b border-zinc-200/80 flex items-center justify-between">
+        <div className="px-5 py-4 border-b border-rule/80 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-zinc-900 text-white flex items-center justify-center font-bold text-xs shadow-xs">
+            <div className="w-7 h-7 rounded-lg bg-solid text-white flex items-center justify-center font-bold text-xs shadow-xs">
               P
             </div>
             <div>
-              <span className="font-bold text-sm tracking-tight text-zinc-900 leading-none block">
+              <span className="font-bold text-sm tracking-tight text-ink leading-none block">
                 Proton
               </span>
-              <span className="text-[10px] text-zinc-400 font-medium">Physician Desk</span>
+              <span className="text-[10px] text-ink-3 font-medium">Physician Desk</span>
             </div>
           </div>
-          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-settled-wash text-settled border border-settled-line">
+            <span className="w-1.5 h-1.5 rounded-full bg-settled-wash0 animate-pulse" />
             Live
           </span>
         </div>
@@ -98,14 +98,14 @@ export default function Layout({
         <div className="px-3 pt-3 pb-2">
           <button
             onClick={() => setIsCommandPaletteOpen(true)}
-            className="w-full flex items-center justify-between px-2.5 py-1.5 text-xs text-zinc-500 bg-zinc-50 hover:bg-zinc-100 hover:text-zinc-800 border border-zinc-200 rounded-md transition-colors cursor-pointer"
+            className="w-full flex items-center justify-between px-2.5 py-1.5 text-xs text-on-solid0 bg-paper-2 hover:bg-paper-2 hover:text-ink border border-rule rounded-md transition-colors cursor-pointer"
             title="Search patients or execute actions (⌘K)"
           >
             <span className="flex items-center gap-2">
-              <Search size={13} className="text-zinc-400" />
+              <Search size={13} className="text-ink-3" />
               <span>Search patients</span>
             </span>
-            <kbd className="text-[10px] text-zinc-400 font-sans border border-zinc-200 px-1 rounded bg-white">
+            <kbd className="text-[10px] text-ink-3 font-sans border border-rule px-1 rounded bg-paper">
               ⌘K
             </kbd>
           </button>
@@ -122,14 +122,14 @@ export default function Layout({
                 end={item.end}
                 className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
                   active
-                    ? 'bg-zinc-100 text-zinc-900 font-semibold'
-                    : 'text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900'
+                    ? 'bg-paper-2 text-ink font-semibold'
+                    : 'text-ink-2 hover:bg-paper-2 hover:text-ink'
                 }`}
               >
                 <item.icon 
                   size={15} 
                   strokeWidth={active ? 2.25 : 1.75} 
-                  className={active ? 'text-zinc-900' : 'text-zinc-400'} 
+                  className={active ? 'text-ink' : 'text-ink-3'} 
                 />
                 <span>{item.label}</span>
               </NavLink>
@@ -138,35 +138,35 @@ export default function Layout({
         </nav>
 
         {/* Physician Profile Card */}
-        <div className="p-2.5 mx-3 mb-2 rounded-xl bg-zinc-50 border border-zinc-200/80 flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-zinc-900 text-white font-bold text-xs flex items-center justify-center shrink-0">
+        <div className="p-2.5 mx-3 mb-2 rounded-xl bg-paper-2 border border-rule/80 flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-solid text-white font-bold text-xs flex items-center justify-center shrink-0">
             DP
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-xs font-semibold text-zinc-900 truncate">Dr. Physician, MD</div>
-            <div className="text-[10px] text-zinc-500 truncate">Attending • Internal Med</div>
+            <div className="text-xs font-semibold text-ink truncate">Dr. Physician, MD</div>
+            <div className="text-[10px] text-on-solid0 truncate">Attending • Internal Med</div>
           </div>
         </div>
 
         {/* Secondary: Settings & Sign Out */}
-        <div className="px-3 py-3 border-t border-zinc-200 space-y-0.5">
+        <div className="px-3 py-3 border-t border-rule space-y-0.5">
           <NavLink
             to="/settings"
             className={({ isActive: active }) => `flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
               active
-                ? 'bg-zinc-100 text-zinc-900 font-semibold'
-                : 'text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900'
+                ? 'bg-paper-2 text-ink font-semibold'
+                : 'text-on-solid0 hover:bg-paper-2 hover:text-ink'
             }`}
           >
-            <Settings size={15} strokeWidth={1.75} className="text-zinc-400" />
+            <Settings size={15} strokeWidth={1.75} className="text-ink-3" />
             <span>Settings</span>
           </NavLink>
 
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2.5 px-2.5 py-1.5 w-full text-left rounded-md text-xs font-medium text-zinc-500 hover:bg-zinc-50 hover:text-red-700 transition-colors cursor-pointer"
+            className="flex items-center gap-2.5 px-2.5 py-1.5 w-full text-left rounded-md text-xs font-medium text-on-solid0 hover:bg-paper-2 hover:text-critical transition-colors cursor-pointer"
           >
-            <LogOut size={15} strokeWidth={1.75} className="text-zinc-400" />
+            <LogOut size={15} strokeWidth={1.75} className="text-ink-3" />
             <span>Sign out</span>
           </button>
         </div>
@@ -200,15 +200,15 @@ export default function Layout({
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         
         {/* Subtle Evaluation Context Bar */}
-        <div className="bg-white border-b border-zinc-200 px-6 py-2 flex items-center justify-between text-xs text-zinc-500 shrink-0">
+        <div className="bg-paper border-b border-rule px-6 py-2 flex items-center justify-between text-xs text-on-solid0 shrink-0">
           <div className="flex items-center gap-2">
-            <span className="font-medium text-zinc-700">Clinical Evaluation Environment</span>
-            <span className="text-zinc-300">•</span>
-            <span className="text-zinc-500">Synthetic FHIR R4 Records</span>
+            <span className="font-medium text-ink-2">Clinical Evaluation Environment</span>
+            <span className="text-ink-3">•</span>
+            <span className="text-on-solid0">Synthetic FHIR R4 Records</span>
           </div>
           <div className="flex items-center gap-3">
             <AppearanceToggle />
-            <span className="text-[11px] text-zinc-500">
+            <span className="text-[11px] text-on-solid0">
               Physician approval required for all clinical commitments
             </span>
           </div>

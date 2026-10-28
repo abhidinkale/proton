@@ -28,7 +28,7 @@ export const TriageInbox: React.FC<Props> = ({ task, onApprove }) => {
 
   if (!details) {
     return (
-      <div className="p-6 text-center text-zinc-400 text-xs">
+      <div className="p-6 text-center text-ink-3 text-xs">
         No triage details available for this task.
       </div>
     );
@@ -47,9 +47,9 @@ export const TriageInbox: React.FC<Props> = ({ task, onApprove }) => {
     <div className="space-y-4">
       {/* Unassigned Patient Collision Banner */}
       {isUnassigned && (
-        <div className="p-4 rounded-xl bg-amber-50 border border-amber-300 shadow-xs flex items-start gap-3">
-          <AlertTriangle className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
-          <div className="text-xs text-amber-900">
+        <div className="p-4 rounded-xl bg-caution-wash border border-caution-line shadow-xs flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-caution shrink-0 mt-0.5" />
+          <div className="text-xs text-caution">
             <div className="font-bold uppercase tracking-wider">
               Identity Verification Required (UNASSIGNED_PATIENT_TRIAGE)
             </div>
@@ -65,25 +65,25 @@ export const TriageInbox: React.FC<Props> = ({ task, onApprove }) => {
       )}
 
       {/* Inbound Message Card */}
-      <div className="p-4 rounded-xl bg-white border border-zinc-200/80 shadow-xs">
+      <div className="p-4 rounded-xl bg-paper border border-rule/80 shadow-xs">
         <div className="flex items-center justify-between mb-2">
-          <div className="text-xs font-bold text-zinc-700 uppercase tracking-wider flex items-center gap-1.5">
-            <MessageSquareText size={14} className="text-blue-600" />
+          <div className="text-xs font-bold text-ink-2 uppercase tracking-wider flex items-center gap-1.5">
+            <MessageSquareText size={14} className="text-accent-ink" />
             Inbound Message ({details.channel.toUpperCase()})
           </div>
           <div className="flex items-center gap-1.5">
             <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-              isClinical ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'
+              isClinical ? 'bg-caution-wash text-caution' : 'bg-accent-wash text-accent-ink'
             }`}>
               {isClinical ? 'Clinical Communication' : 'Administrative Communication'}
             </span>
-            <span className="text-xs text-zinc-400 font-mono">
+            <span className="text-xs text-ink-3 font-mono">
               {new Date(details.receivedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
           </div>
         </div>
 
-        <div className="p-3.5 rounded-lg bg-blue-50/50 border border-blue-100 text-sm text-zinc-900 italic font-serif leading-relaxed">
+        <div className="p-3.5 rounded-lg bg-accent-wash/50 border border-accent-line text-sm text-ink italic font-serif leading-relaxed">
           "{details.inboundMessage}"
         </div>
       </div>
@@ -91,10 +91,10 @@ export const TriageInbox: React.FC<Props> = ({ task, onApprove }) => {
       {/* Red-Flag Emergency Screening Report */}
       <div className={`p-4 rounded-xl border shadow-xs ${
         details.risk.emergencyRedFlag
-          ? 'bg-red-50 border-red-300 text-red-950 ring-1 ring-red-400'
+          ? 'bg-critical-wash border-critical-line text-critical ring-1 ring-critical'
           : details.risk.riskLevel === 'HIGH'
-          ? 'bg-amber-50/80 border-amber-200 text-amber-900'
-          : 'bg-emerald-50/60 border-emerald-200 text-emerald-900'
+          ? 'bg-caution-wash/80 border-caution-line text-caution'
+          : 'bg-settled-wash/60 border-settled-line text-settled'
       }`}>
         <div className="flex items-start gap-3">
           <ShieldAlert size={18} className="shrink-0 mt-0.5" />
@@ -104,7 +104,7 @@ export const TriageInbox: React.FC<Props> = ({ task, onApprove }) => {
                 Deterministic Red-Flag Screening: {details.risk.riskLevel} Risk
               </div>
               {details.risk.emergencyRedFlag && (
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-600 text-white animate-pulse">
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-critical text-white animate-pulse">
                   911 DIVERSION ACTIVE
                 </span>
               )}
@@ -115,7 +115,7 @@ export const TriageInbox: React.FC<Props> = ({ task, onApprove }) => {
             {details.risk.deterministicViolations.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-2">
                 {details.risk.deterministicViolations.map((v, i) => (
-                  <span key={i} className="px-2 py-0.5 rounded text-[10px] font-mono bg-white/90 border border-zinc-200 font-semibold text-zinc-800">
+                  <span key={i} className="px-2 py-0.5 rounded text-[10px] font-mono bg-paper/90 border border-rule font-semibold text-ink">
                     {v}
                   </span>
                 ))}
@@ -126,18 +126,18 @@ export const TriageInbox: React.FC<Props> = ({ task, onApprove }) => {
       </div>
 
       {/* Longitudinal Context Drawer from Clinical Brain */}
-      <div className="p-4 rounded-xl bg-white border border-zinc-200/80 shadow-xs">
-        <div className="text-xs font-bold text-zinc-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-          <Sparkles size={14} className="text-emerald-600" />
+      <div className="p-4 rounded-xl bg-paper border border-rule/80 shadow-xs">
+        <div className="text-xs font-bold text-ink-2 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+          <Sparkles size={14} className="text-settled" />
           Proton Clinical Brain Longitudinal Context
         </div>
         {details.relevantLongitudinalContext.length === 0 ? (
-          <div className="text-xs text-zinc-400 italic">No historical longitudinal flags pulled.</div>
+          <div className="text-xs text-ink-3 italic">No historical longitudinal flags pulled.</div>
         ) : (
-          <ul className="space-y-1.5 text-xs text-zinc-700">
+          <ul className="space-y-1.5 text-xs text-ink-2">
             {details.relevantLongitudinalContext.map((c, i) => (
               <li key={i} className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                <span className="w-1.5 h-1.5 rounded-full bg-settled-wash0 shrink-0" />
                 <span>{c}</span>
               </li>
             ))}
@@ -146,12 +146,12 @@ export const TriageInbox: React.FC<Props> = ({ task, onApprove }) => {
       </div>
 
       {/* Response Composer & Safety Guard */}
-      <div className="p-4 rounded-xl bg-white border border-zinc-200/80 shadow-xs">
+      <div className="p-4 rounded-xl bg-paper border border-rule/80 shadow-xs">
         <div className="flex items-center justify-between mb-2">
-          <div className="text-xs font-bold text-zinc-700 uppercase tracking-wider flex items-center gap-2">
+          <div className="text-xs font-bold text-ink-2 uppercase tracking-wider flex items-center gap-2">
             <span>Proposed Clinical Response</span>
             <span className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${
-              isEditing ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-purple-50 text-purple-700 border-purple-200'
+              isEditing ? 'bg-caution-wash text-caution border-caution-line' : 'bg-accent-wash text-accent-ink border-accent-line'
             }`}>
               {isEditing ? 'PHYSICIAN EDITED' : 'AI DRAFT — REVIEW REQUIRED'}
             </span>
@@ -159,7 +159,7 @@ export const TriageInbox: React.FC<Props> = ({ task, onApprove }) => {
           {task.status !== 'completed' && (
             <button
               onClick={() => setIsEditing(!isEditing)}
-              className="text-xs text-blue-600 hover:text-blue-800 font-medium cursor-pointer"
+              className="text-xs text-accent-ink hover:text-accent-ink font-medium cursor-pointer"
             >
               {isEditing ? 'Reset to AI Draft' : 'Edit Response'}
             </button>
@@ -171,31 +171,31 @@ export const TriageInbox: React.FC<Props> = ({ task, onApprove }) => {
             value={responseDraft}
             onChange={(e) => setResponseDraft(e.target.value)}
             rows={4}
-            className="w-full p-3 text-xs text-zinc-900 border border-zinc-300 rounded-lg focus:outline-hidden focus:ring-1 focus:ring-zinc-900 font-sans"
+            className="w-full p-3 text-xs text-ink border border-rule rounded-lg focus:outline-hidden focus:ring-1 focus:ring-rule-strong font-sans"
           />
         ) : (
-          <div className="p-3.5 rounded-lg bg-zinc-50 border border-zinc-200 text-xs text-zinc-900 leading-relaxed font-sans">
+          <div className="p-3.5 rounded-lg bg-paper-2 border border-rule text-xs text-ink leading-relaxed font-sans">
             {details.physicianApprovedResponse || details.aiDraftResponse}
           </div>
         )}
 
         {/* Safety Boundary Notice for Clinical Communication */}
         {isClinical && (
-          <div className="mt-3 p-2.5 rounded-lg bg-zinc-50 border border-zinc-200 text-[11px] text-zinc-600 flex items-center gap-2">
-            <Shield size={14} className="text-blue-600 shrink-0" />
+          <div className="mt-3 p-2.5 rounded-lg bg-paper-2 border border-rule text-[11px] text-ink-2 flex items-center gap-2">
+            <Shield size={14} className="text-accent-ink shrink-0" />
             <span>
               <strong>Clinical Communication Safety Policy:</strong> Symptom evaluation and medication advice cannot be dispatched autonomously. Attending physician approval is strictly enforced by backend verification.
             </span>
           </div>
         )}
 
-        <div className="flex items-center justify-between text-[11px] text-zinc-500 mt-3 pt-2 border-t border-zinc-100">
+        <div className="flex items-center justify-between text-[11px] text-on-solid0 mt-3 pt-2 border-t border-rule">
           <span>Attributed Prescriber: Dr. Sarah Lin, MD</span>
           {task.status !== 'completed' && (
             <button
               disabled={isSubmitting || !responseDraft.trim()}
               onClick={handleSend}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-semibold text-white bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 transition-colors cursor-pointer shadow-xs"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-semibold text-white bg-solid hover:bg-solid disabled:opacity-50 transition-colors cursor-pointer shadow-xs"
             >
               <Send size={13} />
               <span>{isSubmitting ? 'Transmitting...' : 'Approve & Send Clinical Message'}</span>

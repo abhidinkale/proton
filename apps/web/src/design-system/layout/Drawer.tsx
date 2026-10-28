@@ -58,14 +58,14 @@ export const Drawer = forwardRef<HTMLDivElement, DrawerProps>(function Drawer(
       {/* Drawer Surface */}
       <div
         ref={ref}
-        className={`relative w-full ${widthStyles[width]} bg-white h-full shadow-2xl border-l border-[#E8E5DC] flex flex-col z-10 animate-in slide-in-from-right duration-200 ${className}`}
+        className={`relative w-full ${widthStyles[width]} bg-paper h-full shadow-2xl border-l border-rule flex flex-col z-10 animate-in slide-in-from-right duration-200 ${className}`}
       >
-        <div className="px-6 py-4 border-b border-[#F0ECE1] flex items-center justify-between gap-4">
-          <div className="text-sm font-bold text-[#151719] truncate">{title}</div>
+        <div className="px-6 py-4 border-b border-rule flex items-center justify-between gap-4">
+          <div className="text-sm font-bold text-ink truncate">{title}</div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-full text-[#88909A] hover:text-[#151719] hover:bg-[#F9F8F5] cursor-pointer"
+            className="p-1 rounded-full text-ink-3 hover:text-ink hover:bg-canvas cursor-pointer"
             aria-label="Close drawer"
           >
             <X size={18} />

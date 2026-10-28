@@ -31,51 +31,51 @@ interface ProtonBadgeProps {
 
 const variantConfig: Record<ProtonBadgeVariant, { bg: string; text: string; border: string; defaultIcon: ReactNode }> = {
   stable: {
-    bg: 'bg-[#DCFCE7]',
-    text: 'text-[#166534]',
-    border: 'border-[#BBF7D0]',
+    bg: 'bg-settled-wash',
+    text: 'text-settled',
+    border: 'border-settled-line',
     defaultIcon: <CheckCircle2 className="w-3.5 h-3.5" />
   },
   attention: {
-    bg: 'bg-[#FEF08A]',
-    text: 'text-[#854D0E]',
-    border: 'border-[#FDE047]',
+    bg: 'bg-caution-wash',
+    text: 'text-caution',
+    border: 'border-caution-line',
     defaultIcon: <AlertTriangle className="w-3.5 h-3.5" />
   },
   critical: {
-    bg: 'bg-[#FEE2E2]',
-    text: 'text-[#991B1B]',
-    border: 'border-[#FECACA]',
+    bg: 'bg-critical-wash',
+    text: 'text-critical',
+    border: 'border-critical-line',
     defaultIcon: <AlertCircle className="w-3.5 h-3.5" />
   },
   info: {
-    bg: 'bg-[#E0E7FF]',
-    text: 'text-[#1E40AF]',
-    border: 'border-[#C7D2FE]',
+    bg: 'bg-accent-wash',
+    text: 'text-accent-ink',
+    border: 'border-accent-line',
     defaultIcon: <Info className="w-3.5 h-3.5" />
   },
   ai: {
-    bg: 'bg-[#FCE7F3]',
-    text: 'text-[#9D174D]',
-    border: 'border-[#FBCFE8]',
+    bg: 'bg-accent-wash',
+    text: 'text-accent-ink',
+    border: 'border-accent-line',
     defaultIcon: <Sparkles className="w-3.5 h-3.5" />
   },
   pending: {
-    bg: 'bg-[#F3F4F6]',
-    text: 'text-[#4B5563]',
-    border: 'border-[#E5E7EB]',
+    bg: 'bg-paper-2',
+    text: 'text-ink-2',
+    border: 'border-rule',
     defaultIcon: <Clock className="w-3.5 h-3.5" />
   },
   verified: {
-    bg: 'bg-[#ECFDF5]',
-    text: 'text-[#065F46]',
-    border: 'border-[#A7F3D0]',
+    bg: 'bg-settled-wash',
+    text: 'text-settled',
+    border: 'border-settled-line',
     defaultIcon: <ShieldCheck className="w-3.5 h-3.5" />
   },
   neutral: {
-    bg: 'bg-[#F4F2EC]',
-    text: 'text-[#575D65]',
-    border: 'border-[#E5E1D6]',
+    bg: 'bg-paper-2',
+    text: 'text-ink-2',
+    border: 'border-rule',
     defaultIcon: <FileCheck className="w-3.5 h-3.5" />
   }
 };

@@ -232,11 +232,11 @@ export default function PrescriptionPDFModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-3xl overflow-hidden my-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-solid/60 backdrop-blur-xs p-4 overflow-y-auto">
+      <div className="bg-paper rounded-2xl shadow-2xl border border-rule w-full max-w-3xl overflow-hidden my-8">
         {/* Modal Top Bar */}
-        <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-slate-800">
+        <div className="bg-paper-2 px-6 py-4 border-b border-rule flex items-center justify-between">
+          <div className="flex items-center gap-2 text-ink">
             <FileText size={20} className="text-brand-600" />
             <h2 className="font-semibold text-lg">Prescription PDF Preview</h2>
           </div>
@@ -249,7 +249,7 @@ export default function PrescriptionPDFModal({
             </button>
             <button
               onClick={onClose}
-              className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-200 transition-colors"
+              className="text-ink-3 hover:text-ink-2 p-1.5 rounded-lg hover:bg-rule transition-colors"
             >
               <X size={20} />
             </button>
@@ -257,32 +257,32 @@ export default function PrescriptionPDFModal({
         </div>
 
         {/* Paper Sheet Preview */}
-        <div className="p-8 bg-slate-100 max-h-[75vh] overflow-y-auto">
-          <div className="bg-white border border-slate-300 rounded-xl p-8 shadow-sm text-slate-800 text-sm">
+        <div className="p-8 bg-paper-2 max-h-[75vh] overflow-y-auto">
+          <div className="bg-paper border border-rule rounded-xl p-8 shadow-sm text-ink text-sm">
             {/* Header */}
-            <div className="border-b-2 border-slate-900 pb-4 mb-6 flex justify-between items-start">
+            <div className="border-b-2 border-rule-strong pb-4 mb-6 flex justify-between items-start">
               <div>
                 <h1 className="text-2xl font-black text-brand-600 tracking-tight">PROTON</h1>
-                <p className="text-sm font-semibold text-slate-500">Clinical Prescription</p>
+                <p className="text-sm font-semibold text-on-solid0">Clinical Prescription</p>
               </div>
               <div className="text-right">
-                <p className="font-bold text-slate-900">{doctorName}</p>
-                <p className="text-xs text-slate-500">License #MD-948201</p>
-                <p className="text-xs text-slate-500">Date: {date}</p>
+                <p className="font-bold text-ink">{doctorName}</p>
+                <p className="text-xs text-on-solid0">License #MD-948201</p>
+                <p className="text-xs text-on-solid0">Date: {date}</p>
               </div>
             </div>
 
             {/* Patient Info */}
-            <div className="grid grid-cols-2 gap-4 bg-slate-50 border border-slate-200 rounded-lg p-4 mb-6">
+            <div className="grid grid-cols-2 gap-4 bg-paper-2 border border-rule rounded-lg p-4 mb-6">
               <div>
-                <p className="text-xs uppercase font-bold text-slate-400 tracking-wider">Patient</p>
-                <p className="font-semibold text-slate-800">{patientName}</p>
-                <p className="text-xs text-slate-500 mt-1">DOB: {patient?.birthDate || 'Unknown'} &bull; {patient?.gender || 'Unknown'}</p>
+                <p className="text-xs uppercase font-bold text-ink-3 tracking-wider">Patient</p>
+                <p className="font-semibold text-ink">{patientName}</p>
+                <p className="text-xs text-on-solid0 mt-1">DOB: {patient?.birthDate || 'Unknown'} &bull; {patient?.gender || 'Unknown'}</p>
               </div>
               <div>
-                <p className="text-xs uppercase font-bold text-slate-400 tracking-wider">Patient Record ID</p>
-                <p className="font-mono text-xs text-slate-700">{patient?.id || 'Unknown'}</p>
-                <p className="text-xs text-slate-500 mt-1">Status: Active Ambulatory Order</p>
+                <p className="text-xs uppercase font-bold text-ink-3 tracking-wider">Patient Record ID</p>
+                <p className="font-mono text-xs text-ink-2">{patient?.id || 'Unknown'}</p>
+                <p className="text-xs text-on-solid0 mt-1">Status: Active Ambulatory Order</p>
               </div>
             </div>
 
@@ -290,7 +290,7 @@ export default function PrescriptionPDFModal({
             <div className="mb-6 overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b-2 border-slate-200 bg-slate-50 text-[11px] uppercase tracking-wider text-slate-600">
+                  <tr className="border-b-2 border-rule bg-paper-2 text-[11px] uppercase tracking-wider text-ink-2">
                     <th className="py-2.5 px-3">Medicine</th>
                     <th className="py-2.5 px-3">Strength</th>
                     <th className="py-2.5 px-3">Dose</th>
@@ -300,21 +300,21 @@ export default function PrescriptionPDFModal({
                     <th className="py-2.5 px-3">Instructions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-xs">
+                <tbody className="divide-y divide-rule text-xs">
                   {medications.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-4 text-center text-slate-400 italic">No medications recorded.</td>
+                      <td colSpan={7} className="py-4 text-center text-ink-3 italic">No medications recorded.</td>
                     </tr>
                   ) : (
                     medications.map(m => (
-                      <tr key={m.id} className="hover:bg-slate-50">
-                        <td className="py-3 px-3 font-bold text-slate-900">{m.name}</td>
-                        <td className="py-3 px-3 text-slate-700">{m.strength}</td>
-                        <td className="py-3 px-3 text-slate-700">{m.dose}</td>
-                        <td className="py-3 px-3 text-slate-700">{m.frequency}</td>
-                        <td className="py-3 px-3 text-slate-700">{m.route}</td>
-                        <td className="py-3 px-3 text-slate-700">{m.duration}</td>
-                        <td className="py-3 px-3 text-slate-600">{m.instructions || 'As directed'}</td>
+                      <tr key={m.id} className="hover:bg-paper-2">
+                        <td className="py-3 px-3 font-bold text-ink">{m.name}</td>
+                        <td className="py-3 px-3 text-ink-2">{m.strength}</td>
+                        <td className="py-3 px-3 text-ink-2">{m.dose}</td>
+                        <td className="py-3 px-3 text-ink-2">{m.frequency}</td>
+                        <td className="py-3 px-3 text-ink-2">{m.route}</td>
+                        <td className="py-3 px-3 text-ink-2">{m.duration}</td>
+                        <td className="py-3 px-3 text-ink-2">{m.instructions || 'As directed'}</td>
                       </tr>
                     ))
                   )}
@@ -323,20 +323,20 @@ export default function PrescriptionPDFModal({
             </div>
 
             {/* Doctor Approval Box */}
-            <div className="border border-green-200 bg-green-50 rounded-lg p-4 mb-6">
-              <div className="flex items-center gap-1.5 font-bold text-green-800 text-xs mb-1">
+            <div className="border border-settled-line bg-settled-wash rounded-lg p-4 mb-6">
+              <div className="flex items-center gap-1.5 font-bold text-settled text-xs mb-1">
                 <ShieldCheck size={16} /> Doctor Approval & Verification
               </div>
-              <p className="text-xs text-green-700 italic">
+              <p className="text-xs text-settled italic">
                 "AI-generated content was reviewed and approved by the treating physician."
               </p>
-              <p className="text-[11px] font-medium text-slate-700 mt-2">
+              <p className="text-[11px] font-medium text-ink-2 mt-2">
                 Approved by: {doctorName} &bull; Timestamp: {new Date().toISOString()}
               </p>
             </div>
 
             {/* Disclaimer */}
-            <div className="pt-4 border-t border-slate-200 text-[11px] text-slate-400 leading-relaxed">
+            <div className="pt-4 border-t border-rule text-[11px] text-ink-3 leading-relaxed">
               Notice: This document reflects a physician-approved clinical prescription recorded via Proton. Not claimed to be legally valid in every jurisdiction. Dispensing pharmacists must verify according to local medical and pharmacy regulations.
             </div>
           </div>

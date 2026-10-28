@@ -170,8 +170,8 @@ export const DynamicIntake: React.FC<DynamicIntakeProps> = ({
 
   if (loading) {
     return (
-      <div className="bg-[#0f1420] border border-[#1c2433] rounded-2xl p-12 text-center text-slate-300">
-        <Loader2 className="animate-spin mx-auto text-sky-400 mb-4" size={32} />
+      <div className="bg-solid border border-rule-strong rounded-2xl p-12 text-center text-ink-3">
+        <Loader2 className="animate-spin mx-auto text-accent-ink mb-4" size={32} />
         <p className="text-sm">Loading dynamic clinical questionnaire...</p>
       </div>
     );
@@ -179,14 +179,14 @@ export const DynamicIntake: React.FC<DynamicIntakeProps> = ({
 
   if (fetchError || !questionnaire) {
     return (
-      <div className="bg-rose-50/70 border border-rose-200 rounded-2xl p-8 text-center text-rose-900">
-        <AlertTriangle className="mx-auto text-rose-600 mb-3" size={32} />
-        <h3 className="font-semibold text-base mb-1 text-rose-900">Could Not Load Intake</h3>
-        <p className="text-xs text-rose-700 mb-4">{fetchError || 'Questionnaire could not be loaded.'}</p>
+      <div className="bg-critical-wash/70 border border-critical-line rounded-2xl p-8 text-center text-critical">
+        <AlertTriangle className="mx-auto text-critical mb-3" size={32} />
+        <h3 className="font-semibold text-base mb-1 text-critical">Could Not Load Intake</h3>
+        <p className="text-xs text-critical mb-4">{fetchError || 'Questionnaire could not be loaded.'}</p>
         {onCancel && (
           <button
             onClick={onCancel}
-            className="px-4 py-2 bg-white border border-rose-200 hover:bg-rose-100/60 text-rose-800 rounded-xl text-xs font-semibold cursor-pointer"
+            className="px-4 py-2 bg-paper border border-critical-line hover:bg-critical-wash/60 text-critical rounded-xl text-xs font-semibold cursor-pointer"
           >
             Cancel
           </button>
@@ -201,22 +201,22 @@ export const DynamicIntake: React.FC<DynamicIntakeProps> = ({
     const isUrgent = submissionResult.escalation?.escalationLevel === 'URGENT';
 
     return (
-      <div className="bg-white border border-[#EAE8E3] rounded-2xl overflow-hidden shadow-sm max-w-2xl mx-auto">
+      <div className="bg-paper border border-rule rounded-2xl overflow-hidden shadow-sm max-w-2xl mx-auto">
         {/* Header */}
         <div className={`p-6 border-b ${
           isEmergency
-            ? 'bg-rose-50 border-rose-200 text-rose-900'
+            ? 'bg-critical-wash border-critical-line text-critical'
             : isUrgent
-            ? 'bg-amber-50 border-amber-200 text-amber-900'
-            : 'bg-emerald-50 border-emerald-200 text-emerald-900'
+            ? 'bg-caution-wash border-caution-line text-caution'
+            : 'bg-settled-wash border-settled-line text-settled'
         }`}>
           <div className="flex items-center gap-3">
             {isEmergency ? (
-              <AlertOctagon className="text-rose-600 shrink-0" size={28} />
+              <AlertOctagon className="text-critical shrink-0" size={28} />
             ) : isUrgent ? (
-              <AlertTriangle className="text-amber-600 shrink-0" size={28} />
+              <AlertTriangle className="text-caution shrink-0" size={28} />
             ) : (
-              <CheckCircle2 className="text-emerald-700 shrink-0" size={28} />
+              <CheckCircle2 className="text-settled shrink-0" size={28} />
             )}
             <div>
               <h3 className="text-lg font-bold">
@@ -231,11 +231,11 @@ export const DynamicIntake: React.FC<DynamicIntakeProps> = ({
 
         {/* Action Callout if Red Flag */}
         {(isEmergency || isUrgent) && (
-          <div className="p-5 bg-rose-50/50 border-b border-rose-200 text-sm text-rose-950">
-            <p className="font-semibold text-rose-900 mb-1">
+          <div className="p-5 bg-critical-wash/50 border-b border-critical-line text-sm text-critical">
+            <p className="font-semibold text-critical mb-1">
               {submissionResult.escalation.clinicalAction}
             </p>
-            <ul className="list-disc list-inside text-xs text-rose-700 space-y-1 mt-2">
+            <ul className="list-disc list-inside text-xs text-critical space-y-1 mt-2">
               {submissionResult.escalation.redFlagsDetected.map((rf, i) => (
                 <li key={i}>{rf.reason}</li>
               ))}
@@ -246,24 +246,24 @@ export const DynamicIntake: React.FC<DynamicIntakeProps> = ({
         {/* Narrative & Provenance */}
         <div className="p-6 space-y-4">
           <div>
-            <h4 className="text-xs font-semibold text-[#6E767E] uppercase tracking-wider mb-2">
+            <h4 className="text-xs font-semibold text-ink-2 uppercase tracking-wider mb-2">
               Patient-Reported Summary
             </h4>
-            <div className="bg-[#FBFBFA] border border-[#EAE8E3] rounded-xl p-4 text-xs font-mono text-[#111315] whitespace-pre-wrap leading-relaxed">
+            <div className="bg-paper-2 border border-rule rounded-xl p-4 text-xs font-mono text-ink whitespace-pre-wrap leading-relaxed">
               {submissionResult.clinicalContext.clinicalNarrative}
             </div>
           </div>
 
-          <div className="text-[11px] text-[#6E767E] flex items-center justify-between border-t border-[#EAE8E3] pt-3">
-            <span>QuestionnaireResponse ID: <strong className="text-[#111315]">{submissionResult.questionnaireResponseId}</strong></span>
-            <span>Audit Hash: <strong className="text-[#0F766E] font-mono">{submissionResult.provenance.currentHash.substring(0, 12)}...</strong></span>
+          <div className="text-[11px] text-ink-2 flex items-center justify-between border-t border-rule pt-3">
+            <span>QuestionnaireResponse ID: <strong className="text-ink">{submissionResult.questionnaireResponseId}</strong></span>
+            <span>Audit Hash: <strong className="text-accent-ink font-mono">{submissionResult.provenance.currentHash.substring(0, 12)}...</strong></span>
           </div>
 
           {onCancel && (
             <div className="pt-2 flex justify-end">
               <button
                 onClick={onCancel}
-                className="px-5 py-2.5 bg-[#0F766E] hover:bg-[#0B5C56] text-white font-semibold rounded-xl text-xs transition-colors cursor-pointer"
+                className="px-5 py-2.5 bg-accent hover:bg-accent text-white font-semibold rounded-xl text-xs transition-colors cursor-pointer"
               >
                 Return to Clinical Workspace
               </button>
@@ -277,7 +277,7 @@ export const DynamicIntake: React.FC<DynamicIntakeProps> = ({
   const isLastQuestion = currentIndex === activeQuestions.length - 1;
 
   return (
-    <div className="bg-white border border-[#EAE8E3] rounded-2xl overflow-hidden shadow-sm max-w-2xl mx-auto flex flex-col">
+    <div className="bg-paper border border-rule rounded-2xl overflow-hidden shadow-sm max-w-2xl mx-auto flex flex-col">
       {/* Progress Header */}
       <IntakeProgress
         currentIndex={currentIndex}
@@ -286,7 +286,7 @@ export const DynamicIntake: React.FC<DynamicIntakeProps> = ({
       />
 
       {/* Main Question Body */}
-      <div className="p-6 sm:p-8 flex-1 bg-[#FBFBFA]">
+      <div className="p-6 sm:p-8 flex-1 bg-paper-2">
         {currentQuestion ? (
           <QuestionRenderer
             item={currentQuestion}
@@ -295,16 +295,16 @@ export const DynamicIntake: React.FC<DynamicIntakeProps> = ({
             error={submitError || undefined}
           />
         ) : (
-          <p className="text-sm text-[#6E767E]">No active questions to display.</p>
+          <p className="text-sm text-ink-2">No active questions to display.</p>
         )}
       </div>
 
       {/* Footer Navigation */}
-      <div className="bg-white border-t border-[#EAE8E3] px-6 py-4 flex items-center justify-between">
+      <div className="bg-paper border-t border-rule px-6 py-4 flex items-center justify-between">
         <button
           type="button"
           onClick={currentIndex === 0 ? onCancel : handlePrev}
-          className="px-4 py-2 text-xs font-semibold text-[#6E767E] hover:text-[#111315] rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer border border-[#EAE8E3] bg-[#FBFBFA]"
+          className="px-4 py-2 text-xs font-semibold text-ink-2 hover:text-ink rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer border border-rule bg-paper-2"
         >
           <ArrowLeft size={14} />
           {currentIndex === 0 ? 'Cancel' : 'Previous'}
@@ -315,7 +315,7 @@ export const DynamicIntake: React.FC<DynamicIntakeProps> = ({
             type="button"
             disabled={submitting}
             onClick={handleSubmit}
-            className="px-6 py-2.5 bg-[#0F766E] hover:bg-[#0B5C56] text-white font-semibold text-xs rounded-xl flex items-center gap-2 shadow-xs transition-all cursor-pointer disabled:opacity-50"
+            className="px-6 py-2.5 bg-accent hover:bg-accent text-white font-semibold text-xs rounded-xl flex items-center gap-2 shadow-xs transition-all cursor-pointer disabled:opacity-50"
           >
             {submitting ? (
               <>
@@ -331,7 +331,7 @@ export const DynamicIntake: React.FC<DynamicIntakeProps> = ({
           <button
             type="button"
             onClick={handleNext}
-            className="px-5 py-2.5 bg-[#0F766E] hover:bg-[#0B5C56] text-white font-semibold text-xs rounded-xl flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+            className="px-5 py-2.5 bg-accent hover:bg-accent text-white font-semibold text-xs rounded-xl flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
           >
             Next <ArrowRight size={14} />
           </button>

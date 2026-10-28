@@ -4,6 +4,7 @@ import Layout from '../components/Layout';
 import { API_BASE_URL } from '../config';
 import { apiFetch } from '../lib/api';
 import { clinicApi, type ClinicAuditEvent, type ClinicPreferences } from '../lib/clinicApi';
+import { applyAppearance } from '../design-system/theme/palettes';
 import { authService } from '../services/auth';
 
 interface AIHealthStatus {
@@ -72,10 +73,9 @@ export default function Settings() {
       const next = { ...current, [key]: value };
       // Appearance and motion apply immediately; the save button persists them.
       if (key === 'appearance') {
-        const theme = value === 'dark' ? 'dark' : 'light';
-        localStorage.setItem('proton_appearance', theme);
-        document.documentElement.dataset.theme = theme;
-        document.documentElement.style.colorScheme = theme;
+        const appearance = value as ClinicPreferences['appearance'];
+        localStorage.setItem('proton_appearance', appearance);
+        applyAppearance(appearance);
       }
       if (key === 'density') {
         document.documentElement.dataset.density = String(value);
@@ -180,7 +180,7 @@ export default function Settings() {
               type="button"
               onClick={() => { void savePreferences(); }}
               disabled={!preferences || isSavingPreferences}
-              className="inline-flex items-center gap-1.5 rounded-full bg-[#151719] px-3.5 py-1.5 text-[11px] font-semibold text-white transition-colors hover:bg-[#2A2A28] disabled:opacity-50 cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-full bg-solid px-3.5 py-1.5 text-[11px] font-semibold text-white transition-colors hover:bg-solid disabled:opacity-50 cursor-pointer"
             >
               {isSavingPreferences && <LoaderCircle size={12} className="animate-spin" />}
               {isSavingPreferences ? 'Saving…' : preferencesSaved ? 'Saved' : 'Save preferences'}
@@ -188,7 +188,7 @@ export default function Settings() {
           </div>
 
           {preferencesError && (
-            <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-900">{preferencesError}</p>
+            <p className="rounded-xl border border-caution-line bg-caution-wash px-3 py-2 text-[11px] text-caution">{preferencesError}</p>
           )}
 
           {!preferences ? (
@@ -205,7 +205,7 @@ export default function Settings() {
                       onClick={() => updatePreference('appearance', appearance)}
                       className={`flex-1 rounded-full px-2 py-1.5 capitalize transition-colors cursor-pointer ${
                         preferences.appearance === appearance
-                          ? 'bg-white text-[#151719] shadow-xs'
+                          ? 'bg-paper text-ink shadow-xs'
                           : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]'
                       }`}
                     >
@@ -225,7 +225,7 @@ export default function Settings() {
                       onClick={() => updatePreference('density', density)}
                       className={`flex-1 rounded-full px-2 py-1.5 capitalize transition-colors cursor-pointer ${
                         preferences.density === density
-                          ? 'bg-white text-[#151719] shadow-xs'
+                          ? 'bg-paper text-ink shadow-xs'
                           : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]'
                       }`}
                     >
@@ -373,7 +373,7 @@ export default function Settings() {
           </div>
           {isMedGemma && (
             <div className="p-3 bg-[var(--color-surface-raised)] rounded-lg border border-[var(--color-border-default)] text-[11px] text-[var(--color-text-secondary)] flex items-center gap-2">
-              <AlertTriangle size={14} className="text-amber-600 shrink-0" />
+              <AlertTriangle size={14} className="text-caution shrink-0" />
               <span>Development Notice: MedGemma is running as a local experimental medical model. Technical evaluation only &bull; Not clinically validated.</span>
             </div>
           )}
@@ -440,9 +440,9 @@ export default function Settings() {
           <div className="flex flex-wrap items-center gap-2">
             <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] font-semibold ${
               auditVerification?.valid
-                ? 'bg-emerald-50 text-emerald-800'
+                ? 'bg-settled-wash text-settled'
                 : auditVerification
-                  ? 'bg-rose-50 text-rose-800'
+                  ? 'bg-critical-wash text-critical'
                   : 'bg-[var(--color-surface-sunken)] text-[var(--color-text-tertiary)]'
             }`}>
               <CheckCircle2 size={12} />
@@ -504,11 +504,11 @@ export default function Settings() {
         </div>
 
         {/* Section 5: Synthetic Beta Disclaimer */}
-        <div className="bg-amber-50/70 border border-amber-200/60 rounded-xl p-5 flex items-start gap-3">
-          <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
+        <div className="bg-caution-wash/70 border border-caution-line/60 rounded-xl p-5 flex items-start gap-3">
+          <AlertTriangle size={18} className="text-caution shrink-0 mt-0.5" />
           <div>
-            <h4 className="font-bold text-amber-900 text-sm">Synthetic Beta Environment</h4>
-            <p className="mt-1 text-xs leading-relaxed text-amber-800">
+            <h4 className="font-bold text-caution text-sm">Synthetic Beta Environment</h4>
+            <p className="mt-1 text-xs leading-relaxed text-caution">
               Proton V1 is deployed exclusively for controlled physician evaluation using synthetic clinical data.
               Real protected health information (PHI) must never be entered into this environment.
             </p>

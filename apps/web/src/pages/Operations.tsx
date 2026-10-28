@@ -212,44 +212,44 @@ export default function Operations() {
 
   return (
     <Layout>
-      <div className="flex flex-col h-full bg-[#fafaf9] overflow-hidden text-zinc-900">
+      <div className="flex flex-col h-full bg-canvas overflow-hidden text-ink">
         
         {/* Offline connection banner */}
         {isOffline && (
-          <div className="bg-amber-100 border-b border-amber-300 px-6 py-1.5 flex items-center justify-between text-xs text-amber-950 font-medium shrink-0">
+          <div className="bg-caution-wash border-b border-caution-line px-6 py-1.5 flex items-center justify-between text-xs text-caution font-medium shrink-0">
             <div className="flex items-center gap-2">
-              <AlertTriangle size={14} className="text-amber-700 shrink-0" />
+              <AlertTriangle size={14} className="text-caution shrink-0" />
               <span>
                 <strong>Offline mode</strong>: the operational API is unreachable. Queue changes are cached in this browser and are not transmitted until the connection is restored.
               </span>
             </div>
-            <span className="font-mono text-[10px] uppercase font-bold text-amber-800">Offline cache</span>
+            <span className="font-mono text-[10px] uppercase font-bold text-caution">Offline cache</span>
           </div>
         )}
 
         {/* Top Operational Bar */}
-        <div className="px-6 py-4 bg-white border-b border-zinc-200 shrink-0">
+        <div className="px-6 py-4 bg-paper border-b border-rule shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-zinc-900 text-white flex items-center justify-center font-bold text-xs shadow-xs">
+              <div className="w-8 h-8 rounded-lg bg-solid text-white flex items-center justify-center font-bold text-xs shadow-xs">
                 <Inbox size={17} />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-base font-bold tracking-tight text-zinc-900 leading-none">
+                  <h1 className="text-base font-bold tracking-tight text-ink leading-none">
                     Operations Command Center
                   </h1>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-settled-wash text-settled border border-settled-line">
                     Proton Operations OS v1.4
                   </span>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-zinc-100 text-zinc-600 border border-zinc-200">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-paper-2 text-ink-2 border border-rule">
                     Store: SQLite (WAL)
                   </span>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-zinc-100 text-zinc-600 border border-zinc-200">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-paper-2 text-ink-2 border border-rule">
                     Queue: {isOffline ? 'offline cache' : 'live API'}
                   </span>
                 </div>
-                <p className="text-xs text-zinc-500 mt-1">
+                <p className="text-xs text-on-solid0 mt-1">
                   Autonomous Triage • Care Gaps & Scheduling • Governed Refill Authority • HL7 FHIR R4
                 </p>
               </div>
@@ -257,14 +257,14 @@ export default function Operations() {
 
             <div className="flex items-center gap-2.5">
               {actionSuccess && (
-                <div className="flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-200 animate-fade-in">
-                  <CheckCircle2 size={13} className="text-emerald-600" />
+                <div className="flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium bg-settled-wash text-settled border border-settled-line animate-fade-in">
+                  <CheckCircle2 size={13} className="text-settled" />
                   <span>{actionSuccess}</span>
                 </div>
               )}
               <button
                 onClick={handleRefreshQueue}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-zinc-600 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-ink-2 bg-paper-2 hover:bg-paper-2 border border-rule transition-colors cursor-pointer"
                 title="Reload the operational queue from the API"
               >
                 <RefreshCw size={13} className={isLoading ? 'animate-spin' : ''} />
@@ -279,20 +279,20 @@ export default function Operations() {
               onClick={() => setActiveTab('triage')}
               className={`p-2.5 rounded-lg border text-left transition-all cursor-pointer ${
                 activeTab === 'triage'
-                  ? 'bg-blue-50/70 border-blue-300 ring-1 ring-blue-400/20'
-                  : 'bg-zinc-50/60 border-zinc-200 hover:bg-zinc-50'
+                  ? 'bg-accent-wash/70 border-accent-line ring-1 ring-accent/20'
+                  : 'bg-paper-2/60 border-rule hover:bg-paper-2'
               }`}
             >
-              <div className="flex items-center justify-between text-zinc-500 text-[11px] font-medium">
+              <div className="flex items-center justify-between text-on-solid0 text-[11px] font-medium">
                 <span className="flex items-center gap-1.5">
-                  <MessageSquareText size={13} className="text-blue-600" />
+                  <MessageSquareText size={13} className="text-accent-ink" />
                   Inbound Triage
                 </span>
-                <span className="font-mono text-xs font-semibold text-zinc-900">
+                <span className="font-mono text-xs font-semibold text-ink">
                   {summary?.pendingTriageCount ?? 0}
                 </span>
               </div>
-              <div className="text-[11px] text-zinc-500 mt-1 truncate">
+              <div className="text-[11px] text-on-solid0 mt-1 truncate">
                 Clinical & Administrative Inquiries
               </div>
             </button>
@@ -301,20 +301,20 @@ export default function Operations() {
               onClick={() => setActiveTab('refill')}
               className={`p-2.5 rounded-lg border text-left transition-all cursor-pointer ${
                 activeTab === 'refill'
-                  ? 'bg-amber-50/70 border-amber-300 ring-1 ring-amber-400/20'
-                  : 'bg-zinc-50/60 border-zinc-200 hover:bg-zinc-50'
+                  ? 'bg-caution-wash/70 border-caution-line ring-1 ring-caution/20'
+                  : 'bg-paper-2/60 border-rule hover:bg-paper-2'
               }`}
             >
-              <div className="flex items-center justify-between text-zinc-500 text-[11px] font-medium">
+              <div className="flex items-center justify-between text-on-solid0 text-[11px] font-medium">
                 <span className="flex items-center gap-1.5">
-                  <Pill size={13} className="text-amber-600" />
+                  <Pill size={13} className="text-caution" />
                   Refill Authorizations
                 </span>
-                <span className="font-mono text-xs font-semibold text-zinc-900">
+                <span className="font-mono text-xs font-semibold text-ink">
                   {summary?.urgentRefillCount ?? 0}
                 </span>
               </div>
-              <div className="text-[11px] text-zinc-500 mt-1 truncate">
+              <div className="text-[11px] text-on-solid0 mt-1 truncate">
                 Physician Authority Required
               </div>
             </button>
@@ -323,20 +323,20 @@ export default function Operations() {
               onClick={() => setActiveTab('scheduling')}
               className={`p-2.5 rounded-lg border text-left transition-all cursor-pointer ${
                 activeTab === 'scheduling'
-                  ? 'bg-purple-50/70 border-purple-300 ring-1 ring-purple-400/20'
-                  : 'bg-zinc-50/60 border-zinc-200 hover:bg-zinc-50'
+                  ? 'bg-accent-wash/70 border-accent-line ring-1 ring-accent/20'
+                  : 'bg-paper-2/60 border-rule hover:bg-paper-2'
               }`}
             >
-              <div className="flex items-center justify-between text-zinc-500 text-[11px] font-medium">
+              <div className="flex items-center justify-between text-on-solid0 text-[11px] font-medium">
                 <span className="flex items-center gap-1.5">
-                  <CalendarDays size={13} className="text-purple-600" />
+                  <CalendarDays size={13} className="text-accent-ink" />
                   Care Gaps & Follow-Up
                 </span>
-                <span className="font-mono text-xs font-semibold text-zinc-900">
+                <span className="font-mono text-xs font-semibold text-ink">
                   {summary?.schedulingCareGapCount ?? 0}
                 </span>
               </div>
-              <div className="text-[11px] text-zinc-500 mt-1 truncate">
+              <div className="text-[11px] text-on-solid0 mt-1 truncate">
                 Versioned ADA Guidelines
               </div>
             </button>
@@ -345,42 +345,42 @@ export default function Operations() {
               onClick={() => setActiveTab('referral')}
               className={`p-2.5 rounded-lg border text-left transition-all cursor-pointer ${
                 activeTab === 'referral'
-                  ? 'bg-indigo-50/70 border-indigo-300 ring-1 ring-indigo-400/20'
-                  : 'bg-zinc-50/60 border-zinc-200 hover:bg-zinc-50'
+                  ? 'bg-accent-wash/70 border-accent-line ring-1 ring-accent/20'
+                  : 'bg-paper-2/60 border-rule hover:bg-paper-2'
               }`}
             >
-              <div className="flex items-center justify-between text-zinc-500 text-[11px] font-medium">
+              <div className="flex items-center justify-between text-on-solid0 text-[11px] font-medium">
                 <span className="flex items-center gap-1.5">
-                  <Share2 size={13} className="text-indigo-600" />
+                  <Share2 size={13} className="text-accent-ink" />
                   Specialist Referrals
                 </span>
-                <span className="font-mono text-xs font-semibold text-zinc-900">
+                <span className="font-mono text-xs font-semibold text-ink">
                   {summary?.openReferralCount ?? 0}
                 </span>
               </div>
-              <div className="text-[11px] text-zinc-500 mt-1 truncate">
+              <div className="text-[11px] text-on-solid0 mt-1 truncate">
                 ServiceRequest Loop Closure
               </div>
             </button>
 
-            <div className="p-2.5 rounded-lg border bg-zinc-50/60 border-zinc-200 text-left">
-              <div className="flex items-center justify-between text-zinc-500 text-[11px] font-medium">
+            <div className="p-2.5 rounded-lg border bg-paper-2/60 border-rule text-left">
+              <div className="flex items-center justify-between text-on-solid0 text-[11px] font-medium">
                 <span className="flex items-center gap-1.5">
-                  <Shield size={13} className="text-emerald-600" />
+                  <Shield size={13} className="text-settled" />
                   Safety Invariant
                 </span>
-                <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-100 text-emerald-800">
+                <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-bold bg-settled-wash text-settled">
                   ENFORCED
                 </span>
               </div>
-              <div className="text-[11px] text-zinc-500 mt-1 truncate">
+              <div className="text-[11px] text-on-solid0 mt-1 truncate">
                 No Autonomous Prescribing
               </div>
             </div>
           </div>
 
           {/* Sub-Tabs */}
-          <div className="flex items-center gap-1 mt-4 border-b border-zinc-200/80 -mb-4">
+          <div className="flex items-center gap-1 mt-4 border-b border-rule/80 -mb-4">
             {[
               { id: 'all', label: 'All Operations Queue', count: tasks.length },
               { id: 'triage', label: 'Patient Triage (Agent 1)', count: summary?.pendingTriageCount },
@@ -396,21 +396,21 @@ export default function Operations() {
                 onClick={() => setActiveTab(tab.id as ActiveTab)}
                 className={`flex items-center gap-2 px-3 py-2 text-xs font-medium border-b-2 transition-colors cursor-pointer ${
                   activeTab === tab.id
-                    ? 'border-zinc-900 text-zinc-900 font-semibold'
-                    : 'border-transparent text-zinc-500 hover:text-zinc-800 hover:border-zinc-300'
+                    ? 'border-rule-strong text-ink font-semibold'
+                    : 'border-transparent text-on-solid0 hover:text-ink hover:border-rule'
                 }`}
               >
                 <span>{tab.label}</span>
                 {typeof tab.count === 'number' && (
                   <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
-                    activeTab === tab.id ? 'bg-zinc-900 text-white' : 'bg-zinc-200 text-zinc-700'
+                    activeTab === tab.id ? 'bg-solid text-white' : 'bg-rule text-ink-2'
                   }`}>
                     {tab.count}
                   </span>
                 )}
                 {typeof tab.count === 'string' && (
                   <span className={`px-1.5 py-0.2 rounded font-mono text-[9px] font-bold ${
-                    tab.id === 'imaging_triage' ? 'bg-rose-950 text-rose-300 border border-rose-800' : 'bg-emerald-950 text-emerald-300'
+                    tab.id === 'imaging_triage' ? 'bg-solid text-critical-on-solid border border-critical' : 'bg-solid text-settled-on-solid'
                   }`}>
                     {tab.count}
                   </span>
@@ -425,19 +425,19 @@ export default function Operations() {
           
           {/* Left: Task Feed */}
           {activeTab !== 'audit' && activeTab !== 'roi' && activeTab !== 'imaging_triage' && (
-            <div className="w-96 border-r border-zinc-200 bg-white flex flex-col shrink-0">
-              <div className="p-3 border-b border-zinc-200/80 flex items-center justify-between bg-zinc-50/50">
-                <span className="text-xs font-semibold text-zinc-700">
+            <div className="w-96 border-r border-rule bg-paper flex flex-col shrink-0">
+              <div className="p-3 border-b border-rule/80 flex items-center justify-between bg-paper-2/50">
+                <span className="text-xs font-semibold text-ink-2">
                   Active Items ({filteredTasks.length})
                 </span>
-                <span className="text-[10px] text-zinc-400">
+                <span className="text-[10px] text-ink-3">
                   Sorted by clinical priority
                 </span>
               </div>
 
-              <div className="flex-1 overflow-y-auto divide-y divide-zinc-100">
+              <div className="flex-1 overflow-y-auto divide-y divide-rule">
                 {filteredTasks.length === 0 ? (
-                  <div className="p-8 text-center text-zinc-400 text-xs">
+                  <div className="p-8 text-center text-ink-3 text-xs">
                     No active operational items in this queue.
                   </div>
                 ) : (
@@ -448,67 +448,67 @@ export default function Operations() {
                         key={task.id}
                         onClick={() => setSelectedTask(task)}
                         className={`w-full p-3.5 text-left transition-colors cursor-pointer flex flex-col gap-1.5 ${
-                          isSelected ? 'bg-zinc-100/90' : 'hover:bg-zinc-50/80'
+                          isSelected ? 'bg-paper-2/90' : 'hover:bg-paper-2/80'
                         }`}
                       >
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-xs font-bold text-zinc-900 truncate">
-                            {task.patientName} <span className="text-zinc-400 font-normal text-[11px]">({task.patientAgeSex})</span>
+                          <span className="text-xs font-bold text-ink truncate">
+                            {task.patientName} <span className="text-ink-3 font-normal text-[11px]">({task.patientAgeSex})</span>
                           </span>
                           <div className="flex items-center gap-1 shrink-0">
                             {task.priority === 'urgent' && (
-                              <span className="px-1.5 py-0.2 rounded text-[10px] font-semibold bg-amber-100 text-amber-800">
+                              <span className="px-1.5 py-0.2 rounded text-[10px] font-semibold bg-caution-wash text-caution">
                                 Urgent
                               </span>
                             )}
                             {task.priority === 'emergency' && (
-                              <span className="px-1.5 py-0.2 rounded text-[10px] font-semibold bg-red-100 text-red-800 animate-pulse">
+                              <span className="px-1.5 py-0.2 rounded text-[10px] font-semibold bg-critical-wash text-critical animate-pulse">
                                 Emergency
                               </span>
                             )}
                             {task.reconciliationStatus === 'reconciled' && (
-                              <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-emerald-50 text-emerald-800 border border-emerald-300">
+                              <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-settled-wash text-settled border border-settled-line">
                                 RECONCILED
                               </span>
                             )}
                             {task.reconciliationStatus === 'failed' && (
-                              <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-rose-50 text-rose-800 border border-rose-300">
+                              <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-critical-wash text-critical border border-critical-line">
                                 RECONCILE FAILED
                               </span>
                             )}
                             {task.reconciliationStatus === 'pending' && (
-                              <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-amber-50 text-amber-800 border border-amber-300">
+                              <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-caution-wash text-caution border border-caution-line">
                                 PENDING RECONCILIATION
                               </span>
                             )}
                             <span className={`px-1.5 py-0.2 rounded text-[10px] uppercase font-bold tracking-tight ${
                               task.status === 'completed'
-                                ? 'bg-emerald-50 text-emerald-700'
+                                ? 'bg-settled-wash text-settled'
                                 : task.status === 'rejected'
-                                ? 'bg-rose-50 text-rose-700'
+                                ? 'bg-critical-wash text-critical'
                                 : task.status === 'reconciliation_failed'
-                                ? 'bg-rose-100 text-rose-800 border border-rose-300'
-                                : 'bg-zinc-100 text-zinc-700'
+                                ? 'bg-critical-wash text-critical border border-critical-line'
+                                : 'bg-paper-2 text-ink-2'
                             }`}>
                               {task.status}
                             </span>
                           </div>
                         </div>
 
-                        <div className="text-xs font-medium text-zinc-800 line-clamp-1">
+                        <div className="text-xs font-medium text-ink line-clamp-1">
                           {task.title}
                         </div>
 
-                        <div className="text-[11px] text-zinc-500 line-clamp-2 leading-relaxed">
+                        <div className="text-[11px] text-on-solid0 line-clamp-2 leading-relaxed">
                           {task.summary}
                         </div>
 
-                        <div className="flex items-center justify-between text-[10px] text-zinc-400 pt-1">
+                        <div className="flex items-center justify-between text-[10px] text-ink-3 pt-1">
                           <span className="flex items-center gap-1">
-                            {task.category === 'triage' && <MessageSquareText size={11} className="text-blue-500" />}
-                            {task.category === 'refill' && <Pill size={11} className="text-amber-500" />}
-                            {task.category === 'scheduling' && <CalendarDays size={11} className="text-purple-500" />}
-                            {task.category === 'referral' && <Share2 size={11} className="text-indigo-500" />}
+                            {task.category === 'triage' && <MessageSquareText size={11} className="text-accent-ink0" />}
+                            {task.category === 'refill' && <Pill size={11} className="text-caution-on-solid0" />}
+                            {task.category === 'scheduling' && <CalendarDays size={11} className="text-accent-ink0" />}
+                            {task.category === 'referral' && <Share2 size={11} className="text-accent-ink0" />}
                             <span className="capitalize">{task.category}</span>
                           </span>
                           <span>{task.sourceEvent}</span>
@@ -520,16 +520,16 @@ export default function Operations() {
               </div>
 
               {/* Inbound Simulator Bar */}
-              <div className="p-3 border-t border-zinc-200 bg-zinc-50/70">
-                <div className="text-[11px] font-semibold text-zinc-700 mb-1.5 flex items-center justify-between">
+              <div className="p-3 border-t border-rule bg-paper-2/70">
+                <div className="text-[11px] font-semibold text-ink-2 mb-1.5 flex items-center justify-between">
                   <span>Triage intake tester</span>
-                  <span className="text-[10px] text-zinc-400 font-normal">Writes to the live queue</span>
+                  <span className="text-[10px] text-ink-3 font-normal">Writes to the live queue</span>
                 </div>
                 <div className="mb-2">
                   <select
                     value={simPatientId}
                     onChange={(e) => setSimPatientId(e.target.value)}
-                    className="w-full text-[10px] bg-white border border-zinc-200 rounded px-1.5 py-1 text-zinc-700"
+                    className="w-full text-[10px] bg-paper border border-rule rounded px-1.5 py-1 text-ink-2"
                   >
                     <option value="eleanor-vance">Eleanor Vance (68F)</option>
                     <option value="arthur-pendelton">Arthur Pendelton (74M)</option>
@@ -539,7 +539,7 @@ export default function Operations() {
                   <button
                     disabled={isSubmittingTest}
                     onClick={() => handleSubmitTestMessage("Hello, my home BP was 152/94 this morning and I felt dizzy when standing up. Should I stop my Lisinopril?")}
-                    className="px-2 py-1 rounded text-[10px] bg-white border border-zinc-200 hover:bg-zinc-100 text-zinc-700 cursor-pointer flex-1 truncate disabled:opacity-50"
+                    className="px-2 py-1 rounded text-[10px] bg-paper border border-rule hover:bg-paper-2 text-ink-2 cursor-pointer flex-1 truncate disabled:opacity-50"
                     title="Submit a test BP-spike message for Eleanor Vance"
                   >
                     {isSubmittingTest ? 'Evaluating...' : 'BP Spike (Eleanor)'}
@@ -547,7 +547,7 @@ export default function Operations() {
                   <button
                     disabled={isSubmittingTest}
                     onClick={() => handleSubmitTestMessage("I have crushing chest pain radiating to my left arm and jaw")}
-                    className="px-2 py-1 rounded text-[10px] bg-red-50 border border-red-200 hover:bg-red-100 text-red-700 cursor-pointer flex-1 truncate disabled:opacity-50"
+                    className="px-2 py-1 rounded text-[10px] bg-critical-wash border border-critical-line hover:bg-critical-wash text-critical cursor-pointer flex-1 truncate disabled:opacity-50"
                     title="Submit a test emergency red-flag message"
                   >
                     911 Chest Pain
@@ -558,7 +558,7 @@ export default function Operations() {
           )}
 
           {/* Right: Task Detail & Action Workspace */}
-          <div className="flex-1 overflow-y-auto p-6 bg-[#FAF9F5]">
+          <div className="flex-1 overflow-y-auto p-6 bg-paper-2">
             {activeTab === 'imaging_triage' ? (
               <div className="max-w-6xl mx-auto">
                 <AcuteImagingTriageWorklist />
@@ -572,33 +572,33 @@ export default function Operations() {
                 <OperationsAuditLog />
               </div>
             ) : !selectedTask ? (
-              <div className="h-full flex items-center justify-center text-zinc-400 text-xs">
+              <div className="h-full flex items-center justify-center text-ink-3 text-xs">
                 Select an operational task from the feed to review details and take action.
               </div>
             ) : (
               <div className="max-w-4xl mx-auto space-y-5">
                 
                 {/* Task Header */}
-                <div className="p-5 rounded-xl bg-white border border-zinc-200/80 shadow-xs flex items-start justify-between">
+                <div className="p-5 rounded-xl bg-paper border border-rule/80 shadow-xs flex items-start justify-between">
                   <div>
                     <div className="flex items-center gap-2 mb-1.5">
                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                        selectedTask.category === 'triage' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
-                        selectedTask.category === 'refill' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
-                        selectedTask.category === 'scheduling' ? 'bg-purple-50 text-purple-700 border border-purple-200' :
-                        'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                        selectedTask.category === 'triage' ? 'bg-accent-wash text-accent-ink border border-accent-line' :
+                        selectedTask.category === 'refill' ? 'bg-caution-wash text-caution border border-caution-line' :
+                        selectedTask.category === 'scheduling' ? 'bg-accent-wash text-accent-ink border border-accent-line' :
+                        'bg-accent-wash text-accent-ink border border-accent-line'
                       }`}>
                         {selectedTask.category} agent task
                       </span>
-                      <span className="text-xs text-zinc-400">•</span>
-                      <span className="text-xs text-zinc-500 font-mono">ID: {selectedTask.id}</span>
+                      <span className="text-xs text-ink-3">•</span>
+                      <span className="text-xs text-on-solid0 font-mono">ID: {selectedTask.id}</span>
                     </div>
 
-                    <h2 className="text-lg font-bold text-zinc-900 leading-snug">
+                    <h2 className="text-lg font-bold text-ink leading-snug">
                       {selectedTask.title}
                     </h2>
 
-                    <div className="text-xs text-zinc-500 mt-1 flex items-center gap-3">
+                    <div className="text-xs text-on-solid0 mt-1 flex items-center gap-3">
                       <span>Patient: <strong>{selectedTask.patientName}</strong> ({selectedTask.patientAgeSex})</span>
                       <span>•</span>
                       <span>Received: {new Date(selectedTask.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
@@ -611,13 +611,13 @@ export default function Operations() {
                     {selectedTask.status === 'requested' || selectedTask.status === 'ready' ? (
                       <button
                         onClick={() => handleRejectTask('Clinical discretion')}
-                        className="px-3 py-1.5 rounded-md text-xs font-medium text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors cursor-pointer"
+                        className="px-3 py-1.5 rounded-md text-xs font-medium text-critical bg-critical-wash hover:bg-critical-wash border border-critical-line transition-colors cursor-pointer"
                       >
                         Reject
                       </button>
                     ) : (
-                      <span className="px-3 py-1.5 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center gap-1.5">
-                        <CheckCircle2 size={14} className="text-emerald-600" />
+                      <span className="px-3 py-1.5 rounded-md text-xs font-semibold bg-settled-wash text-settled border border-settled-line flex items-center gap-1.5">
+                        <CheckCircle2 size={14} className="text-settled" />
                         Signed & Committed to FHIR R4
                       </span>
                     )}

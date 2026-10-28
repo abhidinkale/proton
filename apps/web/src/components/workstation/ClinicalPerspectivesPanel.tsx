@@ -269,18 +269,18 @@ export default function ClinicalPerspectivesPanel({
   }
 
   return (
-    <div className="flex flex-col h-full bg-white border-l border-[#e4e4e7] overflow-hidden font-sans">
+    <div className="flex flex-col h-full bg-paper border-l border-rule overflow-hidden font-sans">
       {/* Top Header */}
-      <div className="h-12 border-b border-[#e4e4e7] bg-[#fafaf9] px-5 flex items-center justify-between shrink-0">
+      <div className="h-12 border-b border-rule bg-canvas px-5 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2">
-          <Stethoscope size={14} className="text-[#111315]" />
-          <h2 className="text-xs font-bold text-[#09090b] tracking-tight">Clinical Perspectives</h2>
-          <span className="text-[10px] text-[#71717a] font-medium">({assessments.length} Specialists)</span>
+          <Stethoscope size={14} className="text-ink" />
+          <h2 className="text-xs font-bold text-ink tracking-tight">Clinical Perspectives</h2>
+          <span className="text-[10px] text-ink-2 font-medium">({assessments.length} Specialists)</span>
         </div>
         <button
           onClick={fetchPerspectives}
           disabled={loading}
-          className="flex items-center gap-1 text-[11px] text-[#52525b] hover:text-[#09090b] p-1 rounded-md hover:bg-[#e4e4e7] transition-colors cursor-pointer"
+          className="flex items-center gap-1 text-[11px] text-ink-2 hover:text-ink p-1 rounded-md hover:bg-paper-2 transition-colors cursor-pointer"
           title="Re-run specialist agents"
         >
           <RefreshCw size={11} className={loading ? 'animate-spin' : ''} />
@@ -291,44 +291,44 @@ export default function ClinicalPerspectivesPanel({
       {/* Main Scroller */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {loading && (
-          <div className="p-6 rounded-2xl bg-[#fafaf9] border border-[#e4e4e7] text-center space-y-2 animate-pulse">
-            <Sparkles size={20} className="mx-auto text-[#0284c7]" />
-            <p className="text-xs font-semibold text-[#09090b]">Synthesizing cross-specialty perspectives...</p>
-            <p className="text-[11px] text-[#71717a]">Routing case through Jev decision engine</p>
+          <div className="p-6 rounded-2xl bg-canvas border border-rule text-center space-y-2 animate-pulse">
+            <Sparkles size={20} className="mx-auto text-accent-ink" />
+            <p className="text-xs font-semibold text-ink">Synthesizing cross-specialty perspectives...</p>
+            <p className="text-[11px] text-ink-2">Routing case through Jev decision engine</p>
           </div>
         )}
 
         {/* MULTI-SPECIALIST DISAGREEMENT BANNER (Section 17) */}
         {synthesis && synthesis.differingPerspectives && synthesis.differingPerspectives.length > 0 && (
-          <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/90 space-y-3">
-            <div className="flex items-center gap-2 text-amber-900 font-bold text-xs uppercase tracking-wider">
-              <Scale size={14} className="text-amber-700 shrink-0" />
+          <div className="p-4 rounded-2xl bg-caution-wash/70 border border-caution-line/90 space-y-3">
+            <div className="flex items-center gap-2 text-caution font-bold text-xs uppercase tracking-wider">
+              <Scale size={14} className="text-caution shrink-0" />
               <span>Specialist Perspectives Differ</span>
             </div>
             
-            <p className="text-xs text-amber-950 font-medium">
+            <p className="text-xs text-caution font-medium">
               Proton detected divergent clinical reasoning across participating specialties. Disagreement is preserved transparently for physician review:
             </p>
 
             <div className="space-y-2 pt-1">
               {synthesis.differingPerspectives.map((diff, idx) => (
-                <div key={idx} className="p-2.5 rounded-xl bg-white border border-amber-200/60 text-xs space-y-0.5">
-                  <div className="font-bold text-[#09090b] flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-600" />
+                <div key={idx} className="p-2.5 rounded-xl bg-paper border border-caution-line/60 text-xs space-y-0.5">
+                  <div className="font-bold text-ink flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-caution" />
                     <span>{diff.specialist}:</span>
                   </div>
-                  <p className="text-[#52525b] pl-3 leading-relaxed">{diff.perspective}</p>
+                  <p className="text-ink-2 pl-3 leading-relaxed">{diff.perspective}</p>
                 </div>
               ))}
             </div>
 
             {/* Why they differ */}
-            <div className="p-2.5 rounded-xl bg-amber-100/60 border border-amber-200 text-xs space-y-1">
-              <div className="font-semibold text-amber-950 flex items-center gap-1">
-                <Info size={12} className="text-amber-800" />
+            <div className="p-2.5 rounded-xl bg-caution-wash/60 border border-caution-line text-xs space-y-1">
+              <div className="font-semibold text-caution flex items-center gap-1">
+                <Info size={12} className="text-caution" />
                 <span>Why do the perspectives differ?</span>
               </div>
-              <ul className="text-[11px] text-amber-900 list-disc pl-4 space-y-0.5">
+              <ul className="text-[11px] text-caution list-disc pl-4 space-y-0.5">
                 {synthesis.evidence.map((ev, i) => (
                   <li key={i}>{ev}</li>
                 ))}
@@ -338,12 +338,12 @@ export default function ClinicalPerspectivesPanel({
             {/* Suggested Clarifying Questions */}
             {synthesis.suggestedQuestions && synthesis.suggestedQuestions.length > 0 && (
               <div className="space-y-1 pt-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-caution">
                   Consider Clarifying with Patient:
                 </span>
                 <div className="space-y-1">
                   {synthesis.suggestedQuestions.map((q, qIdx) => (
-                    <div key={qIdx} className="text-xs font-medium text-amber-950 bg-white/80 p-2 rounded-lg border border-amber-200/50">
+                    <div key={qIdx} className="text-xs font-medium text-caution bg-paper/80 p-2 rounded-lg border border-caution-line/50">
                       &ldquo;{q}&rdquo;
                     </div>
                   ))}
@@ -355,15 +355,15 @@ export default function ClinicalPerspectivesPanel({
 
         {/* CONSENSUS FINDINGS (Section 17) */}
         {synthesis && synthesis.consensus && synthesis.consensus.length > 0 && (
-          <div className="p-3.5 rounded-2xl bg-emerald-50/60 border border-emerald-200/80 space-y-1.5">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800 uppercase tracking-wider">
-              <CheckCircle2 size={13} className="text-emerald-700 shrink-0" />
+          <div className="p-3.5 rounded-2xl bg-settled-wash/60 border border-settled-line/80 space-y-1.5">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-settled uppercase tracking-wider">
+              <CheckCircle2 size={13} className="text-settled shrink-0" />
               <span>Specialist Consensus</span>
             </div>
-            <ul className="text-xs text-emerald-950 space-y-1 pl-1">
+            <ul className="text-xs text-settled space-y-1 pl-1">
               {synthesis.consensus.map((c, i) => (
                 <li key={i} className="flex items-start gap-1.5">
-                  <span className="text-emerald-700 font-bold">&bull;</span>
+                  <span className="text-settled font-bold">&bull;</span>
                   <span>{typeof c === 'string' ? c : (c.finding || c.name || JSON.stringify(c))}</span>
                 </li>
               ))}
@@ -373,7 +373,7 @@ export default function ClinicalPerspectivesPanel({
 
         {/* INDIVIDUAL SPECIALIST ACCORDION CARDS (Section 15 & 16) */}
         <div className="space-y-3">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-[#a1a1aa] px-1">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-ink-3 px-1">
             Specialist Analyses & Evidence
           </div>
 
@@ -384,62 +384,62 @@ export default function ClinicalPerspectivesPanel({
             return (
               <div
                 key={specId}
-                className="rounded-2xl border border-[#e4e4e7] bg-[#fafaf9] overflow-hidden transition-all shadow-2xs"
+                className="rounded-2xl border border-rule bg-canvas overflow-hidden transition-all shadow-2xs"
               >
                 {/* Accordion Header */}
                 <button
                   type="button"
                   onClick={() => setExpandedSpecialist(isExpanded ? null : specId)}
-                  className="w-full p-3.5 flex items-center justify-between text-left hover:bg-[#f4f4f5] transition-colors cursor-pointer"
+                  className="w-full p-3.5 flex items-center justify-between text-left hover:bg-paper-2 transition-colors cursor-pointer"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-7 h-7 rounded-lg bg-[#111315] text-white flex items-center justify-center text-xs font-bold shrink-0">
+                    <div className="w-7 h-7 rounded-lg bg-solid text-white flex items-center justify-center text-xs font-bold shrink-0">
                       {(spec.specialty || spec.specialist || 'S').slice(0, 2).toUpperCase()}
                     </div>
                     <div className="truncate">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-[#09090b]">{spec.name || spec.specialty}</span>
+                        <span className="text-xs font-bold text-ink">{spec.name || spec.specialty}</span>
                         {spec.confidence !== undefined && (
-                          <span className="text-[10px] font-mono text-[#71717a]">
+                          <span className="text-[10px] font-mono text-ink-2">
                             ({Math.round(spec.confidence * 100)}% calibrated)
                           </span>
                         )}
                       </div>
-                      <p className="text-[11px] text-[#52525b] truncate max-w-xs">{spec.summary}</p>
+                      <p className="text-[11px] text-ink-2 truncate max-w-xs">{spec.summary}</p>
                     </div>
                   </div>
-                  {isExpanded ? <ChevronDown size={14} className="text-[#71717a]" /> : <ChevronRight size={14} className="text-[#71717a]" />}
+                  {isExpanded ? <ChevronDown size={14} className="text-ink-2" /> : <ChevronRight size={14} className="text-ink-2" />}
                 </button>
 
                 {/* Expanded Details */}
                 {isExpanded && (
-                  <div className="p-4 border-t border-[#e4e4e7] bg-white space-y-4 text-xs">
+                  <div className="p-4 border-t border-rule bg-paper space-y-4 text-xs">
                     {/* What it considered (Section 16 & 18) */}
                     {spec.clinicalConsiderations && spec.clinicalConsiderations.length > 0 && (
                       <div className="space-y-1.5">
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-[#52525b]">
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-ink-2">
                           Diagnostic Considerations:
                         </div>
                         <div className="space-y-1.5">
                           {spec.clinicalConsiderations.map((c, i) => (
-                            <div key={i} className="p-2 rounded-xl bg-[#fafaf9] border border-[#e4e4e7] space-y-1">
+                            <div key={i} className="p-2 rounded-xl bg-canvas border border-rule space-y-1">
                               <div className="flex items-center justify-between">
-                                <span className="font-bold text-[#09090b]">{c.name}</span>
+                                <span className="font-bold text-ink">{c.name}</span>
                                 {c.likelihood && (
-                                  <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded">
+                                  <span className="text-[10px] font-semibold text-accent-ink bg-accent-wash px-1.5 py-0.5 rounded">
                                     {c.likelihood}
                                   </span>
                                 )}
                               </div>
                               {c.supportingFindings && (
-                                <p className="text-[11px] text-[#52525b]">
+                                <p className="text-[11px] text-ink-2">
                                   Supporting: {c.supportingFindings.join(', ')}
                                 </p>
                               )}
                               <button
                                 type="button"
                                 onClick={() => onInsertIntoAssessment(`${c.name}: ${c.supportingFindings ? c.supportingFindings.join(', ') : 'Clinical consideration'}`)}
-                                className="text-[10px] font-semibold text-[#0284c7] hover:underline flex items-center gap-1 pt-0.5 cursor-pointer"
+                                className="text-[10px] font-semibold text-accent-ink hover:underline flex items-center gap-1 pt-0.5 cursor-pointer"
                               >
                                 <Plus size={10} />
                                 <span>Add to Note Assessment</span>
@@ -453,11 +453,11 @@ export default function ClinicalPerspectivesPanel({
                     {/* Evidence & Missing Info */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {/* Evidence */}
-                      <div className="p-3 rounded-xl bg-[#fafaf9] border border-[#e4e4e7] space-y-1">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#52525b]">
+                      <div className="p-3 rounded-xl bg-canvas border border-rule space-y-1">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-ink-2">
                           Evidence from Chart:
                         </span>
-                        <ul className="text-[11px] text-[#09090b] space-y-0.5 list-disc pl-3">
+                        <ul className="text-[11px] text-ink space-y-0.5 list-disc pl-3">
                           {(spec.supportingEvidence || []).map((ev, evIdx) => (
                             <li key={evIdx}>{ev}</li>
                           ))}
@@ -465,11 +465,11 @@ export default function ClinicalPerspectivesPanel({
                       </div>
 
                       {/* Missing Information */}
-                      <div className="p-3 rounded-xl bg-[#fafaf9] border border-[#e4e4e7] space-y-1">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#52525b]">
+                      <div className="p-3 rounded-xl bg-canvas border border-rule space-y-1">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-ink-2">
                           Missing Information:
                         </span>
-                        <ul className="text-[11px] text-amber-900 space-y-0.5 list-disc pl-3">
+                        <ul className="text-[11px] text-caution space-y-0.5 list-disc pl-3">
                           {(spec.missingInformation || []).map((mi, miIdx) => (
                             <li key={miIdx}>{mi}</li>
                           ))}
@@ -479,8 +479,8 @@ export default function ClinicalPerspectivesPanel({
 
                     {/* Uncertainty Note */}
                     {spec.uncertainty && (
-                      <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-700 space-y-0.5">
-                        <span className="font-bold text-[#09090b]">Calibrated Uncertainty: </span>
+                      <div className="p-2.5 rounded-xl bg-paper-2 border border-rule text-[11px] text-ink-2 space-y-0.5">
+                        <span className="font-bold text-ink">Calibrated Uncertainty: </span>
                         <span>{spec.uncertainty}</span>
                       </div>
                     )}
@@ -488,17 +488,17 @@ export default function ClinicalPerspectivesPanel({
                     {/* Draft Recommendations */}
                     {spec.draftRecommendations && spec.draftRecommendations.length > 0 && (
                       <div className="space-y-1.5">
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-[#52525b]">
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-ink-2">
                           Draft Clinical Recommendations:
                         </div>
                         <div className="space-y-1">
                           {spec.draftRecommendations.map((rec, recIdx) => (
-                            <div key={recIdx} className="p-2 rounded-xl bg-[#fafaf9] border border-[#e4e4e7] flex items-center justify-between gap-2">
-                              <span className="text-[11px] text-[#09090b] font-medium">{rec}</span>
+                            <div key={recIdx} className="p-2 rounded-xl bg-canvas border border-rule flex items-center justify-between gap-2">
+                              <span className="text-[11px] text-ink font-medium">{rec}</span>
                               <button
                                 type="button"
                                 onClick={() => onInsertIntoPlan(rec)}
-                                className="text-[10px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-lg shrink-0 cursor-pointer"
+                                className="text-[10px] font-bold text-settled bg-settled-wash hover:bg-settled-wash border border-settled-line px-2 py-0.5 rounded-lg shrink-0 cursor-pointer"
                               >
                                 Insert into Plan
                               </button>
@@ -509,10 +509,10 @@ export default function ClinicalPerspectivesPanel({
                     )}
 
                     {/* Cryptographic Provenance UX (Section 26) */}
-                    <div className="pt-2 border-t border-[#f4f4f5] flex items-center justify-between text-[10px] text-[#71717a]">
+                    <div className="pt-2 border-t border-rule flex items-center justify-between text-[10px] text-ink-2">
                       <div className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                        <span className="font-medium text-[#09090b]">AI-Assisted</span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-settled-wash0" />
+                        <span className="font-medium text-ink">AI-Assisted</span>
                         <span>&bull;</span>
                         <span className="font-mono">{spec.provenance?.model || 'gemini-1.5-flash'}</span>
                       </div>
@@ -524,7 +524,7 @@ export default function ClinicalPerspectivesPanel({
                           setCopiedProvenance(specId);
                           setTimeout(() => setCopiedProvenance(null), 2000);
                         }}
-                        className="text-[#0284c7] hover:underline cursor-pointer"
+                        className="text-accent-ink hover:underline cursor-pointer"
                       >
                         {copiedProvenance === specId ? 'Provenance Copied' : 'View Source & Provenance'}
                       </button>

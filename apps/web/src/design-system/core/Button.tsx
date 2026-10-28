@@ -30,13 +30,13 @@ const sizeStyles: Record<ButtonSize, string> = {
 };
 
 const variantStyles: Record<ButtonVariant, string> = {
-  primary: 'bg-[#151619] text-white hover:bg-[#2A2E37] active:bg-[#0D0E10] border border-transparent shadow-xs focus-visible:ring-2 focus-visible:ring-[#151619] focus-visible:ring-offset-2',
-  secondary: 'bg-white text-[#151719] border border-[#E8E5DC] hover:bg-[#F9F8F5] active:bg-[#F2EFE8] shadow-xs focus-visible:ring-2 focus-visible:ring-[#151719] focus-visible:ring-offset-2',
-  outline: 'bg-transparent text-[#151719] border border-[#E8E5DC] hover:border-[#D5D2C9] hover:bg-[#FAF9F6] active:bg-[#F4F3EE] focus-visible:ring-2 focus-visible:ring-[#151719] focus-visible:ring-offset-2',
-  ghost: 'bg-transparent text-[#575D65] hover:bg-[#EAE7DE]/70 hover:text-[#151719] border border-transparent focus-visible:ring-2 focus-visible:ring-[#151719] focus-visible:ring-offset-2',
-  rose: 'bg-[#FCE7F3] text-[#9D174D] border border-[#FBCFE8] hover:bg-[#FBCFE8] active:bg-[#F9A8D4] shadow-xs focus-visible:ring-2 focus-visible:ring-[#9D174D] focus-visible:ring-offset-2',
-  danger: 'bg-[#FEE2E2] text-[#991B1B] border border-[#FECACA] hover:bg-[#FECACA] active:bg-[#FCA5A5] shadow-xs focus-visible:ring-2 focus-visible:ring-[#991B1B] focus-visible:ring-offset-2',
-  subtle: 'bg-[#F4F2EC] text-[#151719] border border-[#E5E1D6] hover:bg-[#EAE7DE] active:bg-[#E0DDD2] focus-visible:ring-2 focus-visible:ring-[#151719] focus-visible:ring-offset-2'
+  primary: 'bg-solid text-white hover:bg-solid active:bg-solid border border-transparent shadow-xs focus-visible:ring-2 focus-visible:ring-rule-strong focus-visible:ring-offset-2',
+  secondary: 'bg-paper text-ink border border-rule hover:bg-canvas active:bg-paper-2 shadow-xs focus-visible:ring-2 focus-visible:ring-rule-strong focus-visible:ring-offset-2',
+  outline: 'bg-transparent text-ink border border-rule hover:border-rule-strong hover:bg-canvas active:bg-paper-2 focus-visible:ring-2 focus-visible:ring-rule-strong focus-visible:ring-offset-2',
+  ghost: 'bg-transparent text-ink-2 hover:bg-paper-2/70 hover:text-ink border border-transparent focus-visible:ring-2 focus-visible:ring-rule-strong focus-visible:ring-offset-2',
+  rose: 'bg-accent-wash text-accent-ink border border-accent-line hover:bg-accent-wash active:bg-accent-wash shadow-xs focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2',
+  danger: 'bg-critical-wash text-critical border border-critical-line hover:bg-critical-wash active:bg-critical-wash shadow-xs focus-visible:ring-2 focus-visible:ring-critical-line focus-visible:ring-offset-2',
+  subtle: 'bg-paper-2 text-ink border border-rule hover:bg-paper-2 active:bg-paper-2 focus-visible:ring-2 focus-visible:ring-rule-strong focus-visible:ring-offset-2'
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(

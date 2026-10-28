@@ -20,21 +20,21 @@ export default function EvidenceModal({
     switch (evidence.provenance) {
       case 'FACT':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200">
-            <Database size={12} className="text-emerald-600" /> Confirmed Fact
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-settled-wash text-settled border border-settled-line">
+            <Database size={12} className="text-settled" /> Confirmed Fact
           </span>
         );
       case 'PHYSICIAN ENTERED':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-sky-50 text-sky-800 border border-sky-200">
-            <UserCheck size={12} className="text-sky-600" /> Physician Entered
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-accent-wash text-accent-ink border border-accent-line">
+            <UserCheck size={12} className="text-accent-ink" /> Physician Entered
           </span>
         );
       case 'AI SYNTHESIS':
       default:
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-violet-50 text-violet-800 border border-violet-200">
-            <FileText size={12} className="text-violet-600" /> AI-generated &bull; Review Required
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-accent-wash text-accent-ink border border-accent-line">
+            <FileText size={12} className="text-accent-ink" /> AI-generated &bull; Review Required
           </span>
         );
     }
@@ -43,34 +43,34 @@ export default function EvidenceModal({
   return (
     <div className="fixed inset-0 z-50 bg-[var(--color-surface-overlay)] backdrop-blur-xs flex items-center justify-end p-0 sm:p-4 proton-animate-in">
       <div 
-        className="bg-white h-full sm:h-auto sm:max-h-[90vh] sm:rounded-2xl shadow-2xl w-full max-w-lg border-l sm:border border-slate-200 overflow-hidden flex flex-col proton-animate-slide-right"
+        className="bg-paper h-full sm:h-auto sm:max-h-[90vh] sm:rounded-2xl shadow-2xl w-full max-w-lg border-l sm:border border-rule overflow-hidden flex flex-col proton-animate-slide-right"
         role="dialog"
         aria-modal="true"
         aria-labelledby="evidence-drawer-title"
       >
         {/* Header */}
-        <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0">
+        <div className="bg-paper-2 border-b border-rule px-6 py-4 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="h-9 w-9 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center border border-brand-200/60 shadow-2xs">
               <ShieldCheck size={18} strokeWidth={2.5} />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 id="evidence-drawer-title" className="font-bold text-slate-900 text-sm tracking-tight">
+                <h3 id="evidence-drawer-title" className="font-bold text-ink text-sm tracking-tight">
                   Clinical Evidence Panel
                 </h3>
                 <span className="proton-micro-label bg-brand-50 text-brand-700 border border-brand-200 px-1.5 py-0.2 rounded">
                   Provenance
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 font-mono mt-0.5 truncate max-w-[280px]">
+              <p className="text-[11px] text-ink-3 font-mono mt-0.5 truncate max-w-[280px]">
                 {evidence.id}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-200/60 transition-colors cursor-pointer"
+            className="text-ink-3 hover:text-ink-2 p-1.5 rounded-lg hover:bg-rule/60 transition-colors cursor-pointer"
             title="Close Drawer"
           >
             <X size={18} />
@@ -79,12 +79,12 @@ export default function EvidenceModal({
 
         {/* Content Body */}
         <div className="p-6 space-y-5 overflow-y-auto flex-1">
-          <div className="flex items-start justify-between flex-wrap gap-2 pb-2 border-b border-slate-100">
+          <div className="flex items-start justify-between flex-wrap gap-2 pb-2 border-b border-rule">
             <div>
-              <span className="proton-micro-label text-slate-400 block mb-1">
+              <span className="proton-micro-label text-ink-3 block mb-1">
                 Clinical Item / Claim
               </span>
-              <h4 className="text-base font-bold text-slate-900">
+              <h4 className="text-base font-bold text-ink">
                 {evidence.title}
               </h4>
             </div>
@@ -92,14 +92,14 @@ export default function EvidenceModal({
           </div>
 
           {/* Structured Attributes Grid */}
-          <div className="grid grid-cols-2 gap-3 text-xs bg-slate-50 p-3.5 rounded-xl border border-slate-200/80">
+          <div className="grid grid-cols-2 gap-3 text-xs bg-paper-2 p-3.5 rounded-xl border border-rule/80">
             <div>
-              <span className="text-slate-400 block font-semibold uppercase tracking-wider text-[10px]">Resource Type</span>
-              <span className="font-mono font-bold text-slate-800 text-[13px] mt-0.5 block">{evidence.resourceType}</span>
+              <span className="text-ink-3 block font-semibold uppercase tracking-wider text-[10px]">Resource Type</span>
+              <span className="font-mono font-bold text-ink text-[13px] mt-0.5 block">{evidence.resourceType}</span>
             </div>
             <div>
-              <span className="text-slate-400 block font-semibold uppercase tracking-wider text-[10px]">Source Date</span>
-              <span className="font-bold text-slate-800 text-[13px] mt-0.5 flex items-center gap-1.5">
+              <span className="text-ink-3 block font-semibold uppercase tracking-wider text-[10px]">Source Date</span>
+              <span className="font-bold text-ink text-[13px] mt-0.5 flex items-center gap-1.5">
                 <Calendar size={13} className="text-brand-600" /> {evidence.date}
               </span>
             </div>
@@ -108,19 +108,19 @@ export default function EvidenceModal({
           {/* Source Excerpt Block */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <span className="proton-micro-label text-slate-500">
+              <span className="proton-micro-label text-on-solid0">
                 Verbatim Source Excerpt / Value
               </span>
               <span className="text-[10px] text-brand-700 font-medium">Source Grounded</span>
             </div>
-            <div className="bg-amber-50/50 border border-amber-200 rounded-xl p-4 text-xs text-slate-800 leading-relaxed font-sans border-l-4 border-l-brand-600 shadow-2xs">
+            <div className="bg-caution-wash/50 border border-caution-line rounded-xl p-4 text-xs text-ink leading-relaxed font-sans border-l-4 border-l-brand-600 shadow-2xs">
               <p className="font-medium italic">"{evidence.excerpt}"</p>
             </div>
           </div>
 
           {/* Grounding & Audit Philosophy Notice */}
-          <div className="text-[11px] text-slate-600 bg-slate-50 p-3.5 rounded-xl border border-slate-200 leading-relaxed space-y-1">
-            <div className="font-semibold text-slate-800 flex items-center gap-1.5">
+          <div className="text-[11px] text-ink-2 bg-paper-2 p-3.5 rounded-xl border border-rule leading-relaxed space-y-1">
+            <div className="font-semibold text-ink flex items-center gap-1.5">
               <ShieldCheck size={14} className="text-brand-600" /> Grounded Clinical Intelligence
             </div>
             <p>
@@ -130,7 +130,7 @@ export default function EvidenceModal({
         </div>
 
         {/* Footer Actions */}
-        <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex items-center justify-between gap-3 shrink-0">
+        <div className="bg-paper-2 px-6 py-4 border-t border-rule flex items-center justify-between gap-3 shrink-0">
           <div>
             {onFocusTimeline && (
               <button

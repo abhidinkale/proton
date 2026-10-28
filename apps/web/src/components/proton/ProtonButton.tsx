@@ -27,12 +27,12 @@ const sizeStyles: Record<ProtonButtonSize, string> = {
 };
 
 const variantStyles: Record<ProtonButtonVariant, string> = {
-  primary: 'bg-[#151619] text-white hover:bg-[#2A2E37] active:bg-[#0D0E10] border border-transparent shadow-sm',
-  secondary: 'bg-white text-[#151719] border border-[#E8E5DC] hover:bg-[#F9F8F5] active:bg-[#F2EFE8] shadow-[0_1px_2px_rgba(0,0,0,0.04)]',
-  rose: 'bg-[#FCE7F3] text-[#9D174D] border border-[#FBCFE8] hover:bg-[#FBCFE8] active:bg-[#F9A8D4]',
-  ghost: 'text-[#575D65] hover:bg-[#EAE7DE] hover:text-[#151719] border border-transparent',
-  danger: 'bg-[#FEE2E2] text-[#991B1B] border border-[#FECACA] hover:bg-[#FECACA] active:bg-[#FCA5A5]',
-  'icon-pill': 'p-2 rounded-full bg-white border border-[#E8E5DC] text-[#575D65] hover:text-[#151719] hover:bg-[#F9F8F5] shadow-sm'
+  primary: 'bg-solid text-white hover:bg-solid active:bg-solid border border-transparent shadow-sm',
+  secondary: 'bg-paper text-ink border border-rule hover:bg-canvas active:bg-paper-2 shadow-[0_1px_2px_rgba(0,0,0,0.04)]',
+  rose: 'bg-accent-wash text-accent-ink border border-accent-line hover:bg-accent-wash active:bg-accent-wash',
+  ghost: 'text-ink-2 hover:bg-paper-2 hover:text-ink border border-transparent',
+  danger: 'bg-critical-wash text-critical border border-critical-line hover:bg-critical-wash active:bg-critical-wash',
+  'icon-pill': 'p-2 rounded-full bg-paper border border-rule text-ink-2 hover:text-ink hover:bg-canvas shadow-sm'
 };
 
 export default function ProtonButton({

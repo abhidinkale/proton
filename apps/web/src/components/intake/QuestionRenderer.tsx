@@ -18,11 +18,11 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-base font-semibold text-[#111315] mb-1">
+        <label className="block text-base font-semibold text-ink mb-1">
           {item.text}
-          {item.required && <span className="text-rose-600 ml-1 font-bold">*</span>}
+          {item.required && <span className="text-critical ml-1 font-bold">*</span>}
         </label>
-        <p className="text-xs text-[#6E767E]">
+        <p className="text-xs text-ink-2">
           {item.type === 'choice' && 'Select the best matching clinical option.'}
           {item.type === 'boolean' && 'Select Yes or No.'}
           {item.type === 'integer' && 'Select an integer intensity rating.'}
@@ -45,13 +45,13 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
                 onClick={() => onChange(code)}
                 className={`p-3.5 rounded-xl border text-left flex items-start justify-between gap-3 transition-all cursor-pointer ${
                   isSelected
-                    ? 'bg-[#0F766E]/10 border-[#0F766E] text-[#0F766E] ring-1 ring-[#0F766E]'
-                    : 'bg-white border-[#EAE8E3] text-[#111315] hover:border-[#CBD5E1] hover:bg-[#FBFBFA]'
+                    ? 'bg-accent/10 border-accent text-accent-ink ring-1 ring-accent'
+                    : 'bg-paper border-rule text-ink hover:border-rule-strong hover:bg-paper-2'
                 }`}
               >
                 <span className="text-sm font-medium leading-snug">{display}</span>
                 {isSelected && (
-                  <div className="h-5 w-5 rounded-full bg-[#0F766E] text-white flex items-center justify-center shrink-0 mt-0.5">
+                  <div className="h-5 w-5 rounded-full bg-accent text-white flex items-center justify-center shrink-0 mt-0.5">
                     <Check size={13} strokeWidth={3} />
                   </div>
                 )}
@@ -69,8 +69,8 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
             onClick={() => onChange(true)}
             className={`py-3 px-5 rounded-xl border font-semibold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
               value === true
-                ? 'bg-[#0F766E] text-white border-[#0F766E] shadow-xs'
-                : 'bg-white border-[#EAE8E3] text-[#111315] hover:bg-[#FBFBFA] hover:border-[#CBD5E1]'
+                ? 'bg-accent text-white border-accent shadow-xs'
+                : 'bg-paper border-rule text-ink hover:bg-paper-2 hover:border-rule-strong'
             }`}
           >
             {value === true && <Check size={16} strokeWidth={3} />}
@@ -81,8 +81,8 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
             onClick={() => onChange(false)}
             className={`py-3 px-5 rounded-xl border font-semibold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
               value === false
-                ? 'bg-[#0F766E] text-white border-[#0F766E] shadow-xs'
-                : 'bg-white border-[#EAE8E3] text-[#111315] hover:bg-[#FBFBFA] hover:border-[#CBD5E1]'
+                ? 'bg-accent text-white border-accent shadow-xs'
+                : 'bg-paper border-rule text-ink hover:bg-paper-2 hover:border-rule-strong'
             }`}
           >
             {value === false && <Check size={16} strokeWidth={3} />}
@@ -104,10 +104,10 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
                   onClick={() => onChange(num)}
                   className={`py-2.5 rounded-xl border font-mono text-sm font-semibold transition-all cursor-pointer ${
                     isSelected
-                      ? 'bg-[#0F766E] border-[#0F766E] text-white shadow-xs scale-105'
+                      ? 'bg-accent border-accent text-white shadow-xs scale-105'
                       : num >= 8
-                      ? 'bg-rose-50/60 border-rose-200 text-rose-700 hover:border-rose-400'
-                      : 'bg-white border-[#EAE8E3] text-[#111315] hover:border-[#CBD5E1] hover:bg-[#FBFBFA]'
+                      ? 'bg-critical-wash/60 border-critical-line text-critical hover:border-critical'
+                      : 'bg-paper border-rule text-ink hover:border-rule-strong hover:bg-paper-2'
                   }`}
                 >
                   {num}
@@ -115,10 +115,10 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
               );
             })}
           </div>
-          <div className="flex justify-between text-xs text-[#6E767E] px-1 font-medium">
+          <div className="flex justify-between text-xs text-ink-2 px-1 font-medium">
             <span>1 = Very Mild</span>
             <span>5 = Moderate</span>
-            <span className="text-rose-600 font-semibold">10 = Severe / Worst</span>
+            <span className="text-critical font-semibold">10 = Severe / Worst</span>
           </div>
         </div>
       )}
@@ -132,7 +132,7 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
               value={value || ''}
               onChange={e => onChange(e.target.value)}
               placeholder="Type your response here..."
-              className="w-full bg-white border border-[#EAE8E3] rounded-xl px-4 py-2.5 text-sm text-[#111315] placeholder-[#9CA3AF] focus:outline-hidden focus:border-[#0F766E] focus:ring-1 focus:ring-[#0F766E]"
+              className="w-full bg-paper border border-rule rounded-xl px-4 py-2.5 text-sm text-ink placeholder-ink-3 focus:outline-hidden focus:border-accent focus:ring-1 focus:ring-accent"
             />
           ) : (
             <input
@@ -140,14 +140,14 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
               value={value || ''}
               onChange={e => onChange(e.target.value)}
               placeholder="Type your response here..."
-              className="w-full bg-white border border-[#EAE8E3] rounded-xl px-4 py-2.5 text-sm text-[#111315] placeholder-[#9CA3AF] focus:outline-hidden focus:border-[#0F766E] focus:ring-1 focus:ring-[#0F766E]"
+              className="w-full bg-paper border border-rule rounded-xl px-4 py-2.5 text-sm text-ink placeholder-ink-3 focus:outline-hidden focus:border-accent focus:ring-1 focus:ring-accent"
             />
           )}
         </div>
       )}
 
       {error && (
-        <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800">
+        <div className="p-3 bg-critical-wash border border-critical-line rounded-xl text-xs text-critical">
           {error}
         </div>
       )}

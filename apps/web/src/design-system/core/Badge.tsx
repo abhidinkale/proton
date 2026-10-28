@@ -38,81 +38,81 @@ export interface BadgeProps {
 
 const variantConfig: Record<BadgeVariant, { bg: string; text: string; border: string; dot: string; defaultIcon?: ReactNode }> = {
   normal: {
-    bg: 'bg-[#ECFDF5]',
-    text: 'text-[#065F46]',
-    border: 'border-[#A7F3D0]',
-    dot: 'bg-[#10B981]',
-    defaultIcon: <CheckCircle2 className="w-3 h-3 text-[#10B981]" />
+    bg: 'bg-settled-wash',
+    text: 'text-settled',
+    border: 'border-settled-line',
+    dot: 'bg-accent',
+    defaultIcon: <CheckCircle2 className="w-3 h-3 text-settled" />
   },
   attention: {
-    bg: 'bg-[#FEF08A]',
-    text: 'text-[#854D0E]',
-    border: 'border-[#FDE047]',
-    dot: 'bg-[#EAB308]',
-    defaultIcon: <AlertTriangle className="w-3 h-3 text-[#854D0E]" />
+    bg: 'bg-caution-wash',
+    text: 'text-caution',
+    border: 'border-caution-line',
+    dot: 'bg-caution',
+    defaultIcon: <AlertTriangle className="w-3 h-3 text-caution" />
   },
   critical: {
-    bg: 'bg-[#FEE2E2]',
-    text: 'text-[#991B1B]',
-    border: 'border-[#FECACA]',
-    dot: 'bg-[#EF4444]',
-    defaultIcon: <AlertCircle className="w-3 h-3 text-[#EF4444]" />
+    bg: 'bg-critical-wash',
+    text: 'text-critical',
+    border: 'border-critical-line',
+    dot: 'bg-critical',
+    defaultIcon: <AlertCircle className="w-3 h-3 text-critical" />
   },
   info: {
-    bg: 'bg-[#EFF6FF]',
-    text: 'text-[#1E40AF]',
-    border: 'border-[#BFDBFE]',
-    dot: 'bg-[#3B82F6]',
-    defaultIcon: <Info className="w-3 h-3 text-[#3B82F6]" />
+    bg: 'bg-accent-wash',
+    text: 'text-accent-ink',
+    border: 'border-accent-line',
+    dot: 'bg-accent',
+    defaultIcon: <Info className="w-3 h-3 text-accent-ink" />
   },
   ai: {
-    bg: 'bg-[#FCE7F3]',
-    text: 'text-[#9D174D]',
-    border: 'border-[#FBCFE8]',
-    dot: 'bg-[#EC4899]',
-    defaultIcon: <Sparkles className="w-3 h-3 text-[#EC4899]" />
+    bg: 'bg-accent-wash',
+    text: 'text-accent-ink',
+    border: 'border-accent-line',
+    dot: 'bg-accent',
+    defaultIcon: <Sparkles className="w-3 h-3 text-accent-ink" />
   },
   physician: {
-    bg: 'bg-[#F3E8FF]',
+    bg: 'bg-accent-wash',
     text: '#6B21A8',
-    border: 'border-[#E9D5FF]',
-    dot: 'bg-[#A855F7]',
-    defaultIcon: <ShieldCheck className="w-3 h-3 text-[#A855F7]" />
+    border: 'border-accent-line',
+    dot: 'bg-accent',
+    defaultIcon: <ShieldCheck className="w-3 h-3 text-accent-ink" />
   },
   draft: {
-    bg: 'bg-[#F4F2EC]',
-    text: 'text-[#575D65]',
-    border: 'border-[#E5E1D6]',
-    dot: 'bg-[#88909A]',
-    defaultIcon: <Edit3 className="w-3 h-3 text-[#88909A]" />
+    bg: 'bg-paper-2',
+    text: 'text-ink-2',
+    border: 'border-rule',
+    dot: 'bg-rule-strong',
+    defaultIcon: <Edit3 className="w-3 h-3 text-ink-3" />
   },
   amended: {
-    bg: 'bg-[#EFF6FF]',
-    text: 'text-[#1E40AF]',
-    border: 'border-[#BFDBFE]',
-    dot: 'bg-[#3B82F6]',
-    defaultIcon: <FileCheck className="w-3 h-3 text-[#3B82F6]" />
+    bg: 'bg-accent-wash',
+    text: 'text-accent-ink',
+    border: 'border-accent-line',
+    dot: 'bg-accent',
+    defaultIcon: <FileCheck className="w-3 h-3 text-accent-ink" />
   },
   voided: {
-    bg: 'bg-[#F3F4F6]',
-    text: 'text-[#6B7280]',
-    border: 'border-[#E5E7EB]',
-    dot: 'bg-[#9CA3AF]',
-    defaultIcon: <XCircle className="w-3 h-3 text-[#9CA3AF]" />
+    bg: 'bg-paper-2',
+    text: 'text-ink-2',
+    border: 'border-rule',
+    dot: 'bg-rule-strong',
+    defaultIcon: <XCircle className="w-3 h-3 text-ink-3" />
   },
   pending: {
-    bg: 'bg-[#F3F4F6]',
-    text: 'text-[#4B5563]',
-    border: 'border-[#E5E7EB]',
-    dot: 'bg-[#71717A]',
-    defaultIcon: <Clock className="w-3 h-3 text-[#71717A]" />
+    bg: 'bg-paper-2',
+    text: 'text-ink-2',
+    border: 'border-rule',
+    dot: 'bg-rule-strong',
+    defaultIcon: <Clock className="w-3 h-3 text-ink-2" />
   },
   neutral: {
-    bg: 'bg-[#F4F2EC]',
-    text: 'text-[#575D65]',
-    border: 'border-[#E5E1D6]',
-    dot: 'bg-[#88909A]',
-    defaultIcon: <FileCheck className="w-3 h-3 text-[#88909A]" />
+    bg: 'bg-paper-2',
+    text: 'text-ink-2',
+    border: 'border-rule',
+    dot: 'bg-rule-strong',
+    defaultIcon: <FileCheck className="w-3 h-3 text-ink-3" />
   }
 };
 

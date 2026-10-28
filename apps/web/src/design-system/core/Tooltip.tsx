@@ -38,7 +38,7 @@ export const Tooltip = forwardRef<HTMLDivElement, TooltipProps>(function Tooltip
       {visible && content && (
         <div
           role="tooltip"
-          className={`absolute z-50 px-2.5 py-1 text-[11px] font-medium text-white bg-[#151619] rounded-lg shadow-md whitespace-nowrap pointer-events-none transition-opacity duration-150 animate-in fade-in-0 zoom-in-95 ${positionStyles[position]} ${className}`}
+          className={`absolute z-50 px-2.5 py-1 text-[11px] font-medium text-white bg-solid rounded-lg shadow-md whitespace-nowrap pointer-events-none transition-opacity duration-150 animate-in fade-in-0 zoom-in-95 ${positionStyles[position]} ${className}`}
         >
           {content}
         </div>

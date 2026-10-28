@@ -7,6 +7,25 @@ import {
 import { authService } from '../services/auth';
 import { LiveDot, Reveal } from '../design-system/motion/primitives';
 
+/**
+ * Where to land after a successful sign-in.
+ *
+ * A claim link (`/clinic/join?invite=…`) sends the visitor through here, so the
+ * destination has to survive the round trip. Only a same-origin *path* is
+ * honoured: an absolute URL would turn sign-in into an open redirect.
+ */
+function postLoginDestination(): string {
+  try {
+    const next = new URLSearchParams(window.location.search).get('next');
+    if (next && next.startsWith('/') && !next.startsWith('//') && !next.startsWith('/\\')) {
+      return next;
+    }
+  } catch {
+    // Malformed query string: fall through to the dashboard.
+  }
+  return '/';
+}
+
 export default function Login() {
   const [email, setEmail] = useState('dr.lin@proton.health');
   const [password, setPassword] = useState('valid_password_2026!');
@@ -20,7 +39,7 @@ export default function Login() {
     setError('');
     try {
       await authService.loginDemo();
-      window.location.href = '/';
+      window.location.href = postLoginDestination();
     } catch (err: any) {
       setError(err?.message || 'Could not establish a clinical session.');
     } finally {
@@ -35,7 +54,7 @@ export default function Login() {
 
     try {
       await authService.login({ email, password });
-      window.location.href = '/';
+      window.location.href = postLoginDestination();
     } catch (err: any) {
       setError(err?.message || 'Sign-in failed. Check your credentials and that the clinical API is running.');
     } finally {
@@ -44,7 +63,7 @@ export default function Login() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#F5F3EE] text-[#111315] font-sans antialiased selection:bg-[#111315] selection:text-white">
+    <div className="relative min-h-screen overflow-hidden bg-paper-2 text-ink font-sans antialiased selection:bg-solid selection:text-white">
 
       {/* Ambient light field */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
@@ -63,12 +82,12 @@ export default function Login() {
           {/* Brand */}
           <div className="flex items-center justify-between gap-3">
             <Link to="/" className="flex items-center gap-2.5 group" aria-label="Proton home">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#111315] text-sm font-bold text-white">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-solid text-sm font-bold text-white">
                 p
               </span>
               <span className="flex items-baseline gap-2">
                 <span className="text-[17px] font-semibold lowercase tracking-[-0.03em]">proton</span>
-                <span className="hidden text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7A8188] sm:inline">
+                <span className="hidden text-[9px] font-semibold uppercase tracking-[0.18em] text-ink-2 sm:inline">
                   Clinical OS
                 </span>
               </span>
@@ -78,12 +97,12 @@ export default function Login() {
               <button
                 type="button"
                 onClick={() => setShowHowItWorks(true)}
-                className="rounded-full border border-white/70 bg-white/55 px-3 py-1.5 text-[11.5px] font-medium text-[#4C535A] backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:bg-white/80 hover:text-[#111315] active:translate-y-0 cursor-pointer"
+                className="rounded-full border border-rule/70 bg-paper/55 px-3 py-1.5 text-[11.5px] font-medium text-ink-2 backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:bg-paper/80 hover:text-ink active:translate-y-0 cursor-pointer"
               >
                 How it works
               </button>
-              <span className="hidden items-center gap-1.5 rounded-full border border-emerald-300/60 bg-emerald-100/50 px-2.5 py-1 text-[9.5px] font-semibold uppercase tracking-[0.12em] text-emerald-800 sm:inline-flex">
-                <LiveDot size={5} color="#0F9D67" />
+              <span className="hidden items-center gap-1.5 rounded-full border border-settled-line/60 bg-settled-wash/50 px-2.5 py-1 text-[9.5px] font-semibold uppercase tracking-[0.12em] text-settled sm:inline-flex">
+                <LiveDot size={5} color="var(--c-settled)" />
                 System ready
               </span>
             </div>
@@ -91,20 +110,20 @@ export default function Login() {
 
           {/* Statement */}
           <Reveal className="max-w-xl">
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/55 px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#4C535A] backdrop-blur-xl">
-              <Sparkles className="h-3 w-3 text-[#0F4C81]" />
+            <span className="inline-flex items-center gap-2 rounded-full border border-rule/70 bg-paper/55 px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-2 backdrop-blur-xl">
+              <Sparkles className="h-3 w-3 text-accent-ink" />
               AI-native clinical infrastructure
             </span>
 
             <h1 className="mt-6 text-[34px] font-semibold leading-[1.05] tracking-[-0.045em] sm:text-[48px] lg:text-[56px]">
               The intelligent OS for
               <br />
-              <span className="bg-gradient-to-r from-[#111315] via-[#2E3A48] to-[#0F4C81] bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-solid via-solid to-accent bg-clip-text text-transparent">
                 high-acuity care.
               </span>
             </h1>
 
-            <p className="mt-5 max-w-lg text-[14px] leading-relaxed text-[#5A6065] sm:text-[15px]">
+            <p className="mt-5 max-w-lg text-[14px] leading-relaxed text-ink-2 sm:text-[15px]">
               Proton unifies longitudinal FHIR records, ambient audio synthesis, multimodal
               vision, and patient intake under deterministic clinical safety guardrails.
             </p>
@@ -114,31 +133,31 @@ export default function Login() {
           <Reveal delay={0.1}>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div className="proton-glass proton-specular rounded-2xl p-4">
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#EDF3F9] text-[#0F4C81]">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-accent-wash text-accent-ink">
                   <Database size={15} />
                 </span>
                 <h2 className="mt-2.5 text-[12.5px] font-semibold">FHIR R4 atomic persistence</h2>
-                <p className="mt-1 text-[11px] leading-relaxed text-[#6E757C]">
+                <p className="mt-1 text-[11px] leading-relaxed text-ink-2">
                   Transactions with tamper-evident provenance.
                 </p>
               </div>
 
               <div className="proton-glass proton-specular rounded-2xl p-4">
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-red-50 text-red-600">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-critical-wash text-critical">
                   <ShieldCheck size={15} />
                 </span>
                 <h2 className="mt-2.5 text-[12.5px] font-semibold">Deterministic safety rails</h2>
-                <p className="mt-1 text-[11px] leading-relaxed text-[#6E757C]">
+                <p className="mt-1 text-[11px] leading-relaxed text-ink-2">
                   Hard stops for cross-reactivity and contraindications.
                 </p>
               </div>
 
               <div className="proton-glass proton-specular rounded-2xl p-4">
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#EFEDFA] text-[#5B4BC4]">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-accent-wash text-accent-ink">
                   <Cpu size={15} />
                 </span>
                 <h2 className="mt-2.5 text-[12.5px] font-semibold">Physician authority</h2>
-                <p className="mt-1 text-[11px] leading-relaxed text-[#6E757C]">
+                <p className="mt-1 text-[11px] leading-relaxed text-ink-2">
                   AI advises with evidence. Clinicians decide.
                 </p>
               </div>
@@ -146,10 +165,10 @@ export default function Login() {
           </Reveal>
 
           {/* Compliance note */}
-          <div className="flex items-start gap-2.5 rounded-2xl border border-amber-300/50 bg-amber-100/40 px-4 py-3 backdrop-blur-xl">
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-            <p className="text-[11.5px] leading-relaxed text-[#5A6065]">
-              <span className="font-semibold text-[#111315]">Synthetic clinical validation.</span>{' '}
+          <div className="flex items-start gap-2.5 rounded-2xl border border-caution-line/50 bg-caution-wash/40 px-4 py-3 backdrop-blur-xl">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-caution" />
+            <p className="text-[11.5px] leading-relaxed text-ink-2">
+              <span className="font-semibold text-ink">Synthetic clinical validation.</span>{' '}
               Pre-configured with evaluation cohorts (Eleanor Vance, Arthur Pendelton). Patient
               and tenant isolation enforced.
             </p>
@@ -162,34 +181,34 @@ export default function Login() {
             <div className="proton-glass-strong proton-specular rounded-[28px] p-6 shadow-[0_40px_120px_-45px_rgba(16,18,22,0.45)] sm:p-8">
 
               <div>
-                <span className="font-mono-clinical text-[10px] font-semibold uppercase tracking-[0.16em] text-[#0F4C81]">
+                <span className="font-mono-clinical text-[10px] font-semibold uppercase tracking-[0.16em] text-accent-ink">
                   Physician desk access
                 </span>
                 <h2 className="mt-1.5 text-[24px] font-semibold tracking-[-0.035em] sm:text-[28px]">
                   Sign in to Proton
                 </h2>
-                <p className="mt-1 text-[12.5px] text-[#6E757C]">
+                <p className="mt-1 text-[12.5px] text-ink-2">
                   Select a credential pass to enter the clinical workspace.
                 </p>
               </div>
 
               {error && (
-                <div className="mt-5 rounded-xl border border-red-200 bg-red-50/90 px-3.5 py-3 text-[11.5px] font-medium text-red-800">
+                <div className="mt-5 rounded-xl border border-critical-line bg-critical-wash/90 px-3.5 py-3 text-[11.5px] font-medium text-critical">
                   {error}
                 </div>
               )}
 
               {/* Attending pass banner */}
-              <div className="mt-5 flex items-center justify-between gap-3 rounded-2xl border border-emerald-300/60 bg-emerald-50/70 px-3.5 py-2.5">
-                <span className="flex items-center gap-1.5 text-[11.5px] font-medium text-emerald-900">
-                  <Sparkles size={14} className="text-emerald-700" />
+              <div className="mt-5 flex items-center justify-between gap-3 rounded-2xl border border-settled-line/60 bg-settled-wash/70 px-3.5 py-2.5">
+                <span className="flex items-center gap-1.5 text-[11.5px] font-medium text-settled">
+                  <Sparkles size={14} className="text-settled" />
                   Evaluation physician pass
                 </span>
                 <button
                   type="button"
                   onClick={handle1ClickLaunch}
                   disabled={isLoading}
-                  className="flex items-center gap-1 rounded-full bg-emerald-700 px-3 py-1.5 text-[11px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-emerald-800 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+                  className="flex items-center gap-1 rounded-full bg-settled px-3 py-1.5 text-[11px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-solid active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
                 >
                   {isLoading ? 'Signing in…' : 'Instant pass'}
                   <ArrowRight size={12} />
@@ -204,8 +223,8 @@ export default function Login() {
                   aria-pressed={authMode === 'synthetic'}
                   className={`rounded-xl px-3 py-2 transition-all cursor-pointer ${
                     authMode === 'synthetic'
-                      ? 'bg-white text-[#111315] font-semibold shadow-[0_4px_14px_-6px_rgba(16,18,22,0.35)]'
-                      : 'text-[#6E757C] hover:text-[#111315]'
+                      ? 'bg-paper text-ink font-semibold shadow-[0_4px_14px_-6px_rgba(16,18,22,0.35)]'
+                      : 'text-ink-2 hover:text-ink'
                   }`}
                 >
                   Evaluation pass
@@ -216,8 +235,8 @@ export default function Login() {
                   aria-pressed={authMode === 'medplum'}
                   className={`rounded-xl px-3 py-2 transition-all cursor-pointer ${
                     authMode === 'medplum'
-                      ? 'bg-white text-[#111315] font-semibold shadow-[0_4px_14px_-6px_rgba(16,18,22,0.35)]'
-                      : 'text-[#6E757C] hover:text-[#111315]'
+                      ? 'bg-paper text-ink font-semibold shadow-[0_4px_14px_-6px_rgba(16,18,22,0.35)]'
+                      : 'text-ink-2 hover:text-ink'
                   }`}
                 >
                   Clinician credentials
@@ -225,30 +244,30 @@ export default function Login() {
               </div>
 
               {/* Attending card */}
-              <div className="mt-4 rounded-2xl border border-white/80 bg-white/70 p-4">
+              <div className="mt-4 rounded-2xl border border-rule/80 bg-paper/70 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <span className="flex h-11 w-11 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
+                    <span className="flex h-11 w-11 items-center justify-center rounded-full bg-settled-wash text-settled">
                       <Stethoscope size={19} />
                     </span>
                     <div>
                       <div className="text-[13px] font-semibold">Dr. Sarah Lin, MD</div>
-                      <div className="text-[11px] text-[#7A8188]">Attending · Internal Medicine</div>
+                      <div className="text-[11px] text-ink-2">Attending · Internal Medicine</div>
                     </div>
                   </div>
-                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 font-mono-clinical text-[8.5px] font-semibold uppercase tracking-[0.08em] text-emerald-800">
+                  <span className="rounded-full border border-settled-line bg-settled-wash px-2 py-0.5 font-mono-clinical text-[8.5px] font-semibold uppercase tracking-[0.08em] text-settled">
                     API verified
                   </span>
                 </div>
 
-                <dl className="mt-3 space-y-1 rounded-xl border border-black/[0.05] bg-white/50 px-3 py-2.5 text-[11px]">
+                <dl className="mt-3 space-y-1 rounded-xl border border-black/[0.05] bg-paper/50 px-3 py-2.5 text-[11px]">
                   <div className="flex items-center justify-between gap-3">
-                    <dt className="text-[#7A8188]">Active cohort</dt>
-                    <dd className="text-right font-medium text-[#111315]">11 synthetic patients</dd>
+                    <dt className="text-ink-2">Active cohort</dt>
+                    <dd className="text-right font-medium text-ink">11 synthetic patients</dd>
                   </div>
                   <div className="flex items-center justify-between gap-3">
-                    <dt className="text-[#7A8188]">Session</dt>
-                    <dd className="text-right font-medium text-[#111315]">Signed · revocable · 24h</dd>
+                    <dt className="text-ink-2">Session</dt>
+                    <dd className="text-right font-medium text-ink">Signed · revocable · 24h</dd>
                   </div>
                 </dl>
 
@@ -256,7 +275,7 @@ export default function Login() {
                   type="button"
                   onClick={handle1ClickLaunch}
                   disabled={isLoading}
-                  className="group mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-[#111315] px-4 py-3 text-[12.5px] font-semibold text-white shadow-[0_16px_34px_-18px_rgba(17,19,21,0.75)] transition-all hover:-translate-y-0.5 hover:bg-[#24272C] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+                  className="group mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-solid px-4 py-3 text-[12.5px] font-semibold text-white shadow-[0_16px_34px_-18px_rgba(17,19,21,0.75)] transition-all hover:-translate-y-0.5 hover:bg-solid active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
                 >
                   <span>{isLoading ? 'Initializing workspace…' : 'Launch doctor desk'}</span>
                   <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
@@ -267,7 +286,7 @@ export default function Login() {
               {authMode === 'medplum' && (
                 <form onSubmit={handleClinicalSignIn} className="mt-4 space-y-3.5">
                   <div>
-                    <label htmlFor="login-email" className="mb-1.5 block text-[11px] font-medium text-[#50575F]">
+                    <label htmlFor="login-email" className="mb-1.5 block text-[11px] font-medium text-ink-2">
                       Clinician email
                     </label>
                     <input
@@ -276,13 +295,13 @@ export default function Login() {
                       autoComplete="username"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full rounded-xl border border-white/80 bg-white/80 px-3.5 py-2.5 text-[13px] outline-none transition-colors focus:border-[#0F4C81]/40 focus:ring-2 focus:ring-[#0F4C81]/15"
+                      className="w-full rounded-xl border border-rule/80 bg-paper/80 px-3.5 py-2.5 text-[13px] outline-none transition-colors focus:border-accent/40 focus:ring-2 focus:ring-accent/15"
                       required
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="login-password" className="mb-1.5 block text-[11px] font-medium text-[#50575F]">
+                    <label htmlFor="login-password" className="mb-1.5 block text-[11px] font-medium text-ink-2">
                       Password
                     </label>
                     <input
@@ -291,7 +310,7 @@ export default function Login() {
                       autoComplete="current-password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full rounded-xl border border-white/80 bg-white/80 px-3.5 py-2.5 text-[13px] outline-none transition-colors focus:border-[#0F4C81]/40 focus:ring-2 focus:ring-[#0F4C81]/15"
+                      className="w-full rounded-xl border border-rule/80 bg-paper/80 px-3.5 py-2.5 text-[13px] outline-none transition-colors focus:border-accent/40 focus:ring-2 focus:ring-accent/15"
                       required
                     />
                   </div>
@@ -299,22 +318,22 @@ export default function Login() {
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="flex w-full items-center justify-center gap-2 rounded-full bg-[#111315] px-4 py-3 text-[12.5px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-[#24272C] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+                    className="flex w-full items-center justify-center gap-2 rounded-full bg-solid px-4 py-3 text-[12.5px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-solid active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
                   >
                     <span>{isLoading ? 'Verifying…' : 'Sign in with credentials'}</span>
                     <ArrowRight className="h-3.5 w-3.5" />
                   </button>
 
-                  <p className="rounded-xl border border-black/[0.06] bg-white/55 px-3 py-2 text-[10.5px] leading-relaxed text-[#6E757C]">
-                    Evaluation accounts: <span className="font-mono-clinical text-[#111315]">dr.lin@proton.health</span>,{' '}
-                    <span className="font-mono-clinical text-[#111315]">dr.morgan@proton.health</span>,{' '}
-                    <span className="font-mono-clinical text-[#111315]">marcus.ops@proton.health</span> · password{' '}
-                    <span className="font-mono-clinical text-[#111315]">valid_password_2026!</span>
+                  <p className="rounded-xl border border-black/[0.06] bg-paper/55 px-3 py-2 text-[10.5px] leading-relaxed text-ink-2">
+                    Evaluation accounts: <span className="font-mono-clinical text-ink">dr.lin@proton.health</span>,{' '}
+                    <span className="font-mono-clinical text-ink">dr.morgan@proton.health</span>,{' '}
+                    <span className="font-mono-clinical text-ink">marcus.ops@proton.health</span> · password{' '}
+                    <span className="font-mono-clinical text-ink">valid_password_2026!</span>
                   </p>
                 </form>
               )}
 
-              <p className="mt-5 flex items-center justify-center gap-1.5 text-center text-[10px] text-[#8A9199]">
+              <p className="mt-5 flex items-center justify-center gap-1.5 text-center text-[10px] text-ink-3">
                 <Lock className="h-2.5 w-2.5" />
                 Proton core clinical OS · v2.4 · safety enforced
               </p>
@@ -325,11 +344,11 @@ export default function Login() {
 
       {/* ── HOW IT WORKS MODAL ── */}
       {showHowItWorks && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#111315]/35 p-4 backdrop-blur-md">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-solid/35 p-4 backdrop-blur-md">
           <div className="proton-glass-strong proton-specular max-h-[88vh] w-full max-w-2xl overflow-y-auto rounded-[26px] p-6 shadow-2xl sm:p-8">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <span className="font-mono-clinical text-[10px] font-semibold uppercase tracking-[0.16em] text-[#0F4C81]">
+                <span className="font-mono-clinical text-[10px] font-semibold uppercase tracking-[0.16em] text-accent-ink">
                   Clinical workflow lifecycle
                 </span>
                 <h3 className="mt-1.5 text-[22px] font-semibold tracking-[-0.035em]">
@@ -339,7 +358,7 @@ export default function Login() {
               <button
                 type="button"
                 onClick={() => setShowHowItWorks(false)}
-                className="rounded-full p-1.5 text-[#6E757C] transition-colors hover:bg-black/5 hover:text-[#111315] cursor-pointer"
+                className="rounded-full p-1.5 text-ink-2 transition-colors hover:bg-black/5 hover:text-ink cursor-pointer"
                 aria-label="Close"
               >
                 <X size={18} />
@@ -355,14 +374,14 @@ export default function Login() {
                 ['5', 'Multimodal vision & docs', 'Analysis of clinical photos and lab PDFs with Accept / Modify / Reject controls.'],
                 ['6', 'Audit & commit', 'Explicit physician signature required to commit atomic changes into FHIR R4.']
               ].map(([step, title, body]) => (
-                <div key={step} className="rounded-2xl border border-white/80 bg-white/60 p-3.5">
-                  <div className="flex items-center gap-1.5 font-semibold text-[#111315]">
-                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#111315] text-[9px] text-white">
+                <div key={step} className="rounded-2xl border border-rule/80 bg-paper/60 p-3.5">
+                  <div className="flex items-center gap-1.5 font-semibold text-ink">
+                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-solid text-[9px] text-white">
                       {step}
                     </span>
                     {title}
                   </div>
-                  <p className="mt-1 leading-relaxed text-[#6E757C]">{body}</p>
+                  <p className="mt-1 leading-relaxed text-ink-2">{body}</p>
                 </div>
               ))}
             </div>
@@ -371,7 +390,7 @@ export default function Login() {
               <button
                 type="button"
                 onClick={() => setShowHowItWorks(false)}
-                className="rounded-full bg-[#111315] px-5 py-2.5 text-[12px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-[#272B30] active:translate-y-0 cursor-pointer"
+                className="rounded-full bg-solid px-5 py-2.5 text-[12px] font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-solid active:translate-y-0 cursor-pointer"
               >
                 Close
               </button>

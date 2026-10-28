@@ -260,27 +260,27 @@ export default function DocumentReview() {
       <div className="space-y-6 animate-in fade-in pb-12">
         
         {/* Top Header */}
-        <header className="p-6 bg-white border border-[#EAE8E3] rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <header className="p-6 bg-paper border border-rule rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Link 
               to={effectivePatientId ? `/patients/${effectivePatientId}` : "/patients"} 
-              className="p-2 rounded-xl text-[#6E767E] hover:text-[#111315] hover:bg-[#F4F3EE] transition-colors"
+              className="p-2 rounded-xl text-ink-2 hover:text-ink hover:bg-paper-2 transition-colors"
             >
               <ArrowLeft size={18} />
             </Link>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold tracking-tight text-[#111315]">
+                <h1 className="text-xl font-bold tracking-tight text-ink">
                   Document Intelligence & Extraction
                 </h1>
                 <ProvenanceBadge provenance="AI_SUGGESTION" size="xs" />
                 {aiProvider && (
-                  <span className="font-mono text-[10px] text-[#0F766E] bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                  <span className="font-mono text-[10px] text-accent-ink bg-settled-wash border border-settled-line px-2 py-0.5 rounded-full">
                     {aiProvider}
                   </span>
                 )}
               </div>
-              <p className="text-xs text-[#6E767E] mt-0.5">
+              <p className="text-xs text-ink-2 mt-0.5">
                 Optical character extraction • Physician review required before committing to FHIR
               </p>
             </div>
@@ -289,11 +289,11 @@ export default function DocumentReview() {
           <div className="flex items-center gap-3 flex-wrap">
             {!patientId && patients.length > 0 && (
               <div className="flex items-center gap-2 text-xs">
-                <span className="text-[#6E767E] font-medium">Target Patient:</span>
+                <span className="text-ink-2 font-medium">Target Patient:</span>
                 <select
                   value={effectivePatientId}
                   onChange={(e) => setSelectedPatientId(e.target.value)}
-                  className="bg-[#F8F8F6] border border-[#EAE8E3] rounded-xl px-3 py-1.5 text-xs font-semibold text-[#111315] focus:outline-none focus:border-[#111315]"
+                  className="bg-paper-2 border border-rule rounded-xl px-3 py-1.5 text-xs font-semibold text-ink focus:outline-none focus:border-solid"
                 >
                   {patients.map(p => (
                     <option key={p.id} value={p.id}>
@@ -308,7 +308,7 @@ export default function DocumentReview() {
               <button 
                 onClick={handleApproveAndSave}
                 disabled={approvedCount === 0}
-                className="px-5 py-2.5 rounded-xl font-semibold text-xs text-white bg-[#0F766E] hover:bg-[#0B5C56] transition-all shadow-xs flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                className="px-5 py-2.5 rounded-xl font-semibold text-xs text-white bg-accent hover:bg-accent transition-all shadow-xs flex items-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 <Check size={14} />
                 <span>Approve & Save {approvedCount} Facts to FHIR</span>
@@ -316,16 +316,16 @@ export default function DocumentReview() {
             )}
 
             {status === 'saving' && (
-              <button disabled className="bg-[#EAE8E3] text-[#6E767E] px-5 py-2.5 rounded-xl font-semibold text-xs flex items-center gap-2">
-                <Loader2 size={14} className="animate-spin text-[#111315]"/>
+              <button disabled className="bg-paper-2 text-ink-2 px-5 py-2.5 rounded-xl font-semibold text-xs flex items-center gap-2">
+                <Loader2 size={14} className="animate-spin text-ink"/>
                 <span>Committing Transaction Bundle...</span>
               </button>
             )}
             <button
               onClick={() => setShowLabStudio(!showLabStudio)}
-              className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#151619] hover:bg-[#2A2E38] transition-all flex items-center gap-2 cursor-pointer shadow-sm"
+              className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-solid hover:bg-solid transition-all flex items-center gap-2 cursor-pointer shadow-sm"
             >
-              <Layers size={14} className="text-emerald-400" />
+              <Layers size={14} className="text-settled-on-solid" />
               <span>{showLabStudio ? 'Hide Lab Studio' : 'Launch Tesseract Lab Studio'}</span>
             </button>
           </div>
@@ -343,13 +343,13 @@ export default function DocumentReview() {
 
         {/* Content Body */}
         {status === 'idle' || status === 'extracting' || status === 'error' ? (
-          <div className="bg-white border-2 border-dashed border-[#EAE8E3] rounded-2xl p-12 text-center max-w-2xl mx-auto space-y-4 shadow-sm">
-            <div className="w-16 h-16 bg-[#F4F3EE] text-[#111315] rounded-2xl flex items-center justify-center mx-auto">
+          <div className="bg-paper border-2 border-dashed border-rule rounded-2xl p-12 text-center max-w-2xl mx-auto space-y-4 shadow-sm">
+            <div className="w-16 h-16 bg-paper-2 text-ink rounded-2xl flex items-center justify-center mx-auto">
               <UploadCloud size={28} />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-[#111315]">Upload Medical Records</h3>
-              <p className="text-xs sm:text-sm text-[#6E767E] mt-1 max-w-md mx-auto">
+              <h3 className="text-xl font-bold text-ink">Upload Medical Records</h3>
+              <p className="text-xs sm:text-sm text-ink-2 mt-1 max-w-md mx-auto">
                 Upload up to 5 documents (PDF, JPG, PNG). Proton extracts clinical facts while maintaining immutable source citations.
               </p>
             </div>
@@ -367,7 +367,7 @@ export default function DocumentReview() {
               <button 
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="bg-white border border-[#EAE8E3] text-[#111315] hover:bg-[#F4F3EE] px-5 py-2.5 rounded-xl font-semibold text-xs transition-colors shadow-2xs cursor-pointer"
+                className="bg-paper border border-rule text-ink hover:bg-paper-2 px-5 py-2.5 rounded-xl font-semibold text-xs transition-colors shadow-2xs cursor-pointer"
               >
                 Choose Documents
               </button>
@@ -376,10 +376,10 @@ export default function DocumentReview() {
                   type="button"
                   onClick={handleUploadAndExtract}
                   disabled={status === 'extracting'}
-                  className="bg-[#111315] hover:bg-[#272B30] text-white px-5 py-2.5 rounded-xl font-semibold text-xs transition-colors shadow-xs flex items-center gap-2 cursor-pointer disabled:opacity-60"
+                  className="bg-solid hover:bg-solid text-white px-5 py-2.5 rounded-xl font-semibold text-xs transition-colors shadow-xs flex items-center gap-2 cursor-pointer disabled:opacity-60"
                 >
                   {status === 'extracting' ? (
-                    <><Loader2 size={14} className="animate-spin text-emerald-400" /> Extracting Facts...</>
+                    <><Loader2 size={14} className="animate-spin text-settled-on-solid" /> Extracting Facts...</>
                   ) : (
                     `Extract from ${files.length} File${files.length > 1 ? 's' : ''}`
                   )}
@@ -390,7 +390,7 @@ export default function DocumentReview() {
             {files.length > 0 && (
               <div className="pt-4 flex flex-wrap gap-2 justify-center">
                 {files.map((f, i) => (
-                  <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#F4F3EE] text-[#50575F] rounded-full text-xs font-mono">
+                  <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1 bg-paper-2 text-ink-2 rounded-full text-xs font-mono">
                     <FileText size={12}/> {f.name}
                   </span>
                 ))}
@@ -398,42 +398,42 @@ export default function DocumentReview() {
             )}
 
             {status === 'error' && (
-              <div className="p-4 bg-red-50 text-red-800 rounded-xl flex items-center gap-2 text-xs border border-red-200 text-left">
-                <AlertTriangle size={15} className="shrink-0 text-red-600" />
+              <div className="p-4 bg-critical-wash text-critical rounded-xl flex items-center gap-2 text-xs border border-critical-line text-left">
+                <AlertTriangle size={15} className="shrink-0 text-critical" />
                 <span>{errorMessage}</span>
               </div>
             )}
           </div>
         ) : status === 'complete' ? (
-          <div className="bg-white border border-[#EAE8E3] rounded-2xl p-12 text-center max-w-md mx-auto space-y-4 shadow-sm">
-            <div className="w-14 h-14 bg-emerald-50 text-emerald-700 rounded-2xl flex items-center justify-center mx-auto border border-emerald-200">
+          <div className="bg-paper border border-rule rounded-2xl p-12 text-center max-w-md mx-auto space-y-4 shadow-sm">
+            <div className="w-14 h-14 bg-settled-wash text-settled rounded-2xl flex items-center justify-center mx-auto border border-settled-line">
               <Check size={28} />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-[#111315]">Records Successfully Committed</h3>
-              <p className="text-xs text-[#6E767E] mt-1">
+              <h3 className="text-xl font-bold text-ink">Records Successfully Committed</h3>
+              <p className="text-xs text-ink-2 mt-1">
                 Approved clinical facts have been linked to the patient profile with original source provenance.
               </p>
             </div>
             <Link 
               to={effectivePatientId ? `/patients/${effectivePatientId}` : "/patients"} 
-              className="inline-flex items-center justify-center gap-2 bg-[#111315] hover:bg-[#272B30] text-white px-6 py-2.5 rounded-xl font-semibold text-xs transition-colors shadow-xs"
+              className="inline-flex items-center justify-center gap-2 bg-solid hover:bg-solid text-white px-6 py-2.5 rounded-xl font-semibold text-xs transition-colors shadow-xs"
             >
               <span>Return to Patient Chart</span>
             </Link>
           </div>
         ) : (
-          <div className="bg-white border border-[#EAE8E3] rounded-2xl shadow-sm overflow-hidden space-y-0">
+          <div className="bg-paper border border-rule rounded-2xl shadow-sm overflow-hidden space-y-0">
             
             {/* Safety Verification Callout */}
-            <div className="bg-amber-50/70 border-b border-amber-200/80 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="bg-caution-wash/70 border-b border-caution-line/80 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-start gap-3">
-                <ShieldAlert size={18} className="text-amber-700 shrink-0 mt-0.5" />
+                <ShieldAlert size={18} className="text-caution shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="text-amber-950 font-bold text-xs sm:text-sm">
+                  <h4 className="text-caution font-bold text-xs sm:text-sm">
                     Extracted from uploaded document &mdash; Physician confirmation required
                   </h4>
-                  <p className="text-amber-800 text-xs mt-0.5">
+                  <p className="text-caution text-xs mt-0.5">
                     Unverified facts will not become permanent clinical memory until explicitly approved.
                   </p>
                 </div>
@@ -441,11 +441,11 @@ export default function DocumentReview() {
 
               <div className="flex items-center gap-2 shrink-0">
                 {lowConfidenceFacts.length > 0 && (
-                  <span className="text-xs font-semibold px-2.5 py-1 bg-amber-100 text-amber-900 rounded-md border border-amber-300 flex items-center gap-1 font-mono">
+                  <span className="text-xs font-semibold px-2.5 py-1 bg-caution-wash text-caution rounded-md border border-caution-line flex items-center gap-1 font-mono">
                     <AlertTriangle size={12} /> {lowConfidenceFacts.length} Low Confidence
                   </span>
                 )}
-                <span className="text-xs font-semibold px-2.5 py-1 bg-emerald-100 text-emerald-900 rounded-md border border-emerald-300 flex items-center gap-1 font-mono">
+                <span className="text-xs font-semibold px-2.5 py-1 bg-settled-wash text-settled rounded-md border border-settled-line flex items-center gap-1 font-mono">
                   <CheckCircle2 size={12} /> {allFacts.length - lowConfidenceFacts.length} High Confidence
                 </span>
               </div>
@@ -454,7 +454,7 @@ export default function DocumentReview() {
             {/* Extracted Facts Table */}
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs whitespace-nowrap">
-                <thead className="bg-[#FAF9F6] border-b border-[#EAE8E3] font-mono text-[11px] text-[#6E767E] uppercase">
+                <thead className="bg-canvas border-b border-rule font-mono text-[11px] text-ink-2 uppercase">
                   <tr>
                     <th className="px-5 py-3 font-semibold">Clinician Decision</th>
                     <th className="px-5 py-3 font-semibold">Provenance</th>
@@ -464,7 +464,7 @@ export default function DocumentReview() {
                     <th className="px-5 py-3 font-semibold text-center">Confidence</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#F2F1EC]">
+                <tbody className="divide-y divide-rule">
                   {extractions.map((ext, extIdx) => 
                     ext.facts.map((fact, factIdx) => {
                       const factCheck = verifyExtractedFact(fact.confidence, fact.source_quote, ext.originalFileName || 'report');
@@ -472,7 +472,7 @@ export default function DocumentReview() {
                       return (
                         <tr 
                           key={`${extIdx}-${factIdx}`} 
-                          className={`${fact.approved ? 'bg-white hover:bg-[#FAF9F6]' : 'bg-[#FAF9F6]/50 opacity-60'} transition-colors`}
+                          className={`${fact.approved ? 'bg-paper hover:bg-canvas' : 'bg-canvas/50 opacity-60'} transition-colors`}
                         >
                           <td className="px-5 py-3.5">
                             <div className="flex items-center gap-1.5">
@@ -481,8 +481,8 @@ export default function DocumentReview() {
                                 onClick={() => toggleFact(extIdx, factIdx, true)}
                                 className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer ${
                                   fact.approved 
-                                    ? 'bg-emerald-600 text-white shadow-2xs' 
-                                    : 'text-[#6E767E] hover:bg-[#EAE8E3]'
+                                    ? 'bg-settled text-white shadow-2xs' 
+                                    : 'text-ink-2 hover:bg-paper-2'
                                 }`}
                               >
                                 <Check size={13} />
@@ -493,8 +493,8 @@ export default function DocumentReview() {
                                 onClick={() => toggleFact(extIdx, factIdx, false)}
                                 className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer ${
                                   !fact.approved 
-                                    ? 'bg-red-600 text-white shadow-2xs' 
-                                    : 'text-[#6E767E] hover:bg-[#EAE8E3]'
+                                    ? 'bg-critical text-white shadow-2xs' 
+                                    : 'text-ink-2 hover:bg-paper-2'
                                 }`}
                               >
                                 <X size={13} />
@@ -511,7 +511,7 @@ export default function DocumentReview() {
                           </td>
 
                           <td className="px-5 py-3.5">
-                            <span className="capitalize px-2 py-0.5 bg-[#F4F3EE] text-[#50575F] rounded-md font-mono text-[11px] font-medium border border-[#EAE8E3]">
+                            <span className="capitalize px-2 py-0.5 bg-paper-2 text-ink-2 rounded-md font-mono text-[11px] font-medium border border-rule">
                               {fact.category}
                             </span>
                           </td>
@@ -524,13 +524,13 @@ export default function DocumentReview() {
                                 onChange={(e) => updateFactText(extIdx, factIdx, e.target.value)}
                                 className={`w-full rounded-xl px-3 py-1.5 text-xs ${
                                   !fact.approved 
-                                    ? 'line-through text-[#949CA4] bg-transparent border-0' 
-                                    : 'text-[#111315] bg-white border border-[#EAE8E3] focus:border-[#111315] outline-none shadow-2xs'
+                                    ? 'line-through text-ink-3 bg-transparent border-0' 
+                                    : 'text-ink bg-paper border border-rule focus:border-solid outline-none shadow-2xs'
                                 }`}
                                 disabled={!fact.approved}
                               />
                               {fact.edited && (
-                                <span title="Modified by clinician" className="text-sky-600 shrink-0 font-mono text-[10px]">
+                                <span title="Modified by clinician" className="text-accent-ink shrink-0 font-mono text-[10px]">
                                   MODIFIED
                                 </span>
                               )}
@@ -539,10 +539,10 @@ export default function DocumentReview() {
 
                           <td className="px-5 py-3.5">
                             <div className="flex flex-col max-w-xs whitespace-normal gap-1">
-                              <span className="text-[#50575F] italic text-xs leading-relaxed border-l-2 border-[#D5D2C9] pl-2">
+                              <span className="text-ink-2 italic text-xs leading-relaxed border-l-2 border-rule-strong pl-2">
                                 "{fact.source_quote}"
                               </span>
-                              <span className="text-[10px] text-[#0F766E] font-mono uppercase">
+                              <span className="text-[10px] text-accent-ink font-mono uppercase">
                                 DOC: {ext.originalFileName || ext.document_type || 'Record'}
                               </span>
                             </div>
@@ -551,8 +551,8 @@ export default function DocumentReview() {
                           <td className="px-5 py-3.5 text-center">
                             <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded-full ${
                               factCheck.isLowConfidence 
-                                ? 'bg-amber-100 text-amber-900 border border-amber-300' 
-                                : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                                ? 'bg-caution-wash text-caution border border-caution-line' 
+                                : 'bg-settled-wash text-settled border border-settled-line'
                             }`}>
                               {Math.round(fact.confidence * 100)}%
                             </span>
@@ -565,9 +565,9 @@ export default function DocumentReview() {
               </table>
             </div>
             
-            <div className="bg-[#FAF9F6] border-t border-[#EAE8E3] p-4 flex items-center justify-between text-xs text-[#6E767E] font-mono">
+            <div className="bg-canvas border-t border-rule p-4 flex items-center justify-between text-xs text-ink-2 font-mono">
               <span>{extractions.reduce((acc, curr) => acc + curr.facts.length, 0)} total clinical facts extracted</span>
-              <span className="font-bold text-[#111315]">{approvedCount} approved for FHIR persistence</span>
+              <span className="font-bold text-ink">{approvedCount} approved for FHIR persistence</span>
             </div>
           </div>
         )}

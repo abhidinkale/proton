@@ -1,0 +1,788 @@
+{
+  "$id": "https://proton.health/schemas/note_v1.schema.json",
+  "title": "Proton Structured Clinical Note v1",
+  "description": "note_v1: core structured clinical note. Decimal measurements are strings; integers are numbers. Unknown fields are rejected.",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "note_v1"
+    },
+    "subjective": {
+      "type": "object",
+      "properties": {
+        "chief_complaint": {
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            },
+            "onset": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 80
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "duration": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 80
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "severity": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 10
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "text",
+            "onset",
+            "duration",
+            "severity"
+          ],
+          "additionalProperties": false
+        },
+        "hpi": {
+          "maxItems": 50,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "symptom": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "onset": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 80
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "character": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 120
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "aggravating": {
+                "maxItems": 10,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              },
+              "relieving": {
+                "maxItems": 10,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              },
+              "associated": {
+                "maxItems": 20,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              }
+            },
+            "required": [
+              "symptom",
+              "onset",
+              "character",
+              "aggravating",
+              "relieving",
+              "associated"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "pmh": {
+          "maxItems": 100,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "condition": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "code": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 64
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "since": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "condition",
+              "code",
+              "since"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "medications": {
+          "maxItems": 100,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "dose": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 80
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "frequency": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 80
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "name",
+              "dose",
+              "frequency"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "allergies": {
+          "maxItems": 100,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "substance": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "reaction": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 300
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "severity": {
+                "type": "string",
+                "enum": [
+                  "mild",
+                  "moderate",
+                  "severe",
+                  "unknown"
+                ]
+              }
+            },
+            "required": [
+              "substance",
+              "reaction",
+              "severity"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "narrative": {
+          "type": "string",
+          "maxLength": 50000
+        }
+      },
+      "required": [
+        "chief_complaint",
+        "hpi",
+        "pmh",
+        "medications",
+        "allergies",
+        "narrative"
+      ],
+      "additionalProperties": false
+    },
+    "objective": {
+      "type": "object",
+      "properties": {
+        "vitals": {
+          "type": "object",
+          "properties": {
+            "temperature_c": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 40,
+                  "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "heart_rate_bpm": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 40,
+                  "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "systolic_bp_mmhg": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 40,
+                  "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "diastolic_bp_mmhg": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 40,
+                  "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "respiratory_rate_bpm": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 40,
+                  "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "spo2_pct": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 40,
+                  "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "weight_kg": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 40,
+                  "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "height_cm": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 40,
+                  "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "temperature_c",
+            "heart_rate_bpm",
+            "systolic_bp_mmhg",
+            "diastolic_bp_mmhg",
+            "respiratory_rate_bpm",
+            "spo2_pct",
+            "weight_kg",
+            "height_cm"
+          ],
+          "additionalProperties": false
+        },
+        "exam": {
+          "maxItems": 100,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "system": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+              },
+              "finding": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "laterality": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "left",
+                      "right",
+                      "bilateral",
+                      "midline",
+                      "not_applicable"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "system",
+              "finding",
+              "laterality"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "labs": {
+          "maxItems": 200,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "test": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              },
+              "value": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 60
+              },
+              "unit": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 40
+              },
+              "reference_range": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 80
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "flag": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "low",
+                      "normal",
+                      "high",
+                      "critical_low",
+                      "critical_high",
+                      "unknown"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "test",
+              "value",
+              "unit",
+              "reference_range",
+              "flag"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "vitals",
+        "exam",
+        "labs"
+      ],
+      "additionalProperties": false
+    },
+    "assessment": {
+      "type": "object",
+      "properties": {
+        "differential": {
+          "maxItems": 20,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "condition": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300
+              },
+              "band": {
+                "type": "string",
+                "enum": [
+                  "supported",
+                  "weak",
+                  "insufficient"
+                ]
+              },
+              "for": {
+                "maxItems": 20,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              },
+              "against": {
+                "maxItems": 20,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              },
+              "guideline_ref": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "condition",
+              "band",
+              "for",
+              "against",
+              "guideline_ref"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "primary": {
+          "type": "object",
+          "properties": {
+            "condition": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            },
+            "basis": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 2000
+            }
+          },
+          "required": [
+            "condition",
+            "basis"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "differential",
+        "primary"
+      ],
+      "additionalProperties": false
+    },
+    "plan": {
+      "type": "object",
+      "properties": {
+        "medications": {
+          "maxItems": 50,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "drug": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "dose": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              },
+              "route": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 60
+              },
+              "frequency": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              },
+              "duration_days": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 365
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "rationale": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              }
+            },
+            "required": [
+              "drug",
+              "dose",
+              "route",
+              "frequency",
+              "duration_days",
+              "rationale"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "orders": {
+          "maxItems": 50,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+              },
+              "detail": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "rationale": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              }
+            },
+            "required": [
+              "type",
+              "detail",
+              "rationale"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "follow_up": {
+          "type": "object",
+          "properties": {
+            "interval": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "method": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "triggers": {
+              "maxItems": 10,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              }
+            }
+          },
+          "required": [
+            "interval",
+            "method",
+            "triggers"
+          ],
+          "additionalProperties": false
+        },
+        "education": {
+          "maxItems": 50,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "topic": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "material_id": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 128
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "topic",
+              "material_id"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "medications",
+        "orders",
+        "follow_up",
+        "education"
+      ],
+      "additionalProperties": false
+    },
+    "provenance": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": [
+              "transcript",
+              "record",
+              "ai",
+              "clinician"
+            ]
+          },
+          "ref": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "source",
+          "ref"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "subjective",
+    "objective",
+    "assessment",
+    "plan"
+  ],
+  "additionalProperties": false
+}

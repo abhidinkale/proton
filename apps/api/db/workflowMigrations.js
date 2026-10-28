@@ -385,6 +385,36 @@ const WORKFLOW_MIGRATIONS = [
       CREATE INDEX IF NOT EXISTS idx_prescriptions_signed
         ON prescriptions(tenant_id, status, signed_at DESC);
     `
+  },
+  {
+    version: 9,
+    name: 'clinic_desk_fields',
+    sql: `
+      -- P0.1a staging: fields the SQLite clinic desk carries in data_json but
+      -- the workflow schema does not. They are added before the backfill so a
+      -- row can be written without losing the clinical profile or the queue
+      -- position. Nothing reads them until postgresClinicRepository lands.
+      ALTER TABLE patients
+        ADD COLUMN IF NOT EXISTS clinical_profile JSONB NOT NULL DEFAULT '{}'::jsonb;
+
+      ALTER TABLE appointments
+        ADD COLUMN IF NOT EXISTS queue_category TEXT;
+
+      ALTER TABLE appointments
+        ADD COLUMN IF NOT EXISTS priority TEXT NOT NULL DEFAULT 'normal';
+
+      ALTER TABLE appointments
+        ADD COLUMN IF NOT EXISTS metadata JSONB NOT NULL DEFAULT '{}'::jsonb;
+
+      ALTER TABLE notes
+        ADD COLUMN IF NOT EXISTS title TEXT;
+
+      ALTER TABLE notes
+        ADD COLUMN IF NOT EXISTS legacy_signed_at TIMESTAMPTZ;
+
+      CREATE INDEX IF NOT EXISTS idx_appointments_queue
+        ON appointments(tenant_id, queue_category, scheduled_for);
+    `
   }
 ];
 

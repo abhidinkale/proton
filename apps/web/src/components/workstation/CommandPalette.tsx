@@ -77,14 +77,14 @@ export default function CommandPalette({
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-100">
       <div 
-        className="w-full max-w-xl bg-white border border-[#e4e4e7] rounded-2xl shadow-2xl overflow-hidden flex flex-col font-sans"
+        className="w-full max-w-xl bg-paper border border-rule rounded-2xl shadow-2xl overflow-hidden flex flex-col font-sans"
         role="dialog"
         aria-modal="true"
         aria-label="Clinical Command Palette"
       >
         {/* Search Input */}
-        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[#e4e4e7] bg-[#fafaf9]">
-          <Search size={16} className="text-[#71717a] shrink-0" />
+        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-rule bg-canvas">
+          <Search size={16} className="text-ink-2 shrink-0" />
           <input
             ref={inputRef}
             type="text"
@@ -95,14 +95,14 @@ export default function CommandPalette({
             }}
             onKeyDown={handleKeyDown}
             placeholder="Type a patient name, MRN, symptom, or command (⌘K)..."
-            className="flex-1 bg-transparent text-xs text-[#09090b] placeholder-[#a1a1aa] outline-none font-medium"
+            className="flex-1 bg-transparent text-xs text-ink placeholder-ink-3 outline-none font-medium"
           />
-          <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono text-[#71717a] bg-white border border-[#e4e4e7] rounded shadow-2xs">
+          <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono text-ink-2 bg-paper border border-rule rounded shadow-2xs">
             ESC
           </kbd>
           <button
             onClick={onClose}
-            className="text-[#71717a] hover:text-[#09090b] p-1 rounded-md cursor-pointer"
+            className="text-ink-2 hover:text-ink p-1 rounded-md cursor-pointer"
             aria-label="Close command palette"
           >
             <X size={15} />
@@ -110,11 +110,11 @@ export default function CommandPalette({
         </div>
 
         {/* Results List */}
-        <div className="max-h-80 overflow-y-auto p-2 divide-y divide-[#f4f4f5]">
+        <div className="max-h-80 overflow-y-auto p-2 divide-y divide-rule">
           {/* Patients Section */}
           {filteredPatients.length > 0 && (
             <div className="pb-2">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-[#a1a1aa] px-2.5 py-1">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-ink-3 px-2.5 py-1">
                 Patients & Appointments
               </div>
               {filteredPatients.map((pt, idx) => {
@@ -127,28 +127,28 @@ export default function CommandPalette({
                       onClose();
                     }}
                     className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left text-xs transition-colors cursor-pointer ${
-                      isSelected ? 'bg-[#18181b] text-white' : 'text-[#18181b] hover:bg-[#f4f4f5]'
+                      isSelected ? 'bg-solid text-white' : 'text-ink hover:bg-paper-2'
                     }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${
-                        isSelected ? 'bg-white/20 text-white' : 'bg-[#f4f4f5] text-[#52525b]'
+                        isSelected ? 'bg-paper/20 text-white' : 'bg-paper-2 text-ink-2'
                       }`}>
                         <User size={13} />
                       </div>
                       <div className="truncate">
                         <div className="font-semibold flex items-center gap-2">
                           <span>{pt.name}</span>
-                          <span className={`text-[10px] font-normal ${isSelected ? 'text-zinc-300' : 'text-[#71717a]'}`}>
+                          <span className={`text-[10px] font-normal ${isSelected ? 'text-ink-3' : 'text-ink-2'}`}>
                             ({pt.age}y, {pt.gender}) • {pt.mrn}
                           </span>
                         </div>
-                        <p className={`text-[11px] truncate ${isSelected ? 'text-zinc-300' : 'text-[#71717a]'}`}>
+                        <p className={`text-[11px] truncate ${isSelected ? 'text-ink-3' : 'text-ink-2'}`}>
                           {pt.time} &bull; {pt.chiefComplaint}
                         </p>
                       </div>
                     </div>
-                    <ArrowRight size={13} className={isSelected ? 'text-white' : 'text-[#a1a1aa]'} />
+                    <ArrowRight size={13} className={isSelected ? 'text-white' : 'text-ink-3'} />
                   </button>
                 );
               })}
@@ -158,7 +158,7 @@ export default function CommandPalette({
           {/* Quick Commands Section */}
           {quickCommands.length > 0 && (
             <div className="pt-2">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-[#a1a1aa] px-2.5 py-1">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-ink-3 px-2.5 py-1">
                 Clinical Actions
               </div>
               {quickCommands.map((cmd, idx) => {
@@ -173,18 +173,18 @@ export default function CommandPalette({
                       onClose();
                     }}
                     className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left text-xs transition-colors cursor-pointer ${
-                      isSelected ? 'bg-[#18181b] text-white' : 'text-[#18181b] hover:bg-[#f4f4f5]'
+                      isSelected ? 'bg-solid text-white' : 'text-ink hover:bg-paper-2'
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
                       <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${
-                        isSelected ? 'bg-white/20 text-white' : 'bg-[#f4f4f5] text-[#52525b]'
+                        isSelected ? 'bg-paper/20 text-white' : 'bg-paper-2 text-ink-2'
                       }`}>
                         <Icon size={13} />
                       </div>
                       <span className="font-medium">{cmd.label}</span>
                     </div>
-                    <ArrowRight size={13} className={isSelected ? 'text-white' : 'text-[#a1a1aa]'} />
+                    <ArrowRight size={13} className={isSelected ? 'text-white' : 'text-ink-3'} />
                   </button>
                 );
               })}
@@ -192,19 +192,19 @@ export default function CommandPalette({
           )}
 
           {totalItems === 0 && (
-            <div className="text-center py-8 text-xs text-[#71717a]">
+            <div className="text-center py-8 text-xs text-ink-2">
               No patients or clinical actions found matching &ldquo;{query}&rdquo;.
             </div>
           )}
         </div>
 
         {/* Footer shortcuts hint */}
-        <div className="px-4 py-2 border-t border-[#e4e4e7] bg-[#fafaf9] flex items-center justify-between text-[11px] text-[#71717a]">
+        <div className="px-4 py-2 border-t border-rule bg-canvas flex items-center justify-between text-[11px] text-ink-2">
           <div className="flex items-center gap-3">
-            <span><kbd className="font-mono bg-white border border-[#e4e4e7] px-1 py-0.5 rounded text-[10px]">↑↓</kbd> Navigate</span>
-            <span><kbd className="font-mono bg-white border border-[#e4e4e7] px-1 py-0.5 rounded text-[10px]">↵</kbd> Select</span>
+            <span><kbd className="font-mono bg-paper border border-rule px-1 py-0.5 rounded text-[10px]">↑↓</kbd> Navigate</span>
+            <span><kbd className="font-mono bg-paper border border-rule px-1 py-0.5 rounded text-[10px]">↵</kbd> Select</span>
           </div>
-          <span className="font-medium text-[#111315]">Proton Workstation</span>
+          <span className="font-medium text-ink">Proton Workstation</span>
         </div>
       </div>
     </div>

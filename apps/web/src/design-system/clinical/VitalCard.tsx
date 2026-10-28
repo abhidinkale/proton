@@ -31,35 +31,35 @@ export const VitalCard = forwardRef<HTMLDivElement, VitalCardProps>(function Vit
 ) {
   const statusStyles = {
     normal: {
-      border: 'border-[#E8E5DC]',
-      valColor: 'text-[#151719]',
-      badgeBg: 'bg-[#ECFDF5] text-[#065F46] border-[#A7F3D0]'
+      border: 'border-rule',
+      valColor: 'text-ink',
+      badgeBg: 'bg-settled-wash text-settled border-settled-line'
     },
     warning: {
-      border: 'border-[#FDE047]',
-      valColor: 'text-[#854D0E]',
-      badgeBg: 'bg-[#FEF08A] text-[#854D0E] border-[#FDE047]'
+      border: 'border-caution-line',
+      valColor: 'text-caution',
+      badgeBg: 'bg-caution-wash text-caution border-caution-line'
     },
     critical: {
-      border: 'border-[#FECACA]',
-      valColor: 'text-[#991B1B]',
-      badgeBg: 'bg-[#FEF2F2] text-[#991B1B] border-[#FECACA]'
+      border: 'border-critical-line',
+      valColor: 'text-critical',
+      badgeBg: 'bg-critical-wash text-critical border-critical-line'
     }
   }[status];
 
   return (
     <div
       ref={ref}
-      className={`p-4 rounded-2xl bg-white border ${statusStyles.border} shadow-2xs flex flex-col justify-between transition-all ${className}`}
+      className={`p-4 rounded-2xl bg-paper border ${statusStyles.border} shadow-2xs flex flex-col justify-between transition-all ${className}`}
     >
       <div className="flex items-center justify-between gap-2 text-xs">
-        <span className="font-semibold text-[#575D65] uppercase tracking-wider text-[10px]">
+        <span className="font-semibold text-ink-2 uppercase tracking-wider text-[10px]">
           {label}
         </span>
         {icon ? (
-          <span className="text-[#88909A]">{icon}</span>
+          <span className="text-ink-3">{icon}</span>
         ) : (
-          <Activity size={13} className="text-[#88909A]" />
+          <Activity size={13} className="text-ink-3" />
         )}
       </div>
 
@@ -68,18 +68,18 @@ export const VitalCard = forwardRef<HTMLDivElement, VitalCardProps>(function Vit
           {value}
         </span>
         {unit && (
-          <span className="text-xs text-[#575D65] font-medium">{unit}</span>
+          <span className="text-xs text-ink-2 font-medium">{unit}</span>
         )}
       </div>
 
-      <div className="flex items-center justify-between gap-2 text-[10px] font-mono text-[#88909A] pt-1.5 border-t border-[#F0ECE1]">
+      <div className="flex items-center justify-between gap-2 text-[10px] font-mono text-ink-3 pt-1.5 border-t border-rule">
         {normalRange && (
           <span>Normal: {normalRange}</span>
         )}
 
         {delta && (
           <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full font-bold ${
-            delta.isAbnormal ? 'bg-[#FEF2F2] text-[#991B1B]' : 'bg-[#F4F2EC] text-[#575D65]'
+            delta.isAbnormal ? 'bg-critical-wash text-critical' : 'bg-paper-2 text-ink-2'
           }`}>
             {delta.direction === 'up' && <ArrowUp size={10} />}
             {delta.direction === 'down' && <ArrowDown size={10} />}

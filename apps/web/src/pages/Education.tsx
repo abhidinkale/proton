@@ -195,13 +195,13 @@ function downloadTextFile(name: string, content: string) {
 function specialtyBadge(variant: SpecialtyVariant): string {
   switch (variant) {
     case 'rose':
-      return 'bg-[#FCE7F3] text-[#9D174D]';
+      return 'bg-accent-wash text-accent-ink';
     case 'canary':
-      return 'bg-[#FEF08A] text-[#854D0E]';
+      return 'bg-caution-wash text-caution';
     case 'olive':
-      return 'bg-[#DCFCE7] text-[#166534]';
+      return 'bg-settled-wash text-settled';
     default:
-      return 'bg-[#E0E7FF] text-[#1E40AF]';
+      return 'bg-accent-wash text-accent-ink';
   }
 }
 
@@ -372,31 +372,31 @@ export default function Education() {
     <Layout>
       <div className="space-y-6 animate-in fade-in pb-12 relative">
         {toastMessage && (
-          <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-2.5 bg-[#151719] text-white rounded-2xl shadow-xl text-xs font-semibold animate-in fade-in slide-in-from-bottom-2">
-            <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+          <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-2.5 bg-solid text-white rounded-2xl shadow-xl text-xs font-semibold animate-in fade-in slide-in-from-bottom-2">
+            <CheckCircle2 size={16} className="text-settled-on-solid shrink-0" />
             <span>{toastMessage}</span>
           </div>
         )}
 
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#151719]">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-ink">
               Keep learning, Dr. {firstName}
             </h1>
-            <p className="text-xs sm:text-sm text-[#575D65] mt-0.5">
+            <p className="text-xs sm:text-sm text-ink-2 mt-0.5">
               A working clinical library. Bookmarks, completions and claimed credits are saved to your account.
             </p>
           </div>
 
           <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
             <div className="relative flex-1 lg:w-72">
-              <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#88909A]" />
+              <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-3" />
               <input
                 type="search"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search courses, faculty, topics…"
-                className="w-full rounded-full border border-[#E8E5DC] bg-white py-2 pl-9 pr-3 text-xs text-[#151719] shadow-xs placeholder:text-[#9AA0A6] focus:border-[#151719] focus:outline-none"
+                className="w-full rounded-full border border-rule bg-paper py-2 pl-9 pr-3 text-xs text-ink shadow-xs placeholder:text-ink-3 focus:border-rule-strong focus:outline-none"
               />
             </div>
             <button
@@ -404,8 +404,8 @@ export default function Education() {
               onClick={() => setSavedOnly((current) => !current)}
               className={`inline-flex items-center justify-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-semibold transition-colors cursor-pointer ${
                 savedOnly
-                  ? 'border-[#151719] bg-[#151719] text-white'
-                  : 'border-[#E8E5DC] bg-white text-[#575D65] hover:text-[#151719]'
+                  ? 'border-rule-strong bg-solid text-white'
+                  : 'border-rule bg-paper text-ink-2 hover:text-ink'
               }`}
             >
               <BookOpen size={13} />
@@ -415,7 +415,7 @@ export default function Education() {
         </div>
 
         {progressState === 'error' && (
-          <div className="flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">
+          <div className="flex items-start gap-2 rounded-2xl border border-caution-line bg-caution-wash px-4 py-3 text-xs text-caution">
             <AlertTriangle size={15} className="mt-0.5 shrink-0" />
             <div>
               <p className="font-semibold">Learning progress is read-only right now</p>
@@ -428,46 +428,46 @@ export default function Education() {
 
         {/* Progress strip */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="rounded-2xl border border-[#E8E5DC] bg-white p-4">
+          <div className="rounded-2xl border border-rule bg-paper p-4">
             <div className="flex items-center justify-between">
-              <span className="proton-micro-label text-[#88909A]">Completed</span>
-              <CheckCircle2 size={14} className="text-emerald-600" />
+              <span className="proton-micro-label text-ink-3">Completed</span>
+              <CheckCircle2 size={14} className="text-settled" />
             </div>
-            <div className="mt-1 font-mono text-2xl font-black text-[#151719]">
+            <div className="mt-1 font-mono text-2xl font-black text-ink">
               {progressState === 'loading' ? '—' : `${completedCount}/${COURSES.length}`}
             </div>
-            <div className="mt-1 text-[10.5px] text-[#6E767E]">Core clinical courses</div>
+            <div className="mt-1 text-[10.5px] text-ink-2">Core clinical courses</div>
           </div>
-          <div className="rounded-2xl border border-[#E8E5DC] bg-white p-4">
+          <div className="rounded-2xl border border-rule bg-paper p-4">
             <div className="flex items-center justify-between">
-              <span className="proton-micro-label text-[#88909A]">Claimed credit</span>
-              <Award size={14} className="text-amber-600" />
+              <span className="proton-micro-label text-ink-3">Claimed credit</span>
+              <Award size={14} className="text-caution" />
             </div>
-            <div className="mt-1 font-mono text-2xl font-black text-[#151719]">
+            <div className="mt-1 font-mono text-2xl font-black text-ink">
               {progressState === 'loading' ? '—' : `${claimedCredits.toFixed(2)}`}
             </div>
-            <div className="mt-1 text-[10.5px] text-[#6E767E]">AMA PRA Category 1 Credits™</div>
+            <div className="mt-1 text-[10.5px] text-ink-2">AMA PRA Category 1 Credits™</div>
           </div>
-          <div className="rounded-2xl border border-[#E8E5DC] bg-white p-4">
+          <div className="rounded-2xl border border-rule bg-paper p-4">
             <div className="flex items-center justify-between">
-              <span className="proton-micro-label text-[#88909A]">Saved</span>
-              <BookOpen size={14} className="text-[#1E40AF]" />
+              <span className="proton-micro-label text-ink-3">Saved</span>
+              <BookOpen size={14} className="text-accent-ink" />
             </div>
-            <div className="mt-1 font-mono text-2xl font-black text-[#151719]">
+            <div className="mt-1 font-mono text-2xl font-black text-ink">
               {progressState === 'loading' ? '—' : savedCourses.length}
             </div>
-            <div className="mt-1 text-[10.5px] text-[#6E767E]">Resources in your library</div>
+            <div className="mt-1 text-[10.5px] text-ink-2">Resources in your library</div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
           <div className="space-y-6 lg:col-span-8">
             {/* Featured course */}
-            <div className="rounded-3xl border border-[#FBCFE8] bg-[#FCE7F3] p-5 sm:p-6 shadow-[0_2px_12px_rgba(0,0,0,0.02)]">
+            <div className="rounded-3xl border border-accent-line bg-accent-wash p-5 sm:p-6 shadow-[0_2px_12px_rgba(0,0,0,0.02)]">
               <div className="flex flex-col items-center gap-6 md:flex-row">
                 <div
                   onClick={() => setSelectedCourse(featured)}
-                  className="group relative flex h-44 w-full shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-2xl bg-zinc-900 md:w-64"
+                  className="group relative flex h-44 w-full shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-2xl bg-solid md:w-64"
                 >
                   <img
                     src="https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=600&q=80"
@@ -477,27 +477,27 @@ export default function Education() {
                   <span className="absolute left-3 top-3 rounded-full bg-black/70 px-2.5 py-1 text-[10px] font-bold text-white">
                     On-demand · {featured.duration}
                   </span>
-                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-[#9D174D] shadow-lg transition-transform group-hover:scale-110">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-paper/90 text-accent-ink shadow-lg transition-transform group-hover:scale-110">
                     <Play className="ml-0.5 h-5 w-5 fill-current" />
                   </span>
                 </div>
 
                 <div className="min-w-0 flex-1 space-y-3">
-                  <span className="inline-block rounded-full border border-[#FBCFE8] bg-white/80 px-3 py-1 text-[11px] font-bold text-[#9D174D]">
+                  <span className="inline-block rounded-full border border-accent-line bg-paper/80 px-3 py-1 text-[11px] font-bold text-accent-ink">
                     {featured.specialty}
                   </span>
                   <h3
                     onClick={() => setSelectedCourse(featured)}
-                    className="cursor-pointer text-base font-bold leading-snug text-[#151719] transition-colors hover:text-[#9D174D] sm:text-lg"
+                    className="cursor-pointer text-base font-bold leading-snug text-ink transition-colors hover:text-accent-ink sm:text-lg"
                   >
                     {featured.title}
                   </h3>
-                  <p className="line-clamp-2 text-xs text-[#575D65]">{featured.description}</p>
-                  <div className="flex flex-wrap items-center gap-4 border-t border-[#FBCFE8]/60 pt-2 text-xs text-[#575D65]">
-                    <span className="font-semibold text-[#151719]">{featured.speaker}</span>
+                  <p className="line-clamp-2 text-xs text-ink-2">{featured.description}</p>
+                  <div className="flex flex-wrap items-center gap-4 border-t border-accent-line/60 pt-2 text-xs text-ink-2">
+                    <span className="font-semibold text-ink">{featured.speaker}</span>
                     <span>{featured.cmeCredits}</span>
                     {progress.completed.includes(featured.id) && (
-                      <span className="inline-flex items-center gap-1 font-semibold text-emerald-700">
+                      <span className="inline-flex items-center gap-1 font-semibold text-settled">
                         <CheckCircle2 size={12} /> Completed
                       </span>
                     )}
@@ -515,8 +515,8 @@ export default function Education() {
                   onClick={() => setSpecialty(entry)}
                   className={`rounded-full px-3 py-1 text-[11px] font-semibold transition-colors cursor-pointer ${
                     specialty === entry
-                      ? 'bg-[#151619] text-white shadow-xs'
-                      : 'border border-[#E8E5DC] bg-white text-[#575D65] hover:text-[#151719]'
+                      ? 'bg-solid text-white shadow-xs'
+                      : 'border border-rule bg-paper text-ink-2 hover:text-ink'
                   }`}
                 >
                   {entry}
@@ -527,19 +527,19 @@ export default function Education() {
             {/* Course grid */}
             <div>
               <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-sm font-bold uppercase tracking-wider text-[#151719]">Course library</h2>
-                <span className="font-mono text-[10.5px] text-[#88909A]">{filteredCourses.length} results</span>
+                <h2 className="text-sm font-bold uppercase tracking-wider text-ink">Course library</h2>
+                <span className="font-mono text-[10.5px] text-ink-3">{filteredCourses.length} results</span>
               </div>
 
               {filteredCourses.length === 0 ? (
-                <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-[#E8E5DC] bg-white py-14 text-center">
-                  <Search size={20} className="text-[#9AA0A6]" />
-                  <p className="text-sm font-semibold text-[#151719]">No courses match that search</p>
-                  <p className="text-[11.5px] text-[#6E767E]">Try a different term or clear the specialty filter.</p>
+                <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-rule bg-paper py-14 text-center">
+                  <Search size={20} className="text-ink-3" />
+                  <p className="text-sm font-semibold text-ink">No courses match that search</p>
+                  <p className="text-[11.5px] text-ink-2">Try a different term or clear the specialty filter.</p>
                   <button
                     type="button"
                     onClick={() => { setSearch(''); setSpecialty('All'); setSavedOnly(false); }}
-                    className="mt-1 rounded-full bg-[#151719] px-3.5 py-1.5 text-[11px] font-semibold text-white cursor-pointer"
+                    className="mt-1 rounded-full bg-solid px-3.5 py-1.5 text-[11px] font-semibold text-white cursor-pointer"
                   >
                     Reset filters
                   </button>
@@ -553,24 +553,24 @@ export default function Education() {
                       <div
                         key={course.id}
                         onClick={() => setSelectedCourse(course)}
-                        className="group cursor-pointer space-y-2 rounded-2xl border border-[#E8E5DC] bg-white p-4 transition-all hover:shadow-md"
+                        className="group cursor-pointer space-y-2 rounded-2xl border border-rule bg-paper p-4 transition-all hover:shadow-md"
                       >
                         <div className="flex items-start justify-between gap-2">
                           <span className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-bold ${specialtyBadge(course.specialtyVariant)}`}>
                             {course.specialty}
                           </span>
                           {isCompleted && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[9.5px] font-semibold text-emerald-700">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-settled-wash px-2 py-0.5 text-[9.5px] font-semibold text-settled">
                               <Check size={10} /> Done
                             </span>
                           )}
                         </div>
-                        <h4 className="line-clamp-2 text-xs font-bold leading-snug text-[#151719] transition-colors group-hover:text-[#1E40AF]">
+                        <h4 className="line-clamp-2 text-xs font-bold leading-snug text-ink transition-colors group-hover:text-accent-ink">
                           {course.title}
                         </h4>
-                        <p className="line-clamp-2 text-[11px] text-[#575D65]">{course.description}</p>
-                        <div className="flex items-center justify-between border-t border-[#F0ECE1] pt-2">
-                          <span className="inline-flex items-center gap-1 text-[10px] font-mono text-[#88909A]">
+                        <p className="line-clamp-2 text-[11px] text-ink-2">{course.description}</p>
+                        <div className="flex items-center justify-between border-t border-rule pt-2">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-mono text-ink-3">
                             <Clock size={10} /> {course.duration}
                           </span>
                           <button
@@ -582,8 +582,8 @@ export default function Education() {
                             disabled={pendingActionId === `save-${course.id}`}
                             className={`rounded-full p-1.5 transition-colors cursor-pointer disabled:opacity-50 ${
                               isSaved
-                                ? 'bg-[#151619] text-white'
-                                : 'bg-[#F9F8F5] text-[#575D65] hover:bg-[#FCE7F3] hover:text-[#9D174D]'
+                                ? 'bg-solid text-white'
+                                : 'bg-canvas text-ink-2 hover:bg-accent-wash hover:text-accent-ink'
                             }`}
                             title={isSaved ? 'Remove from saved' : 'Save to your library'}
                           >
@@ -605,16 +605,16 @@ export default function Education() {
           {/* Right rail */}
           <div className="space-y-6 lg:col-span-4">
             <div className="space-y-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-[#151719]">Saved resources</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-ink">Saved resources</h3>
               {savedCourses.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-[#E8E5DC] bg-white p-5 text-center">
-                  <BookOpen size={18} className="mx-auto text-[#9AA0A6]" />
-                  <p className="mt-2 text-[11.5px] leading-relaxed text-[#6E767E]">
+                <div className="rounded-2xl border border-dashed border-rule bg-paper p-5 text-center">
+                  <BookOpen size={18} className="mx-auto text-ink-3" />
+                  <p className="mt-2 text-[11.5px] leading-relaxed text-ink-2">
                     Nothing saved yet. Use the <Plus size={11} className="inline" /> button on any course to keep it here.
                   </p>
                 </div>
               ) : (
-                <div className="divide-y divide-[#F0ECE1] rounded-2xl border border-[#E8E5DC] bg-white">
+                <div className="divide-y divide-rule rounded-2xl border border-rule bg-paper">
                   {savedCourses.map((course) => (
                     <div key={course.id} className="flex items-center justify-between gap-3 p-3">
                       <button
@@ -622,13 +622,13 @@ export default function Education() {
                         onClick={() => setSelectedCourse(course)}
                         className="min-w-0 text-left cursor-pointer"
                       >
-                        <p className="truncate text-xs font-semibold text-[#151719]">{course.title}</p>
-                        <p className="text-[10px] text-[#88909A]">{course.specialty} · {course.duration}</p>
+                        <p className="truncate text-xs font-semibold text-ink">{course.title}</p>
+                        <p className="text-[10px] text-ink-3">{course.specialty} · {course.duration}</p>
                       </button>
                       <button
                         type="button"
                         onClick={() => { void toggleBookmark(course); }}
-                        className="shrink-0 rounded-full p-1 text-[#88909A] hover:text-[#9D174D] cursor-pointer"
+                        className="shrink-0 rounded-full p-1 text-ink-3 hover:text-accent-ink cursor-pointer"
                         title="Remove bookmark"
                       >
                         <X size={13} />
@@ -640,7 +640,7 @@ export default function Education() {
             </div>
 
             <div className="space-y-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-[#151719]">Guideline updates</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-ink">Guideline updates</h3>
               <div className="space-y-3">
                 {FIELD_UPDATES.map((update, index) => (
                   <div
@@ -648,10 +648,10 @@ export default function Education() {
                     onClick={() => setSelectedUpdate(update)}
                     className={`cursor-pointer space-y-2 rounded-2xl border p-4 shadow-xs transition-shadow hover:shadow-md ${
                       index === 0
-                        ? 'border-[#FDE047] bg-[#FEF08A] text-[#854D0E]'
+                        ? 'border-caution-line bg-caution-wash text-caution'
                         : index === 1
-                          ? 'border-[#C7D2FE] bg-[#E0E7FF] text-[#1E40AF]'
-                          : 'border-[#E8E5DC] bg-white text-[#151719]'
+                          ? 'border-accent-line bg-accent-wash text-accent-ink'
+                          : 'border-rule bg-paper text-ink'
                     }`}
                   >
                     <div className="flex items-center gap-2">
@@ -672,12 +672,12 @@ export default function Education() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-[#E8E5DC] bg-[#FAF9F6] p-4">
-              <div className="flex items-center gap-2 text-[#151719]">
+            <div className="rounded-2xl border border-rule bg-canvas p-4">
+              <div className="flex items-center gap-2 text-ink">
                 <Sparkles size={14} />
                 <span className="text-xs font-bold">How progress works</span>
               </div>
-              <p className="mt-1.5 text-[10.5px] leading-relaxed text-[#6E767E]">
+              <p className="mt-1.5 text-[10.5px] leading-relaxed text-ink-2">
                 Bookmarks, completions and claimed credits are stored per clinician in the clinic database. Claiming a
                 credit also marks the course complete and downloads a certificate with your name and NPI.
               </p>
@@ -688,21 +688,21 @@ export default function Education() {
         {/* Course detail modal */}
         {selectedCourse && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in">
-            <div className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-3xl border border-[#E8E5DC] bg-white shadow-2xl animate-in zoom-in-95">
-              <div className="sticky top-0 flex items-center justify-between border-b border-[#F0ECE1] bg-[#FAF9F5] px-6 py-5">
+            <div className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-3xl border border-rule bg-paper shadow-2xl animate-in zoom-in-95">
+              <div className="sticky top-0 flex items-center justify-between border-b border-rule bg-paper-2 px-6 py-5">
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-2xl bg-[#151719] text-white">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-2xl bg-solid text-white">
                     <BookOpen size={16} />
                   </div>
                   <div>
-                    <span className="text-[10px] font-bold uppercase text-[#88909A]">{selectedCourse.specialty}</span>
-                    <h3 className="text-sm font-bold leading-tight text-[#151719]">{selectedCourse.title}</h3>
+                    <span className="text-[10px] font-bold uppercase text-ink-3">{selectedCourse.specialty}</span>
+                    <h3 className="text-sm font-bold leading-tight text-ink">{selectedCourse.title}</h3>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => setSelectedCourse(null)}
-                  className="flex h-8 w-8 items-center justify-center rounded-full text-[#575D65] transition-colors hover:bg-[#EAE8E3] cursor-pointer"
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-paper-2 cursor-pointer"
                   aria-label="Close course"
                 >
                   <X size={16} />
@@ -710,20 +710,20 @@ export default function Education() {
               </div>
 
               <div className="space-y-4 p-6 text-xs">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#F0ECE1] pb-2 text-[#88909A]">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-rule pb-2 text-ink-3">
                   <span>Faculty: <strong>{selectedCourse.speaker || 'Clinical faculty'}</strong></span>
                   <span className="font-mono">{selectedCourse.duration} · {selectedCourse.date}</span>
                 </div>
 
                 <div className="space-y-2">
-                  <h4 className="font-bold text-[#151719]">Clinical summary</h4>
-                  <p className="text-xs leading-relaxed text-[#575D65]">{selectedCourse.fullContent}</p>
+                  <h4 className="font-bold text-ink">Clinical summary</h4>
+                  <p className="text-xs leading-relaxed text-ink-2">{selectedCourse.fullContent}</p>
                 </div>
 
                 {selectedCourse.cmeCredits && (
-                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#E8E5DC] bg-[#FAF9F6] p-3">
-                    <div className="flex items-center gap-2 font-medium text-[#151719]">
-                      <Award size={16} className="shrink-0 text-amber-600" />
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-rule bg-canvas p-3">
+                    <div className="flex items-center gap-2 font-medium text-ink">
+                      <Award size={16} className="shrink-0 text-caution" />
                       <span>{selectedCourse.cmeCredits}</span>
                     </div>
                     <button
@@ -732,8 +732,8 @@ export default function Education() {
                       onClick={() => { void claimCredit(selectedCourse); }}
                       className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-60 ${
                         progress.claimed.includes(selectedCourse.id)
-                          ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-                          : 'bg-[#151719] text-white hover:bg-[#252830]'
+                          ? 'bg-settled text-white hover:bg-settled'
+                          : 'bg-solid text-white hover:bg-solid'
                       }`}
                     >
                       {pendingActionId === `claim-${selectedCourse.id}`
@@ -745,24 +745,24 @@ export default function Education() {
                   </div>
                 )}
 
-                <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#F0ECE1] pt-3">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-t border-rule pt-3">
                   <div className="flex flex-wrap items-center gap-2">
                     <button
                       type="button"
                       onClick={() => { void toggleBookmark(selectedCourse); }}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-[#E8E5DC] px-3 py-1.5 font-semibold text-[#151719] transition-colors hover:bg-[#F9F8F5] cursor-pointer"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-rule px-3 py-1.5 font-semibold text-ink transition-colors hover:bg-canvas cursor-pointer"
                     >
                       {progress.bookmarks.includes(selectedCourse.id)
-                        ? <><Check size={13} className="text-emerald-600" /> Saved</>
+                        ? <><Check size={13} className="text-settled" /> Saved</>
                         : <><Plus size={13} /> Save</>}
                     </button>
                     <button
                       type="button"
                       onClick={() => { void markComplete(selectedCourse); }}
                       disabled={progress.completed.includes(selectedCourse.id) || pendingActionId === `complete-${selectedCourse.id}`}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-[#E8E5DC] px-3 py-1.5 font-semibold text-[#151719] transition-colors hover:bg-[#F9F8F5] disabled:opacity-60 cursor-pointer"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-rule px-3 py-1.5 font-semibold text-ink transition-colors hover:bg-canvas disabled:opacity-60 cursor-pointer"
                     >
-                      <CheckCircle2 size={13} className={progress.completed.includes(selectedCourse.id) ? 'text-emerald-600' : ''} />
+                      <CheckCircle2 size={13} className={progress.completed.includes(selectedCourse.id) ? 'text-settled' : ''} />
                       {progress.completed.includes(selectedCourse.id) ? 'Completed' : 'Mark complete'}
                     </button>
                   </div>
@@ -771,7 +771,7 @@ export default function Education() {
                     <button
                       type="button"
                       onClick={() => exportCourse(selectedCourse)}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-[#E8E5DC] px-3 py-1.5 font-semibold text-[#575D65] transition-colors hover:text-[#151719] cursor-pointer"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-rule px-3 py-1.5 font-semibold text-ink-2 transition-colors hover:text-ink cursor-pointer"
                       title="Export course notes"
                     >
                       <Download size={13} />
@@ -779,7 +779,7 @@ export default function Education() {
                     <button
                       type="button"
                       onClick={() => { void shareCourse(selectedCourse); }}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-[#151719] px-4 py-1.5 font-semibold text-white shadow-xs transition-colors hover:bg-[#252830] cursor-pointer"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-solid px-4 py-1.5 font-semibold text-white shadow-xs transition-colors hover:bg-solid cursor-pointer"
                     >
                       <Share2 size={13} />
                       Share
@@ -794,21 +794,21 @@ export default function Education() {
         {/* Guideline update modal */}
         {selectedUpdate && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in">
-            <div className="w-full max-w-lg overflow-hidden rounded-3xl border border-[#E8E5DC] bg-white shadow-2xl animate-in zoom-in-95">
-              <div className="flex items-center justify-between border-b border-[#F0ECE1] bg-[#FAF9F5] px-6 py-5">
+            <div className="w-full max-w-lg overflow-hidden rounded-3xl border border-rule bg-paper shadow-2xl animate-in zoom-in-95">
+              <div className="flex items-center justify-between border-b border-rule bg-paper-2 px-6 py-5">
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-2xl bg-[#151719] text-white">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-2xl bg-solid text-white">
                     <BookOpen size={16} />
                   </div>
                   <div>
-                    <span className="text-[10px] font-bold uppercase text-[#88909A]">{selectedUpdate.guideline}</span>
-                    <h3 className="text-sm font-bold leading-tight text-[#151719]">{selectedUpdate.title}</h3>
+                    <span className="text-[10px] font-bold uppercase text-ink-3">{selectedUpdate.guideline}</span>
+                    <h3 className="text-sm font-bold leading-tight text-ink">{selectedUpdate.title}</h3>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => setSelectedUpdate(null)}
-                  className="flex h-8 w-8 items-center justify-center rounded-full text-[#575D65] transition-colors hover:bg-[#EAE8E3] cursor-pointer"
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-paper-2 cursor-pointer"
                   aria-label="Close update"
                 >
                   <X size={16} />
@@ -816,11 +816,11 @@ export default function Education() {
               </div>
 
               <div className="space-y-4 p-6 text-xs">
-                <div className="font-mono text-[11px] text-[#88909A]">Published: {selectedUpdate.date}</div>
-                <div className="rounded-2xl border border-[#E8E5DC] bg-[#FAF9F6] p-4 leading-relaxed text-[#151719]">
+                <div className="font-mono text-[11px] text-ink-3">Published: {selectedUpdate.date}</div>
+                <div className="rounded-2xl border border-rule bg-canvas p-4 leading-relaxed text-ink">
                   {selectedUpdate.content}
                 </div>
-                <div className="flex items-center justify-end gap-2 border-t border-[#F0ECE1] pt-3">
+                <div className="flex items-center justify-end gap-2 border-t border-rule pt-3">
                   <button
                     type="button"
                     onClick={() => {
@@ -830,7 +830,7 @@ export default function Education() {
                       );
                       showToast('Guideline summary downloaded.');
                     }}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-[#151719] px-4 py-2 font-semibold text-white shadow-xs transition-colors hover:bg-[#252830] cursor-pointer"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-solid px-4 py-2 font-semibold text-white shadow-xs transition-colors hover:bg-solid cursor-pointer"
                   >
                     <Download size={13} />
                     Download summary

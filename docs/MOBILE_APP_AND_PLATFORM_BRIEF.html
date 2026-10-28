@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proton — Demo Briefing</title>
+<style>
+  :root{
+    --paper:#edecea;
+    --card:#ffffff;
+    --ink:#151719;
+    --ink-2:#55565a;
+    --ink-3:#8a8a86;
+    --rule:#dedbd5;
+    --wash:#f6f5f3;
+    --critical:#b4342a;
+    --critical-wash:#f7e6e2;
+    --caution:#8a6414;
+    --caution-wash:#f6eeda;
+    --good:#2f6b3d;
+    --good-wash:#e6f0e7;
+    --lime:#ddf25b;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    --sans:"Helvetica Neue",Helvetica,"Segoe UI",Roboto,Arial,sans-serif;
+    --mono:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;background:var(--paper);color:var(--ink);
+    font-family:var(--sans);font-size:15px;line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .page{max-width:940px;margin:0 auto;padding:56px 48px 96px}
+  .eyebrow{
+    font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--ink-3);font-weight:600
+  }
+  h1{
+    font-family:var(--serif);font-weight:400;font-size:56px;line-height:1.02;
+    letter-spacing:-.03em;margin:14px 0 10px
+  }
+  h2{
+    font-family:var(--serif);font-weight:400;font-size:30px;line-height:1.15;
+    letter-spacing:-.02em;margin:56px 0 6px
+  }
+  h2 .num{
+    font-family:var(--mono);font-size:12px;color:var(--ink-3);
+    vertical-align:6px;margin-right:10px;letter-spacing:0
+  }
+  h3{font-size:15px;font-weight:650;letter-spacing:-.01em;margin:30px 0 8px}
+  p{margin:10px 0}
+  .lede{font-size:18px;line-height:1.55;color:var(--ink-2);max-width:60ch}
+  .rule{height:1px;background:var(--rule);border:0;margin:34px 0}
+  .meta{display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:var(--ink-3);
+    border-top:1px solid var(--rule);padding-top:14px;margin-top:26px}
+  .meta b{color:var(--ink-2);font-weight:600}
+
+  .callout{
+    background:var(--card);border:1px solid var(--rule);border-radius:16px;
+    padding:22px 24px;margin:24px 0;
+  }
+  .callout.pitch{
+    border-left:3px solid var(--ink);border-radius:4px 16px 16px 4px;
+    font-family:var(--serif);font-size:19px;line-height:1.5;letter-spacing:-.01em;
+  }
+  .callout .kicker{
+    display:block;font-family:var(--sans);font-size:10px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--ink-3);margin-bottom:10px;font-weight:600
+  }
+  .callout.pitch .kicker{margin-bottom:12px}
+  .callout.warn{background:var(--caution-wash);border-color:#e6d6ae}
+  .callout.warn .kicker{color:var(--caution)}
+
+  table{width:100%;border-collapse:collapse;margin:18px 0;font-size:13.5px}
+  th{
+    text-align:left;font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--ink-3);font-weight:650;padding:0 12px 9px 0;border-bottom:1px solid var(--rule)
+  }
+  td{padding:11px 12px 11px 0;border-bottom:1px solid #e9e7e2;vertical-align:top}
+  td:first-child{font-weight:600;width:26%}
+  td.lab{font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--ink-3);font-weight:650;padding-top:13px}
+  tr:last-child td{border-bottom:0}
+  .num-cell{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+  .phones{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:26px 0 8px}
+  .phone{
+    background:var(--card);border:1px solid var(--rule);border-radius:18px;
+    padding:8px;overflow:hidden
+  }
+  .phone img{display:block;width:100%;border-radius:12px}
+  .phone .cap{
+    font-size:11px;color:var(--ink-3);text-align:center;padding:8px 4px 4px;
+    letter-spacing:.02em
+  }
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:26px}
+  .stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:22px 0}
+  .stat{background:var(--card);border:1px solid var(--rule);border-radius:14px;padding:16px 16px 14px}
+  .stat .v{font-family:var(--serif);font-size:30px;line-height:1;letter-spacing:-.02em}
+  .stat .l{font-size:11px;color:var(--ink-3);margin-top:8px;letter-spacing:.02em}
+
+  .pill{
+    display:inline-block;font-size:10.5px;letter-spacing:.04em;font-weight:650;
+    padding:3px 9px;border-radius:999px;vertical-align:1px;white-space:nowrap
+  }
+  .pill.ok{background:var(--good-wash);color:var(--good)}
+  .pill.no{background:var(--critical-wash);color:var(--critical)}
+  .pill.mid{background:var(--caution-wash);color:var(--caution)}
+
+  ul.tight{margin:10px 0;padding-left:18px}
+  ul.tight li{margin:7px 0}
+  ol.steps{padding-left:20px}
+  ol.steps li{margin:8px 0}
+
+  .beat{
+    display:grid;grid-template-columns:64px 1fr;gap:16px;
+    padding:16px 0;border-bottom:1px solid #e9e7e2
+  }
+  .beat:last-child{border-bottom:0}
+  .beat .t{
+    font-family:var(--mono);font-size:11px;color:var(--ink-3);padding-top:3px
+  }
+  .beat .h{font-weight:650;margin-bottom:2px}
+  .beat .s{
+    font-family:var(--serif);font-style:italic;color:var(--ink-2);
+    margin-top:6px;font-size:14.5px;line-height:1.5
+  }
+
+  .faq{border-top:1px solid var(--rule)}
+  .qa{border-bottom:1px solid var(--rule);padding:15px 0}
+  .qa .q{font-weight:650;margin-bottom:4px}
+  .qa .a{color:var(--ink-2);max-width:72ch}
+
+  .foot{margin-top:60px;padding-top:18px;border-top:1px solid var(--rule);
+    font-size:12px;color:var(--ink-3)}
+  .foot a{color:var(--ink-2)}
+
+  code{font-family:var(--mono);font-size:.88em;background:#e4e2dd;
+    padding:1.5px 5px;border-radius:5px}
+  em.q{font-family:var(--serif);font-style:italic}
+
+  @media (max-width:720px){
+    .page{padding:32px 20px 64px}
+    h1{font-size:40px}
+    h2{font-size:25px;margin-top:42px}
+    .phones{grid-template-columns:1fr;max-width:320px;margin-inline:auto}
+    .grid2{grid-template-columns:1fr}
+    .stat-row{grid-template-columns:1fr 1fr}
+    td:first-child{width:38%}
+  }
+  @media print{
+    body{background:#fff;font-size:10.4pt}
+    .page{max-width:none;padding:0}
+    h2{page-break-after:avoid;margin-top:26pt}
+    h3{page-break-after:avoid}
+    .callout,.phone,.beat,.stat{page-break-inside:avoid}
+    table{page-break-inside:auto}
+    tr{page-break-inside:avoid}
+    .phones{page-break-inside:avoid;gap:8px}
+    .phone img{max-height:104mm;width:100%;object-fit:cover;object-position:top}
+    a{color:inherit;text-decoration:none}
+    a[href^="http"]::after{content:" (" attr(href) ")";font-size:8pt;color:#777}
+    .pb{page-break-before:always !important}
+    h2.pb{margin-top:0}
+  }
+  @page{margin:16mm 15mm}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <p class="eyebrow">Demo briefing · confidential</p>
+  <h1>Proton</h1>
+  <p class="lede">The patient app, the clinic console, and the one database both are
+  actually writing to. Everything you need to explain it — including what it does not
+  do yet.</p>
+  <div class="meta">
+    <span><b>Version</b> 1.0 · pilot cut</span>
+    <span><b>Date</b> 28 Oct 2026</span>
+    <span><b>Claims</b> docs/VALIDATION.md</span>
+    <span><b>Data</b> synthetic only</span>
+  </div>
+
+  <div class="callout pitch">
+    <span class="kicker">The 30-second pitch</span>
+    “Proton is the clinical record both sides can actually see. A patient on an
+    Android phone books a visit, answers a check-in, asks for a refill, or uploads a
+    document — offline if she has no signal. The moment the phone reaches the
+    network, it writes to the same Postgres rows the doctor’s console is reading.
+    There is no integration, no nightly sync, no second copy. The clinician side is an
+    AI copilot on top of that record: it drafts the note, checks the prescription, and
+    never signs anything. The doctor signs.”
+  </div>
+  <p style="font-size:14px;color:var(--ink-2)"><b>If they remember one line:</b>
+  <em class="q">“Two apps, one database.”</em> Everything after that is detail.</p>
+
+  <hr class="rule">
+
+  <h2><span class="num">01</span>The problem</h2>
+  <table>
+    <tr><th></th><th>Today, without Proton</th></tr>
+    <tr><td>Patient</td><td>A portal she opens twice a year. Booking means a phone call in office hours. A question after a visit has nowhere to go. Records are PDFs in an email.</td></tr>
+    <tr><td>Clinic</td><td>Front desk retypes what the patient already typed. Messages land in a voicemail box detached from the chart. The doctor retypes the story into a note the patient will never see.</td></tr>
+    <tr><td>The record</td><td>Fragmented across the portal, the fax, the EHR and the patient’s memory. Nothing reconciles.</td></tr>
+  </table>
+  <p>Proton’s bet: <b>the patient is a first-class writer to the clinical record</b>, and
+  the clinician’s job is to verify — not to transcribe.</p>
+
+  <h2><span class="num">02</span>The shape of the system</h2>
+  <table>
+    <tr><th>Layer</th><th>What it is</th></tr>
+    <tr><td>Patient app</td><td>Native Android · Kotlin + Jetpack Compose · offline-first outbox</td></tr>
+    <tr><td>Clinic console</td><td>React 19 + Vite + TypeScript + Tailwind · Care Loop polls every 3 s</td></tr>
+    <tr><td>API</td><td>Node 20+ / Express · deterministic safety rules · AI provider gateway</td></tr>
+    <tr><td>Operational store</td><td>PostgreSQL 16 · workflow state, outbox, audit chain, idempotency, tenancy</td></tr>
+    <tr><td>Clinical record</td><td>Medplum FHIR R4 · OAuth2 PKCE · standards vocabulary</td></tr>
+    <tr><td>AI</td><td>Gemini / Grok / DeepSeek / deterministic demo mode — server-side only</td></tr>
+  </table>
+  <p><b>FHIR R4 is the vocabulary; Postgres is the operational truth.</b> They meet in
+  the API, not in the browser. And the AI never sits in the write path of a clinical
+  decision: it proposes, a physician attests.</p>
+
+  <h2 class="pb"><span class="num">03</span>The mobile app</h2>
+  <p class="lede" style="font-size:16px">Not a web view. A first-party Compose app with
+  its own design system, its own persistence, and its own sync engine.</p>
+
+  <table>
+    <tr><th></th><th></th></tr>
+    <tr><td>Name on device</td><td><b>Dork</b> — working name, isolated to presentation strings; rebrand target is <i>Proton Patient</i></td></tr>
+    <tr><td>Stack</td><td>Kotlin · Jetpack Compose (Material 3) · Gradle 9.1 · JDK 17</td></tr>
+    <tr><td>Package / version</td><td><code>health.dork.app</code> · 1.0 (versionCode 1)</td></tr>
+    <tr><td>Android range</td><td>minSdk 26 (Android 8.0) · compile/target 36 · ~22 MB debug APK</td></tr>
+    <tr><td>Code</td><td>119 Kotlin files · ~21,800 lines · 28 test files / ~3,900 lines</td></tr>
+    <tr><td>Session</td><td>30-day patient session after a one-time sign-in code</td></tr>
+  </table>
+
+  <div class="phones">
+    <div class="phone"><img src="screens/onboarding-welcome.png" alt="Onboarding welcome">
+      <div class="cap">Welcome · 1 of 13</div></div>
+    <div class="phone"><img src="screens/onboarding-dob.png" alt="Date of birth step">
+      <div class="cap">Date of birth · 4 of 13</div></div>
+    <div class="phone"><img src="screens/onboarding-welcome-dark.png" alt="Dark mode">
+      <div class="cap">Real dark mode</div></div>
+  </div>
+
+
+  <h3>The design language — first thing they will feel</h3>
+  <ul class="tight">
+    <li><b>Warm paper, not clinical white.</b> Canvas <code>#EDECEA</code>, borderless white cards, hairline borders. Colour is reserved for clinical signal — critical, warning, confirmed — never decoration.</li>
+    <li><b>Editorial type.</b> Serif display with tight tracking, sans body, serif-italic card labels. Numbers that matter are drawn with a dot-matrix component, not typeset.</li>
+    <li><b>Real dark mode.</b> Deep ink-blue <code>#0B0E14</code> with three visible elevations — not inverted paper, not pure black that eats a 2 px border on OLED.</li>
+    <li><b>One continuous surface.</b> A floating pill tab bar: five icons; the active one grows into a dark pill and reveals its label.</li>
+    <li><b>Onboarding gets colour on purpose.</b> A deterministic gradient band and progress line per step, because a medical intake that looks like a tax form is an intake people abandon — often in a waiting room, at night, worried.</li>
+  </ul>
+
+  <h3>The 13-step onboarding</h3>
+  <p>Progressive, validated per step, resumable, and every answer editable later.
+  Order: welcome → account → full name → <b>date of birth</b> (picked from a calendar;
+  age is derived, never typed — leap-year and timezone safe) → sex → height → weight →
+  blood group → conditions → allergies (free-text supported) → medications → emergency
+  contact → complete.</p>
+  <p style="color:var(--ink-2)">The intake is not a formality: conditions and allergies
+  entered here are exactly what the clinician’s safety rules check prescriptions
+  against later.</p>
+
+  <h3>The five tabs</h3>
+  <table>
+    <tr><th>Home</th><td>Not a feed. A context-aware card stack: next appointment and its status, next doses with <i>Mark taken</i> / <i>Skip</i>, a vitals snapshot, recent records, and one <b>next action</b> card that changes with state — complete intake, answer a check-in, request a refill, book a visit. Nothing is more than one tap from the answer.</td></tr>
+    <tr><th>Care</th><td>Upcoming appointments (confirm / cancel / reschedule), doctor discovery by specialty and clinic, real availability, booking (slot → reason → confirm), pre-consultation intake (complaint, duration, severity 1–10, symptom checklist), post-visit check-in (better / same / worse, side effects, need to be seen), refill requests, and <b>From your clinic</b> — replies the doctor actually wrote.</td></tr>
+    <tr><th>Records</th><td>A chronological timeline uniting consultations, labs, prescriptions and imaging; record detail with its source document; prescription detail with the signed order; document upload from camera or file that is <b>sent to the clinic</b>, not just stored on the phone.</td></tr>
+    <tr><th>Dork AI</th><td>“Your health information, explained.” Answers cite the patient’s own records. Urgent symptoms are escalated immediately instead of answered — it is explicitly not a diagnosis channel, and the copy says so.</td></tr>
+    <tr><th>Profile</th><td>Health profile (editable), <b>Medical ID</b> for first responders (blood group, severe allergies, active medications, one-tap emergency dial), preferences, clinic connection, sync controls, sign out, and <b>Erase all data</b> — a device wipe, not a logout.</td></tr>
+  </table>
+  <p style="font-size:13px;color:var(--ink-3)">Plus 17 sub-screens reached from the
+  tabs: doctor detail · book · reschedule · intake · follow-up · refill · record detail ·
+  prescription detail · document upload · doctor chat · clinic inbox · health profile ·
+  medical ID · medications · clinic · sync · care packet.</p>
+
+  <h3>Offline — the part worth demoing</h3>
+  <p>The phone is not “cached”. It is <b>durable</b>:</p>
+  <ol class="steps">
+    <li>The action is written to a local <b>Room-backed outbox</b> with a stable <b>idempotency key</b> for that row.</li>
+    <li><code>WorkManager</code> (plus a foreground drain while the app is open) retries with backoff. Airplane mode is just “retry later”.</li>
+    <li>On success the server returns the canonical row; local state reconciles. Replaying the same key returns the original — no duplicates.</li>
+    <li>Pull is caller-scoped: the patient sees their own rows, derived from real columns (<code>confirmed_at</code> → <code>CONFIRMED</code>), not a mirrored copy.</li>
+  </ol>
+  <p>Consequence on stage: <b>booking in airplane mode is not a trick.</b> The row
+  simply has not left the device yet. When signal returns it lands exactly once.</p>
+
+  <h3>Identity, security, privacy</h3>
+  <ul class="tight">
+    <li><b>Clinic link, code + one-time code.</b> Clinic code → email → 6-digit code → 30-day session. Identity always comes from the issued session, never the request body.</li>
+    <li><b>Tenant isolation.</b> A second clinic sees an empty schedule and cannot act on the first clinic’s rows.</li>
+    <li><b>PHI never in logs.</b> Masking helpers; emails render as <code>c***@example.com</code>.</li>
+    <li><b><code>FLAG_SECURE</code></b> on high-sensitivity views — screenshots and screen recording blocked where it matters.</li>
+    <li><b>Erase all data</b> wipes local state, session and outbox.</li>
+  </ul>
+
+  <h2><span class="num">04</span>The clinic side — the laptop half</h2>
+  <p><b>Care Loop</b> is the live console, and the only clinic view reading the same
+  rows the phone writes: today’s schedule with confirmation state (3 s poll), a
+  <b>Needs attention</b> queue sorted by clinical urgency rather than arrival, reply
+  threads, patient documents and signed prescriptions in one sheet. Front desk can
+  confirm; only a clinician can author a clinical reply.</p>
+  <p style="color:var(--ink-2)">Around it: the consultation cockpit (ambient capture →
+  SOAP draft with provenance badges → deterministic prescription checks → PDF),
+  document review with fact-level approve/reject and citations, the patient profile and
+  longitudinal timeline, and self-serve clinic onboarding.</p>
+  <div class="callout warn">
+    <span class="kicker">Do not imply</span>
+    The older <b>Schedule</b> and <b>Patients</b> pages read a seeded workspace. Only
+    Care Loop is the live loop. Never show the two side by side as if they were the
+    same data.
+  </div>
+
+  <h2><span class="num">05</span>Numbers that are true</h2>
+  <div class="stat-row">
+    <div class="stat"><div class="v">119</div><div class="l">Kotlin files · ~21.8k lines</div></div>
+    <div class="stat"><div class="v">51</div><div class="l">API suites · 8 need Postgres</div></div>
+    <div class="stat"><div class="v">66</div><div class="l">workflow + live-loop checks</div></div>
+    <div class="stat"><div class="v">27</div><div class="l">tables · 9 migrations</div></div>
+  </div>
+  <p style="font-size:13px;color:var(--ink-3)">Also true: 5 tabs · 17 sub-screens ·
+  13 onboarding steps · 28 Android test files. Do <b>not</b> quote “212 tests”,
+  “100/100”, “35/35 dimensions” or “clinically validated” — those live in historical
+  milestone reports and are explicitly retracted in <code>docs/README.md</code>.</p>
+
+  <h2><span class="num">06</span>Real vs. not real — say it before they ask</h2>
+  <div class="grid2">
+    <div>
+      <h3 style="margin-top:14px"><span class="pill ok">proven</span></h3>
+      <ul class="tight">
+        <li>Airplane-mode booking lands in Postgres once and appears on the console within ~3 s of reconnection.</li>
+        <li>Clinic confirmation reaches the phone on its next pull, from the same column.</li>
+        <li>A check-in becomes a severity-sorted attention item (critical above routine).</li>
+        <li>A clinician reply reaches the patient inbox; the patient’s own message is never echoed back as clinic mail.</li>
+        <li>Tenant isolation, role gating, idempotent replay, audit-chain tamper detection, state and outbox survival across an API restart, dump → restore.</li>
+        <li>Production image builds, boots in production posture, and fails closed on the real routes.</li>
+      </ul>
+    </div>
+    <div>
+      <h3 style="margin-top:14px"><span class="pill no">not yet</span></h3>
+      <ul class="tight">
+        <li>No public deployment. Today’s demo is <b>localhost on the laptop, phone over USB</b> (<code>adb reverse</code>). An older deployed API host 404s every product route — never show or reuse it.</li>
+        <li>No push notifications. FCM is next; the phone polls every 15 s while open, and reminders are local exact alarms. A closed app does not light up.</li>
+        <li>No live-provider AI evaluation, no clinician-observed study, no load / pen / accessibility testing, no real Medplum round-trip in CI.</li>
+        <li>Synthetic patients only. No BAA, no real PHI.</li>
+        <li>The clinical agent stack is not yet bound to physician attestation — internal, not deployable.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2><span class="num">07</span>The 3-minute demo</h2>
+  <p style="color:var(--ink-2);font-size:14px">Setup: <code>npm run demo:seed</code>
+  (prints the clinic code and logins) → API on <code>:3002</code> → web on
+  <code>:3001</code> → Care Loop → phone via <code>adb reverse</code> → sign in once.
+  Full pre-flight and failure recovery: <code>docs/DEMO.md</code>.</p>
+
+  <div class="beat">
+    <div class="t">40 s</div>
+    <div>
+      <div class="h">1 · She books with no signal</div>
+      <div>Phone in airplane mode → <b>Care → Book appointment</b> → any slot → “Sore throat” → Confirm. Hold the phone up so the airplane icon is visible.</div>
+      <div class="s">“There is no network on this phone. The booking is on the device — watch the laptop: it genuinely doesn’t have this visit.”</div>
+    </div>
+  </div>
+  <div class="beat">
+    <div class="t">15 s</div>
+    <div>
+      <div class="h">2 · The clinic sees nothing yet</div>
+      <div>Laptop: Care Loop has the seeded visits and the refill request — not the new booking.</div>
+      <div class="s">“Same console a real front desk uses. It has no idea that booking exists, because it doesn’t. That is the honest state.”</div>
+    </div>
+  </div>
+  <div class="beat">
+    <div class="t">20 s</div>
+    <div>
+      <div class="h">3 · Signal comes back</div>
+      <div>Airplane mode off, app in foreground. Within 3 s the visit appears as “Awaiting confirmation”.</div>
+      <div class="s">“One request went out. The clinic’s poll picked it up. Nothing was re-keyed.”</div>
+    </div>
+  </div>
+  <div class="beat">
+    <div class="t">20 s</div>
+    <div>
+      <div class="h">4 · Reception confirms</div>
+      <div>Click <b>Confirm</b>; the badge flips. The phone’s next pull shows Confirmed.</div>
+      <div class="s">“That wrote one column — confirmed_at — on one row. There is no second copy to drift out of sync.”</div>
+    </div>
+  </div>
+  <div class="beat">
+    <div class="t">30 s</div>
+    <div>
+      <div class="h">5 · She says it got worse</div>
+      <div>Phone: <b>After your last visits → Answer check-in</b> → Worse + side effects + needs to be seen. A critical card appears above the routine refill.</div>
+      <div class="s">“The queue is sorted by clinical urgency, not by arrival. A patient asking to be seen never sits below a refill request.”</div>
+    </div>
+  </div>
+  <div class="beat">
+    <div class="t">45 s</div>
+    <div>
+      <div class="h">6 · The doctor answers</div>
+      <div>Laptop: <b>Open &amp; reply</b> → type the reply → <b>Send reply</b>. Within 15 s the phone shows “From your clinic — 1 new message”.</div>
+      <div class="s">“That message is the row the doctor just wrote. The phone didn’t get a push from a demo server — it pulled the clinic’s own record.”</div>
+    </div>
+  </div>
+  <div class="beat">
+    <div class="t">15 s</div>
+    <div>
+      <div class="h">Close</div>
+      <div class="s">“Two clients, one Postgres, no glue in between. A patient app that works offline, and a clinic console that sees the truth the moment the phone can reach it.”</div>
+    </div>
+  </div>
+
+  <p style="font-size:13px;color:var(--ink-3);margin-top:16px">Reset between rehearsals:
+  <code>npm run demo:reset</code> — deletes only <code>pat-demo-*</code> rows and issues
+  a new clinic code; the phone keeps its session. Memorise three recoveries: API without
+  <code>DATABASE_URL</code> (restart, no reseed) · cable pulled (replug + <code>adb
+  reverse</code> + <b>Sync now</b>) · stale tab (click <b>Refresh</b>).</p>
+
+  <h2><span class="num">08</span>Questions they will ask</h2>
+  <div class="faq">
+    <div class="qa"><div class="q">“Is this HIPAA compliant?”</div><div class="a">No — and say so plainly. This is a synthetic-data build with no BAA. HIPAA readiness is a deployment posture: BAAs, tenant boundaries, KMS encryption, audit retention. <code>docs/trust/</code> describes exactly what would need to be true.</div></div>
+    <div class="qa"><div class="q">“Is the AI making clinical decisions?”</div><div class="a">No. It drafts and it checks. Deterministic rules refuse an unsafe prescription — missing dose, frequency or duration; duplicate orders; cross-reactive allergies. Nothing becomes a signed note or order without physician attestation.</div></div>
+    <div class="qa"><div class="q">“What happens if the network dies mid-send?”</div><div class="a">The row stays in the outbox with its idempotency key and retries. A replay returns the original appointment instead of creating a second one. Tested, including process death and an API restart.</div></div>
+    <div class="qa"><div class="q">“How is this different from a patient portal?”</div><div class="a">A portal reads the record. This writes to it — in the same schema the clinic reads — and reconciles deterministically. There is no second copy to drift.</div></div>
+    <div class="qa"><div class="q">“Can I see it on my phone?”</div><div class="a">Today: install the APK and point it at the laptop over USB. A hosted URL is the pilot cut’s Days 1–2 work — do not promise it on the spot.</div></div>
+    <div class="qa"><div class="q">“What’s missing before a real clinic?”</div><div class="a">Deployment, FCM push, a restore drill on real hardware, a named clinician owner, and a signed BAA — in that order.</div></div>
+    <div class="qa"><div class="q">“Why does the icon say Dork?”</div><div class="a">Working name, isolated to presentation strings. Domain models, repositories and FHIR resources are already neutral, so the rebrand is a rename, not a rewrite.</div></div>
+  </div>
+
+  <h2><span class="num">09</span>Words to use and avoid</h2>
+  <table>
+    <tr><td class="lab">Say</td><td>“Durable offline outbox.” “One database, both halves.” “It proposes; the physician attests.” “Synthetic cohort.” “Hermetic regression suites.”</td></tr>
+    <tr><td class="lab">Don’t say</td><td>“HIPAA compliant.” “Clinically validated.” “AI diagnosis.” “Real-time push.” “Deployed and live.” “Production-ready.”</td></tr>
+    <tr><td class="lab">If unsure</td><td>“I can show you exactly what the tests cover — it’s docs/VALIDATION.md.” That sentence wins more trust than any number.</td></tr>
+  </table>
+
+  <div class="foot">
+    Companion documents · <a href="DEMO.md">DEMO.md</a> (stage script and recovery) ·
+    <a href="VALIDATION.md">VALIDATION.md</a> (claim boundaries) ·
+    <a href="PILOT_CUT.md">PILOT_CUT.md</a> (what’s left before a pilot) ·
+    <a href="../apps/dork-android/ARCHITECTURE.md">Android architecture</a>.
+    <br>Proton · internal demo briefing · synthetic data only.
+  </div>
+
+</div>
+</body>
+</html>

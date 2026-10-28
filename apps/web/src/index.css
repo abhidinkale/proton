@@ -1,18 +1,19 @@
 @import "tailwindcss";
+@import "./styles/palettes.css";
 
 @theme {
-  /* ── Refined Clinical Palette ── */
-  --color-brand-50: #f7f7f7;
-  --color-brand-100: #eeeeee;
-  --color-brand-200: #dedede;
-  --color-brand-300: #c7c7c7;
-  --color-brand-400: #a2a2a2;
-  --color-brand-500: #737373;
-  --color-brand-600: #292929;
-  --color-brand-700: #202020;
-  --color-brand-800: #191919;
-  --color-brand-900: #151515;
-  --color-brand-950: #111111;
+  /* ── Refined Clinical Palette (aliased to the palette tokens) ── */
+  --color-brand-50: var(--c-paper-2);
+  --color-brand-100: var(--c-paper-2);
+  --color-brand-200: var(--c-rule);
+  --color-brand-300: var(--c-rule-strong);
+  --color-brand-400: var(--c-ink-3);
+  --color-brand-500: var(--c-ink-3);
+  --color-brand-600: var(--c-ink-2);
+  --color-brand-700: var(--c-ink);
+  --color-brand-800: var(--c-ink);
+  --color-brand-900: var(--c-ink);
+  --color-brand-950: var(--c-solid);
 
   /* ── Typography ────────────────────────────────────────────────────────────
    * Fraunces carries the voice: a variable old-style serif with soft, slightly
@@ -26,50 +27,54 @@
   --font-editorial: 'Fraunces', 'Instrument Serif', Georgia, serif;
   --font-mono: 'IBM Plex Mono', 'SF Mono', ui-monospace, monospace;
 
-  /* ── Clinical Environment (Warm Alabaster Canvas & Deep Carbon Ink) ── */
-  --color-surface: #ffffff;
-  --color-surface-raised: #f7f6f2;
-  --color-surface-sunken: #edebe4;
+  /* ── Clinical Environment ──
+   * These older names are kept as aliases of the palette tokens. Pages written
+   * before the palette system still say `bg-[var(--color-surface)]`; pointing
+   * that at --c-paper is what makes them follow the doctor's atmosphere too.
+   * ──────────────────────────────────────────────────────────────────────── */
+  --color-surface: var(--c-paper);
+  --color-surface-raised: var(--c-canvas);
+  --color-surface-sunken: var(--c-paper-2);
   --color-surface-overlay: rgba(17, 19, 21, 0.45);
 
-  --color-border-default: #e4e2dd;
-  --color-border-subtle: #eeece6;
-  --color-border-strong: #d5d2c9;
+  --color-border-default: var(--c-rule);
+  --color-border-subtle: var(--c-rule);
+  --color-border-strong: var(--c-rule-strong);
 
-  --color-text-primary: #111315;
-  --color-text-secondary: #5a6065;
-  --color-text-tertiary: #8a9199;
-  --color-text-inverse: #ffffff;
+  --color-text-primary: var(--c-ink);
+  --color-text-secondary: var(--c-ink-2);
+  --color-text-tertiary: var(--c-ink-3);
+  --color-text-inverse: var(--c-on-solid);
 
   /* ── Semantic Colors (Restrained Clinical) ── */
-  --color-clinical-safe: #16a34a;
-  --color-clinical-safe-bg: #f0fdf4;
-  --color-clinical-warning: #d97706;
-  --color-clinical-warning-bg: #fffbeb;
-  --color-clinical-danger: #dc2626;
-  --color-clinical-danger-bg: #fef2f2;
-  --color-clinical-info: #2563eb;
-  --color-clinical-info-bg: #eff6ff;
+  --color-clinical-safe: var(--c-settled);
+  --color-clinical-safe-bg: var(--c-settled-wash);
+  --color-clinical-warning: var(--c-caution);
+  --color-clinical-warning-bg: var(--c-caution-wash);
+  --color-clinical-danger: var(--c-critical);
+  --color-clinical-danger-bg: var(--c-critical-wash);
+  --color-clinical-info: var(--accent);
+  --color-clinical-info-bg: var(--accent-wash);
 
   /* ── Proton Design System Tokens (PDS-1 Reference-Driven) ── */
-  --color-proton-canvas: #F9F8F5;
-  --color-proton-rail: #151619;
-  --color-proton-rail-border: #23252B;
-  --color-proton-card: #FFFFFF;
-  --color-proton-border: #E8E5DC;
-  --color-proton-border-subtle: #F0ECE1;
-  --color-proton-border-strong: #D6D2C4;
+  --color-proton-canvas: var(--c-canvas);
+  --color-proton-rail: var(--c-solid);
+  --color-proton-rail-border: var(--c-rule-strong);
+  --color-proton-card: var(--c-paper);
+  --color-proton-border: var(--c-rule);
+  --color-proton-border-subtle: var(--c-rule);
+  --color-proton-border-strong: var(--c-rule-strong);
 
-  --color-proton-canary: #FEF08A;
-  --color-proton-canary-text: #854D0E;
-  --color-proton-rose: #FCE7F3;
-  --color-proton-rose-text: #9D174D;
-  --color-proton-olive: #DCFCE7;
-  --color-proton-olive-text: #166534;
-  --color-proton-periwinkle: #E0E7FF;
-  --color-proton-periwinkle-text: #1E40AF;
-  --color-proton-ai: #18191D;
-  --color-proton-ai-accent: #F472B6;
+  --color-proton-canary: var(--c-caution-wash);
+  --color-proton-canary-text: var(--c-caution);
+  --color-proton-rose: var(--c-critical-wash);
+  --color-proton-rose-text: var(--c-critical);
+  --color-proton-olive: var(--c-settled-wash);
+  --color-proton-olive-text: var(--c-settled);
+  --color-proton-periwinkle: var(--accent-wash);
+  --color-proton-periwinkle-text: var(--accent-ink);
+  --color-proton-ai: var(--c-solid);
+  --color-proton-ai-accent: var(--accent);
 
   /* ── Border Radius (Refined Rounded-3xl Geometry) ── */
   --radius-sm: 0.25rem;
@@ -82,6 +87,45 @@
 
   /* ── Transitions ── */
   --ease-butter: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ══════════════════════════════════════════════════════════════════════
+   * SEMANTIC TOKENS — the only colours a component may name.
+   *
+   * Everything below resolves through --c-* variables that each palette in
+   * styles/palettes.css sets. A component that says `bg-paper` / `text-ink` /
+   * `border-rule` follows the doctor's chosen palette without knowing it
+   * exists; a component that says `bg-[#FAF9F6]` breaks it.
+   * ══════════════════════════════════════════════════════════════════════ */
+  --color-canvas: var(--c-canvas);
+  --color-paper: var(--c-paper);
+  --color-paper-2: var(--c-paper-2);
+  --color-rule: var(--c-rule);
+  --color-rule-strong: var(--c-rule-strong);
+
+  --color-ink: var(--c-ink);
+  --color-ink-2: var(--c-ink-2);
+  --color-ink-3: var(--c-ink-3);
+
+  --color-solid: var(--c-solid);
+  --color-on-solid: var(--c-on-solid);
+
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-wash: var(--accent-wash);
+  --color-accent-line: var(--accent-line);
+
+  --color-critical: var(--c-critical);
+  --color-critical-wash: var(--c-critical-wash);
+  --color-critical-line: var(--c-critical-line);
+  --color-critical-on-solid: var(--c-critical-on-solid);
+  --color-caution: var(--c-caution);
+  --color-caution-wash: var(--c-caution-wash);
+  --color-caution-line: var(--c-caution-line);
+  --color-caution-on-solid: var(--c-caution-on-solid);
+  --color-settled: var(--c-settled);
+  --color-settled-wash: var(--c-settled-wash);
+  --color-settled-line: var(--c-settled-line);
+  --color-settled-on-solid: var(--c-settled-on-solid);
 }
 
 :root {
@@ -96,66 +140,11 @@
   --radius-dialog: 0.75rem;
 }
 
-/* ── Accent system ──────────────────────────────────────────────────────────
- * One accent per clinician, chosen on the dashboard and stored per user.
- * Anything that used to hardcode blue reads these tokens instead, so switching
- * accent restyles the chart, primary actions, focus rings and selected
- * calendar day together. Set via <html data-accent="…">.
+/* ── Accent ─────────────────────────────────────────────────────────────────
+ * The accent now belongs to the palette (see styles/palettes.css): every one of
+ * the six atmospheres brings its own, so a separate accent picker would only
+ * fight it. Components still name --accent/-wash/-line, never a hex.
  * ────────────────────────────────────────────────────────────────────────── */
-:root,
-[data-accent='blue'] {
-  --accent: #4d6bfe;
-  --accent-strong: #3a55e0;
-  --accent-ink: #1f2f8f;
-  --accent-wash: #eef3ff;
-  --accent-line: #d8e2ff;
-  --accent-on: #ffffff;
-}
-
-[data-accent='teal'] {
-  --accent: #0f766e;
-  --accent-strong: #0b5a54;
-  --accent-ink: #083f3b;
-  --accent-wash: #e9f6f4;
-  --accent-line: #b9ded9;
-  --accent-on: #ffffff;
-}
-
-[data-accent='violet'] {
-  --accent: #6a4cd9;
-  --accent-strong: #5236b6;
-  --accent-ink: #38217f;
-  --accent-wash: #f1eefe;
-  --accent-line: #d6cbf7;
-  --accent-on: #ffffff;
-}
-
-[data-accent='amber'] {
-  --accent: #b26a0b;
-  --accent-strong: #8c5308;
-  --accent-ink: #5f3805;
-  --accent-wash: #fdf4e5;
-  --accent-line: #ecd3a8;
-  --accent-on: #fffdf8;
-}
-
-[data-accent='rose'] {
-  --accent: #b23a5a;
-  --accent-strong: #8e2b46;
-  --accent-ink: #5f1c2e;
-  --accent-wash: #fdefef;
-  --accent-line: #eec9d1;
-  --accent-on: #ffffff;
-}
-
-[data-accent='graphite'] {
-  --accent: #2a2e33;
-  --accent-strong: #14161a;
-  --accent-ink: #14161a;
-  --accent-wash: #f0efeb;
-  --accent-line: #d8d4c9;
-  --accent-on: #fbf9f3;
-}
 
 /* A single focus treatment, in the current accent. */
 :where(button, a, input, select, textarea, [tabindex]):focus-visible {
@@ -169,23 +158,21 @@
  * while the dashboard is mounted, so other pages keep their own surface.
  * ────────────────────────────────────────────────────────────────────────── */
 body.clinic-canvas {
-  background-color: #f7faff;
-  background-image:
-    radial-gradient(1100px 560px at 6% -10%, #ffffff 0%, rgba(255, 255, 255, 0) 62%),
-    radial-gradient(1100px 620px at 84% -8%, #cfdfff 0%, rgba(207, 223, 255, 0) 60%),
-    radial-gradient(760px 460px at 54% 4%, #edf3ff 0%, rgba(237, 243, 255, 0) 60%),
-    linear-gradient(180deg, #fbfdff 0%, #f5f8ff 36%, #f8fafe 100%);
+  background-color: var(--c-canvas);
+  background-image: radial-gradient(1100px 560px at 6% -10%, var(--c-paper) 0%, rgba(255, 255, 255, 0) 62%),
+    radial-gradient(1100px 620px at 84% -8%, var(--c-accent-wash) 0%, rgba(207, 223, 255, 0) 60%),
+    radial-gradient(760px 460px at 54% 4%, var(--c-accent-wash) 0%, rgba(237, 243, 255, 0) 60%),
+    linear-gradient(180deg, var(--c-canvas) 0%, var(--c-canvas) 36%, var(--c-canvas) 100%);
   background-attachment: fixed;
 }
 
 /* The shell paints its own warm ground, so repaint it in the desk's field. */
 body.clinic-canvas .proton-workspace-root {
-  background-color: #f7faff;
-  background-image:
-    radial-gradient(1100px 560px at 6% -10%, #ffffff 0%, rgba(255, 255, 255, 0) 62%),
-    radial-gradient(1100px 620px at 84% -8%, #cfdfff 0%, rgba(207, 223, 255, 0) 60%),
-    radial-gradient(760px 460px at 54% 4%, #edf3ff 0%, rgba(237, 243, 255, 0) 60%),
-    linear-gradient(180deg, #fbfdff 0%, #f5f8ff 36%, #f8fafe 100%);
+  background-color: var(--c-canvas);
+  background-image: radial-gradient(1100px 560px at 6% -10%, var(--c-paper) 0%, rgba(255, 255, 255, 0) 62%),
+    radial-gradient(1100px 620px at 84% -8%, var(--c-accent-wash) 0%, rgba(207, 223, 255, 0) 60%),
+    radial-gradient(760px 460px at 54% 4%, var(--c-accent-wash) 0%, rgba(237, 243, 255, 0) 60%),
+    linear-gradient(180deg, var(--c-canvas) 0%, var(--c-canvas) 36%, var(--c-canvas) 100%);
   background-attachment: fixed;
 }
 
@@ -199,34 +186,33 @@ body.clinic-canvas .proton-nav-active {
 }
 
 body.clinic-canvas .proton-search-trigger {
-  background: rgba(255, 255, 255, 0.78);
-  border-color: #e6ecfb;
+  background: color-mix(in srgb, var(--c-paper) 78%, transparent);
+  border-color: var(--c-rule);
 }
 
 body.clinic-canvas .proton-search-trigger:hover {
-  background: #ffffff;
-  border-color: #d8e2ff;
+  background: var(--c-paper);
+  border-color: var(--c-accent-line);
 }
 
 body.clinic-canvas .proton-cohort-card {
-  background: #ffffff;
-  border-color: #e6ecfb;
+  background: var(--c-paper);
+  border-color: var(--c-rule);
 }
 
 /* The calm card: white, generous radius, a hint of blue in the edge. */
 .clinic-card {
-  background: #ffffff;
-  border: 1px solid #e6ecfb;
+  background: var(--c-paper);
+  border: 1px solid var(--c-rule);
   border-radius: 18px;
-  box-shadow:
-    0 1px 1px rgba(23, 32, 64, 0.02),
+  box-shadow: 0 1px 1px rgba(23, 32, 64, 0.02),
     0 12px 32px -28px rgba(23, 32, 64, 0.35);
 }
 
 /* ── Base Styles (Modern Geometric Clinical Workspace) ── */
 html, body {
-  background-color: #F7F6F2;
-  color: #111315;
+  background-color: var(--c-canvas);
+  color: var(--c-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -267,42 +253,42 @@ button, input, select, textarea {
 
 .bg-clinical-grid {
   background-size: 32px 32px;
-  background-image: linear-gradient(to right, #222831 1px, transparent 1px), linear-gradient(to bottom, #222831 1px, transparent 1px);
+  background-image: linear-gradient(to right, var(--c-solid) 1px, transparent 1px), linear-gradient(to bottom, var(--c-solid) 1px, transparent 1px);
 }
 
 .bg-clinical-grid-light {
   background-size: 32px 32px;
-  background-image: linear-gradient(to right, #E4E2DD 1px, transparent 1px), linear-gradient(to bottom, #E4E2DD 1px, transparent 1px);
+  background-image: linear-gradient(to right, var(--c-rule) 1px, transparent 1px), linear-gradient(to bottom, var(--c-rule) 1px, transparent 1px);
 }
 
 /* High-contrast semantic badges */
 .badge-ai-draft {
-  background-color: #FFF8EB;
-  border: 1px solid #F59E0B;
-  color: #B45309;
+  background-color: var(--c-caution-wash);
+  border: 1px solid var(--c-caution-line);
+  color: var(--c-caution);
 }
 
 .badge-doctor-edited {
-  background-color: #ECFDF5;
-  border: 1px solid #10B981;
-  color: #047857;
+  background-color: var(--c-settled-wash);
+  border: 1px solid var(--c-settled-line);
+  color: var(--c-settled);
 }
 
 .badge-safety-intercept {
-  background-color: #FEF2F2;
-  border: 1px solid #EF4444;
-  color: #B91C1C;
+  background-color: var(--c-critical-wash);
+  border: 1px solid var(--c-critical-line);
+  color: var(--c-critical);
 }
 
 /* ── Selection ── */
 ::selection {
-  background-color: #e5e5e5;
-  color: #171717;
+  background-color: var(--c-paper-2);
+  color: var(--c-ink);
 }
 
 /* ── Focus Ring System ── */
 *:focus-visible {
-  outline: 2px solid #171717;
+  outline: 2px solid var(--c-ink);
   outline-offset: 1px;
 }
 
@@ -330,13 +316,13 @@ button, input, select, textarea {
   font-size: 1.5rem;
   font-weight: 600;
   letter-spacing: -0.02em;
-  color: #18181b;
+  color: var(--c-ink);
   line-height: 1.25;
 }
 
 .clinical-subtitle {
   font-size: 0.875rem;
-  color: #71717a;
+  color: var(--c-ink-2);
   line-height: 1.4;
 }
 
@@ -345,24 +331,24 @@ button, input, select, textarea {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #71717a;
+  color: var(--c-ink-2);
 }
 
 .clinical-value-large {
   font-size: 1.25rem;
   font-weight: 600;
   letter-spacing: -0.02em;
-  color: #18181b;
+  color: var(--c-ink);
 }
 
 /* ── Surface & Border Helpers ── */
 .clinical-surface {
-  background-color: #ffffff;
-  border: 1px solid #e4e4e7;
+  background-color: var(--c-paper);
+  border: 1px solid var(--c-rule);
 }
 
 .clinical-divider {
-  border-top: 1px solid #e4e4e7;
+  border-top: 1px solid var(--c-rule);
 }
 
 .clinical-table {
@@ -374,22 +360,22 @@ button, input, select, textarea {
   text-align: left;
   font-size: 0.75rem;
   font-weight: 600;
-  color: #71717a;
+  color: var(--c-ink-2);
   padding: 0.625rem 0.875rem;
-  border-bottom: 1px solid #e4e4e7;
-  background-color: #fafaf9;
+  border-bottom: 1px solid var(--c-rule);
+  background-color: var(--c-paper-2);
 }
 
 .clinical-table td {
   font-size: 0.8125rem;
-  color: #18181b;
+  color: var(--c-ink);
   padding: 0.75rem 0.875rem;
-  border-bottom: 1px solid #f4f4f5;
+  border-bottom: 1px solid var(--c-rule);
   vertical-align: middle;
 }
 
 .clinical-table tr:hover td {
-  background-color: #fbfbfa;
+  background-color: var(--c-paper-2);
 }
 
 /* ── Button Hierarchy (Clean & Restrained) ── */
@@ -398,8 +384,8 @@ button, input, select, textarea {
   align-items: center;
   justify-content: center;
   gap: 0.375rem;
-  background-color: #2563eb;
-  color: #ffffff;
+  background-color: var(--accent);
+  color: var(--c-on-solid);
   font-size: 0.8125rem;
   font-weight: 500;
   padding: 0.5rem 0.875rem;
@@ -410,7 +396,7 @@ button, input, select, textarea {
 }
 
 .clinical-btn-primary:hover {
-  background-color: #1d4ed8;
+  background-color: var(--accent-strong);
 }
 
 .clinical-btn-primary:disabled {
@@ -423,9 +409,9 @@ button, input, select, textarea {
   align-items: center;
   justify-content: center;
   gap: 0.375rem;
-  background-color: #ffffff;
-  color: #18181b;
-  border: 1px solid #e4e4e7;
+  background-color: var(--c-paper);
+  color: var(--c-ink);
+  border: 1px solid var(--c-rule);
   font-size: 0.8125rem;
   font-weight: 500;
   padding: 0.5rem 0.875rem;
@@ -436,8 +422,8 @@ button, input, select, textarea {
 }
 
 .clinical-btn-secondary:hover {
-  background-color: #f4f4f5;
-  border-color: #d4d4d8;
+  background-color: var(--c-paper-2);
+  border-color: var(--c-rule);
 }
 
 .clinical-btn-ghost {
@@ -446,7 +432,7 @@ button, input, select, textarea {
   justify-content: center;
   gap: 0.375rem;
   background-color: transparent;
-  color: #71717a;
+  color: var(--c-ink-2);
   font-size: 0.8125rem;
   font-weight: 500;
   padding: 0.375rem 0.625rem;
@@ -456,14 +442,14 @@ button, input, select, textarea {
 }
 
 .clinical-btn-ghost:hover {
-  color: #18181b;
-  background-color: #f4f4f5;
+  color: var(--c-ink);
+  background-color: var(--c-paper-2);
 }
 
 /* ── Backward Compatibility with Existing Proton Classes ── */
 .proton-card {
-  background-color: #ffffff;
-  border: 1px solid #e4e4e7;
+  background-color: var(--c-paper);
+  border: 1px solid var(--c-rule);
   border-radius: 0.5rem;
 }
 
@@ -481,49 +467,49 @@ button, input, select, textarea {
 }
 
 .proton-btn-primary {
-  background-color: #171717;
-  color: #ffffff;
+  background-color: var(--c-solid);
+  color: var(--c-on-solid);
 }
 
 .proton-btn-primary:hover {
-  background-color: #333333;
+  background-color: var(--c-solid);
 }
 
 .proton-btn-secondary {
-  background-color: #ffffff;
-  color: #18181b;
-  border: 1px solid #e4e4e7;
+  background-color: var(--c-paper);
+  color: var(--c-ink);
+  border: 1px solid var(--c-rule);
 }
 
 .proton-btn-secondary:hover {
-  background-color: #f4f4f5;
+  background-color: var(--c-paper-2);
 }
 
 .proton-btn-ghost {
   background-color: transparent;
-  color: #71717a;
+  color: var(--c-ink-2);
 }
 
 .proton-btn-ghost:hover {
-  color: #18181b;
-  background-color: #f4f4f5;
+  color: var(--c-ink);
+  background-color: var(--c-paper-2);
 }
 
 .proton-input {
   width: 100%;
   padding: 0.5rem 0.75rem;
   font-size: 0.8125rem;
-  color: #18181b;
-  background-color: #ffffff;
-  border: 1px solid #e4e4e7;
+  color: var(--c-ink);
+  background-color: var(--c-paper);
+  border: 1px solid var(--c-rule);
   border-radius: 0.375rem;
   transition: border-color 0.15s ease;
 }
 
 .proton-input:focus {
   outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 1px #2563eb;
+  border-color: var(--c-accent-line);
+  box-shadow: 0 0 0 1px var(--accent);
 }
 
 .proton-badge {
@@ -534,24 +520,24 @@ button, input, select, textarea {
   font-size: 0.75rem;
   font-weight: 500;
   border-radius: 0.25rem;
-  background-color: #f4f4f5;
-  color: #71717a;
+  background-color: var(--c-paper-2);
+  color: var(--c-ink-2);
 }
 
 .proton-divider {
-  border-top: 1px solid #e4e4e7;
+  border-top: 1px solid var(--c-rule);
 }
 
 .proton-micro-label {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #71717a;
+  color: var(--c-ink-2);
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
 
 .proton-shimmer {
-  background: #f4f4f5;
+  background: var(--c-paper-2);
 }
 
 .proton-animate-in {
@@ -560,15 +546,15 @@ button, input, select, textarea {
 
 /* Premium clinical workspace shell */
 .proton-workspace-shell {
-  --workspace-ink: #17231d;
-  --workspace-muted: #879189;
-  --workspace-line: #e8ebe5;
-  --workspace-accent: #c7e879;
+  --workspace-ink: var(--c-ink);
+  --workspace-muted: var(--c-ink-2);
+  --workspace-line: var(--c-rule);
+  --workspace-accent: var(--accent);
   display: flex;
   width: 100%;
   height: 100dvh;
   overflow: hidden;
-  background: #f5f6f1;
+  background: var(--c-paper-2);
   color: var(--workspace-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -581,10 +567,9 @@ button, input, select, textarea {
   flex: 0 0 252px;
   flex-direction: column;
   padding: 25px 16px 15px;
-  background:
-    radial-gradient(ellipse at 0% 0%, rgba(198, 231, 119, 0.08), transparent 42%),
-    #15211b;
-  color: #f5f7f2;
+  background: radial-gradient(ellipse at 0% 0%, rgba(198, 231, 119, 0.08), transparent 42%),
+    var(--c-solid);
+  color: var(--c-on-solid);
 }
 
 .proton-brand {
@@ -603,7 +588,7 @@ button, input, select, textarea {
   place-items: center;
   border-radius: 11px;
   background: var(--workspace-accent);
-  color: #1b281f;
+  color: var(--c-ink);
   box-shadow: 0 5px 18px rgba(199, 232, 121, 0.15);
 }
 
@@ -620,7 +605,7 @@ button, input, select, textarea {
 .proton-brand-caption {
   align-self: center;
   margin: 2px 0 0 auto;
-  color: #8c9a90;
+  color: var(--c-ink-3);
   font-family: var(--font-mono);
   font-size: 8px;
   letter-spacing: 0.12em;
@@ -636,7 +621,7 @@ button, input, select, textarea {
   border: 1px solid rgba(238, 243, 232, 0.1);
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.045);
-  color: #bdc7be;
+  color: var(--c-ink-3);
   font: inherit;
   font-size: 12px;
   text-align: left;
@@ -647,7 +632,7 @@ button, input, select, textarea {
 .proton-search-trigger:hover {
   border-color: rgba(199, 232, 121, 0.34);
   background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  color: var(--c-on-solid);
 }
 
 .proton-search-trigger kbd {
@@ -658,14 +643,14 @@ button, input, select, textarea {
   padding: 3px 5px;
   border: 1px solid rgba(238, 243, 232, 0.13);
   border-radius: 5px;
-  color: #9ba79e;
+  color: var(--c-ink-3);
   font-family: var(--font-mono);
   font-size: 9px;
 }
 
 .proton-nav-label {
   padding: 0 11px 10px;
-  color: #78867c;
+  color: var(--c-ink-2);
   font-family: var(--font-mono);
   font-size: 9px;
   font-weight: 600;
@@ -688,7 +673,7 @@ button, input, select, textarea {
   border: 0;
   border-radius: 9px;
   background: transparent;
-  color: #aab5ac;
+  color: var(--c-ink-3);
   font: inherit;
   font-size: 12px;
   font-weight: 500;
@@ -700,12 +685,12 @@ button, input, select, textarea {
 
 .proton-nav-link:hover {
   background: rgba(255, 255, 255, 0.065);
-  color: #fff;
+  color: var(--c-on-solid);
 }
 
 .proton-nav-link.is-active {
   background: rgba(199, 232, 121, 0.12);
-  color: #e5f4c5;
+  color: var(--c-on-solid);
 }
 
 .proton-nav-link.is-active::before {
@@ -746,14 +731,14 @@ button, input, select, textarea {
 
 .proton-safety-title {
   margin: 1px 0 4px;
-  color: #e5ebdf;
+  color: var(--c-on-solid);
   font-size: 10px;
   font-weight: 600;
 }
 
 .proton-safety-card p {
   margin: 0;
-  color: #9eaaa0;
+  color: var(--c-ink-3);
   font-size: 9px;
   line-height: 1.55;
 }
@@ -764,7 +749,7 @@ button, input, select, textarea {
 }
 
 .proton-signout:hover {
-  color: #ffc2b7;
+  color: var(--c-critical);
 }
 
 .proton-evaluator-profile {
@@ -784,7 +769,7 @@ button, input, select, textarea {
   border: 1px solid rgba(199, 232, 121, 0.3);
   border-radius: 50%;
   background: rgba(199, 232, 121, 0.12);
-  color: #d9eeac;
+  color: var(--c-on-solid);
   font-family: var(--font-mono);
   font-size: 9px;
 }
@@ -793,20 +778,20 @@ button, input, select, textarea {
   display: grid;
   gap: 3px;
   min-width: 0;
-  color: #e2e8e1;
+  color: var(--c-on-solid);
   font-size: 10px;
   font-weight: 500;
 }
 
 .proton-profile-copy small {
-  color: #87948a;
+  color: var(--c-ink-3);
   font-size: 9px;
   font-weight: 400;
 }
 
 .proton-profile-arrow {
   margin-left: auto;
-  color: #78867c;
+  color: var(--c-ink-2);
 }
 
 .proton-workspace-main {
@@ -827,13 +812,13 @@ button, input, select, textarea {
   gap: 20px;
   padding: 12px 34px;
   border-bottom: 1px solid var(--workspace-line);
-  background: rgba(255, 255, 255, 0.86);
+  background: color-mix(in srgb, var(--c-paper) 86%, transparent);
   backdrop-filter: blur(16px);
 }
 
 .proton-breadcrumb {
   margin-bottom: 4px;
-  color: #98a198;
+  color: var(--c-ink-3);
   font-family: var(--font-mono);
   font-size: 8px;
   font-weight: 600;
@@ -842,12 +827,12 @@ button, input, select, textarea {
 
 .proton-breadcrumb span {
   padding: 0 5px;
-  color: #c5cbc3;
+  color: var(--c-ink-3);
 }
 
 .proton-topbar-context h1 {
   margin: 0;
-  color: #1a261f;
+  color: var(--c-ink);
   font-size: 16px;
   font-weight: 600;
   letter-spacing: -0.025em;
@@ -865,10 +850,10 @@ button, input, select, textarea {
   align-items: center;
   gap: 7px;
   padding: 0 10px;
-  border: 1px solid #e4ead9;
+  border: 1px solid var(--c-rule);
   border-radius: 100px;
-  background: #f7faef;
-  color: #647448;
+  background: var(--c-accent-wash);
+  color: var(--c-settled);
   font-family: var(--font-mono);
   font-size: 8px;
   font-weight: 600;
@@ -881,17 +866,17 @@ button, input, select, textarea {
   width: 34px;
   height: 34px;
   place-items: center;
-  border: 1px solid #e5e9e2;
+  border: 1px solid var(--c-rule);
   border-radius: 9px;
-  background: #fff;
-  color: #69756b;
+  background: var(--c-paper);
+  color: var(--c-ink-2);
   cursor: pointer;
   transition: border-color 160ms ease, color 160ms ease;
 }
 
 .proton-topbar-search:hover {
-  border-color: #bdce9b;
-  color: #31422f;
+  border-color: var(--c-rule-strong);
+  color: var(--c-ink);
 }
 
 .proton-start-visit {
@@ -901,10 +886,10 @@ button, input, select, textarea {
   justify-content: center;
   gap: 8px;
   padding: 0 13px;
-  border: 1px solid #19261e;
+  border: 1px solid var(--c-solid);
   border-radius: 9px;
-  background: #19261e;
-  color: #f5f7f2;
+  background: var(--c-solid);
+  color: var(--c-on-solid);
   font: inherit;
   font-size: 11px;
   font-weight: 550;
@@ -914,7 +899,7 @@ button, input, select, textarea {
 
 .proton-start-visit:hover {
   transform: translateY(-1px);
-  background: #27382c;
+  background: var(--c-solid);
 }
 
 .proton-workspace-canvas {
@@ -946,7 +931,7 @@ button, input, select, textarea {
 
 .proton-workspace-shell button:focus-visible,
 .proton-workspace-shell a:focus-visible {
-  outline: 2px solid #a4c765;
+  outline: 2px solid var(--c-rule-strong);
   outline-offset: 2px;
 }
 
@@ -1021,7 +1006,7 @@ button, input, select, textarea {
     gap: 4px;
     padding: 8px 12px;
     border-bottom: 1px solid var(--workspace-line);
-    background: #fff;
+    background: var(--c-paper);
   }
 
   .proton-mobile-nav-link {
@@ -1034,7 +1019,7 @@ button, input, select, textarea {
     gap: 4px;
     padding: 6px 4px;
     border-radius: var(--radius-control);
-    color: #738076;
+    color: var(--c-ink-2);
     font-size: 10px;
     font-weight: 500;
     text-decoration: none;
@@ -1042,8 +1027,8 @@ button, input, select, textarea {
   }
 
   .proton-mobile-nav-link.is-active {
-    background: #eff4e6;
-    color: #35482e;
+    background: var(--c-paper-2);
+    color: var(--c-ink);
   }
 
   .proton-canvas-content {
@@ -1081,14 +1066,13 @@ button, input, select, textarea {
 
 /* Clinical command center */
 .proton-command-center {
-  --command-ink: #1b2921;
-  --command-muted: #77837a;
-  --command-line: #e4e9df;
+  --command-ink: var(--c-ink);
+  --command-muted: var(--c-ink-2);
+  --command-line: var(--c-rule);
   gap: 20px !important;
   padding: 27px clamp(18px, 3vw, 42px) 44px !important;
-  background:
-    radial-gradient(ellipse at 88% 5%, rgba(216, 231, 195, 0.22), transparent 31%),
-    #f5f6f1 !important;
+  background: radial-gradient(ellipse at 88% 5%, rgba(216, 231, 195, 0.22), transparent 31%),
+    var(--c-paper-2) !important;
   color: var(--command-ink) !important;
 }
 
@@ -1105,10 +1089,10 @@ button, input, select, textarea {
 
 .proton-command-header > div:first-child > div:first-child:not(.proton-dashboard-eyebrow) {
   padding: 6px 10px !important;
-  border: 1px solid #e2e8d9;
+  border: 1px solid var(--c-rule);
   border-radius: 8px !important;
-  background: #edf3e4 !important;
-  color: #526641 !important;
+  background: var(--c-paper-2) !important;
+  color: var(--c-ink-2) !important;
   box-shadow: none !important;
 }
 
@@ -1120,12 +1104,12 @@ button, input, select, textarea {
 .proton-command-header > div:first-child > div:first-child span:first-child {
   width: 6px !important;
   height: 6px !important;
-  background: #8fac44 !important;
+  background: var(--accent) !important;
 }
 
 .proton-command-header h1 {
   margin-right: 8px;
-  color: #1a261f !important;
+  color: var(--c-ink) !important;
   font-size: clamp(19px, 2vw, 24px) !important;
   font-weight: 610 !important;
   letter-spacing: -0.045em !important;
@@ -1134,8 +1118,8 @@ button, input, select, textarea {
 .proton-command-header > div:first-child > div:nth-last-child(2) > button,
 .proton-command-header input {
   min-height: 34px;
-  border-color: #e2e7df !important;
-  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: var(--c-rule) !important;
+  background: color-mix(in srgb, var(--c-paper) 90%, transparent) !important;
   box-shadow: 0 2px 5px rgba(29, 44, 32, 0.025);
 }
 
@@ -1156,30 +1140,30 @@ button, input, select, textarea {
   border: 1px solid transparent;
   border-radius: 9px !important;
   background: transparent !important;
-  color: #66736a !important;
+  color: var(--c-ink-2) !important;
   font-size: 10px !important;
   font-weight: 550 !important;
   transition: background 150ms ease, color 150ms ease, border-color 150ms ease !important;
 }
 
 .proton-dashboard-tabs button:hover {
-  background: #fff !important;
-  color: #26352a !important;
+  background: var(--c-paper) !important;
+  color: var(--c-ink) !important;
 }
 
 .proton-dashboard-tabs button[class*="border-black/5"] {
-  border-color: #e2e8dd !important;
-  background: #fff !important;
-  color: #25352a !important;
+  border-color: var(--c-rule) !important;
+  background: var(--c-paper) !important;
+  color: var(--c-ink) !important;
   box-shadow: 0 2px 6px rgba(32, 48, 34, 0.045) !important;
 }
 
 .proton-patient-banner {
   gap: 26px !important;
   padding: 19px 21px !important;
-  border: 1px solid #e4e9df !important;
+  border: 1px solid var(--c-rule) !important;
   border-radius: 18px !important;
-  background: rgba(255, 255, 255, 0.94) !important;
+  background: color-mix(in srgb, var(--c-paper) 94%, transparent) !important;
   box-shadow: 0 8px 24px rgba(27, 41, 33, 0.035) !important;
 }
 
@@ -1189,16 +1173,16 @@ button, input, select, textarea {
 }
 
 .proton-patient-banner h2 {
-  color: #1b2921 !important;
+  color: var(--c-ink) !important;
   font-size: 20px !important;
   font-weight: 620 !important;
   letter-spacing: -0.04em !important;
 }
 
-.proton-patient-banner > div:first-child span[class*="bg-[#1c221e]"] {
+.proton-patient-banner > div:first-child span[class*="bg-solid"] {
   border-radius: 7px !important;
-  background: #23332a !important;
-  color: #e8f1d5 !important;
+  background: var(--c-solid) !important;
+  color: var(--c-on-solid) !important;
 }
 
 .proton-patient-banner > div:last-child {
@@ -1215,7 +1199,7 @@ button, input, select, textarea {
 .proton-patient-banner > div:last-child > div:first-child > div {
   min-width: 0;
   padding: 2px 12px;
-  border-left: 1px solid #edf0eb;
+  border-left: 1px solid var(--c-rule);
 }
 
 .proton-patient-banner > div:last-child > div:first-child > div:first-child {
@@ -1224,14 +1208,14 @@ button, input, select, textarea {
 }
 
 .proton-patient-banner > div:last-child > div:first-child > div > div:first-child {
-  color: #89948a !important;
+  color: var(--c-ink-3) !important;
   font-size: 9px !important;
   letter-spacing: 0.025em;
 }
 
 .proton-patient-banner > div:last-child > div:first-child > div > div:last-child {
   margin-top: 4px !important;
-  color: #26352a !important;
+  color: var(--c-ink) !important;
   font-size: 14px !important;
   font-weight: 620 !important;
 }
@@ -1240,44 +1224,44 @@ button, input, select, textarea {
   font-size: 12px !important;
 }
 
-.proton-patient-banner button[class*="bg-[#1c221e]"] {
+.proton-patient-banner button[class*="bg-solid"] {
   min-height: 37px;
   padding: 0 14px !important;
   border-radius: 9px !important;
-  background: #203127 !important;
-  color: #f4f7ee !important;
+  background: var(--c-solid) !important;
+  color: var(--c-on-solid) !important;
   box-shadow: 0 4px 10px rgba(28, 49, 34, 0.12) !important;
 }
 
 .proton-beta-tour {
   align-items: center;
   padding: 13px 16px !important;
-  border: 1px solid #e2e9d8 !important;
+  border: 1px solid var(--c-settled-line) !important;
   border-radius: 13px !important;
-  background: linear-gradient(105deg, #edf3e5, #f7f9f2 70%) !important;
-  color: #26352a !important;
+  background: linear-gradient(105deg, var(--c-paper-2), var(--c-paper-2) 70%) !important;
+  color: var(--c-ink) !important;
   box-shadow: none !important;
 }
 
 .proton-beta-tour > div:first-child > div:first-child {
-  border-color: #dce6ce !important;
-  background: #e4edd7 !important;
-  color: #647b42 !important;
+  border-color: var(--c-settled-line) !important;
+  background: var(--c-paper-2) !important;
+  color: var(--accent-ink) !important;
 }
 
 .proton-beta-tour h3 {
-  color: #253329 !important;
+  color: var(--c-ink) !important;
   font-size: 12px !important;
   font-weight: 620 !important;
 }
 
 .proton-beta-tour > div:first-child span {
-  background: #e1ebd2 !important;
-  color: #647946 !important;
+  background: var(--c-paper-2) !important;
+  color: var(--accent-ink) !important;
 }
 
 .proton-beta-tour p {
-  color: #768276 !important;
+  color: var(--c-ink-2) !important;
   font-size: 10px !important;
 }
 
@@ -1285,48 +1269,48 @@ button, input, select, textarea {
 .proton-beta-tour button {
   min-height: 34px;
   padding: 0 12px !important;
-  border: 1px solid #dce5d2;
+  border: 1px solid var(--c-settled-line);
   border-radius: 8px !important;
-  background: #fff !important;
-  color: #314332 !important;
+  background: var(--c-paper) !important;
+  color: var(--c-ink) !important;
   box-shadow: 0 2px 5px rgba(28, 49, 34, 0.04) !important;
 }
 
 .proton-dynamics-panel {
   padding: 18px 20px !important;
-  border: 1px solid #e3e8df !important;
+  border: 1px solid var(--c-rule) !important;
   border-radius: 17px !important;
-  background: #fff !important;
+  background: var(--c-paper) !important;
   box-shadow: 0 8px 24px rgba(27, 41, 33, 0.035) !important;
 }
 
 .proton-dynamics-panel > div:first-child {
   padding-bottom: 13px !important;
-  border-color: #edf0eb !important;
+  border-color: var(--c-rule) !important;
 }
 
 .proton-dynamics-panel > div:first-child > div:first-child span:last-child {
-  color: #617064 !important;
+  color: var(--c-ink-2) !important;
   font-size: 9px !important;
   letter-spacing: 0.055em;
 }
 
-.proton-dynamics-panel > div:first-child button[class*="bg-[#1b211d]"] {
-  background: #223128 !important;
-  color: #f5f7ee !important;
+.proton-dynamics-panel > div:first-child button[class*="bg-solid"] {
+  background: var(--c-solid) !important;
+  color: var(--c-on-solid) !important;
 }
 
-.proton-dynamics-panel > div:first-child button[class*="bg-[#1b211d]"] span {
-  color: #f5f7ee !important;
+.proton-dynamics-panel > div:first-child button[class*="bg-solid"] span {
+  color: var(--c-on-solid) !important;
 }
 
-.proton-dynamics-panel > div:first-child button[class*="bg-[#1b211d]"]:last-child {
-  color: #e4f1d2 !important;
+.proton-dynamics-panel > div:first-child button[class*="bg-solid"]:last-child {
+  color: var(--c-on-solid) !important;
 }
 
 .proton-command-center button:focus-visible,
 .proton-command-center a:focus-visible {
-  outline: 2px solid #9dbb69;
+  outline: 2px solid var(--c-rule-strong);
   outline-offset: 2px;
 }
 
@@ -1441,164 +1425,164 @@ button, input, select, textarea {
 
 /* Quiet monochrome workspace */
 .proton-workspace-shell {
-  --workspace-ink: #171717;
-  --workspace-muted: #737373;
-  --workspace-line: #e8e8e8;
-  --workspace-accent: #171717;
-  background: #fff;
-  color: #171717;
+  --workspace-ink: var(--c-ink);
+  --workspace-muted: var(--c-ink-2);
+  --workspace-line: var(--c-rule);
+  --workspace-accent: var(--accent);
+  background: var(--c-paper);
+  color: var(--c-ink);
 }
 
 .proton-sidebar {
-  border-right: 1px solid #e8e8e8;
-  background: #fff;
-  color: #171717;
+  border-right: 1px solid var(--c-rule);
+  background: var(--c-paper);
+  color: var(--c-ink);
 }
 
 .proton-brand-mark {
   border-radius: 9px;
-  background: #171717;
-  color: #fff;
+  background: var(--c-solid);
+  color: var(--c-on-solid);
   box-shadow: none;
 }
 
 .proton-brand-word span {
-  color: #737373;
+  color: var(--c-ink-2);
 }
 
 .proton-brand-caption,
 .proton-nav-label,
 .proton-profile-copy small {
-  color: #858585;
+  color: var(--c-ink-3);
 }
 
 .proton-search-trigger {
-  border-color: #e7e7e7;
+  border-color: var(--c-rule);
   border-radius: 8px;
-  background: #fff;
-  color: #666;
+  background: var(--c-paper);
+  color: var(--c-ink-2);
 }
 
 .proton-search-trigger:hover {
-  border-color: #c8c8c8;
-  background: #fafafa;
-  color: #171717;
+  border-color: var(--c-rule-strong);
+  background: var(--c-paper-2);
+  color: var(--c-ink);
 }
 
 .proton-search-trigger kbd {
-  border-color: #e7e7e7;
-  color: #777;
+  border-color: var(--c-rule);
+  color: var(--c-ink-2);
 }
 
 .proton-nav-link {
   border-radius: var(--radius-control);
-  color: #666;
+  color: var(--c-ink-2);
 }
 
 .proton-nav-link:hover {
-  background: #f6f6f6;
-  color: #171717;
+  background: var(--c-paper-2);
+  color: var(--c-ink);
 }
 
 .proton-nav-link.is-active {
-  background: #f2f2f2;
-  color: #171717;
+  background: var(--c-paper-2);
+  color: var(--c-ink);
 }
 
 .proton-nav-link.is-active::before {
-  background: #171717;
+  background: var(--c-solid);
 }
 
 .proton-safety-card {
-  border-color: #e8e8e8;
+  border-color: var(--c-rule);
   border-radius: var(--radius-card);
-  background: #fafafa;
+  background: var(--c-paper-2);
 }
 
 .proton-safety-icon,
 .proton-avatar {
-  border-color: #e6e6e6;
-  background: #f1f1f1;
-  color: #343434;
+  border-color: var(--c-rule);
+  background: var(--c-paper-2);
+  color: var(--c-ink);
 }
 
 .proton-safety-title,
 .proton-profile-copy {
-  color: #333;
+  color: var(--c-ink);
 }
 
 .proton-safety-card p {
-  color: #777;
+  color: var(--c-ink-2);
 }
 
 .proton-sidebar-footer,
 .proton-evaluator-profile {
-  border-color: #e8e8e8;
+  border-color: var(--c-rule);
 }
 
 .proton-topbar {
-  border-color: #e8e8e8;
-  background: rgba(255, 255, 255, 0.96);
+  border-color: var(--c-rule);
+  background: color-mix(in srgb, var(--c-paper) 96%, transparent);
 }
 
 .proton-breadcrumb,
 .proton-breadcrumb span {
-  color: #8a8a8a;
+  color: var(--c-ink-3);
 }
 
 .proton-topbar-context h1 {
-  color: #171717;
+  color: var(--c-ink);
 }
 
 .proton-environment-pill {
-  border-color: #e7e7e7;
+  border-color: var(--c-rule);
   border-radius: var(--radius-control);
-  background: #fafafa;
-  color: #666;
+  background: var(--c-paper-2);
+  color: var(--c-ink-2);
 }
 
 .proton-topbar-search {
-  border-color: #e7e7e7;
+  border-color: var(--c-rule);
   border-radius: 8px;
-  color: #555;
+  color: var(--c-ink-2);
 }
 
 .proton-topbar-search:hover {
-  border-color: #bdbdbd;
-  color: #171717;
+  border-color: var(--c-rule-strong);
+  color: var(--c-ink);
 }
 
 .proton-start-visit {
-  border-color: #171717;
+  border-color: var(--c-rule-strong);
   border-radius: 8px;
-  background: #171717;
-  color: #fff;
+  background: var(--c-solid);
+  color: var(--c-on-solid);
 }
 
 .proton-start-visit:hover {
-  background: #333;
+  background: var(--c-solid);
 }
 
 .proton-workspace-canvas {
-  background: #f8f8f8;
+  background: var(--c-paper-2);
 }
 
 .proton-mobile-nav {
-  border-color: #e8e8e8;
-  background: rgba(255, 255, 255, 0.97);
+  border-color: var(--c-rule);
+  background: color-mix(in srgb, var(--c-paper) 97%, transparent);
 }
 
 .proton-mobile-nav-link {
-  color: #666;
+  color: var(--c-ink-2);
 }
 
 .proton-mobile-nav-link.is-active {
-  background: #f1f1f1;
-  color: #171717;
+  background: var(--c-paper-2);
+  color: var(--c-ink);
 }
 
 .proton-mobile-nav-link.is-active::before {
-  background: #171717;
+  background: var(--c-solid);
 }
 
 .proton-environment-copy-short {
@@ -1607,7 +1591,7 @@ button, input, select, textarea {
 
 #root .proton-workspace-shell button:focus-visible,
 #root .proton-workspace-shell a:focus-visible {
-  outline-color: #171717;
+  outline-color: var(--c-ink);
 }
 
 @media (max-width: 420px) {
@@ -1621,28 +1605,28 @@ button, input, select, textarea {
 }
 
 .proton-command-center {
-  --command-ink: #171717;
-  --command-muted: #737373;
-  --command-line: #e7e7e7;
+  --command-ink: var(--c-ink);
+  --command-muted: var(--c-ink-2);
+  --command-line: var(--c-rule);
   gap: 18px !important;
-  background: #f8f8f8 !important;
-  color: #171717 !important;
+  background: var(--c-paper-2) !important;
+  color: var(--c-ink) !important;
 }
 
 .proton-command-center svg[class*="text-emerald-"],
 .proton-command-center svg[class*="text-purple-"],
 .proton-command-center svg[class*="text-amber-"] {
-  color: #777 !important;
+  color: var(--c-ink-2) !important;
 }
 
 .proton-command-center div[class*="bg-emerald-50"],
 .proton-command-center div[class*="bg-purple-50"] {
-  background: #f2f2f2 !important;
-  color: #555 !important;
+  background: var(--c-paper-2) !important;
+  color: var(--c-ink-2) !important;
 }
 
 .proton-command-header {
-  border-color: #e7e7e7;
+  border-color: var(--c-rule);
 }
 
 .proton-command-header > div:first-child > .proton-dashboard-eyebrow {
@@ -1651,14 +1635,14 @@ button, input, select, textarea {
   border-radius: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
-  color: #777;
+  color: var(--c-ink-2);
   font-size: 9px;
   font-weight: 600;
   letter-spacing: 0.12em;
 }
 
 .proton-command-header h1 {
-  color: #171717 !important;
+  color: var(--c-ink) !important;
   font-size: clamp(22px, 2.2vw, 28px) !important;
   font-weight: 550 !important;
   letter-spacing: -0.045em !important;
@@ -1666,14 +1650,14 @@ button, input, select, textarea {
 
 .proton-command-header > div:first-child > div:nth-last-child(2) > button,
 .proton-command-header input {
-  border-color: #e4e4e4 !important;
+  border-color: var(--c-rule) !important;
   border-radius: 8px !important;
-  background: #fff !important;
+  background: var(--c-paper) !important;
   box-shadow: none !important;
 }
 
 .proton-dashboard-tabs {
-  border-bottom: 1px solid #e7e7e7;
+  border-bottom: 1px solid var(--c-rule);
   gap: 2px !important;
 }
 
@@ -1682,183 +1666,177 @@ button, input, select, textarea {
   border: 0;
   border-bottom: 2px solid transparent;
   border-radius: 0 !important;
-  color: #737373 !important;
+  color: var(--c-ink-2) !important;
 }
 
 .proton-dashboard-tabs button:hover {
   background: transparent !important;
-  color: #171717 !important;
+  color: var(--c-ink) !important;
 }
 
 .proton-dashboard-tabs button[class*="border-black/5"] {
-  border-color: #171717 !important;
+  border-color: var(--c-ink) !important;
   background: transparent !important;
-  color: #171717 !important;
+  color: var(--c-ink) !important;
   box-shadow: none !important;
 }
 
 .proton-patient-banner {
   gap: 22px !important;
-  border-color: #e5e5e5 !important;
+  border-color: var(--c-rule-strong) !important;
   border-radius: 12px !important;
-  background: #fff !important;
+  background: var(--c-paper) !important;
   box-shadow: none !important;
 }
 
 .proton-patient-banner h2 {
-  color: #171717 !important;
+  color: var(--c-ink) !important;
   font-size: 21px !important;
   font-weight: 560 !important;
 }
 
 .proton-patient-banner > div:first-child img {
-  border: 1px solid #e7e7e7 !important;
+  border: 1px solid var(--c-rule) !important;
   border-radius: 10px !important;
 }
 
-.proton-patient-banner > div:first-child > div:last-child > div:first-child > span[class*="bg-[#1c221e]"] {
-  border: 1px solid #e6e6e6;
+.proton-patient-banner > div:first-child > div:last-child > div:first-child > span[class*="bg-solid"] {
+  border: 1px solid var(--c-rule);
   border-radius: 5px !important;
-  background: #f5f5f5 !important;
-  color: #555 !important;
+  background: var(--c-paper-2) !important;
+  color: var(--c-ink-2) !important;
 }
 
-.proton-dashboard-tabs button span[class*="bg-[#1c221e]"] {
+.proton-dashboard-tabs button span[class*="bg-solid"] {
   border-radius: 4px !important;
-  background: #ededed !important;
-  color: #444 !important;
+  background: var(--c-paper-2) !important;
+  color: var(--c-ink-3) !important;
 }
 
 .proton-patient-banner > div:last-child > div:first-child > div {
-  border-color: #ededed;
+  border-color: var(--c-rule);
 }
 
 .proton-patient-banner > div:last-child > div:first-child > div > div:first-child {
-  color: #888 !important;
+  color: var(--c-ink-3) !important;
 }
 
 .proton-patient-banner > div:last-child > div:first-child > div > div:last-child {
-  color: #222 !important;
+  color: var(--c-ink) !important;
   font-weight: 570 !important;
 }
 
-.proton-patient-banner button[class*="bg-[#1c221e]"] {
+.proton-patient-banner button[class*="bg-solid"] {
   border-radius: 7px !important;
-  background: #171717 !important;
+  background: var(--c-solid) !important;
   box-shadow: none !important;
 }
 
 .proton-beta-tour {
   gap: 14px;
-  border-color: #e5e5e5 !important;
+  border-color: var(--c-rule-strong) !important;
   border-radius: 10px !important;
-  background: #fff !important;
-  color: #171717 !important;
+  background: var(--c-paper) !important;
+  color: var(--c-ink) !important;
   box-shadow: none !important;
 }
 
 .proton-beta-tour > div:first-child > div:first-child {
-  border-color: #e4e4e4 !important;
+  border-color: var(--c-rule) !important;
   border-radius: 8px !important;
-  background: #f3f3f3 !important;
-  color: #444 !important;
+  background: var(--c-paper-2) !important;
+  color: var(--c-ink-3) !important;
 }
 
 .proton-beta-tour h3 {
-  color: #222 !important;
+  color: var(--c-ink) !important;
   font-size: 13px !important;
   font-weight: 570 !important;
 }
 
 .proton-beta-tour > div:first-child span {
-  border: 1px solid #e5e5e5;
+  border: 1px solid var(--c-rule-strong);
   border-radius: 4px !important;
-  background: #f7f7f7 !important;
-  color: #777 !important;
+  background: var(--c-paper-2) !important;
+  color: var(--c-ink-2) !important;
   letter-spacing: 0.07em;
 }
 
 .proton-beta-tour p {
-  color: #777 !important;
+  color: var(--c-ink-2) !important;
   font-size: 11px !important;
 }
 
 .proton-beta-tour a,
 .proton-beta-tour button {
-  border-color: #dedede;
+  border-color: var(--c-rule);
   border-radius: 7px !important;
-  background: #171717 !important;
-  color: #fff !important;
+  background: var(--c-solid) !important;
+  color: var(--c-on-solid) !important;
   box-shadow: none !important;
 }
 
 .proton-dynamics-panel {
   padding: 18px 20px !important;
-  border-color: #e5e5e5 !important;
+  border-color: var(--c-rule-strong) !important;
   border-radius: 12px !important;
-  background: #fff !important;
+  background: var(--c-paper) !important;
   box-shadow: none !important;
 }
 
 .proton-dynamics-panel > div:first-child {
-  border-color: #ededed !important;
+  border-color: var(--c-rule) !important;
 }
 
 .proton-dynamics-panel > div:first-child > div:first-child span:last-child {
-  color: #666 !important;
+  color: var(--c-ink-2) !important;
   font-size: 9px !important;
   letter-spacing: 0.08em;
 }
 
-.proton-dynamics-panel [class~="bg-[#1b211d]"] {
-  background: #171717 !important;
-  color: #fff !important;
+.proton-dynamics-panel [class~="bg-solid"] {
+  background: var(--c-solid) !important;
+  color: var(--c-on-solid) !important;
   box-shadow: none !important;
 }
 
-.proton-dynamics-panel [class~="bg-[#eef1eb]"],
-.proton-dynamics-panel [class~="bg-[#f7f8f5]"] {
-  background: #f7f7f7 !important;
+.proton-dynamics-panel [class~="bg-paper-2"],
+.proton-dynamics-panel [class~="bg-paper-2"] {
+  background: var(--c-paper-2) !important;
 }
 
-.proton-dynamics-panel [class~="bg-[#909e86]"] {
-  color: #fff !important;
+.proton-dynamics-panel [class~="bg-ink-3"] {
+  color: var(--c-on-solid) !important;
 }
 
-.proton-dynamics-panel svg path[fill="#909e86"] {
-  fill: #dedede !important;
-}
 
-.proton-dynamics-panel svg path[stroke="#2c332e"] {
-  stroke: #b8b8b8 !important;
-}
 
 .proton-command-center button:focus-visible,
 .proton-command-center a:focus-visible {
-  outline-color: #171717;
+  outline-color: var(--c-ink);
 }
 
 .proton-dashboard-visits {
   padding: 20px !important;
-  border-color: #e5e5e5 !important;
+  border-color: var(--c-rule-strong) !important;
   border-radius: 12px !important;
   box-shadow: none !important;
 }
 
 .proton-dashboard-visits h3 {
-  color: #171717 !important;
+  color: var(--c-ink) !important;
   font-size: 16px !important;
   font-weight: 560 !important;
 }
 
 .proton-dashboard-visits > div:first-child {
-  border-color: #ededed !important;
+  border-color: var(--c-rule) !important;
 }
 
 .proton-dashboard-visits > div:first-child > button {
   border-radius: 7px !important;
-  background: #171717 !important;
-  color: #fff !important;
+  background: var(--c-solid) !important;
+  color: var(--c-on-solid) !important;
   box-shadow: none !important;
 }
 
@@ -1866,9 +1844,9 @@ button, input, select, textarea {
   gap: 14px !important;
   padding: 16px 2px !important;
   border: 0 !important;
-  border-bottom: 1px solid #ededed !important;
+  border-bottom: 1px solid var(--c-rule) !important;
   border-radius: 0 !important;
-  background: #fff !important;
+  background: var(--c-paper) !important;
 }
 
 .proton-visit-row:last-child {
@@ -1876,21 +1854,21 @@ button, input, select, textarea {
 }
 
 .proton-visit-row > div:first-child > div:first-child > span:first-child {
-  color: #222 !important;
+  color: var(--c-ink) !important;
   font-weight: 570 !important;
 }
 
 .proton-visit-row > div:first-child > div:first-child > span:last-child {
-  border: 1px solid #e7e7e7;
+  border: 1px solid var(--c-rule);
   border-radius: 4px !important;
-  background: #f7f7f7 !important;
-  color: #666 !important;
+  background: var(--c-paper-2) !important;
+  color: var(--c-ink-2) !important;
 }
 
 .proton-visit-row > div:last-child a {
-  border-color: #e2e2e2 !important;
+  border-color: var(--c-rule) !important;
   border-radius: 6px !important;
-  background: #fff !important;
+  background: var(--c-paper) !important;
   box-shadow: none !important;
 }
 
@@ -1908,14 +1886,14 @@ button, input, select, textarea {
 }
 
 .proton-patients-header h1 {
-  color: #1b2921 !important;
+  color: var(--c-ink) !important;
   font-size: 25px !important;
   font-weight: 620 !important;
   letter-spacing: -0.045em !important;
 }
 
 .proton-patients-header p {
-  color: #78847a !important;
+  color: var(--c-ink-2) !important;
   font-size: 12px !important;
 }
 
@@ -1938,21 +1916,21 @@ button, input, select, textarea {
 }
 
 .proton-patient-actions button:first-child {
-  border-color: #23372a !important;
-  background: #23372a !important;
-  color: #f5f7ef !important;
+  border-color: var(--c-solid) !important;
+  background: var(--c-solid) !important;
+  color: var(--c-on-solid) !important;
 }
 
 .proton-patient-actions button:nth-child(2) {
-  border-color: #dce7d1 !important;
-  background: #eff4e7 !important;
-  color: #586f3f !important;
+  border-color: var(--c-rule) !important;
+  background: var(--c-paper-2) !important;
+  color: var(--c-settled) !important;
 }
 
 .proton-patient-actions button:nth-child(3) {
-  border-color: #e1e6dd !important;
-  background: #fff !important;
-  color: #536056 !important;
+  border-color: var(--c-rule) !important;
+  background: var(--c-paper) !important;
+  color: var(--c-ink-2) !important;
 }
 
 .proton-patient-actions button:disabled {
@@ -1963,17 +1941,17 @@ button, input, select, textarea {
 .proton-patient-directory {
   height: min(700px, calc(100dvh - 270px));
   min-height: 400px;
-  border: 1px solid #e4e9df;
+  border: 1px solid var(--c-rule);
   border-radius: 17px !important;
-  background: rgba(255, 255, 255, 0.94);
+  background: color-mix(in srgb, var(--c-paper) 94%, transparent);
   box-shadow: 0 8px 24px rgba(27, 41, 33, 0.035);
 }
 
 .proton-patient-searchbar {
   min-height: 63px;
   padding: 12px 17px !important;
-  border-color: #edf0eb !important;
-  background: rgba(255, 255, 255, 0.7);
+  border-color: var(--c-rule) !important;
+  background: color-mix(in srgb, var(--c-paper) 70%, transparent);
 }
 
 .proton-patient-searchbox {
@@ -1982,14 +1960,14 @@ button, input, select, textarea {
 
 .proton-patient-searchbox input {
   min-height: 38px;
-  border-color: #e5e9e2 !important;
+  border-color: var(--c-rule) !important;
   border-radius: 9px !important;
-  background: #fafbf9;
+  background: var(--c-paper-2);
   font-size: 11px !important;
 }
 
 .proton-patient-searchbox input:focus {
-  background: #fff;
+  background: var(--c-paper);
 }
 
 .proton-patient-empty {
@@ -2001,14 +1979,14 @@ button, input, select, textarea {
 .proton-patient-empty > div:first-child {
   width: 58px;
   height: 58px;
-  border: 1px solid #e5ebdc;
+  border: 1px solid var(--c-rule);
   border-radius: 17px !important;
-  background: #f1f5e9 !important;
-  color: #718d4f !important;
+  background: var(--c-settled-wash) !important;
+  color: var(--c-settled) !important;
 }
 
 .proton-patient-empty > div:nth-child(2) p:first-child {
-  color: #253329 !important;
+  color: var(--c-ink) !important;
   font-size: 15px !important;
   font-weight: 620 !important;
   letter-spacing: -0.02em;
@@ -2016,7 +1994,7 @@ button, input, select, textarea {
 
 .proton-patient-empty > div:nth-child(2) p:last-child {
   max-width: 350px;
-  color: #7c887e !important;
+  color: var(--c-ink-3) !important;
   font-size: 11px !important;
   line-height: 1.6;
 }
@@ -2026,14 +2004,14 @@ button, input, select, textarea {
   margin-top: 4px;
   padding: 0 13px !important;
   border-radius: 9px !important;
-  background: #203127 !important;
+  background: var(--c-solid) !important;
   font-size: 11px !important;
 }
 
 .proton-patient-table th {
   padding: 11px 16px !important;
-  background: #f8f9f6 !important;
-  color: #818b81 !important;
+  background: var(--c-paper-2) !important;
+  color: var(--c-ink-3) !important;
   font-family: var(--font-mono);
   font-size: 8px !important;
   letter-spacing: 0.075em;
@@ -2041,13 +2019,13 @@ button, input, select, textarea {
 
 .proton-patient-table td {
   padding: 13px 16px !important;
-  border-color: #f0f2ee !important;
-  color: #66736a !important;
+  border-color: var(--c-rule) !important;
+  color: var(--c-ink-2) !important;
   font-size: 11px !important;
 }
 
 .proton-patient-table td a {
-  color: #26352a !important;
+  color: var(--c-ink) !important;
   font-size: 12px !important;
 }
 
@@ -2056,13 +2034,13 @@ button, input, select, textarea {
 }
 
 .proton-patient-table tbody tr:hover {
-  background: #fafbf8;
+  background: var(--c-paper);
 }
 
 .proton-patient-table tbody tr > td:first-child > div > div:first-child {
-  border-color: #e4ebda !important;
-  background: #f0f5e8 !important;
-  color: #617d43 !important;
+  border-color: var(--c-rule) !important;
+  background: var(--c-paper-2) !important;
+  color: var(--c-settled) !important;
 }
 
 @media (max-width: 760px) {
@@ -2124,14 +2102,14 @@ button, input, select, textarea {
 .proton-document-workspace {
   height: calc(100dvh - 155px) !important;
   min-height: 480px;
-  border: 1px solid #e4e9df !important;
+  border: 1px solid var(--c-rule) !important;
   border-radius: 17px !important;
-  background: #fff !important;
+  background: var(--c-paper) !important;
   box-shadow: 0 8px 24px rgba(27, 41, 33, 0.035);
 }
 
 .proton-consultation-workspace {
-  color: #253329;
+  color: var(--c-ink);
 }
 
 .proton-consultation-header,
@@ -2139,8 +2117,8 @@ button, input, select, textarea {
   min-height: 84px;
   gap: 14px;
   padding: 14px 19px !important;
-  border-color: #e9ede7 !important;
-  background: #fff !important;
+  border-color: var(--c-rule) !important;
+  background: var(--c-paper) !important;
 }
 
 .proton-document-header > div:first-child {
@@ -2166,7 +2144,7 @@ button, input, select, textarea {
 
 .proton-consultation-header h1,
 .proton-document-header h1 {
-  color: #26352a !important;
+  color: var(--c-ink) !important;
   font-size: 16px !important;
   font-weight: 620 !important;
   letter-spacing: -0.035em !important;
@@ -2174,13 +2152,13 @@ button, input, select, textarea {
 
 .proton-consultation-header p,
 .proton-document-header p {
-  color: #7d897f !important;
+  color: var(--c-ink-3) !important;
   font-size: 10px !important;
 }
 
 .proton-consultation-header > div:first-child > div > div:first-child,
 .proton-document-header > div:first-child > div > div:first-child {
-  color: #8a958b !important;
+  color: var(--c-ink-3) !important;
   font-size: 9px !important;
 }
 
@@ -2210,17 +2188,17 @@ button, input, select, textarea {
   height: 38px;
   flex: 0 0 38px;
   place-items: center;
-  border: 1px solid #e2e9da;
+  border: 1px solid var(--c-rule);
   border-radius: 11px !important;
-  background: #f0f5e8 !important;
-  color: #688249 !important;
+  background: var(--c-paper-2) !important;
+  color: var(--c-settled) !important;
 }
 
 .proton-consultation-stage {
   gap: 10px !important;
   padding: 11px 19px !important;
-  border-color: #e9ede7 !important;
-  background: #f8f9f6 !important;
+  border-color: var(--c-rule) !important;
+  background: var(--c-paper-2) !important;
 }
 
 .proton-consultation-stage > div:first-child {
@@ -2228,7 +2206,7 @@ button, input, select, textarea {
 }
 
 .proton-consultation-stage > div:first-child > span:first-child {
-  color: #879187 !important;
+  color: var(--c-ink-3) !important;
   font-size: 8px !important;
   letter-spacing: 0.1em !important;
 }
@@ -2238,77 +2216,77 @@ button, input, select, textarea {
 }
 
 .proton-consultation-stage > div:first-child > div > span:nth-child(even) {
-  color: #c3cbc1 !important;
+  color: var(--c-ink-3) !important;
 }
 
 .proton-consultation-stage > div:first-child > div > span:nth-child(odd) {
   padding: 5px 8px !important;
-  border: 1px solid #e6eae3;
+  border: 1px solid var(--c-rule-strong);
   border-radius: 7px !important;
-  background: #fff;
-  color: #778278;
+  background: var(--c-paper);
+  color: var(--c-ink-2);
   font-size: 8px !important;
 }
 
 .proton-consultation-stage > div:first-child > div > span[class*="bg-brand-700"] {
-  border-color: #2d4435 !important;
-  background: #26392c !important;
-  color: #f2f6e9 !important;
+  border-color: var(--c-rule-strong) !important;
+  background: var(--c-solid) !important;
+  color: var(--c-on-solid) !important;
   box-shadow: none !important;
 }
 
 .proton-consultation-stage > div:last-child {
-  color: #6f7d71 !important;
+  color: var(--c-ink-2) !important;
   font-size: 10px !important;
 }
 
 .proton-consultation-grid > div:first-child {
   width: 292px !important;
-  background: #fff !important;
-  border-color: #e9ede7 !important;
+  background: var(--c-paper) !important;
+  border-color: var(--c-rule) !important;
 }
 
 .proton-consultation-grid > div:first-child > div {
   padding: 16px !important;
-  border-color: #eef1ec !important;
+  border-color: var(--c-rule) !important;
 }
 
 .proton-consultation-grid > div:first-child h2 {
-  color: #879187 !important;
+  color: var(--c-ink-3) !important;
   font-size: 8px !important;
   letter-spacing: 0.11em !important;
 }
 
 .proton-consultation-grid > div:first-child p,
 .proton-consultation-grid > div:first-child > div > div {
-  color: #536157;
+  color: var(--c-ink-2);
   font-size: 11px !important;
   line-height: 1.55;
 }
 
 .proton-consultation-grid > div:first-child p.font-semibold {
-  color: #29372e !important;
+  color: var(--c-ink) !important;
   font-size: 15px !important;
 }
 
 .proton-consultation-grid > div:first-child select,
 .proton-document-header select {
   min-height: 36px;
-  border: 1px solid #e1e7de !important;
+  border: 1px solid var(--c-rule) !important;
   border-radius: 9px !important;
-  background: #fafbf9 !important;
-  color: #3c4a3f !important;
+  background: var(--c-paper-2) !important;
+  color: var(--c-ink-2) !important;
   font-size: 10px !important;
 }
 
 .proton-consultation-grid > div:first-child > div:nth-child(3) {
-  background: #f8f9f6 !important;
+  background: var(--c-paper-2) !important;
 }
 
 .proton-consultation-grid > div:last-child {
   gap: 16px !important;
   padding: 18px !important;
-  background: #f5f6f2 !important;
+  background: var(--c-paper-2) !important;
 }
 
 .proton-consultation-grid > div:last-child > * {
@@ -2321,51 +2299,51 @@ button, input, select, textarea {
 }
 
 .proton-consultation-workspace [class*="bg-brand-600"] {
-  border-color: #26392c !important;
-  background-color: #26392c !important;
-  color: #f5f7ef !important;
+  border-color: var(--c-rule-strong) !important;
+  background-color: var(--c-solid) !important;
+  color: var(--c-on-solid) !important;
 }
 
 .proton-consultation-workspace [class*="bg-brand-700"] {
-  border-color: #26392c !important;
-  background-color: #26392c !important;
-  color: #f5f7ef !important;
+  border-color: var(--c-rule-strong) !important;
+  background-color: var(--c-solid) !important;
+  color: var(--c-on-solid) !important;
 }
 
 .proton-consultation-workspace button[class*="bg-brand-500"] {
-  border-color: #26392c !important;
-  background-color: #26392c !important;
-  color: #f5f7ef !important;
+  border-color: var(--c-rule-strong) !important;
+  background-color: var(--c-solid) !important;
+  color: var(--c-on-solid) !important;
 }
 
 .proton-consultation-workspace [class*="bg-brand-100"],
 .proton-consultation-workspace [class*="bg-brand-50"] {
-  background-color: #eff4e7 !important;
-  color: #617b45 !important;
+  background-color: var(--c-paper-2) !important;
+  color: var(--c-ink-2) !important;
 }
 
 .proton-consultation-workspace [class*="text-brand-600"],
 .proton-consultation-workspace [class*="text-brand-700"],
 .proton-consultation-workspace [class*="text-brand-300"],
 .proton-consultation-workspace [class*="text-brand-200"] {
-  color: #607a45 !important;
+  color: var(--c-settled) !important;
 }
 
 .proton-consultation-workspace [class*="border-brand-"] {
-  border-color: #dfe7d5 !important;
+  border-color: var(--c-rule) !important;
 }
 
 .proton-document-workspace [class*="bg-brand-600"],
 .proton-document-workspace [class*="bg-brand-700"] {
-  border-color: #26392c !important;
-  background-color: #26392c !important;
-  color: #f5f7ef !important;
+  border-color: var(--c-rule-strong) !important;
+  background-color: var(--c-solid) !important;
+  color: var(--c-on-solid) !important;
 }
 
 .proton-document-workspace [class*="bg-brand-100"],
 .proton-document-workspace [class*="bg-brand-50"] {
-  background-color: #eff4e7 !important;
-  color: #617b45 !important;
+  background-color: var(--c-paper-2) !important;
+  color: var(--c-ink-2) !important;
 }
 
 .proton-consultation-workspace button:focus-visible,
@@ -2373,7 +2351,7 @@ button, input, select, textarea {
 .proton-consultation-workspace select:focus-visible,
 .proton-document-workspace select:focus-visible,
 .proton-document-workspace input:focus-visible {
-  outline: 2px solid #9dbb69;
+  outline: 2px solid var(--c-rule-strong);
   outline-offset: 2px;
 }
 
@@ -2381,12 +2359,12 @@ button, input, select, textarea {
 .proton-document-header button[class*="bg-brand-600"] {
   min-height: 36px;
   border-radius: 9px !important;
-  background: #23352a !important;
+  background: var(--c-solid) !important;
   font-size: 10px !important;
 }
 
 .proton-document-workspace {
-  background: #f8f9f6 !important;
+  background: var(--c-paper-2) !important;
 }
 
 .proton-document-content {
@@ -2400,31 +2378,30 @@ button, input, select, textarea {
 
 .proton-document-content > div[class*="border-dashed"] {
   max-width: 660px;
-  border-color: #dfe6d9 !important;
-  background:
-    radial-gradient(ellipse at 50% 0%, rgba(199, 232, 121, 0.09), transparent 48%),
-    #fff !important;
+  border-color: var(--c-rule) !important;
+  background: radial-gradient(ellipse at 50% 0%, rgba(199, 232, 121, 0.09), transparent 48%),
+    var(--c-paper) !important;
   box-shadow: 0 8px 26px rgba(27, 41, 33, 0.035);
 }
 
 .proton-document-content > div[class*="border-dashed"] > div:first-child {
   width: 58px;
   height: 58px;
-  border: 1px solid #e4ebdc;
+  border: 1px solid var(--c-rule);
   border-radius: 17px !important;
-  background: #f0f5e8 !important;
-  color: #69834b !important;
+  background: var(--c-paper-2) !important;
+  color: var(--c-settled) !important;
 }
 
 .proton-document-content h2 {
-  color: #27362c !important;
+  color: var(--c-ink) !important;
   font-size: 18px !important;
   font-weight: 620 !important;
   letter-spacing: -0.03em;
 }
 
 .proton-document-content p {
-  color: #78847a !important;
+  color: var(--c-ink-2) !important;
   font-size: 11px !important;
   line-height: 1.65;
 }
@@ -2432,28 +2409,28 @@ button, input, select, textarea {
 .proton-document-content button[class*="bg-brand-600"],
 .proton-document-content a[class*="bg-brand-600"] {
   min-height: 38px;
-  border: 1px solid #24372b;
+  border: 1px solid var(--c-rule-strong);
   border-radius: 9px !important;
-  background: #24372b !important;
+  background: var(--c-solid) !important;
   font-size: 10px !important;
 }
 
 .proton-document-content button[class*="bg-white"] {
   min-height: 38px;
-  border-color: #dfe5dc !important;
+  border-color: var(--c-rule) !important;
   border-radius: 9px !important;
-  color: #425047 !important;
+  color: var(--c-ink-2) !important;
   font-size: 10px !important;
 }
 
 .proton-document-content table th {
-  background: #f8f9f6 !important;
-  color: #77837a !important;
+  background: var(--c-paper-2) !important;
+  color: var(--c-ink-2) !important;
   font-size: 8px !important;
 }
 
 .proton-document-content table td {
-  border-color: #eef1ec !important;
+  border-color: var(--c-rule) !important;
   font-size: 10px;
 }
 
@@ -2509,7 +2486,7 @@ button, input, select, textarea {
     max-height: none;
     overflow: visible !important;
     border-right: 0 !important;
-    border-bottom: 1px solid #e9ede7;
+    border-bottom: 1px solid var(--c-rule);
   }
 
   .proton-consultation-grid > div:last-child {
@@ -2546,23 +2523,22 @@ button, input, select, textarea {
   display: grid;
   gap: 12px;
   padding: 24px;
-  border: 1px solid #e4e9df;
+  border: 1px solid var(--c-rule);
   border-radius: 17px;
-  background:
-    radial-gradient(ellipse at 92% 2%, rgba(199, 232, 121, 0.12), transparent 34%),
-    #fff;
+  background: radial-gradient(ellipse at 92% 2%, rgba(199, 232, 121, 0.12), transparent 34%),
+    var(--c-paper);
   box-shadow: 0 8px 24px rgba(27, 41, 33, 0.035);
 }
 
 .proton-patient-profile > header:first-of-type h1 {
-  color: #1c2a22 !important;
+  color: var(--c-ink) !important;
   font-size: clamp(25px, 3vw, 34px) !important;
   font-weight: 620 !important;
   letter-spacing: -0.055em !important;
 }
 
 .proton-patient-profile > header:first-of-type > div:first-child > div {
-  color: #7b887d !important;
+  color: var(--c-ink-2) !important;
   font-size: 10px !important;
 }
 
@@ -2573,43 +2549,43 @@ button, input, select, textarea {
 
 .proton-patient-profile > header:first-of-type > div:nth-child(2) > span {
   padding: 6px 9px;
-  border: 1px solid #e6ebdf;
+  border: 1px solid var(--c-rule);
   border-radius: 7px;
-  background: #f8faf5;
-  color: #526451;
+  background: var(--c-paper-2);
+  color: var(--c-ink-2);
   font-size: 10px;
 }
 
 .proton-patient-profile > header:first-of-type > div:nth-child(3) {
   justify-self: start;
-  border-color: #f0d5b3 !important;
+  border-color: var(--c-caution-line) !important;
   border-radius: 8px !important;
   font-size: 10px !important;
 }
 
 .proton-patient-profile > section {
   padding: 20px !important;
-  border: 1px solid #e6eae3;
+  border: 1px solid var(--c-rule-strong);
   border-radius: 15px;
-  background: rgba(255, 255, 255, 0.83);
+  background: color-mix(in srgb, var(--c-paper) 83%, transparent);
 }
 
 .proton-patient-profile > section > div:first-child {
   padding-bottom: 13px;
-  border-bottom: 1px solid #edf0eb;
+  border-bottom: 1px solid var(--c-rule);
 }
 
 .proton-patient-profile > section h2 {
-  color: #59675d !important;
+  color: var(--c-ink-2) !important;
   font-size: 9px !important;
   letter-spacing: 0.11em !important;
 }
 
 .proton-patient-profile > section .grid > div {
   padding: 13px;
-  border: 1px solid #edf0eb;
+  border: 1px solid var(--c-rule);
   border-radius: 10px;
-  background: #fbfcfa;
+  background: var(--c-paper);
 }
 
 .proton-patient-profile > section button {
@@ -2617,17 +2593,17 @@ button, input, select, textarea {
 }
 
 .proton-patient-profile a.clinical-btn-primary {
-  border: 1px solid #26392c !important;
+  border: 1px solid var(--c-rule-strong) !important;
   border-radius: 9px !important;
-  background: #26392c !important;
-  color: #f5f7ef !important;
+  background: var(--c-solid) !important;
+  color: var(--c-on-solid) !important;
 }
 
 .proton-patient-profile a.clinical-btn-secondary {
-  border-color: #dfe6da !important;
+  border-color: var(--c-rule) !important;
   border-radius: 9px !important;
-  background: #fff !important;
-  color: #526052 !important;
+  background: var(--c-paper) !important;
+  color: var(--c-ink-2) !important;
 }
 
 .proton-settings-page {
@@ -2641,7 +2617,7 @@ button, input, select, textarea {
 }
 
 .proton-settings-page > div:first-child h1 {
-  color: #1c2a22 !important;
+  color: var(--c-ink) !important;
   font-size: 24px !important;
   font-weight: 620 !important;
   letter-spacing: -0.045em;
@@ -2649,39 +2625,39 @@ button, input, select, textarea {
 
 .proton-settings-page > div:first-child p {
   max-width: 620px;
-  color: #7b887d !important;
+  color: var(--c-ink-2) !important;
   font-size: 11px !important;
   line-height: 1.6;
 }
 
 .proton-settings-page > .proton-card {
   padding: 19px !important;
-  border-color: #e4e9df !important;
+  border-color: var(--c-rule) !important;
   border-radius: 14px !important;
   box-shadow: 0 5px 16px rgba(27, 41, 33, 0.025);
 }
 
 .proton-settings-page > .proton-card > div:first-child {
   padding-bottom: 12px;
-  border-color: #edf0eb !important;
+  border-color: var(--c-rule) !important;
 }
 
 .proton-settings-page > .proton-card h2 {
-  color: #2d3b31 !important;
+  color: var(--c-ink) !important;
   font-size: 12px !important;
   font-weight: 620 !important;
 }
 
 .proton-settings-page > .proton-card > div:first-child > div {
-  border: 1px solid #e7ecdf;
+  border: 1px solid var(--c-rule);
   border-radius: 9px !important;
-  background: #f3f6ed !important;
-  color: #6b834a !important;
+  background: var(--c-paper-2) !important;
+  color: var(--c-settled) !important;
 }
 
 .proton-settings-page > .proton-card > div:nth-child(2) > div,
 .proton-settings-page > .proton-card > div:nth-child(3) > div {
-  border-color: #ebeee8 !important;
+  border-color: var(--c-rule) !important;
   border-radius: 9px !important;
 }
 
@@ -2691,26 +2667,26 @@ button, input, select, textarea {
 }
 
 .proton-settings-page [class*="bg-violet-50"] {
-  border-color: #e5e5e5 !important;
-  background: #f7f7f7 !important;
+  border-color: var(--c-rule-strong) !important;
+  background: var(--c-paper-2) !important;
 }
 
 .proton-settings-page [class*="text-violet-"] {
-  color: #555 !important;
+  color: var(--c-ink-2) !important;
 }
 
 .proton-settings-page [class*="border-violet-"] {
-  border-color: #e5e5e5 !important;
+  border-color: var(--c-rule-strong) !important;
 }
 
 .proton-settings-page [class*="bg-blue-50"] {
-  border-color: #e5e5e5 !important;
-  background: #f7f7f7 !important;
-  color: #555 !important;
+  border-color: var(--c-rule-strong) !important;
+  background: var(--c-paper-2) !important;
+  color: var(--c-ink-2) !important;
 }
 
 .proton-settings-page [class*="text-blue-"] {
-  color: #555 !important;
+  color: var(--c-ink-2) !important;
 }
 
 .proton-settings-page > div:last-child {
@@ -2747,86 +2723,86 @@ button, input, select, textarea {
 
 /* Keep the guided tour aligned with Proton's quiet workspace surfaces. */
 .proton-onboarding {
-  background: #fff !important;
-  color: #171717 !important;
+  background: var(--c-paper) !important;
+  color: var(--c-ink) !important;
   backdrop-filter: none;
 }
 
 .proton-onboarding header {
-  border-color: #e8e8e8 !important;
-  background: rgba(255, 255, 255, 0.97) !important;
+  border-color: var(--c-rule) !important;
+  background: color-mix(in srgb, var(--c-paper) 97%, transparent) !important;
   box-shadow: none !important;
 }
 
 .proton-onboarding [class*="from-brand-"][class*="to-indigo-"] {
-  background: #f7f7f7 !important;
-  color: #171717 !important;
+  background: var(--c-paper-2) !important;
+  color: var(--c-ink) !important;
   box-shadow: none !important;
 }
 
 .proton-onboarding [class*="bg-gradient-to-r"] {
-  background: #f7f7f7 !important;
+  background: var(--c-paper-2) !important;
 }
 
 .proton-onboarding [class*="bg-brand-600"] {
-  background-color: #171717 !important;
-  color: #fff !important;
+  background-color: var(--c-solid) !important;
+  color: var(--c-on-solid) !important;
 }
 
 .proton-onboarding [class*="bg-emerald-600"] {
-  background-color: #171717 !important;
+  background-color: var(--c-solid) !important;
 }
 
 .proton-onboarding [class*="bg-brand-500"] {
-  background-color: #f1f1f1 !important;
+  background-color: var(--c-paper-2) !important;
 }
 
 .proton-onboarding [class*="text-brand-400"],
 .proton-onboarding [class*="text-brand-300"] {
-  color: #555 !important;
+  color: var(--c-ink-2) !important;
 }
 
 .proton-onboarding [class*="text-brand-700"],
 .proton-onboarding [class*="text-brand-800"],
 .proton-onboarding [class*="text-brand-900"] {
-  color: #333 !important;
+  color: var(--c-ink) !important;
 }
 
 .proton-onboarding [class*="bg-brand-50"] {
-  background-color: #f5f5f5 !important;
+  background-color: var(--c-paper-2) !important;
 }
 
 .proton-onboarding [class*="border-brand-200"] {
-  border-color: #e4e4e4 !important;
+  border-color: var(--c-rule) !important;
 }
 
 .proton-onboarding h1.text-white {
-  color: #171717 !important;
+  color: var(--c-ink) !important;
 }
 
 .proton-onboarding [class*="bg-slate-950"],
 .proton-onboarding [class*="bg-slate-900"],
 .proton-onboarding [class*="bg-slate-800"] {
-  background: #f7f7f7 !important;
+  background: var(--c-paper-2) !important;
 }
 
 .proton-onboarding [class*="bg-slate-950"] .text-white,
 .proton-onboarding [class*="bg-slate-900"] .text-white,
 .proton-onboarding [class*="bg-slate-800"] .text-white {
-  color: #171717 !important;
+  color: var(--c-ink) !important;
 }
 
 .proton-onboarding [class*="text-slate-"] {
-  color: #505050 !important;
+  color: var(--c-ink-2) !important;
 }
 
 .proton-onboarding [class*="text-emerald-"],
 .proton-onboarding [class*="text-amber-"] {
-  color: #404040 !important;
+  color: var(--c-ink) !important;
 }
 
 .proton-onboarding [class*="border-slate-800"] {
-  border-color: #e5e5e5 !important;
+  border-color: var(--c-rule-strong) !important;
 }
 
 .proton-onboarding button {
@@ -2842,10 +2818,10 @@ button, input, select, textarea {
   justify-content: center;
   gap: 7px;
   padding: 0 10px;
-  border: 1px solid #e5e5e5;
+  border: 1px solid var(--c-rule-strong);
   border-radius: 8px;
-  background: #fff;
-  color: #525252;
+  background: var(--c-paper);
+  color: var(--c-ink-2);
   font: inherit;
   font-size: 11px;
   font-weight: 550;
@@ -2854,9 +2830,9 @@ button, input, select, textarea {
 }
 
 .proton-theme-toggle:hover {
-  border-color: #c8c8c8;
-  background: #f7f7f7;
-  color: #171717;
+  border-color: var(--c-rule-strong);
+  background: var(--c-paper-2);
+  color: var(--c-ink);
 }
 
 .proton-card {
@@ -2876,585 +2852,7 @@ button, input, select, textarea {
   }
 }
 
-html[data-theme="dark"] {
-  color-scheme: dark;
-  --color-surface: #181818;
-  --color-surface-raised: #1e1e1e;
-  --color-surface-sunken: #111111;
-  --color-surface-overlay: rgba(0, 0, 0, 0.72);
-  --color-border-default: #303030;
-  --color-border-subtle: #252525;
-  --color-border-strong: #444444;
-  --color-text-primary: #f1f1f1;
-  --color-text-secondary: #b0b0b0;
-  --color-text-tertiary: #898989;
-  --color-text-inverse: #171717;
-  background: #111;
-}
-
-html[data-theme="dark"] body {
-  background: #111;
-  color: #ededed;
-}
-
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) {
-  background: #111;
-  color: #ededed;
-}
-
-html[data-theme="dark"] .proton-sidebar {
-  border-color: #282828;
-  background: #141414;
-  color: #ededed;
-}
-
-html[data-theme="dark"] .proton-brand-mark {
-  background: #f0f0f0;
-  color: #111;
-}
-
-html[data-theme="dark"] .proton-brand-word span {
-  color: #a7a7a7;
-}
-
-html[data-theme="dark"] .proton-search-trigger,
-html[data-theme="dark"] .proton-topbar-search,
-html[data-theme="dark"] .proton-theme-toggle {
-  border-color: #333;
-  background: #191919;
-  color: #c5c5c5;
-}
-
-html[data-theme="dark"] .proton-search-trigger:hover,
-html[data-theme="dark"] .proton-topbar-search:hover,
-html[data-theme="dark"] .proton-theme-toggle:hover {
-  border-color: #555;
-  background: #222;
-  color: #fff;
-}
-
-html[data-theme="dark"] .proton-search-trigger kbd,
-html[data-theme="dark"] .proton-sidebar-footer,
-html[data-theme="dark"] .proton-evaluator-profile {
-  border-color: #2d2d2d;
-}
-
-html[data-theme="dark"] .proton-nav-link {
-  color: #aaa;
-}
-
-html[data-theme="dark"] .proton-nav-link:hover,
-html[data-theme="dark"] .proton-nav-link.is-active,
-html[data-theme="dark"] .proton-mobile-nav-link.is-active {
-  background: #252525;
-  color: #f5f5f5;
-}
-
-html[data-theme="dark"] .proton-nav-link.is-active::before,
-html[data-theme="dark"] .proton-mobile-nav-link.is-active::before {
-  background: #f0f0f0;
-}
-
-html[data-theme="dark"] .proton-safety-card {
-  border-color: #303030;
-  background: #191919;
-}
-
-html[data-theme="dark"] .proton-safety-icon,
-html[data-theme="dark"] .proton-avatar {
-  border-color: #3a3a3a;
-  background: #242424;
-  color: #e5e5e5;
-}
-
-html[data-theme="dark"] .proton-safety-title,
-html[data-theme="dark"] .proton-profile-copy {
-  color: #dedede;
-}
-
-html[data-theme="dark"] .proton-safety-card p,
-html[data-theme="dark"] .proton-profile-copy small,
-html[data-theme="dark"] .proton-profile-arrow {
-  color: #929292;
-}
-
-html[data-theme="dark"] .proton-topbar,
-html[data-theme="dark"] .proton-mobile-nav {
-  border-color: #292929;
-  background: rgba(20, 20, 20, 0.96);
-}
-
-html[data-theme="dark"] .proton-topbar-context h1 {
-  color: #f1f1f1;
-}
-
-html[data-theme="dark"] .proton-breadcrumb,
-html[data-theme="dark"] .proton-breadcrumb span {
-  color: #8c8c8c;
-}
-
-html[data-theme="dark"] .proton-environment-pill {
-  border-color: #333;
-  background: #1b1b1b;
-  color: #bdbdbd;
-}
-
-html[data-theme="dark"] .proton-start-visit {
-  border-color: #f0f0f0;
-  background: #f0f0f0;
-  color: #171717;
-}
-
-html[data-theme="dark"] .proton-start-visit:hover {
-  background: #d8d8d8;
-}
-
-html[data-theme="dark"] .proton-workspace-canvas,
-html[data-theme="dark"] .proton-classic-shell main {
-  background: #111;
-}
-
-html[data-theme="dark"] :is(.proton-consultation-workspace, .proton-document-workspace) {
-  border-color: #303030 !important;
-  background: #191919 !important;
-  box-shadow: none;
-}
-
-html[data-theme="dark"] :is(.proton-consultation-header, .proton-document-header) {
-  border-color: #303030 !important;
-  background: #191919 !important;
-}
-
-html[data-theme="dark"] :is(.proton-consultation-stage, .proton-document-content) {
-  border-color: #303030 !important;
-  background: #151515 !important;
-}
-
-html[data-theme="dark"] .proton-document-header > div:first-child > div > div:nth-child(2) {
-  border-color: #383838 !important;
-  background: #242424 !important;
-  color: #dedede !important;
-}
-
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-brand-50"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-brand-100"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-brand-200"] {
-  background-color: #252525 !important;
-}
-
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-brand-600"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-brand-700"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-brand-800"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-brand-900"] {
-  color: #dedede !important;
-}
-
-html[data-theme="dark"] .proton-mobile-nav-link {
-  color: #a0a0a0;
-}
-
-html[data-theme="dark"] .proton-classic-shell > div > div:first-child,
-html[data-theme="dark"] .proton-classic-shell aside,
-html[data-theme="dark"] .proton-classic-shell aside > div:first-child,
-html[data-theme="dark"] .proton-classic-shell main > div:not([class*="bg-"]) {
-  border-color: #2d2d2d;
-  background-color: #181818;
-  color: #e8e8e8;
-}
-
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) .proton-card,
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) .clinical-surface {
-  border-color: #303030;
-  background-color: #191919;
-  color: #e7e7e7;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.16);
-}
-
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) .clinical-title,
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) .clinical-value-large {
-  color: #ededed;
-}
-
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) .clinical-subtitle,
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) .clinical-section-header {
-  color: #aaa;
-}
-
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) .clinical-divider {
-  border-color: #303030;
-}
-
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) .clinical-table th {
-  border-color: #303030;
-  background: #1c1c1c;
-  color: #aaa;
-}
-
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) .clinical-table td {
-  border-color: #2b2b2b;
-  color: #dedede;
-}
-
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) .clinical-table tr:hover td {
-  background: #202020;
-}
-
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) :is(.clinical-btn-secondary, .proton-btn-secondary) {
-  border-color: #383838;
-  background: #1c1c1c;
-  color: #e5e5e5;
-}
-
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) :is(.clinical-btn-secondary, .proton-btn-secondary):hover {
-  border-color: #505050;
-  background: #252525;
-}
-
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) :is(.clinical-btn-ghost, .proton-btn-ghost) {
-  color: #aaa;
-}
-
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) :is(.clinical-btn-ghost, .proton-btn-ghost):hover {
-  background: #252525;
-  color: #f2f2f2;
-}
-
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) :is(input, select, textarea, .proton-input) {
-  border-color: #383838;
-  background-color: #141414;
-  color: #ededed;
-}
-
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) input::placeholder,
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) textarea::placeholder {
-  color: #858585;
-}
-
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-white"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-slate-50"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-slate-100"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-gray-50"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-gray-100"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-zinc-50"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-zinc-100"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-neutral-50"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-neutral-100"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-[#fafaf9]"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-[#edf0ea]"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-[#f5f6f1]"] {
-  background-color: #1b1b1b !important;
-}
-
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-slate-200"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-gray-200"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-zinc-200"] {
-  background-color: #292929 !important;
-}
-
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-slate-800"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-slate-900"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-gray-800"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-gray-900"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-zinc-800"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="bg-zinc-900"] {
-  background-color: #111 !important;
-}
-
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="border-slate-"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="border-gray-"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="border-zinc-"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="border-neutral-"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="border-white"] {
-  border-color: #333 !important;
-}
-
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-slate-900"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-slate-800"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-gray-900"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-gray-800"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-zinc-900"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-zinc-800"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-neutral-900"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-neutral-800"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-black"] {
-  color: #ededed !important;
-}
-
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-slate-700"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-slate-600"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-gray-700"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-gray-600"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-zinc-700"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-zinc-600"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-neutral-700"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-neutral-600"] {
-  color: #c5c5c5 !important;
-}
-
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-slate-500"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-slate-400"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-gray-500"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-gray-400"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-zinc-500"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-zinc-400"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-neutral-500"],
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="text-neutral-400"] {
-  color: #999 !important;
-}
-
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="hover:bg-slate-50"]:hover,
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="hover:bg-slate-100"]:hover,
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="hover:bg-gray-50"]:hover,
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) [class*="hover:bg-zinc-50"]:hover {
-  background-color: #252525 !important;
-}
-
-html[data-theme="dark"] .proton-command-center {
-  background: #111 !important;
-  color: #e7e7e7 !important;
-}
-
-html[data-theme="dark"] .proton-command-header {
-  border-color: #303030 !important;
-}
-
-html[data-theme="dark"] .proton-command-header h1,
-html[data-theme="dark"] .proton-dashboard-visits h3 {
-  color: #ededed !important;
-}
-
-html[data-theme="dark"] .proton-command-header > div:first-child > div:nth-last-child(2) > button,
-html[data-theme="dark"] .proton-command-header input {
-  border-color: #383838 !important;
-  background: #191919 !important;
-  color: #ededed !important;
-}
-
-html[data-theme="dark"] .proton-dashboard-tabs {
-  border-color: #303030;
-}
-
-html[data-theme="dark"] .proton-dashboard-tabs button {
-  color: #aaa !important;
-}
-
-html[data-theme="dark"] .proton-dashboard-tabs button:hover,
-html[data-theme="dark"] .proton-dashboard-tabs button[class*="border-black/5"] {
-  background: #222 !important;
-  color: #f2f2f2 !important;
-}
-
-html[data-theme="dark"] .proton-dashboard-tabs button[class*="border-black/5"] {
-  border-color: #aaa !important;
-}
-
-html[data-theme="dark"] .proton-dashboard-tabs button[aria-pressed="true"],
-html[data-theme="dark"] .proton-dashboard-tabs select {
-  border-color: #444 !important;
-  background: #222 !important;
-  color: #f2f2f2 !important;
-}
-
-html[data-theme="dark"] .proton-dashboard-tabs button span[class*="bg-[#1c221e]"] {
-  background: #333 !important;
-  color: #eee !important;
-}
-
-html[data-theme="dark"] .proton-patient-banner,
-html[data-theme="dark"] .proton-beta-tour,
-html[data-theme="dark"] .proton-dashboard-visits,
-html[data-theme="dark"] .proton-dynamics-panel {
-  border-color: #303030 !important;
-  background: #191919 !important;
-  color: #e7e7e7 !important;
-  box-shadow: none !important;
-}
-
-html[data-theme="dark"] .proton-patient-banner h2,
-html[data-theme="dark"] .proton-beta-tour h3,
-html[data-theme="dark"] .proton-dashboard-visits h3,
-html[data-theme="dark"] .proton-visit-row > div:first-child > div:first-child > span:first-child {
-  color: #ededed !important;
-}
-
-html[data-theme="dark"] .proton-patient-banner > div:last-child > div:first-child > div {
-  border-color: #333 !important;
-}
-
-html[data-theme="dark"] .proton-patient-banner > div:last-child > div:first-child > div > div:last-child {
-  color: #ededed !important;
-}
-
-html[data-theme="dark"] .proton-patient-banner > div:first-child > div:last-child > div:first-child > span[class*="bg-[#1c221e]"] {
-  border-color: #383838 !important;
-  background: #303030 !important;
-  color: #ededed !important;
-}
-
-html[data-theme="dark"] .proton-patient-banner > div:first-child > div:last-child > div:first-child > span[class*="bg-white"] {
-  border-color: #383838 !important;
-  background: #2a2a2a !important;
-  color: #dedede !important;
-}
-
-html[data-theme="dark"] .proton-beta-tour > div:first-child > div:first-child,
-html[data-theme="dark"] .proton-beta-tour > div:first-child span,
-html[data-theme="dark"] .proton-visit-row > div:first-child > div:first-child > span:last-child {
-  border-color: #383838 !important;
-  background: #242424 !important;
-  color: #c8c8c8 !important;
-}
-
-html[data-theme="dark"] .proton-beta-tour p,
-html[data-theme="dark"] .proton-dynamics-panel > div:first-child > div:first-child span:last-child {
-  color: #aaa !important;
-}
-
-html[data-theme="dark"] .proton-dashboard-visits > div:first-child,
-html[data-theme="dark"] .proton-visit-row {
-  border-color: #303030 !important;
-}
-
-html[data-theme="dark"] .proton-visit-row {
-  background: #191919 !important;
-}
-
-html[data-theme="dark"] .proton-patient-banner :is(button, a)[class*="bg-white"],
-html[data-theme="dark"] .proton-visit-row > div:last-child a {
-  border-color: #383838 !important;
-  background: #242424 !important;
-}
-
-html[data-theme="dark"] .proton-command-center [class*="bg-[#f5f6"],
-html[data-theme="dark"] .proton-command-center [class*="bg-[#f8f"],
-html[data-theme="dark"] .proton-command-center [class*="bg-[#eef1"],
-html[data-theme="dark"] .proton-command-center [class*="bg-[#faf"] {
-  background-color: #242424 !important;
-}
-
-html[data-theme="dark"] .proton-command-center [class*="text-[#141a16"],
-html[data-theme="dark"] .proton-command-center [class*="text-[#161c18"],
-html[data-theme="dark"] .proton-command-center [class*="text-[#1c221e"],
-html[data-theme="dark"] .proton-command-center [class*="text-[#2a362e"],
-html[data-theme="dark"] .proton-command-center [class*="text-[#354038"],
-html[data-theme="dark"] .proton-command-center [class*="text-[#455249"],
-html[data-theme="dark"] .proton-command-center [class*="text-[#526056"] {
-  color: #e2e2e2 !important;
-}
-
-html[data-theme="dark"] .proton-command-center [class*="718076"],
-html[data-theme="dark"] .proton-command-center [class*="778076"],
-html[data-theme="dark"] .proton-command-center [class*="818b81"] {
-  color: #aaa !important;
-}
-
-html[data-theme="dark"] .proton-dynamics-panel [class~="bg-[#eef1eb]"],
-html[data-theme="dark"] .proton-dynamics-panel [class~="bg-[#f7f8f5]"] {
-  background: #242424 !important;
-}
-
-html[data-theme="dark"] .proton-patients-header h1,
-html[data-theme="dark"] .proton-patient-empty > div:nth-child(2) p:first-child,
-html[data-theme="dark"] .proton-patient-table td a {
-  color: #ededed !important;
-}
-
-html[data-theme="dark"] .proton-patients-header p,
-html[data-theme="dark"] .proton-patient-empty > div:nth-child(2) p:last-child {
-  color: #aaa !important;
-}
-
-html[data-theme="dark"] .proton-patient-directory {
-  border-color: #303030 !important;
-  background: #191919 !important;
-  box-shadow: none !important;
-}
-
-html[data-theme="dark"] .proton-patient-searchbar {
-  border-color: #303030 !important;
-  background: #1d1d1d !important;
-}
-
-html[data-theme="dark"] .proton-patient-searchbox input {
-  border-color: #383838 !important;
-  background: #141414 !important;
-  color: #ededed !important;
-}
-
-html[data-theme="dark"] .proton-patient-searchbox input:focus {
-  background: #141414 !important;
-}
-
-html[data-theme="dark"] .proton-patient-table th {
-  border-color: #303030 !important;
-  background: #222 !important;
-  color: #aaa !important;
-}
-
-html[data-theme="dark"] .proton-patient-table td {
-  border-color: #303030 !important;
-  color: #b8b8b8 !important;
-}
-
-html[data-theme="dark"] .proton-patient-table tbody tr:hover {
-  background: #222 !important;
-}
-
-html[data-theme="dark"] .proton-patient-actions button:nth-child(2),
-html[data-theme="dark"] .proton-patient-actions button:nth-child(3) {
-  border-color: #383838 !important;
-  background: #222 !important;
-  color: #dedede !important;
-}
-
-html[data-theme="dark"] .proton-consultation-grid > div:first-child,
-html[data-theme="dark"] .proton-consultation-grid > div:last-child {
-  border-color: #303030 !important;
-  background: #191919 !important;
-  color: #e2e2e2 !important;
-}
-
-html[data-theme="dark"] .proton-consultation-grid > div:first-child > div,
-html[data-theme="dark"] .proton-consultation-grid > div:first-child > div:nth-child(3) {
-  border-color: #303030 !important;
-  background: #1d1d1d !important;
-}
-
-html[data-theme="dark"] .proton-consultation-grid > div:first-child h2 {
-  color: #aaa !important;
-}
-
-html[data-theme="dark"] .proton-consultation-grid > div:first-child p,
-html[data-theme="dark"] .proton-consultation-grid > div:first-child > div > div {
-  color: #bbb !important;
-}
-
-html[data-theme="dark"] .proton-consultation-grid > div:first-child p.font-semibold {
-  color: #ededed !important;
-}
-
-html[data-theme="dark"] .proton-consultation-grid > div:first-child select,
-html[data-theme="dark"] .proton-document-header select {
-  border-color: #383838 !important;
-  background: #141414 !important;
-  color: #dedede !important;
-}
-
-html[data-theme="dark"] .proton-consultation-workspace [class*="bg-brand-50"],
-html[data-theme="dark"] .proton-consultation-workspace [class*="bg-brand-100"],
-html[data-theme="dark"] .proton-document-workspace [class*="bg-brand-50"],
-html[data-theme="dark"] .proton-document-workspace [class*="bg-brand-100"] {
-  background: #252525 !important;
-  color: #d2d2d2 !important;
-}
-
-html[data-theme="dark"] .proton-consultation-workspace [class*="text-brand-600"],
-html[data-theme="dark"] .proton-consultation-workspace [class*="text-brand-700"],
-html[data-theme="dark"] .proton-consultation-workspace [class*="text-brand-300"],
-html[data-theme="dark"] .proton-consultation-workspace [class*="text-brand-200"],
-html[data-theme="dark"] .proton-document-workspace [class*="text-brand-600"] {
-  color: #c6c6c6 !important;
-}
+/* html[data-theme="dark"] retired: palettes own dark surfaces. */
 
 @media (prefers-reduced-motion: no-preference) {
   html[data-theme] body,
@@ -3469,10 +2867,10 @@ html[data-theme="dark"] .proton-document-workspace [class*="text-brand-600"] {
 
 .proton-preconsultation-brief,
 .proton-during-consult-context {
-  border: 1px solid #e5e5e5 !important;
+  border: 1px solid var(--c-rule-strong) !important;
   border-radius: 10px !important;
-  background: #fff !important;
-  color: #171717 !important;
+  background: var(--c-paper) !important;
+  color: var(--c-ink) !important;
   box-shadow: none !important;
 }
 
@@ -3480,28 +2878,28 @@ html[data-theme="dark"] .proton-document-workspace [class*="text-brand-600"] {
 .proton-preconsultation-brief [class*="text-brand-"],
 .proton-during-consult-context [class*="text-slate-"],
 .proton-during-consult-context [class*="text-brand-"] {
-  color: #555 !important;
+  color: var(--c-ink-2) !important;
 }
 
 .proton-preconsultation-brief [class*="bg-black/40"],
 .proton-preconsultation-brief [class*="bg-black/"],
 .proton-during-consult-context [class*="bg-brand-"] {
-  background: #f7f7f7 !important;
+  background: var(--c-paper-2) !important;
 }
 
 .proton-preconsultation-brief [class*="border-brand-"],
 .proton-during-consult-context [class*="border-brand-"] {
-  border-color: #e5e5e5 !important;
+  border-color: var(--c-rule-strong) !important;
 }
 
 .proton-patient-intelligence > div:first-child {
-  background: #171717 !important;
-  color: #fff !important;
+  background: var(--c-solid) !important;
+  color: var(--c-on-solid) !important;
 }
 
 .proton-patient-intelligence > div:first-child [class*="text-brand-"],
 .proton-patient-intelligence > div:first-child [class*="text-white"] {
-  color: #fff !important;
+  color: var(--c-on-solid) !important;
 }
 
 .proton-patient-intelligence > div:first-child [class*="bg-brand-"] {
@@ -3510,12 +2908,12 @@ html[data-theme="dark"] .proton-document-workspace [class*="text-brand-600"] {
 
 .proton-patient-intelligence [class*="bg-brand-"],
 .proton-patient-intelligence [class*="border-brand-"] {
-  border-color: #e5e5e5 !important;
-  background-color: #f7f7f7 !important;
+  border-color: var(--c-rule-strong) !important;
+  background-color: var(--c-paper-2) !important;
 }
 
 .proton-patient-intelligence [class*="text-brand-"] {
-  color: #444 !important;
+  color: var(--c-ink-3) !important;
 }
 
 /* Shared workspace rules: keep the clinical UI quiet and consistent across pages. */
@@ -3529,11 +2927,11 @@ html[data-theme="dark"] .proton-document-workspace [class*="text-brand-600"] {
   --workspace-control-radius: 0.5rem;
   --workspace-card-radius: 0.75rem;
   --workspace-dialog-radius: 1rem;
-  --workspace-border: #e5e5e5;
-  --workspace-surface: #fff;
-  --workspace-canvas: #f8f8f8;
-  --workspace-text: #171717;
-  --workspace-muted: #737373;
+  --workspace-border: var(--c-rule);
+  --workspace-surface: var(--c-paper);
+  --workspace-canvas: var(--c-canvas);
+  --workspace-text: var(--c-ink);
+  --workspace-muted: var(--c-ink-2);
   font-family: var(--font-sans);
   color: var(--workspace-text);
 }
@@ -3576,25 +2974,12 @@ html[data-theme="dark"] .proton-document-workspace [class*="text-brand-600"] {
 }
 
 :is(.proton-workspace-shell, .proton-classic-shell) :is(button, a, input, select, textarea):focus-visible {
-  outline: 2px solid #737373;
+  outline: 2px solid var(--c-ink-3);
   outline-offset: 2px;
 }
 
 .proton-classic-mobile-nav {
   display: none;
-}
-
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) {
-  --workspace-border: #303030;
-  --workspace-surface: #181818;
-  --workspace-canvas: #111;
-  --workspace-text: #ededed;
-  --workspace-muted: #a0a0a0;
-}
-
-html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) :is(.proton-card, .proton-patient-banner, .proton-dashboard-visits, .proton-patient-intelligence, .proton-consultation-workspace, .proton-document-workspace, .proton-preconsultation-brief, .proton-during-consult-context, .proton-dynamics-panel) {
-  border-color: var(--workspace-border) !important;
-  background-color: var(--workspace-surface) !important;
 }
 
 @media (max-width: 760px) {
@@ -3629,14 +3014,8 @@ html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) :is(
 
   .proton-workspace-shell .proton-mobile-nav-link.is-active,
   .proton-classic-mobile-nav-link.is-active {
-    background: #f1f1f1;
+    background: var(--c-paper-2);
     color: var(--workspace-text);
-  }
-
-  html[data-theme="dark"] .proton-workspace-shell .proton-mobile-nav-link.is-active,
-  html[data-theme="dark"] .proton-classic-mobile-nav-link.is-active {
-    background: #262626;
-    color: #f1f1f1;
   }
 
   .proton-classic-shell {
@@ -3760,11 +3139,10 @@ html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) :is(
    ========================================================================== */
 
 :root {
-  --proton-glass-bg: rgba(255, 255, 255, 0.58);
-  --proton-glass-bg-strong: rgba(255, 255, 255, 0.78);
-  --proton-glass-border: rgba(255, 255, 255, 0.72);
-  --proton-glass-shadow:
-    0 1px 1px rgba(16, 18, 22, 0.03),
+  --proton-glass-bg: color-mix(in srgb, var(--c-paper) 58%, transparent);
+  --proton-glass-bg-strong: color-mix(in srgb, var(--c-paper) 78%, transparent);
+  --proton-glass-border: color-mix(in srgb, var(--c-paper) 45%, var(--c-rule));
+  --proton-glass-shadow: 0 1px 1px rgba(16, 18, 22, 0.03),
     0 24px 70px -28px rgba(16, 18, 22, 0.30),
     inset 0 1px 0 rgba(255, 255, 255, 0.9);
   --proton-glass-dark-bg: rgba(15, 17, 21, 0.72);
@@ -3791,8 +3169,7 @@ html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) :is(
 .proton-glass-dark {
   background: var(--proton-glass-dark-bg);
   border-color: var(--proton-glass-dark-border);
-  box-shadow:
-    0 24px 70px -28px rgba(0, 0, 0, 0.55),
+  box-shadow: 0 24px 70px -28px rgba(0, 0, 0, 0.55),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
@@ -3809,21 +3186,20 @@ html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) :is(
   pointer-events: none;
   background: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.55) 0%,
-    rgba(255, 255, 255, 0.12) 18%,
-    rgba(255, 255, 255, 0) 42%
+    var(--c-sheen) 0%,
+    var(--c-sheen-soft) 18%,
+    transparent 42%
   );
   opacity: 0.55;
 }
 
 /* Frosted toolbar: for sticky chrome over a scrolling canvas. */
 .proton-toolbar {
-  background: rgba(247, 244, 238, 0.72);
+  background: color-mix(in srgb, var(--c-canvas) 72%, transparent);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   backdrop-filter: blur(24px) saturate(180%);
   border-bottom: 1px solid rgba(255, 255, 255, 0.55);
-  box-shadow:
-    0 1px 0 rgba(17, 19, 21, 0.035),
+  box-shadow: 0 1px 0 rgba(17, 19, 21, 0.035),
     0 12px 32px -24px rgba(17, 19, 21, 0.28);
 }
 
@@ -3849,8 +3225,7 @@ html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) :is(
 
 /* Fine dotted grid; fades out so it never competes with content. */
 .proton-grid {
-  background-image:
-    linear-gradient(to right, rgba(17, 19, 21, 0.045) 1px, transparent 1px),
+  background-image: linear-gradient(to right, rgba(17, 19, 21, 0.045) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(17, 19, 21, 0.045) 1px, transparent 1px);
   background-size: 64px 64px;
   -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 10%, transparent 72%);
@@ -3871,11 +3246,11 @@ html[data-theme="dark"] :is(.proton-workspace-shell, .proton-classic-shell) :is(
   }
 
   .proton-glass-dark {
-    background: #15171b;
+    background: var(--c-solid);
   }
 
   .proton-toolbar {
-    background: #f7f4ee;
+    background: var(--c-canvas);
   }
 }
 

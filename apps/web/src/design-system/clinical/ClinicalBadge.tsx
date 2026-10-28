@@ -17,29 +17,29 @@ export interface ClinicalBadgeProps {
 
 const typeStyles: Record<ClinicalBadgeType, { bg: string; text: string; border: string }> = {
   condition: {
-    bg: 'bg-white',
-    text: 'text-[#151719]',
-    border: 'border-[#E8E5DC]'
+    bg: 'bg-paper',
+    text: 'text-ink',
+    border: 'border-rule'
   },
   allergy: {
-    bg: 'bg-[#FEF2F2]',
-    text: 'text-[#991B1B]',
-    border: 'border-[#FECACA]'
+    bg: 'bg-critical-wash',
+    text: 'text-critical',
+    border: 'border-critical-line'
   },
   medication: {
-    bg: 'bg-[#EFF6FF]',
-    text: 'text-[#1E40AF]',
-    border: 'border-[#BFDBFE]'
+    bg: 'bg-accent-wash',
+    text: 'text-accent-ink',
+    border: 'border-accent-line'
   },
   lab: {
-    bg: 'bg-[#FAF9F6]',
-    text: 'text-[#575D65]',
-    border: 'border-[#E8E5DC]'
+    bg: 'bg-canvas',
+    text: 'text-ink-2',
+    border: 'border-rule'
   },
   procedure: {
-    bg: 'bg-[#FDF2F8]',
-    text: 'text-[#9D174D]',
-    border: 'border-[#FBCFE8]'
+    bg: 'bg-accent-wash',
+    text: 'text-accent-ink',
+    border: 'border-accent-line'
   }
 };
 
@@ -54,7 +54,7 @@ export const ClinicalBadge = forwardRef<HTMLSpanElement, ClinicalBadgeProps>(fun
   ref
 ) {
   const cfg = isCritical
-    ? { bg: 'bg-[#FEF2F2]', text: 'text-[#991B1B]', border: 'border-[#FECACA]' }
+    ? { bg: 'bg-critical-wash', text: 'text-critical', border: 'border-critical-line' }
     : typeStyles[type] || typeStyles.condition;
 
   return (
@@ -67,7 +67,7 @@ export const ClinicalBadge = forwardRef<HTMLSpanElement, ClinicalBadgeProps>(fun
         <span className="text-[10px] font-mono opacity-70">[{code}]</span>
       )}
       {isCritical && (
-        <span className="w-1.5 h-1.5 rounded-full bg-[#EF4444] animate-pulse" aria-hidden="true" />
+        <span className="w-1.5 h-1.5 rounded-full bg-critical animate-pulse" aria-hidden="true" />
       )}
     </span>
   );

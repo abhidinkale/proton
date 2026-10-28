@@ -85,22 +85,22 @@ export const AudioLevelMeter: React.FC<AudioLevelMeterProps> = ({
   const activeCount = Math.round(normalized * bars);
 
   return (
-    <div className="flex items-center gap-1 h-5 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-      <span className="text-[10px] uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400 mr-1">
+    <div className="flex items-center gap-1 h-5 px-2 py-0.5 rounded-full bg-paper-2 dark:bg-solid border border-rule dark:border-rule-strong">
+      <span className="text-[10px] uppercase tracking-wider font-semibold text-on-solid0 dark:text-ink-3 mr-1">
         {isPaused ? 'Paused' : 'Input'}
       </span>
       <div className="flex items-end gap-[2px] h-3">
         {Array.from({ length: bars }).map((_, i) => {
           const isActive = !isPaused && i < activeCount;
-          let color = 'bg-emerald-500';
-          if (i >= bars - 2) color = 'bg-amber-500';
-          if (i === bars - 1) color = 'bg-rose-500';
+          let color = 'bg-settled-wash0';
+          if (i >= bars - 2) color = 'bg-caution-wash0';
+          if (i === bars - 1) color = 'bg-critical-wash0';
 
           return (
             <div
               key={i}
               className={`w-[3px] rounded-full transition-all duration-75 ${
-                isActive ? color : 'bg-slate-300 dark:bg-slate-600'
+                isActive ? color : 'bg-rule dark:bg-ink-3'
               }`}
               style={{
                 height: `${Math.max(25, ((i + 1) / bars) * 100)}%`,

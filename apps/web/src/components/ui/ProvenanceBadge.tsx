@@ -46,10 +46,10 @@ export default function ProvenanceBadge({
     case 'PATIENT_FACT':
       config = {
         label: 'PATIENT FACT',
-        bg: 'bg-sky-50/90',
-        text: 'text-sky-800',
-        border: 'border-sky-200/90',
-        icon: <FileText size={size === 'xs' ? 9 : 11} className="text-sky-600 shrink-0" />,
+        bg: 'bg-accent-wash/90',
+        text: 'text-accent-ink',
+        border: 'border-accent-line/90',
+        icon: <FileText size={size === 'xs' ? 9 : 11} className="text-accent-ink shrink-0" />,
         description: 'Verified demographic or factual patient record data'
       };
       break;
@@ -58,10 +58,10 @@ export default function ProvenanceBadge({
     case 'PATIENT_REPORTED_DATA':
       config = {
         label: 'PATIENT-REPORTED',
-        bg: 'bg-cyan-50/90',
-        text: 'text-cyan-800',
-        border: 'border-cyan-200/90',
-        icon: <FileText size={size === 'xs' ? 9 : 11} className="text-cyan-600 shrink-0" />,
+        bg: 'bg-accent-wash/90',
+        text: 'text-accent-ink',
+        border: 'border-accent-line/90',
+        icon: <FileText size={size === 'xs' ? 9 : 11} className="text-accent-ink shrink-0" />,
         description: 'Patient-submitted intake symptom or history • Unverified by clinician'
       };
       break;
@@ -72,10 +72,10 @@ export default function ProvenanceBadge({
     case 'DOCTOR_EDITED':
       config = {
         label: 'CLINICIAN FACT',
-        bg: 'bg-zinc-100',
-        text: 'text-zinc-800',
-        border: 'border-zinc-300',
-        icon: <Edit3 size={size === 'xs' ? 9 : 11} className="text-zinc-700 shrink-0" />,
+        bg: 'bg-paper-2',
+        text: 'text-ink',
+        border: 'border-rule',
+        icon: <Edit3 size={size === 'xs' ? 9 : 11} className="text-ink-2 shrink-0" />,
         description: 'Established directly by treating clinician'
       };
       break;
@@ -85,10 +85,10 @@ export default function ProvenanceBadge({
     case 'AI_SUGGESTED':
       config = {
         label: 'AI SUGGESTION (ADVISORY)',
-        bg: 'bg-amber-50/90',
-        text: 'text-amber-800',
-        border: 'border-amber-300/80',
-        icon: <FileText size={size === 'xs' ? 9 : 11} className="text-amber-600 shrink-0" />,
+        bg: 'bg-caution-wash/90',
+        text: 'text-caution',
+        border: 'border-caution-line/80',
+        icon: <FileText size={size === 'xs' ? 9 : 11} className="text-caution shrink-0" />,
         description: 'AI advisory hypothesis • NOT an established diagnosis • Requires physician review',
         isAdvisory: true
       };
@@ -99,10 +99,10 @@ export default function ProvenanceBadge({
     case 'AI_SYNTHESIS':
       config = {
         label: 'AI INFERENCE',
-        bg: 'bg-violet-50/90',
-        text: 'text-violet-800',
-        border: 'border-violet-200/90',
-        icon: <FileText size={size === 'xs' ? 9 : 11} className="text-violet-600 shrink-0" />,
+        bg: 'bg-accent-wash/90',
+        text: 'text-accent-ink',
+        border: 'border-accent-line/90',
+        icon: <FileText size={size === 'xs' ? 9 : 11} className="text-accent-ink shrink-0" />,
         description: 'Multi-source computational synthesis • Pending physician review',
         isAdvisory: true
       };
@@ -114,10 +114,10 @@ export default function ProvenanceBadge({
     case 'DOCTOR_APPROVED':
       config = {
         label: 'CONFIRMED CLINICAL DATA',
-        bg: 'bg-emerald-50',
-        text: 'text-emerald-800',
-        border: 'border-emerald-300',
-        icon: <ShieldCheck size={size === 'xs' ? 9 : 11} className="text-emerald-600 shrink-0" />,
+        bg: 'bg-settled-wash',
+        text: 'text-settled',
+        border: 'border-settled-line',
+        icon: <ShieldCheck size={size === 'xs' ? 9 : 11} className="text-settled shrink-0" />,
         description: 'Clinician confirmed and committed to FHIR clinical record'
       };
       break;
@@ -125,10 +125,10 @@ export default function ProvenanceBadge({
     case 'REJECTED':
       config = {
         label: 'REJECTED',
-        bg: 'bg-zinc-100',
-        text: 'text-zinc-500 line-through',
-        border: 'border-zinc-200',
-        icon: <XCircle size={size === 'xs' ? 9 : 11} className="text-zinc-400 shrink-0" />,
+        bg: 'bg-paper-2',
+        text: 'text-on-solid0 line-through',
+        border: 'border-rule',
+        icon: <XCircle size={size === 'xs' ? 9 : 11} className="text-ink-3 shrink-0" />,
         description: 'Rejected by clinician • Discarded from clinical record'
       };
       break;
@@ -136,9 +136,9 @@ export default function ProvenanceBadge({
     default:
       config = {
         label: provenance,
-        bg: 'bg-zinc-50',
-        text: 'text-zinc-700',
-        border: 'border-zinc-200',
+        bg: 'bg-paper-2',
+        text: 'text-ink-2',
+        border: 'border-rule',
         icon: null,
         description: 'Clinical record entry'
       };

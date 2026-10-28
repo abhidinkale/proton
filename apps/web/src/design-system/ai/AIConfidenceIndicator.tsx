@@ -20,21 +20,21 @@ export const AIConfidenceIndicator = forwardRef<HTMLSpanElement, AIConfidenceInd
 ) {
   const levelConfig = {
     HIGH: {
-      text: 'text-[#065F46]',
-      bg: 'bg-[#ECFDF5]',
-      border: 'border-[#A7F3D0]',
+      text: 'text-settled',
+      bg: 'bg-settled-wash',
+      border: 'border-settled-line',
       label: 'High Confidence'
     },
     MODERATE: {
-      text: 'text-[#854D0E]',
-      bg: 'bg-[#FEF08A]',
-      border: 'border-[#FDE047]',
+      text: 'text-caution',
+      bg: 'bg-caution-wash',
+      border: 'border-caution-line',
       label: 'Moderate Confidence'
     },
     LOW: {
-      text: 'text-[#991B1B]',
-      bg: 'bg-[#FEE2E2]',
-      border: 'border-[#FECACA]',
+      text: 'text-critical',
+      bg: 'bg-critical-wash',
+      border: 'border-critical-line',
       label: 'Low Confidence'
     }
   }[level];

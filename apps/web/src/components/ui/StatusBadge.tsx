@@ -23,38 +23,38 @@ export default function StatusBadge({
   pulse = false,
   className = ''
 }: StatusBadgeProps) {
-  let style = 'bg-slate-100 text-slate-700 border-slate-200';
-  let dotColor = 'bg-slate-400';
+  let style = 'bg-paper-2 text-ink-2 border-rule';
+  let dotColor = 'bg-ink-3';
 
   switch (variant) {
     case 'active':
-      style = 'bg-emerald-50 text-emerald-800 border-emerald-200';
-      dotColor = 'bg-emerald-500';
+      style = 'bg-settled-wash text-settled border-settled-line';
+      dotColor = 'bg-settled-wash0';
       break;
     case 'completed':
-      style = 'bg-teal-50 text-teal-800 border-teal-200';
-      dotColor = 'bg-teal-500';
+      style = 'bg-settled-wash text-settled border-settled-line';
+      dotColor = 'bg-settled-wash0';
       break;
     case 'draft':
-      style = 'bg-amber-50 text-amber-900 border-amber-200';
-      dotColor = 'bg-amber-500';
+      style = 'bg-caution-wash text-caution border-caution-line';
+      dotColor = 'bg-caution-wash0';
       break;
     case 'warning':
-      style = 'bg-amber-100 text-amber-900 border-amber-300';
-      dotColor = 'bg-amber-600';
+      style = 'bg-caution-wash text-caution border-caution-line';
+      dotColor = 'bg-caution';
       break;
     case 'critical':
-      style = 'bg-rose-50 text-rose-800 border-rose-200';
-      dotColor = 'bg-rose-600';
+      style = 'bg-critical-wash text-critical border-critical-line';
+      dotColor = 'bg-critical';
       break;
     case 'info':
-      style = 'bg-sky-50 text-sky-800 border-sky-200';
-      dotColor = 'bg-sky-500';
+      style = 'bg-accent-wash text-accent-ink border-accent-line';
+      dotColor = 'bg-accent-wash0';
       break;
     case 'neutral':
     default:
-      style = 'bg-slate-100 text-slate-700 border-slate-200';
-      dotColor = 'bg-slate-400';
+      style = 'bg-paper-2 text-ink-2 border-rule';
+      dotColor = 'bg-ink-3';
       break;
   }
 

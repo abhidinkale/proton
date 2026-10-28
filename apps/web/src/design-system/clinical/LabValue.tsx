@@ -28,37 +28,37 @@ export const LabValue = forwardRef<HTMLDivElement, LabValueProps>(function LabVa
 
   const flagConfig = {
     NORMAL: {
-      text: 'text-[#065F46]',
-      bg: 'bg-[#ECFDF5]',
-      border: 'border-[#A7F3D0]',
+      text: 'text-settled',
+      bg: 'bg-settled-wash',
+      border: 'border-settled-line',
       icon: CheckCircle2,
       label: 'Normal'
     },
     HIGH: {
-      text: 'text-[#9A3412]',
-      bg: 'bg-[#FFEDD5]',
-      border: 'border-[#FED7AA]',
+      text: 'text-caution',
+      bg: 'bg-caution-wash',
+      border: 'border-caution-line',
       icon: AlertTriangle,
       label: 'High'
     },
     LOW: {
-      text: 'text-[#1E40AF]',
-      bg: 'bg-[#EFF6FF]',
-      border: 'border-[#BFDBFE]',
+      text: 'text-accent-ink',
+      bg: 'bg-accent-wash',
+      border: 'border-accent-line',
       icon: AlertTriangle,
       label: 'Low'
     },
     CRITICAL_HIGH: {
-      text: 'text-[#991B1B]',
-      bg: 'bg-[#FEF2F2]',
-      border: 'border-[#FECACA]',
+      text: 'text-critical',
+      bg: 'bg-critical-wash',
+      border: 'border-critical-line',
       icon: AlertCircle,
       label: 'Critical High'
     },
     CRITICAL_LOW: {
-      text: 'text-[#991B1B]',
-      bg: 'bg-[#FEF2F2]',
-      border: 'border-[#FECACA]',
+      text: 'text-critical',
+      bg: 'bg-critical-wash',
+      border: 'border-critical-line',
       icon: AlertCircle,
       label: 'Critical Low'
     }
@@ -71,15 +71,15 @@ export const LabValue = forwardRef<HTMLDivElement, LabValueProps>(function LabVa
       ref={ref}
       className={`p-3 rounded-2xl border transition-all flex items-center justify-between gap-4 ${
         isCritical
-          ? 'bg-[#FEF2F2]/60 border-[#FECACA]'
+          ? 'bg-critical-wash/60 border-critical-line'
           : isAbnormal
-          ? 'bg-[#FAF9F6] border-[#FDE047]'
-          : 'bg-white border-[#E8E5DC]'
+          ? 'bg-canvas border-caution-line'
+          : 'bg-paper border-rule'
       } ${className}`}
     >
       <div className="min-w-0">
-        <h4 className="text-xs font-bold text-[#151719] truncate">{testName}</h4>
-        <div className="flex items-center gap-2 mt-0.5 text-[11px] font-mono text-[#575D65]">
+        <h4 className="text-xs font-bold text-ink truncate">{testName}</h4>
+        <div className="flex items-center gap-2 mt-0.5 text-[11px] font-mono text-ink-2">
           <span>Ref: {referenceRange}</span>
           {collectionDate && <span>• {collectionDate}</span>}
         </div>
@@ -88,11 +88,11 @@ export const LabValue = forwardRef<HTMLDivElement, LabValueProps>(function LabVa
       <div className="flex items-center gap-3 shrink-0">
         <div className="text-right">
           <span className={`text-sm sm:text-base font-bold font-mono tabular-nums ${
-            isCritical ? 'text-[#991B1B]' : isAbnormal ? 'text-[#854D0E]' : 'text-[#151719]'
+            isCritical ? 'text-critical' : isAbnormal ? 'text-caution' : 'text-ink'
           }`}>
             {value}
           </span>
-          {unit && <span className="text-xs font-mono text-[#88909A] ml-1">{unit}</span>}
+          {unit && <span className="text-xs font-mono text-ink-3 ml-1">{unit}</span>}
         </div>
 
         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${flagConfig.bg} ${flagConfig.text} ${flagConfig.border}`}>

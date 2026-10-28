@@ -22,16 +22,16 @@ export const AIGeneratedContent = forwardRef<HTMLDivElement, AIGeneratedContentP
   return (
     <div
       ref={ref}
-      className={`rounded-2xl border border-dashed border-[#FBCFE8] bg-[#FDF2F8]/50 p-4 transition-all ${className}`}
+      className={`rounded-2xl border border-dashed border-accent-line bg-accent-wash/50 p-4 transition-all ${className}`}
     >
       {/* Required Clinical Provenance Header */}
-      <div className="flex items-center justify-between gap-3 pb-2.5 mb-2.5 border-b border-[#FBCFE8]/80 text-xs">
-        <div className="flex items-center gap-1.5 font-bold text-[#9D174D]">
-          <Sparkles size={13} className="shrink-0 text-[#9D174D]" />
+      <div className="flex items-center justify-between gap-3 pb-2.5 mb-2.5 border-b border-accent-line/80 text-xs">
+        <div className="flex items-center gap-1.5 font-bold text-accent-ink">
+          <Sparkles size={13} className="shrink-0 text-accent-ink" />
           <span>AI generated — physician review required</span>
         </div>
 
-        <div className="flex items-center gap-2 text-[10px] text-[#575D65] font-mono">
+        <div className="flex items-center gap-2 text-[10px] text-ink-2 font-mono">
           <span>{modelIdentifier}</span>
           {sourceDocId && (
             <span className="opacity-70">[{sourceDocId}]</span>
@@ -40,7 +40,7 @@ export const AIGeneratedContent = forwardRef<HTMLDivElement, AIGeneratedContentP
             <button
               type="button"
               onClick={onViewEvidence}
-              className="inline-flex items-center gap-0.5 text-[#9D174D] hover:underline cursor-pointer font-bold"
+              className="inline-flex items-center gap-0.5 text-accent-ink hover:underline cursor-pointer font-bold"
             >
               <span>Evidence</span>
               <ExternalLink size={9} />
@@ -50,12 +50,12 @@ export const AIGeneratedContent = forwardRef<HTMLDivElement, AIGeneratedContentP
       </div>
 
       {/* Draft Content Body */}
-      <div className="text-xs text-[#151719] leading-relaxed">
+      <div className="text-xs text-ink leading-relaxed">
         {children}
       </div>
 
       {/* Non-authoritative Footer Disclaimer */}
-      <div className="mt-3 pt-2 border-t border-[#FBCFE8]/50 flex items-center gap-1.5 text-[10px] text-[#88909A]">
+      <div className="mt-3 pt-2 border-t border-accent-line/50 flex items-center gap-1.5 text-[10px] text-ink-3">
         <AlertCircle size={10} className="shrink-0" />
         <span>Advisory clinical draft only. Not committed to medical record until physician signs off.</span>
       </div>

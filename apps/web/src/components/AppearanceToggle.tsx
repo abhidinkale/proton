@@ -1,31 +1,28 @@
-import { useLayoutEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 import { Moon, Sun } from 'lucide-react';
+import {
+  getPalette,
+  paletteById,
+  subscribePalette,
+  toggleMode
+} from '../design-system/theme/palettes';
 
-const APPEARANCE_KEY = 'proton_appearance';
-type Appearance = 'light' | 'dark';
-
+/**
+ * Light ⇄ dark, as a one-click shortcut next to the full palette switcher.
+ *
+ * It no longer writes `data-theme="dark"`: the palettes are full atmospheres,
+ * so this remembers the last light family and the last dark one and moves
+ * between them. Choosing a specific palette is the switcher's job.
+ */
 export default function AppearanceToggle() {
-  const [appearance, setAppearance] = useState<Appearance>(() =>
-    localStorage.getItem(APPEARANCE_KEY) === 'dark' ? 'dark' : 'light'
-  );
-  const isDark = appearance === 'dark';
-
-  useLayoutEffect(() => {
-    document.documentElement.dataset.theme = appearance;
-    document.documentElement.style.colorScheme = appearance;
-  }, [appearance]);
-
-  const toggleAppearance = () => {
-    const nextAppearance = isDark ? 'light' : 'dark';
-    localStorage.setItem(APPEARANCE_KEY, nextAppearance);
-    setAppearance(nextAppearance);
-  };
+  const activeId = useSyncExternalStore(subscribePalette, getPalette, getPalette);
+  const isDark = paletteById(activeId).mode === 'dark';
 
   return (
     <button
       type="button"
       className="proton-theme-toggle"
-      onClick={toggleAppearance}
+      onClick={toggleMode}
       aria-label={`Switch to ${isDark ? 'light' : 'dark'} mode`}
       title={`Switch to ${isDark ? 'light' : 'dark'} mode`}
       aria-pressed={isDark}

@@ -25,18 +25,18 @@ export default function ConfidenceBadge({
     if (!displayStr.includes('%')) displayStr += '%';
   }
 
-  let style = 'bg-blue-50 text-blue-800 border-blue-200';
-  let dotColor = 'bg-blue-500';
+  let style = 'bg-accent-wash text-accent-ink border-accent-line';
+  let dotColor = 'bg-accent-wash0';
 
   if (numeric >= 90) {
-    style = 'bg-emerald-50 text-emerald-800 border-emerald-200';
-    dotColor = 'bg-emerald-500';
+    style = 'bg-settled-wash text-settled border-settled-line';
+    dotColor = 'bg-settled-wash0';
   } else if (numeric >= 75) {
-    style = 'bg-sky-50 text-sky-800 border-sky-200';
-    dotColor = 'bg-sky-500';
+    style = 'bg-accent-wash text-accent-ink border-accent-line';
+    dotColor = 'bg-accent-wash0';
   } else {
-    style = 'bg-amber-50 text-amber-900 border-amber-200';
-    dotColor = 'bg-amber-500';
+    style = 'bg-caution-wash text-caution border-caution-line';
+    dotColor = 'bg-caution-wash0';
   }
 
   const sizeClass = size === 'xs' ? 'px-1.5 py-0.2 text-[9px]' : 'px-2 py-0.5 text-[10px]';

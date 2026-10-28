@@ -26,22 +26,22 @@ import {
 const STATUS_META: Record<InvoiceStatus, { label: string; badge: string; dot: string }> = {
   DRAFT: {
     label: 'Draft',
-    badge: 'bg-[#E0E7FF] text-[#1E40AF]',
-    dot: '#BFDBFE'
+    badge: 'bg-accent-wash text-accent-ink',
+    dot: 'var(--accent-line)'
   },
   SENT: {
     label: 'Sent',
-    badge: 'bg-[#FEF3C7] text-[#92400E]',
-    dot: '#FDE68A'
+    badge: 'bg-caution-wash text-caution',
+    dot: 'var(--c-caution-line)'
   },
   PAID: {
     label: 'Paid',
-    badge: 'bg-[#DCFCE7] text-[#166534]',
+    badge: 'bg-settled-wash text-settled',
     dot: '#86EFAC'
   },
   VOID: {
     label: 'Void',
-    badge: 'bg-[#F3F4F6] text-[#4B5563]',
+    badge: 'bg-paper-2 text-ink-2',
     dot: '#D1D5DB'
   }
 };
@@ -180,10 +180,10 @@ export default function Billing() {
   const donutSegments = useMemo(() => {
     const circumference = 2 * Math.PI * 38;
     const groups = [
-      { key: 'PAID', value: totals.byStatus.PAID, color: '#86EFAC' },
-      { key: 'SENT', value: totals.byStatus.SENT, color: '#FDE68A' },
-      { key: 'DRAFT', value: totals.byStatus.DRAFT, color: '#BFDBFE' },
-      { key: 'VOID', value: totals.byStatus.VOID, color: '#D1D5DB' }
+      { key: 'PAID', value: totals.byStatus.PAID, color: 'var(--c-on-solid)' },
+      { key: 'SENT', value: totals.byStatus.SENT, color: 'var(--c-on-solid)' },
+      { key: 'DRAFT', value: totals.byStatus.DRAFT, color: 'var(--c-on-solid)' },
+      { key: 'VOID', value: totals.byStatus.VOID, color: 'var(--c-ink-3)' }
     ];
     const total = groups.reduce((sum, group) => sum + group.value, 0);
     let offset = 0;
@@ -201,8 +201,8 @@ export default function Billing() {
     <Layout>
       <div className="space-y-6 animate-in fade-in pb-12 relative">
         {toastMessage && (
-          <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-2.5 bg-[#151719] text-white rounded-2xl shadow-xl text-xs font-semibold animate-in fade-in slide-in-from-bottom-2">
-            <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+          <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-2.5 bg-solid text-white rounded-2xl shadow-xl text-xs font-semibold animate-in fade-in slide-in-from-bottom-2">
+            <CheckCircle2 size={16} className="text-settled-on-solid shrink-0" />
             <span>{toastMessage}</span>
           </div>
         )}
@@ -210,10 +210,10 @@ export default function Billing() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#151719]">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-ink">
               Billing & invoices
             </h1>
-            <p className="text-xs sm:text-sm text-[#575D65] mt-0.5">
+            <p className="text-xs sm:text-sm text-ink-2 mt-0.5">
               Every invoice is derived from a signed encounter — no invented claims.
             </p>
           </div>
@@ -222,7 +222,7 @@ export default function Billing() {
             type="button"
             onClick={() => { void loadLedger(); }}
             disabled={isLoading}
-            className="inline-flex items-center gap-1.5 self-start rounded-full border border-[#E8E5DC] bg-white px-3.5 py-1.5 text-xs font-semibold text-[#151719] shadow-xs transition-colors hover:bg-[#F9F8F5] disabled:opacity-60 cursor-pointer"
+            className="inline-flex items-center gap-1.5 self-start rounded-full border border-rule bg-paper px-3.5 py-1.5 text-xs font-semibold text-ink shadow-xs transition-colors hover:bg-canvas disabled:opacity-60 cursor-pointer"
           >
             <RefreshCw size={13} className={isLoading ? 'animate-spin' : ''} />
             Refresh ledger
@@ -230,7 +230,7 @@ export default function Billing() {
         </div>
 
         {loadError && (
-          <div className="flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">
+          <div className="flex items-start gap-2 rounded-2xl border border-caution-line bg-caution-wash px-4 py-3 text-xs text-caution">
             <AlertTriangle size={15} className="mt-0.5 shrink-0" />
             <div>
               <p className="font-semibold">Billing ledger unavailable</p>
@@ -241,10 +241,10 @@ export default function Billing() {
 
         {/* Analytics */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-4 bg-white rounded-3xl border border-[#E8E5DC] p-6 shadow-[0_2px_12px_rgba(0,0,0,0.02)] flex flex-col items-center justify-center relative">
+          <div className="lg:col-span-4 bg-paper rounded-3xl border border-rule p-6 shadow-[0_2px_12px_rgba(0,0,0,0.02)] flex flex-col items-center justify-center relative">
             <div className="relative w-48 h-48 flex items-center justify-center">
               <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="38" fill="transparent" stroke="#F4F2EC" strokeWidth="12" />
+                <circle cx="50" cy="50" r="38" fill="transparent" stroke="var(--c-on-solid)" strokeWidth="12" />
                 {donutSegments.map((segment) => (
                   <circle
                     key={segment.key}
@@ -262,20 +262,20 @@ export default function Billing() {
               </svg>
 
               <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                <span className="text-2xl font-extrabold tracking-tight text-[#151719] font-mono">
+                <span className="text-2xl font-extrabold tracking-tight text-ink font-mono">
                   {isLoading && !summary ? '—' : formatCurrency(totals.totalCents)}
                 </span>
-                <span className="text-[10px] uppercase font-bold tracking-wider text-[#88909A] mt-0.5">
+                <span className="text-[10px] uppercase font-bold tracking-wider text-ink-3 mt-0.5">
                   Total billed
                 </span>
               </div>
             </div>
 
-            <div className="w-full mt-4 pt-4 border-t border-[#F0ECE1] flex items-center justify-around text-[11px]">
+            <div className="w-full mt-4 pt-4 border-t border-rule flex items-center justify-around text-[11px]">
               {(['PAID', 'SENT', 'DRAFT'] as const).map((status) => (
                 <div key={status} className="flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: STATUS_META[status].dot }} />
-                  <span className="text-[#575D65]">
+                  <span className="text-ink-2">
                     {STATUS_META[status].label} · {totals.byStatus[status]}
                   </span>
                 </div>
@@ -284,10 +284,10 @@ export default function Billing() {
           </div>
 
           <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-[#FCE7F3] rounded-3xl border border-[#FBCFE8] p-5 flex flex-col justify-between text-[#9D174D] shadow-xs">
+            <div className="bg-accent-wash rounded-3xl border border-accent-line p-5 flex flex-col justify-between text-accent-ink shadow-xs">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider">Collected</span>
-                <div className="flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-white/70 text-[10px] font-bold">
+                <div className="flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-paper/70 text-[10px] font-bold">
                   <TrendingUp className="w-3 h-3" />
                   <span>{totals.byStatus.PAID}</span>
                 </div>
@@ -303,10 +303,10 @@ export default function Billing() {
               </div>
             </div>
 
-            <div className="bg-[#EFF6FF] rounded-3xl border border-[#BFDBFE] p-5 flex flex-col justify-between text-[#1E40AF] shadow-xs">
+            <div className="bg-accent-wash rounded-3xl border border-accent-line p-5 flex flex-col justify-between text-accent-ink shadow-xs">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider">Outstanding</span>
-                <div className="flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-white/70 text-[10px] font-bold">
+                <div className="flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-paper/70 text-[10px] font-bold">
                   <Send className="w-3 h-3" />
                   <span>{totals.byStatus.SENT}</span>
                 </div>
@@ -322,10 +322,10 @@ export default function Billing() {
               </div>
             </div>
 
-            <div className="bg-[#FEF08A] rounded-3xl border border-[#FDE047] p-5 flex flex-col justify-between text-[#854D0E] shadow-xs">
+            <div className="bg-caution-wash rounded-3xl border border-caution-line p-5 flex flex-col justify-between text-caution shadow-xs">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider">Patient responsibility</span>
-                <div className="flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-white/70 text-[10px] font-bold">
+                <div className="flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-paper/70 text-[10px] font-bold">
                   <CreditCard className="w-3 h-3" />
                   <span>Est.</span>
                 </div>
@@ -351,33 +351,33 @@ export default function Billing() {
         {draftInvoices.length > 0 && (
           <div>
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-sm font-bold text-[#151719] uppercase tracking-wider">Awaiting submission</h2>
-              <span className="font-mono text-[11px] text-[#88909A]">{formatCurrency(awaitingSubmissionCents)} uncoded</span>
+              <h2 className="text-sm font-bold text-ink uppercase tracking-wider">Awaiting submission</h2>
+              <span className="font-mono text-[11px] text-ink-3">{formatCurrency(awaitingSubmissionCents)} uncoded</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {draftInvoices.slice(0, 4).map((invoice) => (
-                <div key={invoice.id} className="bg-[#F9F8F5] rounded-3xl border border-[#E8E5DC] p-4 flex items-center justify-between gap-4">
+                <div key={invoice.id} className="bg-canvas rounded-3xl border border-rule p-4 flex items-center justify-between gap-4">
                   <div className="flex min-w-0 items-center gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#E0E7FF] text-xs font-bold text-[#1E40AF]">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-accent-wash text-xs font-bold text-accent-ink">
                       {initials(invoice.patientName)}
                     </div>
                     <div className="min-w-0">
-                      <h4 className="truncate text-xs font-bold text-[#151719]">{invoice.patientName}</h4>
-                      <p className="truncate text-[11px] text-[#575D65]">
+                      <h4 className="truncate text-xs font-bold text-ink">{invoice.patientName}</h4>
+                      <p className="truncate text-[11px] text-ink-2">
                         {invoice.cptCode} · {invoice.cptDescription}
                       </p>
                     </div>
                   </div>
 
                   <div className="flex shrink-0 items-center gap-2.5">
-                    <span className="rounded-full bg-white px-2.5 py-1 font-mono text-[10px] font-semibold text-[#575D65]">
+                    <span className="rounded-full bg-paper px-2.5 py-1 font-mono text-[10px] font-semibold text-ink-2">
                       {formatCurrency(invoice.amountCents)}
                     </span>
                     <button
                       type="button"
                       onClick={() => { void changeStatus(invoice, 'SENT'); }}
                       disabled={pendingInvoiceId === invoice.id}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-[#151619] px-3 py-1.5 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-[#252830] disabled:opacity-60 cursor-pointer"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-solid px-3 py-1.5 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-solid disabled:opacity-60 cursor-pointer"
                     >
                       {pendingInvoiceId === invoice.id
                         ? <LoaderCircle size={12} className="animate-spin" />
@@ -392,8 +392,8 @@ export default function Billing() {
         )}
 
         {/* Ledger */}
-        <div className="bg-white rounded-3xl border border-[#E8E5DC] p-5 sm:p-6 shadow-[0_2px_12px_rgba(0,0,0,0.02)] space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-[#F0ECE1]">
+        <div className="bg-paper rounded-3xl border border-rule p-5 sm:p-6 shadow-[0_2px_12px_rgba(0,0,0,0.02)] space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-rule">
             <div className="flex items-center gap-2 overflow-x-auto">
               {FILTERS.map((entry) => {
                 const count = entry.key === 'all' ? invoices.length : totals.byStatus[entry.key];
@@ -404,8 +404,8 @@ export default function Billing() {
                     onClick={() => setFilter(entry.key)}
                     className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-colors cursor-pointer ${
                       filter === entry.key
-                        ? 'bg-[#151619] text-white shadow-xs'
-                        : 'text-[#575D65] hover:bg-[#F9F8F5]'
+                        ? 'bg-solid text-white shadow-xs'
+                        : 'text-ink-2 hover:bg-canvas'
                     }`}
                   >
                     {entry.label} ({count})
@@ -413,25 +413,25 @@ export default function Billing() {
                 );
               })}
             </div>
-            <span className="font-mono text-[10.5px] text-[#88909A]">
+            <span className="font-mono text-[10.5px] text-ink-3">
               {filteredInvoices.length} of {invoices.length} displayed
             </span>
           </div>
 
           {isLoading && invoices.length === 0 ? (
-            <div className="flex items-center justify-center gap-2 py-16 text-xs text-[#575D65]">
+            <div className="flex items-center justify-center gap-2 py-16 text-xs text-ink-2">
               <LoaderCircle size={16} className="animate-spin" />
               Loading the billing ledger…
             </div>
           ) : filteredInvoices.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F4F2EC] text-[#88909A]">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-paper-2 text-ink-3">
                 <FileText size={20} />
               </div>
-              <p className="text-sm font-semibold text-[#151719]">
+              <p className="text-sm font-semibold text-ink">
                 {invoices.length === 0 ? 'No billable encounters yet' : `No ${filter.toLowerCase()} invoices`}
               </p>
-              <p className="max-w-sm text-[11.5px] leading-relaxed text-[#6E767E]">
+              <p className="max-w-sm text-[11.5px] leading-relaxed text-ink-2">
                 {invoices.length === 0
                   ? 'Complete an encounter and sign the note. The coded invoice then appears here automatically.'
                   : 'Switch tabs to see the rest of the ledger.'}
@@ -441,7 +441,7 @@ export default function Billing() {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-[#E8E5DC] text-[#88909A] font-medium">
+                  <tr className="border-b border-rule text-ink-3 font-medium">
                     <th className="pb-3 font-semibold">Patient</th>
                     <th className="pb-3 font-semibold">Service date</th>
                     <th className="pb-3 font-semibold">CPT</th>
@@ -451,31 +451,31 @@ export default function Billing() {
                     <th className="pb-3 font-semibold text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#F0ECE1]">
+                <tbody className="divide-y divide-rule">
                   {filteredInvoices.map((invoice) => {
                     const meta = STATUS_META[invoice.status];
                     return (
                       <tr
                         key={invoice.id}
                         onClick={() => setSelectedInvoice(invoice)}
-                        className="group cursor-pointer transition-colors hover:bg-[#F9F8F5]"
+                        className="group cursor-pointer transition-colors hover:bg-canvas"
                       >
                         <td className="py-3">
-                          <div className="font-semibold text-[#151719] group-hover:text-[#1E40AF] transition-colors">
+                          <div className="font-semibold text-ink group-hover:text-accent-ink transition-colors">
                             {invoice.patientName}
                           </div>
-                          <div className="font-mono text-[10px] text-[#88909A]">{invoice.mrn || invoice.patientId}</div>
+                          <div className="font-mono text-[10px] text-ink-3">{invoice.mrn || invoice.patientId}</div>
                         </td>
-                        <td className="py-3 font-mono text-[#575D65]">
+                        <td className="py-3 font-mono text-ink-2">
                           {invoice.date}
-                          <span className="ml-1 text-[10px] text-[#88909A]">{invoice.time}</span>
+                          <span className="ml-1 text-[10px] text-ink-3">{invoice.time}</span>
                         </td>
                         <td className="py-3">
-                          <div className="font-mono font-bold text-[#151719]">{invoice.cptCode}</div>
-                          <div className="max-w-[190px] truncate text-[10px] text-[#88909A]">{invoice.cptDescription}</div>
+                          <div className="font-mono font-bold text-ink">{invoice.cptCode}</div>
+                          <div className="max-w-[190px] truncate text-[10px] text-ink-3">{invoice.cptDescription}</div>
                         </td>
-                        <td className="max-w-[150px] truncate py-3 text-[#575D65]">{invoice.payer}</td>
-                        <td className="py-3 font-mono font-bold text-[#151719]">{formatCurrency(invoice.amountCents)}</td>
+                        <td className="max-w-[150px] truncate py-3 text-ink-2">{invoice.payer}</td>
+                        <td className="py-3 font-mono font-bold text-ink">{formatCurrency(invoice.amountCents)}</td>
                         <td className="py-3">
                           <span className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-bold ${meta.badge}`}>
                             {meta.label}
@@ -486,7 +486,7 @@ export default function Billing() {
                             <button
                               type="button"
                               onClick={() => setSelectedInvoice(invoice)}
-                              className="rounded p-1 text-[#88909A] hover:text-[#151719] cursor-pointer"
+                              className="rounded p-1 text-ink-3 hover:text-ink cursor-pointer"
                               title="View invoice"
                             >
                               <FileText className="w-3.5 h-3.5" />
@@ -496,7 +496,7 @@ export default function Billing() {
                                 type="button"
                                 onClick={() => { void changeStatus(invoice, 'SENT'); }}
                                 disabled={pendingInvoiceId === invoice.id}
-                                className="rounded p-1 text-[#88909A] hover:text-[#1E40AF] disabled:opacity-50 cursor-pointer"
+                                className="rounded p-1 text-ink-3 hover:text-accent-ink disabled:opacity-50 cursor-pointer"
                                 title="Send to payer"
                               >
                                 <Send className="w-3.5 h-3.5" />
@@ -507,7 +507,7 @@ export default function Billing() {
                                 type="button"
                                 onClick={() => { void changeStatus(invoice, 'PAID'); }}
                                 disabled={pendingInvoiceId === invoice.id}
-                                className="rounded p-1 text-[#88909A] hover:text-emerald-700 disabled:opacity-50 cursor-pointer"
+                                className="rounded p-1 text-ink-3 hover:text-settled disabled:opacity-50 cursor-pointer"
                                 title="Mark paid"
                               >
                                 <CheckCircle2 className="w-3.5 h-3.5" />
@@ -518,7 +518,7 @@ export default function Billing() {
                                 type="button"
                                 onClick={() => { void changeStatus(invoice, 'DRAFT'); }}
                                 disabled={pendingInvoiceId === invoice.id}
-                                className="rounded p-1 text-[#88909A] hover:text-[#151719] disabled:opacity-50 cursor-pointer"
+                                className="rounded p-1 text-ink-3 hover:text-ink disabled:opacity-50 cursor-pointer"
                                 title="Reopen as draft"
                               >
                                 <RotateCcw className="w-3.5 h-3.5" />
@@ -538,15 +538,15 @@ export default function Billing() {
         {/* Invoice detail */}
         {selectedInvoice && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in">
-            <div className="bg-white border border-[#E8E5DC] rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden animate-in zoom-in-95">
-              <div className="px-6 py-5 border-b border-[#F0ECE1] flex items-center justify-between bg-[#FAF9F5]">
+            <div className="bg-paper border border-rule rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden animate-in zoom-in-95">
+              <div className="px-6 py-5 border-b border-rule flex items-center justify-between bg-paper-2">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-2xl bg-[#151719] text-white flex items-center justify-center">
+                  <div className="w-9 h-9 rounded-2xl bg-solid text-white flex items-center justify-center">
                     <CreditCard size={18} />
                   </div>
                   <div>
-                    <h3 className="font-bold text-[#151719] text-base">Invoice {selectedInvoice.id.slice(0, 18)}</h3>
-                    <p className="text-[11px] text-[#575D65]">
+                    <h3 className="font-bold text-ink text-base">Invoice {selectedInvoice.id.slice(0, 18)}</h3>
+                    <p className="text-[11px] text-ink-2">
                       {selectedInvoice.date} · {selectedInvoice.time} · {selectedInvoice.visitType}
                     </p>
                   </div>
@@ -554,7 +554,7 @@ export default function Billing() {
                 <button
                   type="button"
                   onClick={() => setSelectedInvoice(null)}
-                  className="w-8 h-8 rounded-full hover:bg-[#EAE8E3] text-[#575D65] flex items-center justify-center transition-colors cursor-pointer"
+                  className="w-8 h-8 rounded-full hover:bg-paper-2 text-ink-2 flex items-center justify-center transition-colors cursor-pointer"
                   aria-label="Close invoice"
                 >
                   <X size={16} />
@@ -562,16 +562,16 @@ export default function Billing() {
               </div>
 
               <div className="p-6 space-y-4 text-xs">
-                <div className="p-3.5 bg-[#FAF9F6] border border-[#E8E5DC] rounded-2xl flex items-center justify-between">
+                <div className="p-3.5 bg-canvas border border-rule rounded-2xl flex items-center justify-between">
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-[#88909A]">Patient</span>
-                    <h4 className="font-bold text-sm text-[#151719]">{selectedInvoice.patientName}</h4>
-                    <span className="text-[11px] text-[#575D65]">
+                    <span className="text-[10px] uppercase font-bold text-ink-3">Patient</span>
+                    <h4 className="font-bold text-sm text-ink">{selectedInvoice.patientName}</h4>
+                    <span className="text-[11px] text-ink-2">
                       {selectedInvoice.mrn || 'MRN not recorded'} · Payer: {selectedInvoice.payer}
                     </span>
                   </div>
                   <div className="text-right">
-                    <span className="text-[10px] uppercase font-bold text-[#88909A]">Status</span>
+                    <span className="text-[10px] uppercase font-bold text-ink-3">Status</span>
                     <div>
                       <span className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold ${STATUS_META[selectedInvoice.status].badge}`}>
                         {STATUS_META[selectedInvoice.status].label}
@@ -581,25 +581,25 @@ export default function Billing() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-[#88909A]">Coding attribution</span>
-                  <div className="p-3 bg-white border border-[#E8E5DC] rounded-xl space-y-2">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-ink-3">Coding attribution</span>
+                  <div className="p-3 bg-paper border border-rule rounded-xl space-y-2">
                     <div className="flex items-center justify-between gap-3">
-                      <span className="font-semibold text-[#151719]">CPT</span>
-                      <span className="font-mono text-[#151719] bg-[#F4F2EC] px-2 py-0.5 rounded text-[11px] font-bold">
+                      <span className="font-semibold text-ink">CPT</span>
+                      <span className="font-mono text-ink bg-paper-2 px-2 py-0.5 rounded text-[11px] font-bold">
                         {selectedInvoice.cptCode}
                       </span>
                     </div>
                     <div className="flex items-center justify-between gap-3">
-                      <span className="font-semibold text-[#151719]">Description</span>
-                      <span className="text-right text-[#575D65]">{selectedInvoice.cptDescription}</span>
+                      <span className="font-semibold text-ink">Description</span>
+                      <span className="text-right text-ink-2">{selectedInvoice.cptDescription}</span>
                     </div>
                     <div className="flex items-center justify-between gap-3">
-                      <span className="font-semibold text-[#151719]">ICD-10</span>
-                      <span className="truncate font-mono text-[#575D65]">{selectedInvoice.icd10}</span>
+                      <span className="font-semibold text-ink">ICD-10</span>
+                      <span className="truncate font-mono text-ink-2">{selectedInvoice.icd10}</span>
                     </div>
                     <div className="flex items-center justify-between gap-3">
-                      <span className="font-semibold text-[#151719]">Signed note</span>
-                      <span className={`font-mono text-[11px] ${selectedInvoice.noteId ? 'text-emerald-700' : 'text-amber-700'}`}>
+                      <span className="font-semibold text-ink">Signed note</span>
+                      <span className={`font-mono text-[11px] ${selectedInvoice.noteId ? 'text-settled' : 'text-caution'}`}>
                         {selectedInvoice.noteId ? `attached · ${selectedInvoice.noteId.slice(0, 16)}` : 'none'}
                       </span>
                     </div>
@@ -607,35 +607,35 @@ export default function Billing() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-[#88909A]">Fee breakdown</span>
-                  <div className="border border-[#E8E5DC] rounded-xl divide-y divide-[#F0ECE1]">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-ink-3">Fee breakdown</span>
+                  <div className="border border-rule rounded-xl divide-y divide-rule">
                     <div className="p-2.5 flex items-center justify-between">
-                      <span className="text-[#575D65]">Total professional charge</span>
-                      <span className="font-mono font-semibold text-[#151719]">{formatCurrency(selectedInvoice.amountCents)}</span>
+                      <span className="text-ink-2">Total professional charge</span>
+                      <span className="font-mono font-semibold text-ink">{formatCurrency(selectedInvoice.amountCents)}</span>
                     </div>
                     <div className="p-2.5 flex items-center justify-between">
-                      <span className="text-[#575D65]">Estimated insurance payment (80%)</span>
-                      <span className="font-mono font-semibold text-[#151719]">{formatCurrency(selectedInvoice.insuranceEstimateCents)}</span>
+                      <span className="text-ink-2">Estimated insurance payment (80%)</span>
+                      <span className="font-mono font-semibold text-ink">{formatCurrency(selectedInvoice.insuranceEstimateCents)}</span>
                     </div>
                     <div className="p-2.5 flex items-center justify-between">
-                      <span className="text-[#575D65]">Estimated patient responsibility</span>
-                      <span className="font-mono font-semibold text-[#151719]">{formatCurrency(selectedInvoice.patientResponsibilityCents)}</span>
+                      <span className="text-ink-2">Estimated patient responsibility</span>
+                      <span className="font-mono font-semibold text-ink">{formatCurrency(selectedInvoice.patientResponsibilityCents)}</span>
                     </div>
-                    <div className="p-2.5 bg-[#FAF9F5] flex items-center justify-between font-bold">
-                      <span className="text-[#151719]">Total billed</span>
-                      <span className="font-mono text-base text-[#151719]">{formatCurrency(selectedInvoice.amountCents)}</span>
+                    <div className="p-2.5 bg-paper-2 flex items-center justify-between font-bold">
+                      <span className="text-ink">Total billed</span>
+                      <span className="font-mono text-base text-ink">{formatCurrency(selectedInvoice.amountCents)}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-[#F0ECE1] space-y-3">
+                <div className="pt-3 border-t border-rule space-y-3">
                   <div className="flex flex-wrap items-center gap-2">
                     {selectedInvoice.status === 'DRAFT' && (
                       <button
                         type="button"
                         onClick={() => { void changeStatus(selectedInvoice, 'SENT'); }}
                         disabled={pendingInvoiceId === selectedInvoice.id}
-                        className="inline-flex items-center gap-1.5 rounded-full bg-[#151719] px-3.5 py-1.5 font-semibold text-white transition-colors hover:bg-[#252830] disabled:opacity-60 cursor-pointer"
+                        className="inline-flex items-center gap-1.5 rounded-full bg-solid px-3.5 py-1.5 font-semibold text-white transition-colors hover:bg-solid disabled:opacity-60 cursor-pointer"
                       >
                         {pendingInvoiceId === selectedInvoice.id
                           ? <LoaderCircle size={13} className="animate-spin" />
@@ -648,7 +648,7 @@ export default function Billing() {
                         type="button"
                         onClick={() => { void changeStatus(selectedInvoice, 'PAID'); }}
                         disabled={pendingInvoiceId === selectedInvoice.id}
-                        className="inline-flex items-center gap-1.5 rounded-full bg-emerald-700 px-3.5 py-1.5 font-semibold text-white transition-colors hover:bg-emerald-800 disabled:opacity-60 cursor-pointer"
+                        className="inline-flex items-center gap-1.5 rounded-full bg-settled px-3.5 py-1.5 font-semibold text-white transition-colors hover:bg-solid disabled:opacity-60 cursor-pointer"
                       >
                         {pendingInvoiceId === selectedInvoice.id
                           ? <LoaderCircle size={13} className="animate-spin" />
@@ -661,7 +661,7 @@ export default function Billing() {
                         type="button"
                         onClick={() => { void changeStatus(selectedInvoice, 'DRAFT'); }}
                         disabled={pendingInvoiceId === selectedInvoice.id}
-                        className="inline-flex items-center gap-1.5 rounded-full bg-[#151719] px-3.5 py-1.5 font-semibold text-white transition-colors hover:bg-[#252830] disabled:opacity-60 cursor-pointer"
+                        className="inline-flex items-center gap-1.5 rounded-full bg-solid px-3.5 py-1.5 font-semibold text-white transition-colors hover:bg-solid disabled:opacity-60 cursor-pointer"
                       >
                         <RotateCcw size={13} />
                         Reopen as draft
@@ -672,7 +672,7 @@ export default function Billing() {
                         type="button"
                         onClick={() => { void changeStatus(selectedInvoice, 'VOID'); }}
                         disabled={pendingInvoiceId === selectedInvoice.id}
-                        className="inline-flex items-center gap-1.5 rounded-full border border-[#E8E5DC] px-3.5 py-1.5 font-semibold text-[#575D65] transition-colors hover:bg-[#F9F8F5] disabled:opacity-60 cursor-pointer"
+                        className="inline-flex items-center gap-1.5 rounded-full border border-rule px-3.5 py-1.5 font-semibold text-ink-2 transition-colors hover:bg-canvas disabled:opacity-60 cursor-pointer"
                       >
                         <Ban size={13} />
                         Void
@@ -681,8 +681,8 @@ export default function Billing() {
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 text-[11px] text-[#575D65]">
-                      <ShieldCheck size={14} className="text-emerald-600" />
+                    <div className="flex items-center gap-1.5 text-[11px] text-ink-2">
+                      <ShieldCheck size={14} className="text-settled" />
                       <span>Status changes are written to the audit chain</span>
                     </div>
 
@@ -690,7 +690,7 @@ export default function Billing() {
                       <button
                         type="button"
                         onClick={() => window.print()}
-                        className="px-3.5 py-1.5 rounded-full border border-[#E8E5DC] text-[#151719] hover:bg-[#F9F8F5] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                        className="px-3.5 py-1.5 rounded-full border border-rule text-ink hover:bg-canvas font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
                       >
                         <Printer size={13} />
                         <span>Print</span>
@@ -701,7 +701,7 @@ export default function Billing() {
                           downloadInvoiceCsv(selectedInvoice);
                           showToast(`Invoice ${selectedInvoice.cptCode} exported as CSV.`);
                         }}
-                        className="px-4 py-1.5 rounded-full bg-[#151719] hover:bg-[#252830] text-white font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                        className="px-4 py-1.5 rounded-full bg-solid hover:bg-solid text-white font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
                       >
                         <Download size={13} />
                         <span>Export CSV</span>

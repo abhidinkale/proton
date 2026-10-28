@@ -64,6 +64,16 @@ jobs:
         working-directory: ./apps/web
         run: npm run build
 
+      # A component that names a hex colour is invisible to the palette system
+      # and becomes a white card on a navy page. This gate keeps it at zero.
+      - name: Design Token Guard
+        working-directory: ./apps/web
+        run: npm run check:design-tokens
+
+      - name: API Client Guard
+        working-directory: ./apps/web
+        run: npm run check:api-client
+
       - name: Deterministic API, Workflow Durability & Clinical Safety Suites
         working-directory: ./apps/api
         run: npm test

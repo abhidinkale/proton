@@ -39,44 +39,44 @@ export default function SafetyIntervention({
 
   const severityConfig = {
     HARD_STOP: {
-      bg: 'bg-[#FEF2F2]',
-      border: 'border-[#FECACA]',
-      titleColor: 'text-[#991B1B]',
-      badgeColor: 'bg-[#991B1B] text-white',
+      bg: 'bg-critical-wash',
+      border: 'border-critical-line',
+      titleColor: 'text-critical',
+      badgeColor: 'bg-critical text-white',
       icon: ShieldAlert,
-      iconColor: 'text-[#EF4444]'
+      iconColor: 'text-critical'
     },
     CRITICAL: {
-      bg: 'bg-[#FEF2F2]',
-      border: 'border-[#FECACA]',
-      titleColor: 'text-[#991B1B]',
-      badgeColor: 'bg-[#FEE2E2] text-[#991B1B] border border-[#FECACA]',
+      bg: 'bg-critical-wash',
+      border: 'border-critical-line',
+      titleColor: 'text-critical',
+      badgeColor: 'bg-critical-wash text-critical border border-critical-line',
       icon: ShieldAlert,
-      iconColor: 'text-[#DC2626]'
+      iconColor: 'text-critical'
     },
     WARNING: {
-      bg: 'bg-[#FFEDD5]',
-      border: 'border-[#FED7AA]',
-      titleColor: 'text-[#9A3412]',
-      badgeColor: 'bg-[#FFEDD5] text-[#9A3412] border border-[#FED7AA]',
+      bg: 'bg-caution-wash',
+      border: 'border-caution-line',
+      titleColor: 'text-caution',
+      badgeColor: 'bg-caution-wash text-caution border border-caution-line',
       icon: AlertTriangle,
-      iconColor: 'text-[#EA580C]'
+      iconColor: 'text-caution'
     },
     ATTENTION: {
-      bg: 'bg-[#FEF08A]/80',
-      border: 'border-[#FDE047]',
-      titleColor: 'text-[#854D0E]',
-      badgeColor: 'bg-[#FEF9C3] text-[#854D0E] border border-[#FDE047]',
+      bg: 'bg-caution-wash/80',
+      border: 'border-caution-line',
+      titleColor: 'text-caution',
+      badgeColor: 'bg-caution-wash text-caution border border-caution-line',
       icon: AlertCircle,
-      iconColor: 'text-[#CA8A04]'
+      iconColor: 'text-caution'
     },
     INFO: {
-      bg: 'bg-[#EFF6FF]',
-      border: 'border-[#BFDBFE]',
-      titleColor: 'text-[#1E40AF]',
-      badgeColor: 'bg-[#DBEAFE] text-[#1E40AF] border border-[#BFDBFE]',
+      bg: 'bg-accent-wash',
+      border: 'border-accent-line',
+      titleColor: 'text-accent-ink',
+      badgeColor: 'bg-accent-wash text-accent-ink border border-accent-line',
       icon: Info,
-      iconColor: 'text-[#2563EB]'
+      iconColor: 'text-accent-ink'
     }
   }[intervention.severity];
 
@@ -89,7 +89,7 @@ export default function SafetyIntervention({
       aria-live={isHardStop ? 'assertive' : 'polite'}
     >
       <div className="flex items-start gap-4">
-        <div className={`p-2.5 rounded-2xl bg-white shadow-xs shrink-0 ${severityConfig.iconColor}`}>
+        <div className={`p-2.5 rounded-2xl bg-paper shadow-xs shrink-0 ${severityConfig.iconColor}`}>
           <IconComponent size={22} />
         </div>
 
@@ -100,12 +100,12 @@ export default function SafetyIntervention({
               <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${severityConfig.badgeColor}`}>
                 {intervention.severity.replace('_', ' ')}
               </span>
-              <span className="text-xs font-mono text-[#88909A]">
+              <span className="text-xs font-mono text-ink-3">
                 {intervention.ruleId}
               </span>
             </div>
             {isHardStop && (
-              <span className="flex items-center gap-1 text-[11px] font-bold text-[#991B1B]">
+              <span className="flex items-center gap-1 text-[11px] font-bold text-critical">
                 <Lock size={12} />
                 <span>Deterministic Safety Lock</span>
               </span>
@@ -116,32 +116,32 @@ export default function SafetyIntervention({
             <h3 className={`text-base font-bold tracking-tight ${severityConfig.titleColor}`}>
               {intervention.title}
             </h3>
-            <p className="text-xs text-[#575D65] mt-1 leading-relaxed">
+            <p className="text-xs text-ink-2 mt-1 leading-relaxed">
               {intervention.description}
             </p>
           </div>
 
           {/* Structured Conflict Breakdown */}
           {(intervention.patientAllergy || intervention.proposedItem) && (
-            <div className="p-3.5 bg-white/80 rounded-2xl border border-black/5 space-y-2 text-xs">
+            <div className="p-3.5 bg-paper/80 rounded-2xl border border-black/5 space-y-2 text-xs">
               {intervention.patientAllergy && (
                 <div className="flex items-start gap-2">
-                  <span className="font-semibold text-[#88909A] w-28 shrink-0">Documented Allergy:</span>
-                  <span className="font-bold text-[#991B1B]">
+                  <span className="font-semibold text-ink-3 w-28 shrink-0">Documented Allergy:</span>
+                  <span className="font-bold text-critical">
                     {intervention.patientAllergy.allergen} ({intervention.patientAllergy.reaction})
                   </span>
                 </div>
               )}
               {intervention.proposedItem && (
                 <div className="flex items-start gap-2">
-                  <span className="font-semibold text-[#88909A] w-28 shrink-0">Blocked Item:</span>
-                  <span className="font-bold text-[#151719]">
-                    {intervention.proposedItem.name} — <span className="font-normal text-[#575D65]">{intervention.proposedItem.conflictReason}</span>
+                  <span className="font-semibold text-ink-3 w-28 shrink-0">Blocked Item:</span>
+                  <span className="font-bold text-ink">
+                    {intervention.proposedItem.name} — <span className="font-normal text-ink-2">{intervention.proposedItem.conflictReason}</span>
                   </span>
                 </div>
               )}
               {intervention.sourceGuideline && (
-                <div className="flex items-start gap-2 pt-1 border-t border-black/5 text-[11px] text-[#88909A]">
+                <div className="flex items-start gap-2 pt-1 border-t border-black/5 text-[11px] text-ink-3">
                   <span className="font-semibold w-28 shrink-0">Clinical Basis:</span>
                   <span className="italic">{intervention.sourceGuideline}</span>
                 </div>
@@ -166,7 +166,7 @@ export default function SafetyIntervention({
               <button
                 type="button"
                 onClick={() => setIsOverrideOpen(prev => !prev)}
-                className="text-xs font-semibold text-[#991B1B] hover:underline cursor-pointer py-1"
+                className="text-xs font-semibold text-critical hover:underline cursor-pointer py-1"
               >
                 {isOverrideOpen ? 'Cancel Documented Override' : 'Document Physician Clinical Directive →'}
               </button>
@@ -186,12 +186,12 @@ export default function SafetyIntervention({
 
           {/* Physician Override Drawer */}
           {isOverrideOpen && !overrideSuccess && (
-            <div className="p-4 bg-white rounded-2xl border border-[#E8E5DC] space-y-3 mt-3 animate-in fade-in">
-              <div className="flex items-center gap-2 text-xs font-bold text-[#151719]">
-                <ShieldAlert size={14} className="text-[#991B1B]" />
+            <div className="p-4 bg-paper rounded-2xl border border-rule space-y-3 mt-3 animate-in fade-in">
+              <div className="flex items-center gap-2 text-xs font-bold text-ink">
+                <ShieldAlert size={14} className="text-critical" />
                 <span>Physician Direct-Order Attestation</span>
               </div>
-              <p className="text-[11px] text-[#575D65]">
+              <p className="text-[11px] text-ink-2">
                 To override this safety intervention, document clinical justification. This directive is cryptographically hashed to the FHIR audit trail.
               </p>
               <textarea
@@ -199,10 +199,10 @@ export default function SafetyIntervention({
                 onChange={e => setOverrideRationale(e.target.value)}
                 placeholder="Document clinical rationale (e.g. Desensitization protocol completed in ICU)..."
                 rows={2}
-                className="w-full text-xs p-3 rounded-xl border border-[#E8E5DC] outline-none focus:border-[#151619] bg-[#FAF9F6]"
+                className="w-full text-xs p-3 rounded-xl border border-rule outline-none focus:border-rule-strong bg-canvas"
               />
               {validationError && (
-                <p className="text-[11px] text-[#991B1B] font-semibold">{validationError}</p>
+                <p className="text-[11px] text-critical font-semibold">{validationError}</p>
               )}
               <div className="flex justify-end gap-2">
                 <ProtonButton
@@ -216,7 +216,7 @@ export default function SafetyIntervention({
                   variant="primary"
                   size="sm"
                   onClick={handleApplyOverride}
-                  className="bg-[#991B1B] hover:bg-[#7F1D1D] text-white"
+                  className="bg-critical hover:bg-critical text-white"
                 >
                   Sign & Execute Directive
                 </ProtonButton>
@@ -225,7 +225,7 @@ export default function SafetyIntervention({
           )}
 
           {overrideSuccess && (
-            <div className="p-3 bg-[#ECFDF5] border border-[#A7F3D0] rounded-xl flex items-center gap-2 text-xs text-[#065F46] font-semibold">
+            <div className="p-3 bg-settled-wash border border-settled-line rounded-xl flex items-center gap-2 text-xs text-settled font-semibold">
               <CheckCircle2 size={14} />
               <span>Override rationale cryptographically registered to encounter record.</span>
             </div>

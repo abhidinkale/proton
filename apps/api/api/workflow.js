@@ -22,6 +22,7 @@ const {
 const { verifyWorkflowAuditChain, listWorkflowAuditEvents } = require('../storage/postgres/workflowAuditRepository');
 const { getPostgresPool } = require('../storage/postgresDb');
 const { dispatchDueOutbox } = require('../services/workflow/outboxDispatcher');
+const { assertSignSafety } = require('../services/workflow/signSafety');
 const { getBoss, OUTBOX_QUEUE, isWorkflowPersistenceEnabled } = require('../services/workflow/runtime');
 
 const router = express.Router();
@@ -416,6 +417,18 @@ router.post('/encounters/:encounterId/transitions', async (req, res, next) => {
     }
 
     const result = await repo.withTransaction(async (client) => {
+      // The signature is a clinical write. Check the prescriptions in the same
+      // transaction, before the state changes, so a refusal leaves no event.
+      let signSafety = null;
+      if (action === 'sign') {
+        signSafety = await assertSignSafety(client, {
+          tenantId: actor.tenantId,
+          encounterId: req.params.encounterId,
+          actor,
+          physicianDirective: optionalString(body.physicianDirective, 'physicianDirective', { max: 1000 })
+        });
+      }
+
       const transitionResult = await transitionEncounter(client, {
         tenantId: actor.tenantId,
         encounterId: req.params.encounterId,
@@ -427,11 +440,31 @@ router.post('/encounters/:encounterId/transitions', async (req, res, next) => {
         attestation: body.attestation === true
       });
 
+      if (signSafety && !signSafety.skipped && signSafety.verdict) {
+        await client.query(
+          `UPDATE notes
+              SET provenance = provenance || jsonb_build_object('safety_verdict', $3::jsonb),
+                  updated_at = NOW()
+            WHERE id = (
+              SELECT id FROM notes
+               WHERE encounter_id = $1 AND tenant_id = $2
+               ORDER BY created_at DESC
+               LIMIT 1
+            );`,
+          [req.params.encounterId, actor.tenantId, JSON.stringify(signSafety.verdict)]
+        );
+      }
+
       const responseBody = {
         encounter: transitionResult.encounter,
         event: transitionResult.event,
         previousState: transitionResult.previousState,
         nextState: transitionResult.nextState,
+        safety: signSafety && !signSafety.skipped ? {
+          status: signSafety.verdict.status,
+          cleared: signSafety.verdict.cleared,
+          kernelVersion: signSafety.verdict.kernelVersion
+        } : null,
         outbox: transitionResult.outbox.map((row) => ({
           id: row.id,
           channel: row.channel,

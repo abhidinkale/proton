@@ -95,8 +95,8 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingFlowPro
     <div 
       className={`proton-onboarding fixed inset-0 z-50 flex flex-col overflow-y-auto transition-colors duration-500 ${
         isDarkMode 
-          ? 'bg-slate-950 text-slate-100 proton-grid-pattern' 
-          : 'bg-slate-50/95 text-slate-900'
+          ? 'bg-solid text-on-solid proton-grid-pattern' 
+          : 'bg-paper-2/95 text-ink'
       }`}
       role="dialog"
       aria-modal="true"
@@ -106,27 +106,27 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingFlowPro
       <header 
         className={`sticky top-0 z-20 px-4 sm:px-8 py-4 transition-colors duration-300 border-b ${
           isDarkMode 
-            ? 'bg-slate-950/90 border-slate-800/80' 
-            : 'bg-white/90 border-slate-200/80 shadow-xs'
+            ? 'bg-solid/90 border-rule-strong/80' 
+            : 'bg-paper/90 border-rule/80 shadow-xs'
         }`}
       >
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
           {/* Logo & Clinical Badge */}
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-lg bg-slate-100 text-slate-900 flex items-center justify-center">
+            <div className="h-9 w-9 rounded-lg bg-paper-2 text-ink flex items-center justify-center">
               <Activity size={20} strokeWidth={2.5} />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className={`font-bold tracking-tight text-base ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                <span className={`font-bold tracking-tight text-base ${isDarkMode ? 'text-white' : 'text-ink'}`}>
                   PROTON
                 </span>
-                <span className="proton-micro-label px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
+                <span className="proton-micro-label px-1.5 py-0.5 rounded bg-paper-2 text-ink-2 border border-rule">
                   <span className="hidden sm:inline">Workspace guide</span>
                   <span className="sm:hidden">Guide</span>
                 </span>
               </div>
-              <p className={`text-[11px] font-medium hidden sm:block ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+              <p className={`text-[11px] font-medium hidden sm:block ${isDarkMode ? 'text-ink-3' : 'text-on-solid0'}`}>
                 Physician-led clinical support
               </p>
             </div>
@@ -134,7 +134,7 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingFlowPro
 
           {/* Stepper with connecting lines */}
           <div className="order-last flex w-full flex-col items-center sm:order-none sm:w-auto">
-            <span className={`text-[11px] font-semibold uppercase tracking-wider mb-1.5 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+            <span className={`text-[11px] font-semibold uppercase tracking-wider mb-1.5 ${isDarkMode ? 'text-ink-3' : 'text-on-solid0'}`}>
               Step {currentStep} of {TOTAL_STEPS}
             </span>
             <div className="flex items-center">
@@ -152,10 +152,10 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingFlowPro
                         isCurrent
                           ? 'bg-brand-600 text-white ring-4 ring-brand-500/25 scale-110 shadow-sm'
                           : isCompleted
-                            ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                            ? 'bg-settled text-white hover:bg-settled'
                             : isDarkMode
-                              ? 'bg-slate-900 border border-slate-700 text-slate-500 hover:text-slate-300'
-                              : 'bg-slate-100 border border-slate-300 text-slate-400 hover:text-slate-700'
+                              ? 'bg-solid border border-rule-strong text-on-solid0 hover:text-ink-3'
+                              : 'bg-paper-2 border border-rule text-ink-3 hover:text-ink-2'
                       }`}
                     >
                       {isCompleted ? <Check size={13} strokeWidth={3} /> : s}
@@ -166,10 +166,10 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingFlowPro
                       <div
                         className={`h-[2px] w-4 sm:w-8 md:w-12 transition-colors duration-300 ${
                           s < currentStep
-                            ? 'bg-emerald-600'
+                            ? 'bg-settled'
                             : isDarkMode
-                              ? 'bg-slate-800'
-                              : 'bg-slate-200'
+                              ? 'bg-solid'
+                              : 'bg-rule'
                         }`}
                       />
                     )}
@@ -185,8 +185,8 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingFlowPro
               onClick={handleSkip}
               className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
                 isDarkMode 
-                  ? 'text-slate-400 hover:text-white hover:bg-slate-900' 
-                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
+                  ? 'text-ink-3 hover:text-white hover:bg-solid' 
+                  : 'text-on-solid0 hover:text-ink hover:bg-paper-2'
               }`}
             >
               <span>Skip tutorial</span>
@@ -233,8 +233,8 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingFlowPro
       <footer 
         className={`px-4 sm:px-8 py-3.5 border-t text-xs transition-colors duration-300 ${
           isDarkMode 
-            ? 'bg-slate-950/80 border-slate-850 text-slate-500' 
-            : 'bg-white/80 border-slate-200 text-slate-500'
+            ? 'bg-solid/80 border-slate-850 text-on-solid0' 
+            : 'bg-paper/80 border-rule text-on-solid0'
         }`}
       >
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
@@ -243,12 +243,12 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingFlowPro
             <span>&bull;</span>
             <span>Synthetic Evaluation Environment</span>
             <span>&bull;</span>
-            <span className="text-amber-500 font-medium">Physician Approval Gated</span>
+            <span className="text-caution-on-solid0 font-medium">Physician Approval Gated</span>
           </div>
           <div className="flex items-center gap-3">
-            <span>Use <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono border ${isDarkMode ? 'bg-slate-900 border-slate-700 text-slate-300' : 'bg-slate-100 border-slate-300 text-slate-700'}`}>&larr;</kbd> <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono border ${isDarkMode ? 'bg-slate-900 border-slate-700 text-slate-300' : 'bg-slate-100 border-slate-300 text-slate-700'}`}>&rarr;</kbd> to navigate</span>
+            <span>Use <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono border ${isDarkMode ? 'bg-solid border-rule-strong text-ink-3' : 'bg-paper-2 border-rule text-ink-2'}`}>&larr;</kbd> <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono border ${isDarkMode ? 'bg-solid border-rule-strong text-ink-3' : 'bg-paper-2 border-rule text-ink-2'}`}>&rarr;</kbd> to navigate</span>
             <span>&bull;</span>
-            <span>Press <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono border ${isDarkMode ? 'bg-slate-900 border-slate-700 text-slate-300' : 'bg-slate-100 border-slate-300 text-slate-700'}`}>Esc</kbd> to exit</span>
+            <span>Press <kbd className={`px-1.5 py-0.5 rounded text-[10px] font-mono border ${isDarkMode ? 'bg-solid border-rule-strong text-ink-3' : 'bg-paper-2 border-rule text-ink-2'}`}>Esc</kbd> to exit</span>
           </div>
         </div>
       </footer>
@@ -265,7 +265,7 @@ function StepOneWelcome({ onNext, onSkip }: { onNext: () => void; onSkip: () => 
       {/* Left Column */}
       <div className="lg:col-span-5 space-y-6">
         <div className="space-y-2">
-          <div className="h-12 w-12 rounded-xl bg-slate-100 text-slate-900 flex items-center justify-center mb-4">
+          <div className="h-12 w-12 rounded-xl bg-paper-2 text-ink flex items-center justify-center mb-4">
             <Activity size={36} strokeWidth={2.5} />
           </div>
           <h1 className="text-4xl sm:text-5xl font-semibold tracking-tight text-white leading-tight">
@@ -276,18 +276,18 @@ function StepOneWelcome({ onNext, onSkip }: { onNext: () => void; onSkip: () => 
           </p>
         </div>
 
-        <p className="text-slate-300 text-base leading-relaxed">
+        <p className="text-ink-3 text-base leading-relaxed">
           Proton helps you understand patient context, document consultations, review clinical information, and build a longitudinal patient story.
         </p>
 
-        <div className="space-y-3 border-l border-slate-200 pl-4">
+        <div className="space-y-3 border-l border-rule pl-4">
           <div>
-              <p className="text-sm font-semibold text-slate-900">Physician review</p>
-              <p className="text-xs text-slate-400">Every note and order requires your review before it is saved.</p>
+              <p className="text-sm font-semibold text-ink">Physician review</p>
+              <p className="text-xs text-ink-3">Every note and order requires your review before it is saved.</p>
           </div>
           <div>
-              <p className="text-sm font-semibold text-slate-900">Patient history</p>
-              <p className="text-xs text-slate-400">Approved findings build the ongoing patient story across future appointments.</p>
+              <p className="text-sm font-semibold text-ink">Patient history</p>
+              <p className="text-xs text-ink-3">Approved findings build the ongoing patient story across future appointments.</p>
           </div>
         </div>
 
@@ -303,7 +303,7 @@ function StepOneWelcome({ onNext, onSkip }: { onNext: () => void; onSkip: () => 
 
           <button
             onClick={onSkip}
-            className="proton-btn proton-btn-ghost text-slate-400 hover:text-white text-sm font-semibold cursor-pointer"
+            className="proton-btn proton-btn-ghost text-ink-3 hover:text-white text-sm font-semibold cursor-pointer"
           >
             Skip tutorial
           </button>
@@ -312,29 +312,29 @@ function StepOneWelcome({ onNext, onSkip }: { onNext: () => void; onSkip: () => 
 
       {/* Sample patient record */}
       <div className="lg:col-span-7">
-        <div className="rounded-xl border border-slate-200 bg-white">
-          <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-5 py-4">
+        <div className="rounded-xl border border-rule bg-paper">
+          <div className="flex items-center justify-between gap-4 border-b border-rule px-5 py-4">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Sample patient</p>
-              <h2 className="mt-1 text-lg font-semibold tracking-tight text-slate-900">Eleanor Vance</h2>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-on-solid0">Sample patient</p>
+              <h2 className="mt-1 text-lg font-semibold tracking-tight text-ink">Eleanor Vance</h2>
             </div>
-            <span className="shrink-0 rounded-md border border-slate-200 px-2 py-1 text-[10px] font-medium text-slate-600">
+            <span className="shrink-0 rounded-md border border-rule px-2 py-1 text-[10px] font-medium text-ink-2">
               Synthetic record
             </span>
           </div>
-          <div className="grid grid-cols-1 divide-y divide-slate-200 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+          <div className="grid grid-cols-1 divide-y divide-rule sm:grid-cols-2 sm:divide-x sm:divide-y-0">
             <div className="p-5">
-              <p className="text-xs font-medium text-slate-500">Conditions</p>
-              <p className="mt-2 text-sm font-medium text-slate-900">Type 2 diabetes</p>
-              <p className="mt-1 text-sm text-slate-600">Essential hypertension</p>
+              <p className="text-xs font-medium text-on-solid0">Conditions</p>
+              <p className="mt-2 text-sm font-medium text-ink">Type 2 diabetes</p>
+              <p className="mt-1 text-sm text-ink-2">Essential hypertension</p>
             </div>
             <div className="p-5">
-              <p className="text-xs font-medium text-slate-500">Allergy</p>
-              <p className="mt-2 text-sm font-medium text-slate-900">Penicillin</p>
-              <p className="mt-1 text-sm text-slate-600">Review before prescribing</p>
+              <p className="text-xs font-medium text-on-solid0">Allergy</p>
+              <p className="mt-2 text-sm font-medium text-ink">Penicillin</p>
+              <p className="mt-1 text-sm text-ink-2">Review before prescribing</p>
             </div>
           </div>
-          <div className="border-t border-slate-200 px-5 py-3 text-xs text-slate-600">
+          <div className="border-t border-rule px-5 py-3 text-xs text-ink-2">
             Notes and orders are saved only after physician review.
           </div>
         </div>
@@ -357,30 +357,30 @@ function StepTwoCommandCenter({ onNext, onPrev }: { onNext: () => void; onPrev: 
         </div>
 
         <div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-ink">
             Your Command Center
           </h2>
-          <p className="text-base sm:text-lg font-medium text-slate-600 mt-2">
+          <p className="text-base sm:text-lg font-medium text-ink-2 mt-2">
             This is where Proton tells you what needs your attention today.
           </p>
         </div>
 
-        <p className="text-slate-600 text-sm leading-relaxed">
+        <p className="text-ink-2 text-sm leading-relaxed">
           Start every clinic shift with clarity. Rather than navigating disconnected inboxes and EMR queues, Proton brings together pending safety flags, unfinalized consult drafts, and incoming documents into a single prioritized workspace.
         </p>
 
         {/* Feature badges */}
         <div className="flex flex-wrap gap-2 pt-1">
-          <span className="proton-badge bg-red-50 text-red-800 border border-red-200 py-1 px-2.5">
-            <AlertTriangle size={12} className="text-red-600" />
+          <span className="proton-badge bg-critical-wash text-critical border border-critical-line py-1 px-2.5">
+            <AlertTriangle size={12} className="text-critical" />
             Safety Alert Triage
           </span>
-          <span className="proton-badge bg-amber-50 text-amber-800 border border-amber-200 py-1 px-2.5">
-            <Clock size={12} className="text-amber-600" />
+          <span className="proton-badge bg-caution-wash text-caution border border-caution-line py-1 px-2.5">
+            <Clock size={12} className="text-caution" />
             Unfinished Draft Queue
           </span>
-          <span className="proton-badge bg-indigo-50 text-indigo-800 border border-indigo-200 py-1 px-2.5">
-            <FileText size={12} className="text-indigo-600" />
+          <span className="proton-badge bg-accent-wash text-accent-ink border border-accent-line py-1 px-2.5">
+            <FileText size={12} className="text-accent-ink" />
             External Document Review
           </span>
         </div>
@@ -407,118 +407,118 @@ function StepTwoCommandCenter({ onNext, onPrev }: { onNext: () => void; onPrev: 
 
       {/* Right Visual Mockup Column */}
       <div className="lg:col-span-7">
-        <div className="proton-card p-5 sm:p-6 bg-white border border-slate-200 shadow-md space-y-5">
+        <div className="proton-card p-5 sm:p-6 bg-paper border border-rule shadow-md space-y-5">
           {/* Dashboard Header Bar */}
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="flex items-center justify-between border-b border-rule pb-3">
             <div>
-              <h3 className="text-sm font-bold text-slate-900 tracking-tight">Today's Clinic Dashboard</h3>
-              <p className="text-[11px] text-slate-500">Dr. Eleanor Vance, MD &bull; General Internal Medicine</p>
+              <h3 className="text-sm font-bold text-ink tracking-tight">Today's Clinic Dashboard</h3>
+              <p className="text-[11px] text-on-solid0">Dr. Eleanor Vance, MD &bull; General Internal Medicine</p>
             </div>
-            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-settled-wash text-settled border border-settled-line">
               ● All Systems Live
             </span>
           </div>
 
           {/* Quick Metrics */}
           <div className="grid grid-cols-3 gap-3">
-            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-              <div className="flex items-center justify-between text-slate-500 mb-1">
+            <div className="p-3 rounded-xl bg-paper-2 border border-rule">
+              <div className="flex items-center justify-between text-on-solid0 mb-1">
                 <span className="text-[11px] font-semibold uppercase">Patients</span>
                 <Users size={14} className="text-brand-600" />
               </div>
-              <p className="text-xl font-extrabold text-slate-900">24</p>
-              <p className="text-[10px] text-slate-500">4 with pending labs</p>
+              <p className="text-xl font-extrabold text-ink">24</p>
+              <p className="text-[10px] text-on-solid0">4 with pending labs</p>
             </div>
 
-            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-              <div className="flex items-center justify-between text-slate-500 mb-1">
+            <div className="p-3 rounded-xl bg-paper-2 border border-rule">
+              <div className="flex items-center justify-between text-on-solid0 mb-1">
                 <span className="text-[11px] font-semibold uppercase">Consultations</span>
-                <Mic size={14} className="text-indigo-600" />
+                <Mic size={14} className="text-accent-ink" />
               </div>
-              <p className="text-xl font-extrabold text-slate-900">8</p>
-              <p className="text-[10px] text-slate-500">2 pending signature</p>
+              <p className="text-xl font-extrabold text-ink">8</p>
+              <p className="text-[10px] text-on-solid0">2 pending signature</p>
             </div>
 
-            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-              <div className="flex items-center justify-between text-slate-500 mb-1">
+            <div className="p-3 rounded-xl bg-paper-2 border border-rule">
+              <div className="flex items-center justify-between text-on-solid0 mb-1">
                 <span className="text-[11px] font-semibold uppercase">Documents</span>
-                <FileText size={14} className="text-amber-600" />
+                <FileText size={14} className="text-caution" />
               </div>
-              <p className="text-xl font-extrabold text-slate-900">3</p>
-              <p className="text-[10px] text-slate-500">1 urgent pathology</p>
+              <p className="text-xl font-extrabold text-ink">3</p>
+              <p className="text-[10px] text-on-solid0">1 urgent pathology</p>
             </div>
           </div>
 
           {/* Needs Your Attention Section */}
           <div className="space-y-2.5">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 uppercase tracking-wide">
-                <AlertTriangle size={14} className="text-amber-600" />
+              <div className="flex items-center gap-1.5 text-xs font-bold text-ink uppercase tracking-wide">
+                <AlertTriangle size={14} className="text-caution" />
                 <span>Needs Your Attention</span>
               </div>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-caution-wash text-caution">
                 3 Pending
               </span>
             </div>
 
             {/* Item 1: Safety Alert */}
-            <div className="p-3 rounded-xl bg-red-50/50 border border-red-200 flex items-center justify-between gap-3">
+            <div className="p-3 rounded-xl bg-critical-wash/50 border border-critical-line flex items-center justify-between gap-3">
               <div className="flex items-start gap-2.5">
-                <div className="p-1.5 rounded-lg bg-red-100 text-red-700 shrink-0 mt-0.5">
+                <div className="p-1.5 rounded-lg bg-critical-wash text-critical shrink-0 mt-0.5">
                   <ShieldAlert size={16} />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-red-950">Safety Alert &bull; Allergy Conflict</span>
-                    <span className="text-[9px] font-bold uppercase px-1.5 py-0.2 rounded bg-red-200/60 text-red-800">Critical</span>
+                    <span className="text-xs font-bold text-critical">Safety Alert &bull; Allergy Conflict</span>
+                    <span className="text-[9px] font-bold uppercase px-1.5 py-0.2 rounded bg-critical-line/60 text-critical">Critical</span>
                   </div>
-                  <p className="text-[11px] text-red-800 font-medium">Eleanor Vance (42y)</p>
-                  <p className="text-[11px] text-slate-600">Amoxicillin draft contraindicated by documented Penicillin anaphylaxis.</p>
+                  <p className="text-[11px] text-critical font-medium">Eleanor Vance (42y)</p>
+                  <p className="text-[11px] text-ink-2">Amoxicillin draft contraindicated by documented Penicillin anaphylaxis.</p>
                 </div>
               </div>
-              <button className="px-2.5 py-1 rounded-lg text-xs font-bold bg-white text-red-700 border border-red-300 hover:bg-red-50 shrink-0 inline-flex items-center gap-1">
+              <button className="px-2.5 py-1 rounded-lg text-xs font-bold bg-paper text-critical border border-critical-line hover:bg-critical-wash shrink-0 inline-flex items-center gap-1">
                 <span>Review</span>
                 <ChevronRight size={12} />
               </button>
             </div>
 
             {/* Item 2: Unfinished Draft */}
-            <div className="p-3 rounded-xl bg-amber-50/50 border border-amber-200 flex items-center justify-between gap-3">
+            <div className="p-3 rounded-xl bg-caution-wash/50 border border-caution-line flex items-center justify-between gap-3">
               <div className="flex items-start gap-2.5">
-                <div className="p-1.5 rounded-lg bg-amber-100 text-amber-700 shrink-0 mt-0.5">
+                <div className="p-1.5 rounded-lg bg-caution-wash text-caution shrink-0 mt-0.5">
                   <Clock size={16} />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-amber-950">Unfinished Consultation Draft</span>
-                    <span className="text-[9px] font-bold uppercase px-1.5 py-0.2 rounded bg-amber-200/60 text-amber-800">Today 09:15</span>
+                    <span className="text-xs font-bold text-caution">Unfinished Consultation Draft</span>
+                    <span className="text-[9px] font-bold uppercase px-1.5 py-0.2 rounded bg-caution-line/60 text-caution">Today 09:15</span>
                   </div>
-                  <p className="text-[11px] text-amber-800 font-medium">Marcus Chen (58y)</p>
-                  <p className="text-[11px] text-slate-600">Cardiology follow-up audio captured &bull; SOAP draft awaiting physician sign.</p>
+                  <p className="text-[11px] text-caution font-medium">Marcus Chen (58y)</p>
+                  <p className="text-[11px] text-ink-2">Cardiology follow-up audio captured &bull; SOAP draft awaiting physician sign.</p>
                 </div>
               </div>
-              <button className="px-2.5 py-1 rounded-lg text-xs font-bold bg-white text-amber-800 border border-amber-300 hover:bg-amber-50 shrink-0 inline-flex items-center gap-1">
+              <button className="px-2.5 py-1 rounded-lg text-xs font-bold bg-paper text-caution border border-caution-line hover:bg-caution-wash shrink-0 inline-flex items-center gap-1">
                 <span>Resume</span>
                 <ChevronRight size={12} />
               </button>
             </div>
 
             {/* Item 3: Document to Review */}
-            <div className="p-3 rounded-xl bg-indigo-50/50 border border-indigo-200 flex items-center justify-between gap-3">
+            <div className="p-3 rounded-xl bg-accent-wash/50 border border-accent-line flex items-center justify-between gap-3">
               <div className="flex items-start gap-2.5">
-                <div className="p-1.5 rounded-lg bg-indigo-100 text-indigo-700 shrink-0 mt-0.5">
+                <div className="p-1.5 rounded-lg bg-accent-wash text-accent-ink shrink-0 mt-0.5">
                   <FileText size={16} />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-indigo-950">Document to Review</span>
-                    <span className="text-[9px] font-bold uppercase px-1.5 py-0.2 rounded bg-indigo-200/60 text-indigo-800">Biopsy PDF</span>
+                    <span className="text-xs font-bold text-accent-ink">Document to Review</span>
+                    <span className="text-[9px] font-bold uppercase px-1.5 py-0.2 rounded bg-accent-line/60 text-accent-ink">Biopsy PDF</span>
                   </div>
-                  <p className="text-[11px] text-indigo-800 font-medium">Sarah Jenkins (36y)</p>
-                  <p className="text-[11px] text-slate-600">External surgical pathology report &bull; 4 clinical findings extracted.</p>
+                  <p className="text-[11px] text-accent-ink font-medium">Sarah Jenkins (36y)</p>
+                  <p className="text-[11px] text-ink-2">External surgical pathology report &bull; 4 clinical findings extracted.</p>
                 </div>
               </div>
-              <button className="px-2.5 py-1 rounded-lg text-xs font-bold bg-white text-indigo-800 border border-indigo-300 hover:bg-indigo-50 shrink-0 inline-flex items-center gap-1">
+              <button className="px-2.5 py-1 rounded-lg text-xs font-bold bg-paper text-accent-ink border border-accent-line hover:bg-accent-wash shrink-0 inline-flex items-center gap-1">
                 <span>Verify</span>
                 <ChevronRight size={12} />
               </button>
@@ -544,30 +544,30 @@ function StepThreePatientIntelligence({ onNext, onPrev }: { onNext: () => void; 
         </div>
 
         <div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-ink">
             Patient summary
           </h2>
-          <p className="text-base sm:text-lg font-medium text-slate-600 mt-2">
+          <p className="text-base sm:text-lg font-medium text-ink-2 mt-2">
             Before you see the patient, Proton summarizes what matters.
           </p>
         </div>
 
-        <p className="text-slate-600 text-sm leading-relaxed">
+        <p className="text-ink-2 text-sm leading-relaxed">
           Review recent changes, allergy alerts, and the patient's history in one concise view.
         </p>
 
         {/* Highlight bullets */}
-        <div className="space-y-2 pt-1 text-xs text-slate-700">
+        <div className="space-y-2 pt-1 text-xs text-ink-2">
           <div className="flex items-center gap-2">
-            <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+            <CheckCircle2 size={15} className="text-settled shrink-0" />
             <span><strong>What Matters Today:</strong> Dynamic delta tracking between past and current visits</span>
           </div>
           <div className="flex items-center gap-2">
-            <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+            <CheckCircle2 size={15} className="text-settled shrink-0" />
             <span><strong>Objective Lab Trajectory:</strong> Automatic detection of out-of-range clinical shifts</span>
           </div>
           <div className="flex items-center gap-2">
-            <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+            <CheckCircle2 size={15} className="text-settled shrink-0" />
             <span><strong>Chronological Timeline:</strong> Unified timeline spanning multiple specialties and encounters</span>
           </div>
         </div>
@@ -594,26 +594,26 @@ function StepThreePatientIntelligence({ onNext, onPrev }: { onNext: () => void; 
 
       {/* Right Visual Mockup Column */}
       <div className="lg:col-span-7">
-        <div className="proton-card p-5 sm:p-6 bg-white border border-slate-200 shadow-md space-y-4">
+        <div className="proton-card p-5 sm:p-6 bg-paper border border-rule shadow-md space-y-4">
           {/* Patient Header */}
-          <div className="flex items-start justify-between border-b border-slate-100 pb-4">
+          <div className="flex items-start justify-between border-b border-rule pb-4">
             <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-600 text-white flex items-center justify-center font-bold text-base shadow-sm">
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-accent to-accent text-white flex items-center justify-center font-bold text-base shadow-sm">
                 EV
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-base font-bold text-slate-900">Eleanor Vance</h3>
-                  <span className="text-xs text-slate-500 font-medium">42y &bull; Female</span>
+                  <h3 className="text-base font-bold text-ink">Eleanor Vance</h3>
+                  <span className="text-xs text-on-solid0 font-medium">42y &bull; Female</span>
                 </div>
                 <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700">
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-paper-2 text-ink-2">
                     MRN: #94821
                   </span>
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-accent-wash text-accent-ink border border-accent-line">
                     Type 2 Diabetes
                   </span>
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700">
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-paper-2 text-ink-2">
                     Hypertension
                   </span>
                 </div>
@@ -627,64 +627,64 @@ function StepThreePatientIntelligence({ onNext, onPrev }: { onNext: () => void; 
           {/* What Matters Today Section */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
+              <span className="text-xs font-bold text-ink uppercase tracking-wide flex items-center gap-1.5">
                 <FileText size={13} className="text-brand-600" />
                 What Matters Today
               </span>
-              <span className="text-[10px] text-slate-500">Updated 2m ago</span>
+              <span className="text-[10px] text-on-solid0">Updated 2m ago</span>
             </div>
 
             {/* Allergies Item */}
-            <div className="p-2.5 rounded-xl bg-red-50/70 border border-red-200 flex items-start gap-2.5">
-              <div className="p-1 rounded-md bg-red-100 text-red-700 shrink-0 mt-0.5">
+            <div className="p-2.5 rounded-xl bg-critical-wash/70 border border-critical-line flex items-start gap-2.5">
+              <div className="p-1 rounded-md bg-critical-wash text-critical shrink-0 mt-0.5">
                 <AlertTriangle size={14} />
               </div>
               <div className="text-xs">
-                <span className="font-bold text-red-900">Allergy Warning: Penicillin</span>
-                <p className="text-slate-700 mt-0.5">Documented severe anaphylaxis. Strict beta-lactam avoidance required.</p>
+                <span className="font-bold text-critical">Allergy Warning: Penicillin</span>
+                <p className="text-ink-2 mt-0.5">Documented severe anaphylaxis. Strict beta-lactam avoidance required.</p>
               </div>
             </div>
 
             {/* Lab Changes Item */}
-            <div className="p-2.5 rounded-xl bg-amber-50/70 border border-amber-200 flex items-start gap-2.5">
-              <div className="p-1 rounded-md bg-amber-100 text-amber-700 shrink-0 mt-0.5">
+            <div className="p-2.5 rounded-xl bg-caution-wash/70 border border-caution-line flex items-start gap-2.5">
+              <div className="p-1 rounded-md bg-caution-wash text-caution shrink-0 mt-0.5">
                 <TrendingUp size={14} />
               </div>
               <div className="text-xs">
-                <span className="font-bold text-amber-900">Lab Shift: HbA1c 7.1% &rarr; 8.4%</span>
-                <p className="text-slate-700 mt-0.5">Elevated HbA1c from Quest Diagnostics 5 days ago indicates worsening glycemic control.</p>
+                <span className="font-bold text-caution">Lab Shift: HbA1c 7.1% &rarr; 8.4%</span>
+                <p className="text-ink-2 mt-0.5">Elevated HbA1c from Quest Diagnostics 5 days ago indicates worsening glycemic control.</p>
               </div>
             </div>
 
             {/* Medication Changes Item */}
-            <div className="p-2.5 rounded-xl bg-sky-50/70 border border-sky-200 flex items-start gap-2.5">
-              <div className="p-1 rounded-md bg-sky-100 text-sky-700 shrink-0 mt-0.5">
+            <div className="p-2.5 rounded-xl bg-accent-wash/70 border border-accent-line flex items-start gap-2.5">
+              <div className="p-1 rounded-md bg-accent-wash text-accent-ink shrink-0 mt-0.5">
                 <Pill size={14} />
               </div>
               <div className="text-xs">
-                <span className="font-bold text-sky-900">Medication Change: Lisinopril 20mg</span>
-                <p className="text-slate-700 mt-0.5">Titrated up by Nephrology 3 weeks ago. Recent BP averaging 124/80 mmHg.</p>
+                <span className="font-bold text-accent-ink">Medication Change: Lisinopril 20mg</span>
+                <p className="text-ink-2 mt-0.5">Titrated up by Nephrology 3 weeks ago. Recent BP averaging 124/80 mmHg.</p>
               </div>
             </div>
           </div>
 
           {/* Clinical Timeline Preview */}
-          <div className="pt-2 border-t border-slate-100">
-            <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wide block mb-2">
+          <div className="pt-2 border-t border-rule">
+            <span className="text-[11px] font-bold text-ink-2 uppercase tracking-wide block mb-2">
               Clinical Timeline
             </span>
-            <div className="relative pl-4 space-y-2 border-l-2 border-slate-200 text-xs text-slate-600">
+            <div className="relative pl-4 space-y-2 border-l-2 border-rule text-xs text-ink-2">
               <div className="relative">
                 <span className="absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full bg-brand-600 ring-2 ring-white"></span>
-                <span className="font-semibold text-slate-900">Today:</span> Follow-up Consultation &bull; Diabetes & HTN Review
+                <span className="font-semibold text-ink">Today:</span> Follow-up Consultation &bull; Diabetes & HTN Review
               </div>
               <div className="relative">
-                <span className="absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full bg-slate-400 ring-2 ring-white"></span>
-                <span className="font-medium text-slate-700">5 days ago:</span> Outpatient Lab &bull; HbA1c 8.4%, eGFR &gt; 60
+                <span className="absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full bg-ink-3 ring-2 ring-white"></span>
+                <span className="font-medium text-ink-2">5 days ago:</span> Outpatient Lab &bull; HbA1c 8.4%, eGFR &gt; 60
               </div>
               <div className="relative">
-                <span className="absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full bg-slate-400 ring-2 ring-white"></span>
-                <span className="font-medium text-slate-700">3 weeks ago:</span> Nephrology Visit &bull; Lisinopril dose increase
+                <span className="absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full bg-ink-3 ring-2 ring-white"></span>
+                <span className="font-medium text-ink-2">3 weeks ago:</span> Nephrology Visit &bull; Lisinopril dose increase
               </div>
             </div>
           </div>
@@ -708,10 +708,10 @@ function StepFourConsultation({ onNext, onPrev }: { onNext: () => void; onPrev: 
         </div>
 
         <div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-ink">
             Clinical Consultation
           </h2>
-          <p className="text-base sm:text-lg font-medium text-slate-600 mt-2">
+          <p className="text-base sm:text-lg font-medium text-ink-2 mt-2">
             During the consultation, Proton helps turn the conversation into structured clinical documentation.
           </p>
         </div>
@@ -729,17 +729,17 @@ function StepFourConsultation({ onNext, onPrev }: { onNext: () => void; onPrev: 
 
         {/* Workflow stages */}
         <div className="space-y-2">
-          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Consultation Workflow</span>
+          <span className="text-[11px] font-bold text-on-solid0 uppercase tracking-wider">Consultation Workflow</span>
           <div className="grid grid-cols-3 gap-2 text-center text-xs">
-            <div className="p-2.5 rounded-xl bg-white border border-slate-200">
-              <span className="font-bold text-slate-900 block">1. Record</span>
-              <span className="text-[10px] text-slate-500">Ambient audio</span>
+            <div className="p-2.5 rounded-xl bg-paper border border-rule">
+              <span className="font-bold text-ink block">1. Record</span>
+              <span className="text-[10px] text-on-solid0">Ambient audio</span>
             </div>
-            <div className="p-2.5 rounded-xl bg-white border border-slate-200">
-              <span className="font-bold text-slate-900 block">2. Transcript</span>
-              <span className="text-[10px] text-slate-500">Speaker separated</span>
+            <div className="p-2.5 rounded-xl bg-paper border border-rule">
+              <span className="font-bold text-ink block">2. Transcript</span>
+              <span className="text-[10px] text-on-solid0">Speaker separated</span>
             </div>
-            <div className="p-2.5 rounded-xl bg-white border border-brand-200 bg-brand-50/30">
+            <div className="p-2.5 rounded-xl bg-paper border border-brand-200 bg-brand-50/30">
               <span className="font-bold text-brand-700 block">3. Clinical draft</span>
               <span className="text-[10px] text-brand-600">Structured SOAP</span>
             </div>
@@ -748,16 +748,16 @@ function StepFourConsultation({ onNext, onPrev }: { onNext: () => void; onPrev: 
 
         {/* Provenance Badges Explainer */}
         <div className="space-y-1.5 pt-1">
-          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Provenance Badges</span>
+          <span className="text-[11px] font-bold text-on-solid0 uppercase tracking-wider">Provenance Badges</span>
           <div className="flex flex-wrap gap-2">
-            <span className="proton-badge bg-violet-50 text-violet-800 border border-violet-200">
-              <FileText size={11} className="text-violet-600" /> AI-GENERATED DRAFT
+            <span className="proton-badge bg-accent-wash text-accent-ink border border-accent-line">
+              <FileText size={11} className="text-accent-ink" /> AI-GENERATED DRAFT
             </span>
-            <span className="proton-badge bg-sky-50 text-sky-800 border border-sky-200">
+            <span className="proton-badge bg-accent-wash text-accent-ink border border-accent-line">
               PHYSICIAN EDITED
             </span>
-            <span className="proton-badge bg-emerald-50 text-emerald-800 border border-emerald-200">
-              <ShieldCheck size={11} className="text-emerald-600" /> PHYSICIAN APPROVED
+            <span className="proton-badge bg-settled-wash text-settled border border-settled-line">
+              <ShieldCheck size={11} className="text-settled" /> PHYSICIAN APPROVED
             </span>
           </div>
         </div>
@@ -784,51 +784,51 @@ function StepFourConsultation({ onNext, onPrev }: { onNext: () => void; onPrev: 
 
       {/* Right Visual Mockup Column */}
       <div className="lg:col-span-7">
-        <div className="proton-card p-5 sm:p-6 bg-white border border-slate-200 shadow-md space-y-4">
-          <div className="flex items-center justify-between gap-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+        <div className="proton-card p-5 sm:p-6 bg-paper border border-rule shadow-md space-y-4">
+          <div className="flex items-center justify-between gap-4 rounded-lg border border-rule bg-paper-2 p-3">
             <div>
-              <span className="text-xs font-semibold text-slate-900">Sample consultation transcript</span>
-              <p className="mt-0.5 text-[10px] text-slate-600">Synthetic example for review</p>
+              <span className="text-xs font-semibold text-ink">Sample consultation transcript</span>
+              <p className="mt-0.5 text-[10px] text-ink-2">Synthetic example for review</p>
             </div>
-            <FileText size={16} className="shrink-0 text-slate-500" />
+            <FileText size={16} className="shrink-0 text-on-solid0" />
           </div>
 
           {/* Transcript Snippet */}
-          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-2">
-            <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 uppercase">
+          <div className="p-3 rounded-xl bg-paper-2 border border-rule text-xs space-y-2">
+            <div className="flex items-center justify-between text-[11px] font-bold text-on-solid0 uppercase">
               <span>Conversation</span>
             </div>
-            <div className="space-y-1.5 text-slate-700">
+            <div className="space-y-1.5 text-ink-2">
               <p>
-                <strong className="text-slate-900 font-semibold">Dr. Vance:</strong> "Good morning Eleanor. Your recent HbA1c is 8.4%. Any side effects on the Lisinopril?"
+                <strong className="text-ink font-semibold">Dr. Vance:</strong> "Good morning Eleanor. Your recent HbA1c is 8.4%. Any side effects on the Lisinopril?"
               </p>
               <p>
-                <strong className="text-slate-900 font-semibold">Eleanor:</strong> "No dizziness, but I've had some tingling in my toes lately."
+                <strong className="text-ink font-semibold">Eleanor:</strong> "No dizziness, but I've had some tingling in my toes lately."
               </p>
               <p>
-                <strong className="text-slate-900 font-semibold">Dr. Vance:</strong> "Let's increase Metformin to 1000mg twice daily with meals and evaluate the numbness."
+                <strong className="text-ink font-semibold">Dr. Vance:</strong> "Let's increase Metformin to 1000mg twice daily with meals and evaluate the numbness."
               </p>
             </div>
           </div>
 
           {/* Structured Note Draft Preview */}
-          <div className="p-3.5 rounded-xl bg-white border border-slate-200 space-y-3">
+          <div className="p-3.5 rounded-xl bg-paper border border-rule space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-900 uppercase tracking-wide">
+              <span className="text-xs font-bold text-ink uppercase tracking-wide">
                 Clinical note draft
               </span>
-              <span className="proton-badge bg-violet-50 text-violet-800 border border-violet-200">
-                <FileText size={11} className="text-violet-600" /> AI-GENERATED DRAFT
+              <span className="proton-badge bg-accent-wash text-accent-ink border border-accent-line">
+                <FileText size={11} className="text-accent-ink" /> AI-GENERATED DRAFT
               </span>
             </div>
 
             {/* Assessment */}
-            <div className="text-xs space-y-1 border-l-2 border-violet-400 pl-2.5">
+            <div className="text-xs space-y-1 border-l-2 border-accent pl-2.5">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-slate-900">Assessment:</span>
-                <span className="text-[10px] px-1.5 py-0.2 rounded bg-violet-100 text-violet-800 font-semibold">AI-generated</span>
+                <span className="font-bold text-ink">Assessment:</span>
+                <span className="text-[10px] px-1.5 py-0.2 rounded bg-accent-wash text-accent-ink font-semibold">AI-generated</span>
               </div>
-              <p className="text-slate-700">
+              <p className="text-ink-2">
                 1. Type 2 Diabetes Mellitus with worsening glycemic control (recent HbA1c 8.4%).
                 <br />
                 2. Early bilateral peripheral neuropathy (subtle distal paresthesia).
@@ -836,23 +836,23 @@ function StepFourConsultation({ onNext, onPrev }: { onNext: () => void; onPrev: 
             </div>
 
             {/* Plan */}
-            <div className="text-xs space-y-1 border-l-2 border-sky-400 pl-2.5">
+            <div className="text-xs space-y-1 border-l-2 border-accent pl-2.5">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-slate-900">Plan:</span>
-                <span className="text-[10px] px-1.5 py-0.2 rounded bg-sky-100 text-sky-800 font-semibold">PHYSICIAN EDITED</span>
+                <span className="font-bold text-ink">Plan:</span>
+                <span className="text-[10px] px-1.5 py-0.2 rounded bg-accent-wash text-accent-ink font-semibold">PHYSICIAN EDITED</span>
               </div>
-              <p className="text-slate-700">
+              <p className="text-ink-2">
                 Titrate Metformin from 500mg BID to 1000mg PO BID with meals. Recheck HbA1c in 90 days. Recommend diabetic foot exam.
               </p>
             </div>
 
             {/* Objective Vitals */}
-            <div className="text-xs space-y-1 border-l-2 border-emerald-400 pl-2.5">
+            <div className="text-xs space-y-1 border-l-2 border-settled pl-2.5">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-slate-900">Objective Vitals:</span>
-                <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 font-semibold">PHYSICIAN APPROVED</span>
+                <span className="font-bold text-ink">Objective Vitals:</span>
+                <span className="text-[10px] px-1.5 py-0.2 rounded bg-settled-wash text-settled font-semibold">PHYSICIAN APPROVED</span>
               </div>
-              <p className="text-slate-700">
+              <p className="text-ink-2">
                 BP 124/80 mmHg &bull; HR 72 bpm &bull; BMI 27.2 &bull; Monofilament exam pending.
               </p>
             </div>
@@ -877,7 +877,7 @@ function StepFiveVerifyApprove({ onNext, onPrev }: { onNext: () => void; onPrev:
         </div>
 
         <div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-ink">
             Verify & Approve
           </h2>
           <p className="text-lg sm:text-xl font-bold text-brand-700 mt-2">
@@ -885,22 +885,22 @@ function StepFiveVerifyApprove({ onNext, onPrev }: { onNext: () => void; onPrev:
           </p>
         </div>
 
-        <p className="text-slate-600 text-sm leading-relaxed">
+        <p className="text-ink-2 text-sm leading-relaxed">
           AI-generated content can be wrong. Before any clinical draft is signed, deterministic safety rules check for drug-allergy conflicts, dosage parameters, and missing fields.
         </p>
 
         {/* Safety Principles */}
-        <div className="space-y-2 text-xs text-slate-700 pt-1">
+        <div className="space-y-2 text-xs text-ink-2 pt-1">
           <div className="flex items-center gap-2">
-            <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+            <CheckCircle2 size={15} className="text-settled shrink-0" />
             <span><strong>Deterministic rule engine:</strong> Safe execution rules, not probabilistic guesses</span>
           </div>
           <div className="flex items-center gap-2">
-            <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+            <CheckCircle2 size={15} className="text-settled shrink-0" />
             <span><strong>Hard conflict blocking:</strong> Prevents contraindicated medications from being signed</span>
           </div>
           <div className="flex items-center gap-2">
-            <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+            <CheckCircle2 size={15} className="text-settled shrink-0" />
             <span><strong>Immutable provenance:</strong> Clear audit trail connecting clinical drafts to doctor sign-off</span>
           </div>
         </div>
@@ -927,17 +927,17 @@ function StepFiveVerifyApprove({ onNext, onPrev }: { onNext: () => void; onPrev:
 
       {/* Right Visual Mockup Column */}
       <div className="lg:col-span-7">
-        <div className="proton-card p-5 sm:p-6 bg-white border border-slate-200 shadow-md space-y-4">
+        <div className="proton-card p-5 sm:p-6 bg-paper border border-rule shadow-md space-y-4">
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="flex items-center justify-between border-b border-rule pb-3">
             <div className="flex items-center gap-2">
               <ShieldCheck size={18} className="text-brand-600" />
               <div>
-                <h3 className="text-sm font-bold text-slate-900">Clinical Safety & Verification</h3>
-                <p className="text-[11px] text-slate-500">Deterministic checks evaluated before EHR persistence</p>
+                <h3 className="text-sm font-bold text-ink">Clinical Safety & Verification</h3>
+                <p className="text-[11px] text-on-solid0">Deterministic checks evaluated before EHR persistence</p>
               </div>
             </div>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-caution-wash text-caution">
               1 Conflict Flagged
             </span>
           </div>
@@ -945,68 +945,68 @@ function StepFiveVerifyApprove({ onNext, onPrev }: { onNext: () => void; onPrev:
           {/* Verification Checklist */}
           <div className="space-y-2.5">
             {/* Check 1 */}
-            <div className="p-3 rounded-xl bg-emerald-50/50 border border-emerald-200 flex items-start gap-2.5">
-              <div className="p-1 rounded-md bg-emerald-100 text-emerald-700 shrink-0 mt-0.5">
+            <div className="p-3 rounded-xl bg-settled-wash/50 border border-settled-line flex items-start gap-2.5">
+              <div className="p-1 rounded-md bg-settled-wash text-settled shrink-0 mt-0.5">
                 <Check size={14} strokeWidth={3} />
               </div>
               <div className="text-xs">
-                <span className="font-bold text-emerald-950">Required fields present</span>
-                <p className="text-slate-600 mt-0.5">Subjective, Objective, Assessment, and Plan all properly structured with clinical detail.</p>
+                <span className="font-bold text-settled">Required fields present</span>
+                <p className="text-ink-2 mt-0.5">Subjective, Objective, Assessment, and Plan all properly structured with clinical detail.</p>
               </div>
-              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded ml-auto shrink-0">
+              <span className="text-[10px] font-bold text-settled bg-settled-wash px-2 py-0.5 rounded ml-auto shrink-0">
                 Passed
               </span>
             </div>
 
             {/* Check 2: Conflict */}
-            <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-300 flex items-start gap-2.5">
-              <div className="p-1 rounded-md bg-amber-100 text-amber-700 shrink-0 mt-0.5">
+            <div className="p-3 rounded-xl bg-caution-wash/80 border border-caution-line flex items-start gap-2.5">
+              <div className="p-1 rounded-md bg-caution-wash text-caution shrink-0 mt-0.5">
                 <AlertTriangle size={14} />
               </div>
               <div className="text-xs">
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-amber-950">Allergy conflict detected</span>
-                  <span className="text-[9px] font-bold uppercase px-1.5 py-0.2 rounded bg-amber-200 text-amber-900">
+                  <span className="font-bold text-caution">Allergy conflict detected</span>
+                  <span className="text-[9px] font-bold uppercase px-1.5 py-0.2 rounded bg-caution-line text-caution">
                     Action Blocked
                   </span>
                 </div>
-                <p className="text-slate-700 mt-0.5">
+                <p className="text-ink-2 mt-0.5">
                   Suggested Amoxicillin draft blocked by documented Penicillin Anaphylaxis. Replaced with Azithromycin 250mg.
                 </p>
               </div>
-              <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded ml-auto shrink-0">
+              <span className="text-[10px] font-bold text-caution bg-caution-wash px-2 py-0.5 rounded ml-auto shrink-0">
                 Resolved
               </span>
             </div>
 
             {/* Check 3 */}
-            <div className="p-3 rounded-xl bg-emerald-50/50 border border-emerald-200 flex items-start gap-2.5">
-              <div className="p-1 rounded-md bg-emerald-100 text-emerald-700 shrink-0 mt-0.5">
+            <div className="p-3 rounded-xl bg-settled-wash/50 border border-settled-line flex items-start gap-2.5">
+              <div className="p-1 rounded-md bg-settled-wash text-settled shrink-0 mt-0.5">
                 <Check size={14} strokeWidth={3} />
               </div>
               <div className="text-xs">
-                <span className="font-bold text-emerald-950">No duplicate medication</span>
-                <p className="text-slate-600 mt-0.5">Metformin 1000mg correctly supersedes previous 500mg dose without duplicate order.</p>
+                <span className="font-bold text-settled">No duplicate medication</span>
+                <p className="text-ink-2 mt-0.5">Metformin 1000mg correctly supersedes previous 500mg dose without duplicate order.</p>
               </div>
-              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded ml-auto shrink-0">
+              <span className="text-[10px] font-bold text-settled bg-settled-wash px-2 py-0.5 rounded ml-auto shrink-0">
                 Passed
               </span>
             </div>
           </div>
 
           {/* Physician Sign-Off Action Mockup */}
-          <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 p-3 rounded-xl">
+          <div className="pt-3 border-t border-rule flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-paper-2 p-3 rounded-xl">
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold text-slate-900">Physician Approval Gate</span>
-                <span className="proton-badge bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px]">
+                <span className="text-xs font-bold text-ink">Physician Approval Gate</span>
+                <span className="proton-badge bg-settled-wash text-settled border border-settled-line text-[10px]">
                   Ready to Sign
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500">Dr. Eleanor Vance, MD &bull; NPI #1982736410</p>
+              <p className="text-[11px] text-on-solid0">Dr. Eleanor Vance, MD &bull; NPI #1982736410</p>
             </div>
 
-            <button className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer">
+            <button className="px-4 py-2 rounded-xl bg-settled hover:bg-solid text-white text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer">
               <ShieldCheck size={14} />
               <span>Approve & Sign Note</span>
             </button>
@@ -1039,7 +1039,7 @@ function StepSixLongitudinalMemory({
         </div>
 
         <div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-ink">
             Longitudinal Memory
           </h2>
           <p className="text-lg sm:text-xl font-bold text-brand-700 mt-2">
@@ -1047,22 +1047,22 @@ function StepSixLongitudinalMemory({
           </p>
         </div>
 
-        <p className="text-slate-600 text-sm leading-relaxed">
+        <p className="text-ink-2 text-sm leading-relaxed">
           Proton saves only the changes you approve. At the end of a consultation, proposed updates are shown for review before they are added to the patient record.
         </p>
 
         {/* Value Callouts */}
-        <div className="space-y-2 text-xs text-slate-700 pt-1">
+        <div className="space-y-2 text-xs text-ink-2 pt-1">
           <div className="flex items-center gap-2">
-            <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+            <CheckCircle2 size={15} className="text-settled shrink-0" />
             <span><strong>Zero chart amnesia:</strong> Medication changes and symptoms follow the patient</span>
           </div>
           <div className="flex items-center gap-2">
-            <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+            <CheckCircle2 size={15} className="text-settled shrink-0" />
             <span><strong>Physician gate required:</strong> Memory proposals require doctor acceptance</span>
           </div>
           <div className="flex items-center gap-2">
-            <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+            <CheckCircle2 size={15} className="text-settled shrink-0" />
             <span><strong>FHIR R4 Native:</strong> Persisted directly to standard healthcare resources</span>
           </div>
         </div>
@@ -1090,7 +1090,7 @@ function StepSixLongitudinalMemory({
           <div>
             <button
               onClick={onPrev}
-              className="text-xs font-semibold text-slate-500 hover:text-slate-800 flex items-center gap-1 cursor-pointer"
+              className="text-xs font-semibold text-on-solid0 hover:text-ink flex items-center gap-1 cursor-pointer"
             >
               <ArrowLeft size={13} />
               <span>Back to Step 5</span>
@@ -1101,18 +1101,18 @@ function StepSixLongitudinalMemory({
 
       {/* Right Visual Mockup Column */}
       <div className="lg:col-span-7">
-        <div className="proton-card p-5 sm:p-6 bg-white border border-slate-200 shadow-md space-y-4">
+        <div className="proton-card p-5 sm:p-6 bg-paper border border-rule shadow-md space-y-4">
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="flex items-center justify-between border-b border-rule pb-3">
             <div className="flex items-center gap-2.5">
               <div className="h-8 w-8 rounded-lg bg-brand-600 text-white flex items-center justify-center shadow-xs">
                 <FileText size={18} />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-slate-900 tracking-tight">
+                <h3 className="text-sm font-bold text-ink tracking-tight">
                   PATIENT MEMORY UPDATE PROPOSALS
                 </h3>
-                <p className="text-[11px] text-slate-500">Proposed longitudinal changes from Eleanor Vance visit</p>
+                <p className="text-[11px] text-on-solid0">Proposed longitudinal changes from Eleanor Vance visit</p>
               </div>
             </div>
             <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-brand-50 text-brand-700 border border-brand-200">
@@ -1123,55 +1123,55 @@ function StepSixLongitudinalMemory({
           {/* Memory Proposal Items */}
           <div className="space-y-2.5">
             {/* Proposal 1: Medication changed */}
-            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1 text-xs">
+            <div className="p-3 rounded-xl bg-paper-2 border border-rule space-y-1 text-xs">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-indigo-700 flex items-center gap-1">
+                <span className="font-bold text-accent-ink flex items-center gap-1">
                   <Pill size={13} /> + Medication changed
                 </span>
-                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded flex items-center gap-1">
+                <span className="text-[10px] font-bold text-settled bg-settled-wash px-2 py-0.5 rounded flex items-center gap-1">
                   <Check size={11} strokeWidth={3} /> Approved
                 </span>
               </div>
-              <p className="font-semibold text-slate-900">Metformin titrated to 1000mg BID</p>
-              <p className="text-slate-500 text-[11px]">Supersedes previous 500mg BID dose due to recent elevated HbA1c (8.4%).</p>
+              <p className="font-semibold text-ink">Metformin titrated to 1000mg BID</p>
+              <p className="text-on-solid0 text-[11px]">Supersedes previous 500mg BID dose due to recent elevated HbA1c (8.4%).</p>
             </div>
 
             {/* Proposal 2: New clinical finding */}
-            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1 text-xs">
+            <div className="p-3 rounded-xl bg-paper-2 border border-rule space-y-1 text-xs">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-purple-700 flex items-center gap-1">
+                <span className="font-bold text-accent-ink flex items-center gap-1">
                   <Stethoscope size={13} /> + New clinical finding
                 </span>
-                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded flex items-center gap-1">
+                <span className="text-[10px] font-bold text-settled bg-settled-wash px-2 py-0.5 rounded flex items-center gap-1">
                   <Check size={11} strokeWidth={3} /> Approved
                 </span>
               </div>
-              <p className="font-semibold text-slate-900">Early diabetic peripheral neuropathy</p>
-              <p className="text-slate-500 text-[11px]">Bilateral distal toe numbness identified during consultation review of systems.</p>
+              <p className="font-semibold text-ink">Early diabetic peripheral neuropathy</p>
+              <p className="text-on-solid0 text-[11px]">Bilateral distal toe numbness identified during consultation review of systems.</p>
             </div>
 
             {/* Proposal 3: Follow-up required */}
-            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1 text-xs">
+            <div className="p-3 rounded-xl bg-paper-2 border border-rule space-y-1 text-xs">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-emerald-700 flex items-center gap-1">
+                <span className="font-bold text-settled flex items-center gap-1">
                   <Clock size={13} /> + Follow-up required
                 </span>
-                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded flex items-center gap-1">
+                <span className="text-[10px] font-bold text-settled bg-settled-wash px-2 py-0.5 rounded flex items-center gap-1">
                   <Check size={11} strokeWidth={3} /> Approved
                 </span>
               </div>
-              <p className="font-semibold text-slate-900">Repeat HbA1c & Renal Panel in 3 Months</p>
-              <p className="text-slate-500 text-[11px]">Order dispatched to Quest Diagnostics prior to next scheduled appointment.</p>
+              <p className="font-semibold text-ink">Repeat HbA1c & Renal Panel in 3 Months</p>
+              <p className="text-on-solid0 text-[11px]">Order dispatched to Quest Diagnostics prior to next scheduled appointment.</p>
             </div>
           </div>
 
           {/* Summary Confirmation */}
-          <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs flex items-center justify-between gap-2 text-emerald-900">
+          <div className="p-3 rounded-xl bg-settled-wash border border-settled-line text-xs flex items-center justify-between gap-2 text-settled">
             <div className="flex items-center gap-2">
-              <ShieldCheck size={16} className="text-emerald-600 shrink-0" />
+              <ShieldCheck size={16} className="text-settled shrink-0" />
               <span>3 longitudinal updates confirmed. Eleanor's story is updated for all future encounters.</span>
             </div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 shrink-0">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-settled shrink-0">
               FHIR Synced
             </span>
           </div>

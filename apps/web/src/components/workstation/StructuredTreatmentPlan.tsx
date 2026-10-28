@@ -135,20 +135,20 @@ export default function StructuredTreatmentPlan({
   return (
     <div className="space-y-6 font-sans">
       {/* ── 1. MEDICATIONS SECTION ── */}
-      <div className="rounded-2xl border border-[#e4e4e7] bg-white p-5 shadow-2xs space-y-4">
-        <div className="flex items-center justify-between border-b border-[#f4f4f5] pb-3">
+      <div className="rounded-2xl border border-rule bg-paper p-5 shadow-2xs space-y-4">
+        <div className="flex items-center justify-between border-b border-rule pb-3">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+            <div className="w-6 h-6 rounded-lg bg-settled-wash text-settled flex items-center justify-center">
               <Pill size={14} />
             </div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[#09090b]">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-ink">
               Prescriptions & Medication Orders
             </h3>
-            <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-bold text-caution bg-caution-wash border border-caution-line px-2 py-0.5 rounded-full">
               DRAFT
             </span>
           </div>
-          <span className="text-[11px] text-[#71717a]">
+          <span className="text-[11px] text-ink-2">
             {plan.medications.length} items staged
           </span>
         </div>
@@ -160,35 +160,35 @@ export default function StructuredTreatmentPlan({
               key={med.id}
               className={`p-3 rounded-xl border transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
                 med.isEdited
-                  ? 'bg-amber-50/40 border-amber-200/80'
-                  : 'bg-[#fafaf9] border-[#e4e4e7]'
+                  ? 'bg-caution-wash/40 border-caution-line/80'
+                  : 'bg-canvas border-rule'
               }`}
             >
               <div className="space-y-1 min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs font-bold text-[#09090b]">{med.name}</span>
+                  <span className="text-xs font-bold text-ink">{med.name}</span>
                   <input
                     type="text"
                     value={med.dose}
                     onChange={e => handleUpdateMed(med.id, { dose: e.target.value })}
-                    className="text-xs font-mono font-medium bg-white border border-[#e4e4e7] rounded px-2 py-0.5 w-24 outline-none focus:border-[#111315]"
+                    className="text-xs font-mono font-medium bg-paper border border-rule rounded px-2 py-0.5 w-24 outline-none focus:border-solid"
                     title="Click to edit dose"
                   />
-                  <span className="text-xs text-[#52525b]">&bull; {med.route} &bull;</span>
+                  <span className="text-xs text-ink-2">&bull; {med.route} &bull;</span>
                   <input
                     type="text"
                     value={med.frequency}
                     onChange={e => handleUpdateMed(med.id, { frequency: e.target.value })}
-                    className="text-xs bg-white border border-[#e4e4e7] rounded px-2 py-0.5 w-36 outline-none focus:border-[#111315]"
+                    className="text-xs bg-paper border border-rule rounded px-2 py-0.5 w-36 outline-none focus:border-solid"
                     title="Click to edit frequency"
                   />
-                  <span className="text-xs text-[#71717a] font-mono">({med.duration})</span>
+                  <span className="text-xs text-ink-2 font-mono">({med.duration})</span>
                 </div>
                 {med.indication && (
-                  <p className="text-[11px] text-[#71717a]">Indication: {med.indication}</p>
+                  <p className="text-[11px] text-ink-2">Indication: {med.indication}</p>
                 )}
                 {med.isEdited && (
-                  <span className="inline-block text-[10px] font-semibold text-amber-800 bg-amber-100/70 px-1.5 py-0.2 rounded">
+                  <span className="inline-block text-[10px] font-semibold text-caution bg-caution-wash/70 px-1.5 py-0.2 rounded">
                     Edited by Clinician (Pending Sign-off)
                   </span>
                 )}
@@ -197,7 +197,7 @@ export default function StructuredTreatmentPlan({
               <button
                 type="button"
                 onClick={() => handleDeleteMed(med.id)}
-                className="text-[#a1a1aa] hover:text-rose-600 p-1 rounded-md transition-colors self-end sm:self-center cursor-pointer"
+                className="text-ink-3 hover:text-critical p-1 rounded-md transition-colors self-end sm:self-center cursor-pointer"
                 title="Remove prescription"
               >
                 <Trash2 size={13} />
@@ -206,38 +206,38 @@ export default function StructuredTreatmentPlan({
           ))}
 
           {plan.medications.length === 0 && (
-            <div className="text-center py-4 text-xs text-[#71717a] italic">
+            <div className="text-center py-4 text-xs text-ink-2 italic">
               No medications in draft plan. Add below or adopt from clinical perspectives.
             </div>
           )}
         </div>
 
         {/* Add Medication Form */}
-        <form onSubmit={handleAddMed} className="pt-2 border-t border-[#f4f4f5] flex flex-wrap items-center gap-2 text-xs">
+        <form onSubmit={handleAddMed} className="pt-2 border-t border-rule flex flex-wrap items-center gap-2 text-xs">
           <input
             type="text"
             placeholder="Medication name..."
             value={newMed.name}
             onChange={e => setNewMed({ ...newMed, name: e.target.value })}
-            className="flex-1 min-w-[140px] px-2.5 py-1.5 rounded-lg border border-[#e4e4e7] bg-white outline-none focus:border-[#111315]"
+            className="flex-1 min-w-[140px] px-2.5 py-1.5 rounded-lg border border-rule bg-paper outline-none focus:border-solid"
           />
           <input
             type="text"
             placeholder="Dose (e.g. 500 mg)"
             value={newMed.dose}
             onChange={e => setNewMed({ ...newMed, dose: e.target.value })}
-            className="w-28 px-2.5 py-1.5 rounded-lg border border-[#e4e4e7] bg-white outline-none focus:border-[#111315]"
+            className="w-28 px-2.5 py-1.5 rounded-lg border border-rule bg-paper outline-none focus:border-solid"
           />
           <input
             type="text"
             placeholder="Freq (e.g. Twice daily)"
             value={newMed.frequency}
             onChange={e => setNewMed({ ...newMed, frequency: e.target.value })}
-            className="w-32 px-2.5 py-1.5 rounded-lg border border-[#e4e4e7] bg-white outline-none focus:border-[#111315]"
+            className="w-32 px-2.5 py-1.5 rounded-lg border border-rule bg-paper outline-none focus:border-solid"
           />
           <button
             type="submit"
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#111315] hover:bg-[#262a2e] text-white font-semibold cursor-pointer shadow-2xs"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-solid hover:bg-solid text-white font-semibold cursor-pointer shadow-2xs"
           >
             <Plus size={12} />
             <span>Add Rx</span>
@@ -246,20 +246,20 @@ export default function StructuredTreatmentPlan({
       </div>
 
       {/* ── 2. INVESTIGATIONS SECTION ── */}
-      <div className="rounded-2xl border border-[#e4e4e7] bg-white p-5 shadow-2xs space-y-4">
-        <div className="flex items-center justify-between border-b border-[#f4f4f5] pb-3">
+      <div className="rounded-2xl border border-rule bg-paper p-5 shadow-2xs space-y-4">
+        <div className="flex items-center justify-between border-b border-rule pb-3">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
+            <div className="w-6 h-6 rounded-lg bg-accent-wash text-accent-ink flex items-center justify-center">
               <Activity size={14} />
             </div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[#09090b]">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-ink">
               Diagnostic Investigations & Orders
             </h3>
-            <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-bold text-caution bg-caution-wash border border-caution-line px-2 py-0.5 rounded-full">
               DRAFT
             </span>
           </div>
-          <span className="text-[11px] text-[#71717a]">
+          <span className="text-[11px] text-ink-2">
             {plan.investigations.length} orders staged
           </span>
         </div>
@@ -268,26 +268,26 @@ export default function StructuredTreatmentPlan({
           {plan.investigations.map(inv => (
             <div
               key={inv.id}
-              className="p-3 rounded-xl bg-[#fafaf9] border border-[#e4e4e7] flex items-center justify-between gap-3 text-xs"
+              className="p-3 rounded-xl bg-canvas border border-rule flex items-center justify-between gap-3 text-xs"
             >
               <div>
-                <div className="font-bold text-[#09090b] flex items-center gap-2">
+                <div className="font-bold text-ink flex items-center gap-2">
                   <span>{inv.testName}</span>
-                  <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.2 rounded">
+                  <span className="text-[10px] font-semibold text-accent-ink bg-accent-wash border border-accent-line px-1.5 py-0.2 rounded">
                     {inv.category}
                   </span>
-                  <span className="text-[10px] text-[#71717a] font-mono">
+                  <span className="text-[10px] text-ink-2 font-mono">
                     Urgency: {inv.urgency}
                   </span>
                 </div>
                 {inv.indication && (
-                  <p className="text-[11px] text-[#71717a]">Clinical Indication: {inv.indication}</p>
+                  <p className="text-[11px] text-ink-2">Clinical Indication: {inv.indication}</p>
                 )}
               </div>
               <button
                 type="button"
                 onClick={() => handleDeleteInv(inv.id)}
-                className="text-[#a1a1aa] hover:text-rose-600 p-1 cursor-pointer"
+                className="text-ink-3 hover:text-critical p-1 cursor-pointer"
                 title="Remove investigation order"
               >
                 <Trash2 size={13} />
@@ -296,25 +296,25 @@ export default function StructuredTreatmentPlan({
           ))}
 
           {plan.investigations.length === 0 && (
-            <div className="text-center py-4 text-xs text-[#71717a] italic">
+            <div className="text-center py-4 text-xs text-ink-2 italic">
               No investigations ordered.
             </div>
           )}
         </div>
 
         {/* Add Investigation Form */}
-        <form onSubmit={handleAddInv} className="pt-2 border-t border-[#f4f4f5] flex items-center gap-2 text-xs">
+        <form onSubmit={handleAddInv} className="pt-2 border-t border-rule flex items-center gap-2 text-xs">
           <input
             type="text"
             placeholder="Order lab or imaging (e.g. Comprehensive Metabolic Panel, Stress Echo)..."
             value={newInv.testName}
             onChange={e => setNewInv({ ...newInv, testName: e.target.value })}
-            className="flex-1 px-2.5 py-1.5 rounded-lg border border-[#e4e4e7] bg-white outline-none focus:border-[#111315]"
+            className="flex-1 px-2.5 py-1.5 rounded-lg border border-rule bg-paper outline-none focus:border-solid"
           />
           <select
             value={newInv.category}
             onChange={e => setNewInv({ ...newInv, category: e.target.value as any })}
-            className="px-2 py-1.5 rounded-lg border border-[#e4e4e7] bg-white outline-none font-medium cursor-pointer"
+            className="px-2 py-1.5 rounded-lg border border-rule bg-paper outline-none font-medium cursor-pointer"
           >
             <option value="Laboratory">Laboratory</option>
             <option value="Diagnostic Imaging">Imaging</option>
@@ -322,7 +322,7 @@ export default function StructuredTreatmentPlan({
           </select>
           <button
             type="submit"
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#111315] hover:bg-[#262a2e] text-white font-semibold cursor-pointer shadow-2xs"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-solid hover:bg-solid text-white font-semibold cursor-pointer shadow-2xs"
           >
             <Plus size={12} />
             <span>Order</span>
@@ -333,22 +333,22 @@ export default function StructuredTreatmentPlan({
       {/* ── 3. FOLLOW-UP & PATIENT INSTRUCTIONS ── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Follow-up */}
-        <div className="rounded-2xl border border-[#e4e4e7] bg-white p-5 shadow-2xs space-y-3">
-          <div className="flex items-center justify-between border-b border-[#f4f4f5] pb-2">
+        <div className="rounded-2xl border border-rule bg-paper p-5 shadow-2xs space-y-3">
+          <div className="flex items-center justify-between border-b border-rule pb-2">
             <div className="flex items-center gap-2">
-              <Calendar size={14} className="text-indigo-600" />
-              <h3 className="text-xs font-bold uppercase tracking-wider text-[#09090b]">
+              <Calendar size={14} className="text-accent-ink" />
+              <h3 className="text-xs font-bold uppercase tracking-wider text-ink">
                 Clinical Follow-up
               </h3>
             </div>
-            <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.2 rounded">
+            <span className="text-[10px] font-bold text-caution bg-caution-wash border border-caution-line px-1.5 py-0.2 rounded">
               DRAFT
             </span>
           </div>
 
           <div className="space-y-2 text-xs">
             <div>
-              <label className="text-[11px] font-semibold text-[#52525b] block mb-1">
+              <label className="text-[11px] font-semibold text-ink-2 block mb-1">
                 Timeframe:
               </label>
               <input
@@ -361,13 +361,13 @@ export default function StructuredTreatmentPlan({
                   });
                   notifyEdit();
                 }}
-                className="w-full px-2.5 py-1.5 rounded-lg border border-[#e4e4e7] bg-[#fafaf9] outline-none focus:border-[#111315]"
+                className="w-full px-2.5 py-1.5 rounded-lg border border-rule bg-canvas outline-none focus:border-solid"
                 placeholder="e.g. Return in 3 months for repeat labs"
               />
             </div>
 
             <div>
-              <label className="text-[11px] font-semibold text-[#52525b] block mb-1">
+              <label className="text-[11px] font-semibold text-ink-2 block mb-1">
                 Specialty Clinic / Referral:
               </label>
               <input
@@ -380,7 +380,7 @@ export default function StructuredTreatmentPlan({
                   });
                   notifyEdit();
                 }}
-                className="w-full px-2.5 py-1.5 rounded-lg border border-[#e4e4e7] bg-[#fafaf9] outline-none focus:border-[#111315]"
+                className="w-full px-2.5 py-1.5 rounded-lg border border-rule bg-canvas outline-none focus:border-solid"
                 placeholder="e.g. Internal Medicine Outpatient Clinic"
               />
             </div>
@@ -388,15 +388,15 @@ export default function StructuredTreatmentPlan({
         </div>
 
         {/* Patient Instructions */}
-        <div className="rounded-2xl border border-[#e4e4e7] bg-white p-5 shadow-2xs space-y-3">
-          <div className="flex items-center justify-between border-b border-[#f4f4f5] pb-2">
+        <div className="rounded-2xl border border-rule bg-paper p-5 shadow-2xs space-y-3">
+          <div className="flex items-center justify-between border-b border-rule pb-2">
             <div className="flex items-center gap-2">
-              <MessageSquare size={14} className="text-teal-600" />
-              <h3 className="text-xs font-bold uppercase tracking-wider text-[#09090b]">
+              <MessageSquare size={14} className="text-settled" />
+              <h3 className="text-xs font-bold uppercase tracking-wider text-ink">
                 Patient Instructions (Plain Language)
               </h3>
             </div>
-            <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.2 rounded">
+            <span className="text-[10px] font-bold text-caution bg-caution-wash border border-caution-line px-1.5 py-0.2 rounded">
               DRAFT
             </span>
           </div>
@@ -412,7 +412,7 @@ export default function StructuredTreatmentPlan({
                 });
                 notifyEdit();
               }}
-              className="w-full p-2.5 rounded-lg border border-[#e4e4e7] bg-[#fafaf9] text-xs text-[#09090b] outline-none focus:border-[#111315] resize-y"
+              className="w-full p-2.5 rounded-lg border border-rule bg-canvas text-xs text-ink outline-none focus:border-solid resize-y"
               placeholder="Concise, plain-language patient care instructions..."
             />
           </div>

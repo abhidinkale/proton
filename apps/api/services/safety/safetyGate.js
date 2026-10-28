@@ -56,7 +56,9 @@ class SafetyGate {
 
     const allergies = patientProfile.allergies || [];
     const activeMeds = patientProfile.medications || patientProfile.activeMedications || [];
-    const age = patientProfile.age || 45;
+    const age = patientProfile.age ?? 45;
+    const eGFR = patientProfile.eGFR ?? patientProfile.egfr ?? null;
+    const weightKg = patientProfile.weightKg ?? patientProfile.weight_kg ?? null;
 
     // 1. Missing Data Check: Missing allergy context is flagged as warning/risk, NEVER assumed safe
     const hasDocumentedAllergies = allergies.length > 0;
@@ -71,7 +73,14 @@ class SafetyGate {
 
     // 2. Deterministic Verification via SafetyService
     const deterministicResult = typeof this.safetyService.evaluatePrescriptionSafety === 'function'
-      ? this.safetyService.evaluatePrescriptionSafety({ prescriptions, allergies, activeMedications: activeMeds })
+      ? this.safetyService.evaluatePrescriptionSafety({
+          prescriptions,
+          allergies,
+          activeMedications: activeMeds,
+          eGFR,
+          weightKg,
+          age
+        })
       : (typeof this.safetyService.verifyPrescriptions === 'function'
           ? this.safetyService.verifyPrescriptions(prescriptions, allergies, activeMeds, age)
           : { contraindications: [], warnings: [] });
@@ -81,10 +90,13 @@ class SafetyGate {
 
 
     const hasCriticalHardStop = violations.some(v => v.severity === 'CRITICAL');
+    const hasHighRisk = violations.some(v => v.severity === 'HIGH' || v.severity === 'MEDIUM');
 
-    // 3. Physician Override Evaluation
+    // 3. Physician Override Evaluation. A HIGH finding is not a silent pass: it
+    // is REVIEW_REQUIRED, and a physician may clear it only with a documented
+    // rationale. A CRITICAL finding is the same, but blocked until then.
     let overrideAccepted = false;
-    if (hasCriticalHardStop && physicianDirective) {
+    if ((hasCriticalHardStop || hasHighRisk) && physicianDirective) {
       // Must be licensed physician
       if (!actor || actor.actorRole !== 'physician') {
         throw new SafetyGateError(
@@ -106,25 +118,33 @@ class SafetyGate {
       overrideAccepted = true;
     }
 
-    // Determine final clearance status
+    // Determine final clearance status. `cleared` is the only field a caller
+    // should use to proceed; a HIGH violation cannot leave it true.
     let status = 'VERIFIED';
     if (hasCriticalHardStop) {
       status = overrideAccepted ? 'DIRECTIVE_OVERRIDE' : 'CONTRAINDICATION_HARD_STOP';
+    } else if (hasHighRisk) {
+      status = overrideAccepted ? 'DIRECTIVE_OVERRIDE' : 'REVIEW_REQUIRED';
     }
+
+    const cleared = status === 'VERIFIED' || status === 'DIRECTIVE_OVERRIDE';
 
     return {
       status,
-      cleared: status === 'VERIFIED' || status === 'DIRECTIVE_OVERRIDE',
-      passed: status === 'VERIFIED' || status === 'DIRECTIVE_OVERRIDE',
-      isSafe: status === 'VERIFIED' || status === 'DIRECTIVE_OVERRIDE',
+      cleared,
+      passed: cleared,
+      isSafe: cleared,
       hardStop: hasCriticalHardStop,
       blocked: hasCriticalHardStop && !overrideAccepted,
+      requiresReview: status === 'REVIEW_REQUIRED',
       hasCriticalHardStop,
+      hasHighRisk,
       overrideAccepted,
       physicianDirective: overrideAccepted ? physicianDirective.trim() : null,
       violations,
       contraindications: violations,
       warnings,
+      kernelVersion: deterministicResult.kernelVersion || null,
       verifiedPrescriptionCount: prescriptions.length,
       evaluatedAt: new Date().toISOString()
     };

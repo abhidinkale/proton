@@ -36,6 +36,22 @@ class ClinicalPipelineError extends Error {
   }
 }
 
+/**
+ * A HIGH or MEDIUM finding is review-required, not a silent pass. The gate
+ * permits a documented physician directive to clear it; without one, the
+ * pipeline must not build a signable output.
+ */
+function assertSafetyClearance(safetyReport) {
+  if (safetyReport && safetyReport.cleared === false) {
+    throw new ClinicalPipelineError(
+      'SAFETY_CHECK',
+      'SAFETY_REVIEW_REQUIRED',
+      'Safety findings require review before the encounter can proceed.',
+      { safetyReport, status: 422 }
+    );
+  }
+}
+
 class ClinicalPipeline {
   /**
    * Executes the canonical clinical pipeline.
@@ -296,6 +312,18 @@ class ClinicalPipeline {
           );
         }
       }
+
+      // A HIGH or MEDIUM finding is REVIEW_REQUIRED, not a silent pass. The
+      // gate has already allowed a documented physician directive to clear it;
+      // without one, the pipeline must not build a signable output.
+      if (safetyReport.cleared === false) {
+        emit('SAFETY_REVIEW_REQUIRED', {
+          reason: 'Safety findings require review before the encounter can proceed.',
+          contraindications: safetyReport.contraindications || [],
+          warnings: safetyReport.warnings || []
+        });
+      }
+      assertSafetyClearance(safetyReport);
 
       // Stage 6: STRUCTURED CLINICAL OUTPUT
       currentStage = 'STRUCTURED_OUTPUT';
@@ -720,7 +748,9 @@ class ClinicalPipeline {
       patientProfile: {
         allergies: clinicalContext.allergies || clinicalContext.rawAllergies || [],
         medications: clinicalContext.medications || clinicalContext.rawMedications || clinicalContext.activeMedications || [],
-        age: clinicalContext.age || 45
+        age: clinicalContext.age ?? 45,
+        eGFR: clinicalContext.eGFR ?? clinicalContext.egfr ?? null,
+        weightKg: clinicalContext.weightKg ?? clinicalContext.weight_kg ?? null
       },
       actor,
       physicianDirective
@@ -807,5 +837,6 @@ const clinicalPipeline = new ClinicalPipeline();
 module.exports = {
   ClinicalPipeline,
   clinicalPipeline,
-  ClinicalPipelineError
+  ClinicalPipelineError,
+  assertSafetyClearance
 };

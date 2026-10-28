@@ -17,6 +17,9 @@ import Education from './pages/Education';
 import Billing from './pages/Billing';
 import MobileCapturePage from './pages/MobileCapturePage';
 import SmartLaunch from './pages/SmartLaunch';
+import ClinicStart from './pages/ClinicStart';
+import ClinicJoin from './pages/ClinicJoin';
+import ClinicAdmin from './pages/ClinicAdmin';
 import { authService } from './services/auth';
 
 // Lazy-load the landing page since it's only for unauthenticated visitors
@@ -30,12 +33,12 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   // Deterministic Auth Guard: While Medplum is actively negotiating, allow if local session is valid
   if (medplum.isLoading() && !user) {
     return (
-      <div className="min-h-screen bg-[#F8F8F6] flex items-center justify-center">
+      <div className="min-h-screen bg-paper-2 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <span className="text-xl font-bold tracking-tight text-[#111315]">proton</span>
+          <span className="text-xl font-bold tracking-tight text-ink">proton</span>
           <div className="text-center">
-            <p className="text-sm font-medium text-[#111315]">Verifying clinical credentials</p>
-            <p className="text-xs text-[#6E767E] mt-1">Authenticating session with EHR boundary</p>
+            <p className="text-sm font-medium text-ink">Verifying clinical credentials</p>
+            <p className="text-xs text-ink-2 mt-1">Authenticating session with EHR boundary</p>
           </div>
         </div>
       </div>
@@ -65,12 +68,17 @@ export default function App() {
         </Suspense>
       } />
       <Route path="/landing" element={<Navigate to="/welcome" replace />} />
+      {/* Public: a hospital opens a clinic before any account exists. */}
+      <Route path="/clinic/start" element={<ClinicStart />} />
+      {/* Public: the invited clinician signs in, then claims the membership. */}
+      <Route path="/clinic/join" element={<ClinicJoin />} />
       <Route path="/login" element={<Login />} />
       <Route path="/capture" element={<MobileCapturePage />} />
       <Route path="/launch" element={<SmartLaunch />} />
       <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/care-loop" element={<ProtectedRoute><CareLoop /></ProtectedRoute>} />
+      <Route path="/clinic/admin" element={<ProtectedRoute><ClinicAdmin /></ProtectedRoute>} />
       <Route path="/schedule" element={<ProtectedRoute><Schedule /></ProtectedRoute>} />
       <Route path="/patients" element={<ProtectedRoute><Patients /></ProtectedRoute>} />
       <Route path="/patients/:id" element={<ProtectedRoute><PatientProfile /></ProtectedRoute>} />

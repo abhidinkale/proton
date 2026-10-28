@@ -34,11 +34,11 @@ export default function ProtonStatusChip({ className = '' }: ProtonStatusChipPro
   if (!isOnline) {
     return (
       <div 
-        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A] shadow-sm select-none ${className}`}
+        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-caution-wash text-caution border border-caution-line shadow-sm select-none ${className}`}
         role="status"
         aria-label="Proton is currently offline. Clinical modifications are saved locally."
       >
-        <WifiOff className="w-3.5 h-3.5 text-[#B45309]" />
+        <WifiOff className="w-3.5 h-3.5 text-caution" />
         <span>Offline · Changes saved locally</span>
       </div>
     );
@@ -47,11 +47,11 @@ export default function ProtonStatusChip({ className = '' }: ProtonStatusChipPro
   if (syncing) {
     return (
       <div 
-        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#EFF6FF] text-[#1E40AF] border border-[#BFDBFE] shadow-sm select-none ${className}`}
+        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-accent-wash text-accent-ink border border-accent-line shadow-sm select-none ${className}`}
         role="status"
         aria-label="Synchronizing clinical cache with FHIR repository"
       >
-        <RefreshCw className="w-3.5 h-3.5 text-[#2563EB] animate-spin" />
+        <RefreshCw className="w-3.5 h-3.5 text-accent-ink animate-spin" />
         <span>Syncing changes...</span>
       </div>
     );
@@ -59,12 +59,12 @@ export default function ProtonStatusChip({ className = '' }: ProtonStatusChipPro
 
   return (
     <div 
-      className={`inline-flex items-center gap-1.5 rounded-[5px] border border-[#D9E3D2] bg-[#F4F8F1] px-2 py-[3px] select-none ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-[5px] border border-settled-line bg-settled-wash px-2 py-[3px] select-none ${className}`}
       role="status"
       aria-label="Proton is securely connected to FHIR clinical server"
     >
-      <span className="h-1.5 w-1.5 rounded-full bg-[#5C8A55]" />
-      <span className="font-mono text-[8.5px] uppercase tracking-[0.14em] text-[#4E7449]">Connected</span>
+      <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+      <span className="font-mono text-[8.5px] uppercase tracking-[0.14em] text-settled">Connected</span>
     </div>
   );
 }

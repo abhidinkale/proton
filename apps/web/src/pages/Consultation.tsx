@@ -112,8 +112,8 @@ export default function Consultation() {
   if (isLoadingChart && !clinicPatient) {
     return (
       <div className="flex min-h-[70vh] flex-col items-center justify-center gap-3">
-        <span className="h-6 w-6 animate-spin rounded-full border-2 border-[#151719] border-t-transparent" />
-        <p className="text-xs font-medium text-[#575D65]">Loading the clinical chart…</p>
+        <span className="h-6 w-6 animate-spin rounded-full border-2 border-rule-strong border-t-transparent" />
+        <p className="text-xs font-medium text-ink-2">Loading the clinical chart…</p>
       </div>
     );
   }
@@ -121,12 +121,12 @@ export default function Consultation() {
   if (chartError && !clinicPatient) {
     return (
       <div className="mx-auto flex min-h-[70vh] max-w-md flex-col items-center justify-center gap-3 text-center">
-        <p className="text-sm font-semibold text-[#151719]">Chart unavailable</p>
-        <p className="text-xs leading-relaxed text-[#6E757C]">{chartError}</p>
+        <p className="text-sm font-semibold text-ink">Chart unavailable</p>
+        <p className="text-xs leading-relaxed text-ink-2">{chartError}</p>
         <button
           type="button"
           onClick={() => navigate('/patients')}
-          className="rounded-full bg-[#151719] px-4 py-2 text-xs font-semibold text-white cursor-pointer"
+          className="rounded-full bg-solid px-4 py-2 text-xs font-semibold text-white cursor-pointer"
         >
           Back to patients
         </button>
@@ -157,27 +157,27 @@ export default function Consultation() {
     return (
       <div className="flex flex-col gap-4">
         <div className="proton-glass proton-specular flex flex-wrap items-center justify-between gap-3 rounded-full px-4 py-2">
-          <div className="flex items-center gap-2 text-[11px] text-[#6E757C]">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            <span className="font-semibold text-[#111315]">Power desk</span>
+          <div className="flex items-center gap-2 text-[11px] text-ink-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-settled-wash0" />
+            <span className="font-semibold text-ink">Power desk</span>
             <span className="hidden sm:inline">· multi-tab encounter</span>
           </div>
           <div className="flex items-center gap-1 text-[11px]">
             <button
               onClick={() => setViewMode('cockpit')}
-              className="rounded-full px-3 py-1.5 font-medium text-[#6E757C] transition-colors hover:bg-white/70 hover:text-[#111315] cursor-pointer"
+              className="rounded-full px-3 py-1.5 font-medium text-ink-2 transition-colors hover:bg-paper/70 hover:text-ink cursor-pointer"
             >
               Cockpit
             </button>
             <button
               onClick={() => setViewMode('guided')}
-              className="rounded-full px-3 py-1.5 font-medium text-[#6E757C] transition-colors hover:bg-white/70 hover:text-[#111315] cursor-pointer"
+              className="rounded-full px-3 py-1.5 font-medium text-ink-2 transition-colors hover:bg-paper/70 hover:text-ink cursor-pointer"
             >
               Guided
             </button>
             <button
               onClick={() => setViewMode('legacy')}
-              className="rounded-full px-3 py-1.5 font-medium text-[#6E757C] transition-colors hover:bg-white/70 hover:text-[#111315] cursor-pointer"
+              className="rounded-full px-3 py-1.5 font-medium text-ink-2 transition-colors hover:bg-paper/70 hover:text-ink cursor-pointer"
             >
               Legacy
             </button>

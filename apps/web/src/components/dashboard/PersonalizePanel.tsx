@@ -57,8 +57,8 @@ export default function PersonalizePanel({
 
   const renderGroup = (title: string, order: PanelId[]) => (
     <div>
-      <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-[#A3AEC4]">{title}</p>
-      <ul className="mt-2 divide-y divide-[#EEF2FB] border-y border-[#EEF2FB]">
+      <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-ink-3">{title}</p>
+      <ul className="mt-2 divide-y divide-rule border-y border-rule">
         {order.map((panel, index) => {
           const meta = PANEL_META[panel];
           const visible = !prefs.hidden.includes(panel);
@@ -67,21 +67,21 @@ export default function PersonalizePanel({
               <div className="min-w-0 flex-1">
                 <p
                   className={`text-[12.5px] leading-tight ${
-                    visible ? 'text-[#171A21]' : 'text-[#A3AEC4]'
+                    visible ? 'text-ink' : 'text-ink-3'
                   }`}
                 >
                   {meta.label}
                 </p>
-                <p className="mt-0.5 truncate text-[10.5px] leading-tight text-[#8A93A6]">{meta.hint}</p>
+                <p className="mt-0.5 truncate text-[10.5px] leading-tight text-ink-3">{meta.hint}</p>
               </div>
 
-              <div className="flex items-center overflow-hidden rounded-[6px] border border-[#E6ECFB]">
+              <div className="flex items-center overflow-hidden rounded-[6px] border border-accent-line">
                 <button
                   type="button"
                   onClick={() => onMovePanel(panel, -1)}
                   disabled={index === 0}
                   aria-label={`Move ${meta.label} up`}
-                  className="flex h-6 w-6 items-center justify-center text-[#8A93A6] disabled:opacity-30 enabled:hover:text-[#171A21]"
+                  className="flex h-6 w-6 items-center justify-center text-ink-3 disabled:opacity-30 enabled:hover:text-ink"
                 >
                   <ArrowUp size={11} />
                 </button>
@@ -90,7 +90,7 @@ export default function PersonalizePanel({
                   onClick={() => onMovePanel(panel, 1)}
                   disabled={index === order.length - 1}
                   aria-label={`Move ${meta.label} down`}
-                  className="flex h-6 w-6 items-center justify-center border-l border-[#E6ECFB] text-[#8A93A6] disabled:opacity-30 enabled:hover:text-[#171A21]"
+                  className="flex h-6 w-6 items-center justify-center border-l border-accent-line text-ink-3 disabled:opacity-30 enabled:hover:text-ink"
                 >
                   <ArrowDown size={11} />
                 </button>
@@ -103,15 +103,15 @@ export default function PersonalizePanel({
                 aria-label={`Show ${meta.label}`}
                 onClick={() => onTogglePanel(panel)}
                 className={`relative h-[18px] w-[30px] shrink-0 rounded-full border transition-colors ${
-                  visible ? 'border-transparent' : 'border-[#E1E8FA] bg-[#F2F5FD]'
+                  visible ? 'border-transparent' : 'border-accent-line bg-accent-wash'
                 }`}
                 style={visible ? { background: 'var(--accent)' } : undefined}
               >
                 <span
-                  className={`absolute top-[2px] h-[12px] w-[12px] rounded-full bg-white shadow-sm transition-all ${
+                  className={`absolute top-[2px] h-[12px] w-[12px] rounded-full bg-paper shadow-sm transition-all ${
                     visible ? 'left-[15px]' : 'left-[2px]'
                   }`}
-                  style={visible ? undefined : { background: '#B6C0D6' }}
+                  style={visible ? undefined : { background: 'var(--accent-wash)' }}
                 />
               </button>
             </li>
@@ -127,7 +127,7 @@ export default function PersonalizePanel({
         type="button"
         aria-label="Close personalization"
         onClick={onClose}
-        className="absolute inset-0 bg-[#171A21]/25 backdrop-blur-[1px]"
+        className="absolute inset-0 bg-solid/25 backdrop-blur-[1px]"
       />
       <div
         ref={panelRef}
@@ -135,14 +135,14 @@ export default function PersonalizePanel({
         aria-modal="true"
         aria-labelledby="personalize-title"
         tabIndex={-1}
-        className="relative flex h-full w-full max-w-[392px] flex-col border-l border-[#E1E8FA] bg-[#FFFFFF] shadow-[-24px_0_48px_-32px_rgba(20,22,26,0.35)] outline-none"
+        className="relative flex h-full w-full max-w-[392px] flex-col border-l border-accent-line bg-paper shadow-[-24px_0_48px_-32px_rgba(20,22,26,0.35)] outline-none"
       >
-        <header className="flex items-start justify-between gap-3 border-b border-[#E6ECFB] px-5 py-4">
+        <header className="flex items-start justify-between gap-3 border-b border-accent-line px-5 py-4">
           <div>
-            <h2 id="personalize-title" className="text-[19px] font-medium tracking-[-0.02em] text-[#171A21]">
+            <h2 id="personalize-title" className="text-[19px] font-medium tracking-[-0.02em] text-ink">
               Personalize
             </h2>
-            <p className="mt-1.5 text-[11.5px] leading-snug text-[#6B7280]">
+            <p className="mt-1.5 text-[11.5px] leading-snug text-ink-2">
               Your desk, your accent, your panels. Saved to this account.
             </p>
           </div>
@@ -150,7 +150,7 @@ export default function PersonalizePanel({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="mt-0.5 flex h-7 w-7 items-center justify-center rounded-[6px] text-[#8A93A6] transition-colors hover:bg-[#F2F5FD] hover:text-[#171A21]"
+            className="mt-0.5 flex h-7 w-7 items-center justify-center rounded-[6px] text-ink-3 transition-colors hover:bg-accent-wash hover:text-ink"
           >
             <X size={14} />
           </button>
@@ -159,8 +159,8 @@ export default function PersonalizePanel({
         <div className="flex-1 space-y-6 overflow-y-auto px-5 py-5">
           <section>
             <div className="flex items-baseline justify-between">
-              <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-[#A3AEC4]">Accent</p>
-              <span className="text-[10.5px] text-[#8A93A6]">{activeAccent.label}</span>
+              <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-ink-3">Accent</p>
+              <span className="text-[10.5px] text-ink-3">{activeAccent.label}</span>
             </div>
             <div className="mt-2.5 grid grid-cols-6 gap-2">
               {ACCENTS.map((option) => {
@@ -174,7 +174,7 @@ export default function PersonalizePanel({
                     aria-pressed={selected}
                     title={option.label}
                     className={`group relative flex h-9 items-center justify-center rounded-[8px] border transition-all ${
-                      selected ? 'border-[#171A21]' : 'border-[#E6ECFB] hover:border-[#CBD5F0]'
+                      selected ? 'border-rule-strong' : 'border-accent-line hover:border-accent-line'
                     }`}
                   >
                     <span
@@ -185,19 +185,19 @@ export default function PersonalizePanel({
                     {selected && (
                       <Check
                         size={10}
-                        className="absolute -right-1 -top-1 rounded-full bg-[#171A21] p-[2px] text-[#FFFFFF]"
+                        className="absolute -right-1 -top-1 rounded-full bg-solid p-[2px] text-on-solid"
                       />
                     )}
                   </button>
                 );
               })}
             </div>
-            <p className="mt-2 text-[10.5px] leading-snug text-[#8A93A6]">{activeAccent.note}</p>
+            <p className="mt-2 text-[10.5px] leading-snug text-ink-3">{activeAccent.note}</p>
           </section>
 
           <section>
-            <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-[#A3AEC4]">Density</p>
-            <div className="mt-2 flex rounded-[8px] border border-[#E6ECFB] p-0.5">
+            <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-ink-3">Density</p>
+            <div className="mt-2 flex rounded-[8px] border border-accent-line p-0.5">
               {(
                 [
                   { id: 'comfortable', label: 'Comfortable' },
@@ -212,7 +212,7 @@ export default function PersonalizePanel({
                     onClick={() => onDensity(option.id)}
                     aria-pressed={selected}
                     className={`flex-1 rounded-[6px] py-1.5 text-[11.5px] transition-colors ${
-                      selected ? 'bg-[#171A21] text-[#FFFFFF]' : 'text-[#6B7280] hover:text-[#171A21]'
+                      selected ? 'bg-solid text-on-solid' : 'text-ink-2 hover:text-ink'
                     }`}
                   >
                     {option.label}
@@ -220,7 +220,7 @@ export default function PersonalizePanel({
                 );
               })}
             </div>
-            <p className="mt-2 text-[10.5px] leading-snug text-[#8A93A6]">
+            <p className="mt-2 text-[10.5px] leading-snug text-ink-3">
               Compact fits two more queue rows on a 13-inch screen.
             </p>
           </section>
@@ -229,15 +229,15 @@ export default function PersonalizePanel({
           {renderGroup('Right rail', prefs.order.rail as PanelId[])}
         </div>
 
-        <footer className="flex items-center justify-between gap-3 border-t border-[#E6ECFB] pl-5 pr-16 py-3.5">
-          <p className="text-[10.5px] leading-snug text-[#8A93A6]">
+        <footer className="flex items-center justify-between gap-3 border-t border-accent-line pl-5 pr-16 py-3.5">
+          <p className="text-[10.5px] leading-snug text-ink-3">
             {isCustomized ? 'Using your layout.' : 'Using the clinic default.'}
           </p>
           <button
             type="button"
             onClick={onReset}
             disabled={!isCustomized}
-            className="inline-flex items-center gap-1.5 rounded-[6px] border border-[#E1E8FA] px-2.5 py-1.5 text-[11px] text-[#6B7280] transition-colors enabled:hover:border-[#CBD5F0] enabled:hover:text-[#171A21] disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 rounded-[6px] border border-accent-line px-2.5 py-1.5 text-[11px] text-ink-2 transition-colors enabled:hover:border-accent-line enabled:hover:text-ink disabled:opacity-40"
           >
             <RotateCcw size={11} />
             Reset

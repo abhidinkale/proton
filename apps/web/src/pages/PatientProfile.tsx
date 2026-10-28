@@ -622,8 +622,8 @@ export default function PatientProfile() {
   if (loading) {
     return (
       <Layout>
-        <div className="max-w-4xl mx-auto py-24 flex flex-col items-center justify-center gap-3 text-xs text-[#6E767E]" role="status">
-          <LoaderCircle size={22} className="animate-spin text-[#111315]" />
+        <div className="max-w-4xl mx-auto py-24 flex flex-col items-center justify-center gap-3 text-xs text-ink-2" role="status">
+          <LoaderCircle size={22} className="animate-spin text-ink" />
           <span>Opening clinical record...</span>
         </div>
       </Layout>
@@ -634,13 +634,13 @@ export default function PatientProfile() {
     return (
       <Layout>
         <div className="max-w-md mx-auto py-24 text-center space-y-4">
-          <h3 className="text-xl font-bold text-[#111315]">Patient Record Not Found</h3>
-          <p className="text-xs text-[#6E767E]">
+          <h3 className="text-xl font-bold text-ink">Patient Record Not Found</h3>
+          <p className="text-xs text-ink-2">
             The requested patient could not be located in the current database.
           </p>
           <Link
             to="/patients"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-[#111315] text-white rounded-xl text-xs font-semibold"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-solid text-white rounded-xl text-xs font-semibold"
           >
             <ArrowLeft size={14} />
             <span>Return to Patients</span>
@@ -705,21 +705,21 @@ export default function PatientProfile() {
         {/* Back navigation */}
         <Link 
           to="/patients" 
-          className="inline-flex items-center gap-1.5 text-xs text-[#6E767E] hover:text-[#111315] transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs text-ink-2 hover:text-ink transition-colors"
         >
           <ArrowLeft size={13} />
           <span>Patient Panel</span>
         </Link>
 
         {/* ── 1. CLEAN PATIENT HEADER (Airy Slab) ── */}
-        <section aria-label="Patient header summary" className="bg-white border border-[#EAE8E3] rounded-2xl p-6 sm:p-7 shadow-xs space-y-4">
+        <section aria-label="Patient header summary" className="bg-paper border border-rule rounded-2xl p-6 sm:p-7 shadow-xs space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-5">
             <div className="space-y-2">
               <div className="flex items-center gap-2.5 flex-wrap">
-                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#111315]">
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-ink">
                   {displayName}
                 </h1>
-                <span className="text-xs text-[#6E767E] font-medium">
+                <span className="text-xs text-ink-2 font-medium">
                   {age}y • {gender}
                 </span>
                 {criticalAllergies.map((all, idx) => (
@@ -727,8 +727,8 @@ export default function PatientProfile() {
                     key={idx}
                     className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${
                       all.isCritical
-                        ? 'text-red-700 bg-red-50 border border-red-200/80'
-                        : 'text-amber-800 bg-amber-50 border border-amber-200/80'
+                        ? 'text-critical bg-critical-wash border border-critical-line/80'
+                        : 'text-caution bg-caution-wash border border-caution-line/80'
                     }`}
                   >
                     <AlertTriangle size={11} className="shrink-0" />
@@ -737,7 +737,7 @@ export default function PatientProfile() {
                 ))}
               </div>
 
-              <div className="flex items-center gap-2 text-xs text-[#6E767E] flex-wrap">
+              <div className="flex items-center gap-2 text-xs text-ink-2 flex-wrap">
                 <span>DOB: {patient.birthDate || 'Not recorded'}</span>
                 <span>•</span>
                 <span>Attending: {authService.getCurrentUser()?.displayName || 'Unassigned'}</span>
@@ -757,7 +757,7 @@ export default function PatientProfile() {
                   {conditionNames.map((cond, idx) => (
                     <span
                       key={idx}
-                      className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#F4F3EE] text-[#50575F] border border-[#EAE8E3]"
+                      className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-paper-2 text-ink-2 border border-rule"
                     >
                       {cond}
                     </span>
@@ -771,15 +771,15 @@ export default function PatientProfile() {
               <button
                 type="button"
                 onClick={() => navigate(`/consultation?patient=${patient.id}`)}
-                className="px-4 py-2.5 bg-[#111315] hover:bg-[#272B30] text-white text-xs font-semibold rounded-xl transition-all shadow-xs flex items-center gap-2 cursor-pointer"
+                className="px-4 py-2.5 bg-solid hover:bg-solid text-white text-xs font-semibold rounded-xl transition-all shadow-xs flex items-center gap-2 cursor-pointer"
               >
-                <Stethoscope size={14} className="text-emerald-400" />
+                <Stethoscope size={14} className="text-settled-on-solid" />
                 <span>Start Consultation</span>
               </button>
               <button
                 type="button"
                 onClick={() => navigate(`/document-review?patient=${patient.id}`)}
-                className="p-2.5 bg-white hover:bg-[#F4F3EE] text-[#111315] border border-[#EAE8E3] rounded-xl transition-all shadow-2xs cursor-pointer"
+                className="p-2.5 bg-paper hover:bg-paper-2 text-ink border border-rule rounded-xl transition-all shadow-2xs cursor-pointer"
                 title="Upload Clinical Documents"
               >
                 <Upload size={15} />
@@ -789,7 +789,7 @@ export default function PatientProfile() {
         </section>
 
         {/* ── 2. MINIMALIST 3-TAB SWITCHER ── */}
-        <div className="border-b border-[#EAE8E3] flex items-center gap-6 overflow-x-auto">
+        <div className="border-b border-rule flex items-center gap-6 overflow-x-auto">
           {[
             { id: 'overview', label: 'Overview', icon: Activity },
             { id: 'timeline', label: `Timeline & Visits (${allTimelineEvents.length})`, icon: Clock },
@@ -803,11 +803,11 @@ export default function PatientProfile() {
                 onClick={() => setActiveTab(tab.id as ProfileTab)}
                 className={`flex items-center gap-2 pb-3 text-xs font-semibold transition-all whitespace-nowrap cursor-pointer border-b-2 -mb-px ${
                   active
-                    ? 'border-[#111315] text-[#111315]'
-                    : 'border-transparent text-[#6E767E] hover:text-[#111315]'
+                    ? 'border-solid text-ink'
+                    : 'border-transparent text-ink-2 hover:text-ink'
                 }`}
               >
-                <tab.icon size={14} className={active ? 'text-[#111315]' : 'text-[#8C949D]'} />
+                <tab.icon size={14} className={active ? 'text-ink' : 'text-ink-3'} />
                 <span>{tab.label}</span>
               </button>
             );
@@ -821,15 +821,15 @@ export default function PatientProfile() {
           <section className="space-y-6 animate-in fade-in">
             {/* Clinical Narrative / Snapshot */}
             {intelligence.clinicalStory.paragraphs.length > 0 && (
-              <div className="p-5 sm:p-6 bg-white border border-[#EAE8E3] rounded-2xl shadow-2xs space-y-3">
-                <div className="flex items-center justify-between pb-2 border-b border-[#F0ECE1]">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-[#111315]">
-                    <Sparkles size={14} className="text-[#9D174D]" />
+              <div className="p-5 sm:p-6 bg-paper border border-rule rounded-2xl shadow-2xs space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-rule">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-ink">
+                    <Sparkles size={14} className="text-accent-ink" />
                     <span>Clinical Longitudinal Snapshot</span>
                   </div>
                   <ProvenanceBadge provenance="AI_SUGGESTION" size="xs" />
                 </div>
-                <div className="space-y-2 text-xs sm:text-sm text-[#50575F] leading-relaxed">
+                <div className="space-y-2 text-xs sm:text-sm text-ink-2 leading-relaxed">
                   {intelligence.clinicalStory.paragraphs.map((p, idx) => (
                     <p key={idx}>{p.text}</p>
                   ))}
@@ -839,56 +839,56 @@ export default function PatientProfile() {
 
             {/* Key Clinical Markers (Cards) */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="p-4 bg-white rounded-2xl border border-[#EAE8E3] shadow-2xs space-y-1">
-                <div className="text-[11px] font-medium text-[#6E767E] uppercase tracking-wider">Hemoglobin A1c</div>
+              <div className="p-4 bg-paper rounded-2xl border border-rule shadow-2xs space-y-1">
+                <div className="text-[11px] font-medium text-ink-2 uppercase tracking-wider">Hemoglobin A1c</div>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-bold tracking-tight text-[#111315]">{a1cVal}</span>
+                  <span className="text-2xl font-bold tracking-tight text-ink">{a1cVal}</span>
                   <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded ${
-                    a1cElevated ? 'text-red-600 bg-red-50' : 'text-emerald-600 bg-emerald-50'
+                    a1cElevated ? 'text-critical bg-critical-wash' : 'text-settled bg-settled-wash'
                   }`}>
                     {a1cElevated ? 'Elevated' : 'Target'}
                   </span>
                 </div>
-                <p className="text-xs text-[#6E767E] pt-1">Target ceiling &lt; 7.0%</p>
+                <p className="text-xs text-ink-2 pt-1">Target ceiling &lt; 7.0%</p>
               </div>
 
-              <div className="p-4 bg-white rounded-2xl border border-[#EAE8E3] shadow-2xs space-y-1">
-                <div className="text-[11px] font-medium text-[#6E767E] uppercase tracking-wider">Blood Pressure</div>
+              <div className="p-4 bg-paper rounded-2xl border border-rule shadow-2xs space-y-1">
+                <div className="text-[11px] font-medium text-ink-2 uppercase tracking-wider">Blood Pressure</div>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-bold tracking-tight text-[#111315]">{bpVal}</span>
-                  <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">Recorded</span>
+                  <span className="text-2xl font-bold tracking-tight text-ink">{bpVal}</span>
+                  <span className="text-[11px] font-semibold text-settled bg-settled-wash px-1.5 py-0.5 rounded">Recorded</span>
                 </div>
-                <p className="text-xs text-[#6E767E] pt-1">Active Regimen Observation</p>
+                <p className="text-xs text-ink-2 pt-1">Active Regimen Observation</p>
               </div>
 
-              <div className="p-4 bg-white rounded-2xl border border-[#EAE8E3] shadow-2xs space-y-1">
-                <div className="text-[11px] font-medium text-[#6E767E] uppercase tracking-wider">Renal Function</div>
+              <div className="p-4 bg-paper rounded-2xl border border-rule shadow-2xs space-y-1">
+                <div className="text-[11px] font-medium text-ink-2 uppercase tracking-wider">Renal Function</div>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-bold tracking-tight text-[#111315]">{renalVal}</span>
-                  <span className="text-[11px] font-semibold text-[#50575F] bg-[#F4F3EE] px-1.5 py-0.5 rounded">Serum Marker</span>
+                  <span className="text-2xl font-bold tracking-tight text-ink">{renalVal}</span>
+                  <span className="text-[11px] font-semibold text-ink-2 bg-paper-2 px-1.5 py-0.5 rounded">Serum Marker</span>
                 </div>
-                <p className="text-xs text-[#6E767E] pt-1">Renal filtration metric</p>
+                <p className="text-xs text-ink-2 pt-1">Renal filtration metric</p>
               </div>
             </div>
 
             {/* Active Regimen & Conditions side-by-side */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {/* Active Medications */}
-              <div className="p-5 bg-white border border-[#EAE8E3] rounded-2xl shadow-2xs space-y-3">
+              <div className="p-5 bg-paper border border-rule rounded-2xl shadow-2xs space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Pill size={14} className="text-[#111315]" />
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-[#111315]">Current Medications</h3>
+                    <Pill size={14} className="text-ink" />
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-ink">Current Medications</h3>
                   </div>
-                  <span className="text-xs text-[#6E767E]">{medicationRequests.length} active</span>
+                  <span className="text-xs text-ink-2">{medicationRequests.length} active</span>
                 </div>
 
                 {medicationRequests.length === 0 ? (
-                  <div className="py-6 text-center text-xs text-[#6E767E]">
+                  <div className="py-6 text-center text-xs text-ink-2">
                     No active prescriptions.
                   </div>
                 ) : (
-                  <div className="divide-y divide-[#F2F1EC]">
+                  <div className="divide-y divide-rule">
                     {medicationRequests.map((mr, idx) => {
                       const medName = mr.medicationCodeableConcept?.text || mr.medicationCodeableConcept?.coding?.[0]?.display || 'Medication';
                       const instructions = mr.dosageInstruction?.[0]?.text || mr.dosageInstruction?.[0]?.patientInstruction || 'As directed';
@@ -896,13 +896,13 @@ export default function PatientProfile() {
                       return (
                         <div key={mr.id || idx} className="py-2.5 flex items-center justify-between text-xs">
                           <div>
-                            <div className="font-semibold text-[#111315]">{medName}</div>
-                            <div className="text-[#6E767E]">{instructions}</div>
+                            <div className="font-semibold text-ink">{medName}</div>
+                            <div className="text-ink-2">{instructions}</div>
                           </div>
                           <button
                             type="button"
                             onClick={() => openPdfForSingleRx(mr)}
-                            className="p-1.5 text-[#6E767E] hover:text-[#111315] hover:bg-[#F4F3EE] rounded-lg cursor-pointer"
+                            className="p-1.5 text-ink-2 hover:text-ink hover:bg-paper-2 rounded-lg cursor-pointer"
                             title="Print Prescription"
                           >
                             <Printer size={13} />
@@ -915,23 +915,23 @@ export default function PatientProfile() {
               </div>
 
               {/* Active Conditions */}
-              <div className="p-5 bg-white border border-[#EAE8E3] rounded-2xl shadow-2xs space-y-3">
+              <div className="p-5 bg-paper border border-rule rounded-2xl shadow-2xs space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Activity size={14} className="text-[#111315]" />
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-[#111315]">Active Conditions</h3>
+                    <Activity size={14} className="text-ink" />
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-ink">Active Conditions</h3>
                   </div>
-                  <span className="text-xs text-[#6E767E]">{conditionNames.length} conditions</span>
+                  <span className="text-xs text-ink-2">{conditionNames.length} conditions</span>
                 </div>
 
-                <div className="divide-y divide-[#F2F1EC]">
+                <div className="divide-y divide-rule">
                   {conditionNames.map((cond, idx) => (
                     <div key={idx} className="py-2.5 flex items-center justify-between text-xs">
                       <div>
-                        <div className="font-semibold text-[#111315]">{cond}</div>
-                        <div className="text-[#6E767E]">Chronic diagnosis • Active</div>
+                        <div className="font-semibold text-ink">{cond}</div>
+                        <div className="text-ink-2">Chronic diagnosis • Active</div>
                       </div>
-                      <span className="px-2 py-0.5 bg-emerald-50 text-emerald-800 text-[10px] font-medium rounded-full">
+                      <span className="px-2 py-0.5 bg-settled-wash text-settled text-[10px] font-medium rounded-full">
                         Active
                       </span>
                     </div>
@@ -942,32 +942,32 @@ export default function PatientProfile() {
 
             {/* Durable encounter notes from /api/clinic */}
             {clinicNotes.length > 0 && (
-              <div className="p-5 bg-white border border-[#EAE8E3] rounded-2xl shadow-2xs space-y-3">
+              <div className="p-5 bg-paper border border-rule rounded-2xl shadow-2xs space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <FileText size={14} className="text-[#111315]" />
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-[#111315]">Encounter notes</h3>
+                    <FileText size={14} className="text-ink" />
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-ink">Encounter notes</h3>
                   </div>
-                  <span className="text-xs text-[#6E767E]">{clinicNotes.length} on file</span>
+                  <span className="text-xs text-ink-2">{clinicNotes.length} on file</span>
                 </div>
-                <div className="divide-y divide-[#F2F1EC]">
+                <div className="divide-y divide-rule">
                   {clinicNotes.map((note) => (
                     <button
                       key={note.id}
                       type="button"
                       onClick={() => navigate(`/consultation?patient=${patient.id}`)}
-                      className="flex w-full items-start justify-between gap-3 py-2.5 text-left cursor-pointer hover:bg-[#FAF9F6]"
+                      className="flex w-full items-start justify-between gap-3 py-2.5 text-left cursor-pointer hover:bg-canvas"
                     >
                       <div className="min-w-0">
-                        <div className="text-xs font-semibold text-[#111315]">{note.title}</div>
-                        <div className="mt-0.5 line-clamp-2 text-[11px] text-[#6E767E]">
+                        <div className="text-xs font-semibold text-ink">{note.title}</div>
+                        <div className="mt-0.5 line-clamp-2 text-[11px] text-ink-2">
                           {note.note?.assessment || note.note?.plan || 'No assessment recorded'}
                         </div>
                       </div>
                       <span className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.06em] ${
                         note.status === 'SIGNED'
-                          ? 'bg-emerald-50 text-emerald-800'
-                          : 'bg-amber-50 text-amber-800'
+                          ? 'bg-settled-wash text-settled'
+                          : 'bg-caution-wash text-caution'
                       }`}>
                         {note.status}
                       </span>
@@ -978,19 +978,19 @@ export default function PatientProfile() {
             )}
 
             {/* Quick Consultation CTA */}
-            <div className="p-5 bg-[#FAF9F6] border border-[#EAE8E3] rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="p-5 bg-canvas border border-rule rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h4 className="text-sm font-bold text-[#111315]">Ready for an encounter?</h4>
-                <p className="text-xs text-[#6E767E] mt-0.5">
+                <h4 className="text-sm font-bold text-ink">Ready for an encounter?</h4>
+                <p className="text-xs text-ink-2 mt-0.5">
                   Start ambient consultation to capture clinical dialogue and synthesize SOAP notes.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => navigate(`/consultation?patient=${patient.id}`)}
-                className="px-4 py-2 bg-[#111315] hover:bg-[#272B30] text-white rounded-xl text-xs font-semibold transition-all shadow-xs inline-flex items-center gap-1.5 cursor-pointer shrink-0"
+                className="px-4 py-2 bg-solid hover:bg-solid text-white rounded-xl text-xs font-semibold transition-all shadow-xs inline-flex items-center gap-1.5 cursor-pointer shrink-0"
               >
-                <Stethoscope size={14} className="text-emerald-400" />
+                <Stethoscope size={14} className="text-settled-on-solid" />
                 <span>Open Doctor Desk</span>
               </button>
             </div>
@@ -1015,15 +1015,15 @@ export default function PatientProfile() {
                     onClick={() => setActiveFilter(f.id as any)}
                     className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                       activeFilter === f.id
-                        ? 'bg-[#111315] text-white font-semibold'
-                        : 'bg-white border border-[#EAE8E3] text-[#6E767E] hover:text-[#111315]'
+                        ? 'bg-solid text-white font-semibold'
+                        : 'bg-paper border border-rule text-ink-2 hover:text-ink'
                     }`}
                   >
                     {f.label}
                   </button>
                 ))}
               </div>
-              <span className="text-xs text-[#8C949D]">
+              <span className="text-xs text-ink-3">
                 {filteredTimeline.length} events
               </span>
             </div>
@@ -1031,7 +1031,7 @@ export default function PatientProfile() {
             {/* Timeline Entries */}
             <div className="space-y-3">
               {filteredTimeline.length === 0 ? (
-                <div className="p-8 bg-white rounded-2xl border border-[#EAE8E3] text-center text-xs text-[#6E767E]">
+                <div className="p-8 bg-paper rounded-2xl border border-rule text-center text-xs text-ink-2">
                   No events found for this filter.
                 </div>
               ) : (
@@ -1041,30 +1041,30 @@ export default function PatientProfile() {
                   return (
                     <div
                       key={`${ev.type}-${ev.id}`}
-                      className="p-4 sm:p-5 bg-white border border-[#EAE8E3] rounded-2xl shadow-2xs space-y-2 transition-colors hover:border-[#D5D2C9]"
+                      className="p-4 sm:p-5 bg-paper border border-rule rounded-2xl shadow-2xs space-y-2 transition-colors hover:border-rule-strong"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="space-y-1">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-xs text-[#6E767E] font-medium">
+                            <span className="text-xs text-ink-2 font-medium">
                               {ev.date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                             </span>
                             {ev.badge && (
                               <span className={`px-2 py-0.5 rounded text-[10px] font-medium ${
                                 ev.badge.variant === 'approved' 
-                                  ? 'bg-emerald-50 text-emerald-800' 
+                                  ? 'bg-settled-wash text-settled' 
                                   : ev.badge.variant === 'warning'
-                                  ? 'bg-amber-50 text-amber-800'
-                                  : 'bg-[#F4F3EE] text-[#50575F]'
+                                  ? 'bg-caution-wash text-caution'
+                                  : 'bg-paper-2 text-ink-2'
                               }`}>
                                 {ev.badge.text}
                               </span>
                             )}
                           </div>
-                          <h4 className="text-sm font-bold text-[#111315] tracking-tight">
+                          <h4 className="text-sm font-bold text-ink tracking-tight">
                             {ev.title}
                           </h4>
-                          <p className="text-xs text-[#50575F] leading-relaxed">
+                          <p className="text-xs text-ink-2 leading-relaxed">
                             {ev.description}
                           </p>
                         </div>
@@ -1074,7 +1074,7 @@ export default function PatientProfile() {
                             <button
                               type="button"
                               onClick={() => openPdfForEncounter(ev.resource, ev.consultationData?.linkedPrescriptions || [])}
-                              className="px-2.5 py-1 text-xs border border-[#EAE8E3] hover:bg-[#F4F3EE] rounded-lg text-[#50575F] flex items-center gap-1 cursor-pointer"
+                              className="px-2.5 py-1 text-xs border border-rule hover:bg-paper-2 rounded-lg text-ink-2 flex items-center gap-1 cursor-pointer"
                               title="Print Summary"
                             >
                               <Printer size={12} />
@@ -1084,7 +1084,7 @@ export default function PatientProfile() {
                           <button
                             type="button"
                             onClick={() => toggleTimelineEvent(ev.id)}
-                            className="p-1 text-[#6E767E] hover:text-[#111315] cursor-pointer"
+                            className="p-1 text-ink-2 hover:text-ink cursor-pointer"
                           >
                             {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
                           </button>
@@ -1093,7 +1093,7 @@ export default function PatientProfile() {
 
                       {/* Expanded details */}
                       {isExpanded && (
-                        <div className="mt-2 pt-2 border-t border-[#F2F1EC] text-xs text-[#6E767E] space-y-1">
+                        <div className="mt-2 pt-2 border-t border-rule text-xs text-ink-2 space-y-1">
                           <div>Recorded: {ev.date.toLocaleString()}</div>
                           {ev.observationData && <div>Status: {ev.observationData.status}</div>}
                         </div>
@@ -1110,13 +1110,13 @@ export default function PatientProfile() {
         {activeTab === 'documents' && (
           <section className="space-y-4 animate-in fade-in">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-[#111315]">
+              <span className="text-xs font-semibold text-ink">
                 Uploaded Records & Attachments
               </span>
               <button
                 type="button"
                 onClick={() => navigate(`/document-review?patient=${patient.id}`)}
-                className="px-3.5 py-1.5 bg-[#111315] text-white rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
+                className="px-3.5 py-1.5 bg-solid text-white rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
               >
                 <Plus size={13} />
                 <span>Upload Document</span>
@@ -1124,20 +1124,20 @@ export default function PatientProfile() {
             </div>
 
             {documents.length === 0 ? (
-              <div className="p-8 bg-white rounded-2xl border border-[#EAE8E3] text-center text-xs text-[#6E767E]">
+              <div className="p-8 bg-paper rounded-2xl border border-rule text-center text-xs text-ink-2">
                 No document references uploaded yet.
               </div>
             ) : (
               <div className="space-y-2.5">
                 {documents.map(doc => (
-                  <div key={doc.id} className="p-4 bg-white border border-[#EAE8E3] rounded-2xl shadow-2xs flex items-center justify-between">
+                  <div key={doc.id} className="p-4 bg-paper border border-rule rounded-2xl shadow-2xs flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-[#F4F3EE] text-[#111315] flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-xl bg-paper-2 text-ink flex items-center justify-center">
                         <FileText size={16} />
                       </div>
                       <div>
-                        <h4 className="text-xs font-bold text-[#111315]">{doc.description || 'Clinical Record PDF'}</h4>
-                        <div className="text-[11px] text-[#6E767E]">
+                        <h4 className="text-xs font-bold text-ink">{doc.description || 'Clinical Record PDF'}</h4>
+                        <div className="text-[11px] text-ink-2">
                           {doc.date ? new Date(doc.date).toLocaleDateString() : 'Uploaded'}
                         </div>
                       </div>
@@ -1145,7 +1145,7 @@ export default function PatientProfile() {
                     <button
                       type="button"
                       onClick={() => navigate(`/document-review?patient=${patient.id}`)}
-                      className="px-3 py-1.5 bg-[#FAF9F6] hover:bg-[#F4F3EE] text-xs font-medium rounded-lg text-[#111315] border border-[#EAE8E3] cursor-pointer"
+                      className="px-3 py-1.5 bg-canvas hover:bg-paper-2 text-xs font-medium rounded-lg text-ink border border-rule cursor-pointer"
                     >
                       View
                     </button>

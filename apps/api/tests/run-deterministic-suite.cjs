@@ -53,7 +53,9 @@ const REQUIRES_POSTGRES = new Set([
   'patient_sync_validation.cjs',
   'patient_documents_validation.cjs',
   'patient_prescriptions_validation.cjs',
-  'clinic_live_validation.cjs'
+  'clinic_live_validation.cjs',
+  'clinical_links_sql_validation.cjs',
+  'workflow_sign_safety_validation.cjs'
 ]);
 
 const REQUIRE_POSTGRES = process.env.REQUIRE_POSTGRES === '1';

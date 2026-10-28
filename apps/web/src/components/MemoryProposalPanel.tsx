@@ -47,11 +47,11 @@ export default function MemoryProposalPanel({
   const pendingCount = proposals.filter(p => p.status === 'PROPOSED').length;
 
   return (
-    <div className="bg-white border border-[#D5D2C9] rounded-md shadow-2xs overflow-hidden mb-8 font-sans">
+    <div className="bg-paper border border-rule-strong rounded-md shadow-2xs overflow-hidden mb-8 font-sans">
       {/* Header */}
-      <div className="bg-[#111315] text-white px-6 py-4 border-b border-[#222831] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="bg-solid text-white px-6 py-4 border-b border-rule-strong flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <div className="h-8 w-8 rounded bg-white text-[#111315] flex items-center justify-center font-mono-clinical font-bold text-xs">
+          <div className="h-8 w-8 rounded bg-paper text-ink flex items-center justify-center font-mono-clinical font-bold text-xs">
             MP
           </div>
           <div>
@@ -59,11 +59,11 @@ export default function MemoryProposalPanel({
               <h3 className="font-editorial text-xl sm:text-2xl text-white tracking-normal">
                 Patient Memory Update Proposals
               </h3>
-              <span className="text-[10px] font-mono-clinical uppercase tracking-wider px-2 py-0.5 rounded bg-[#1D232C] text-emerald-400 border border-[#2E3643] flex items-center gap-1">
+              <span className="text-[10px] font-mono-clinical uppercase tracking-wider px-2 py-0.5 rounded bg-solid text-settled-on-solid border border-rule-strong flex items-center gap-1">
                 <CheckCircle2 size={11} /> 1-Click Batchable
               </span>
             </div>
-            <p className="text-xs text-[#8A9199] mt-0.5">
+            <p className="text-xs text-ink-3 mt-0.5">
               Proton extracted {proposals.length} updates to longitudinal patient memory. Approve all in one click or expand to inspect.
             </p>
           </div>
@@ -72,7 +72,7 @@ export default function MemoryProposalPanel({
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="px-3 py-1.5 bg-[#1F242D] hover:bg-[#2A313C] text-slate-200 text-xs font-medium rounded-lg border border-[#353E4C] transition-colors flex items-center gap-1.5 cursor-pointer"
+            className="px-3 py-1.5 bg-solid hover:bg-solid text-on-solid text-xs font-medium rounded-lg border border-rule-strong transition-colors flex items-center gap-1.5 cursor-pointer"
           >
             {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             {isExpanded ? 'Hide Details' : `Review Details (${pendingCount} pending)`}
@@ -81,7 +81,7 @@ export default function MemoryProposalPanel({
           {pendingCount > 0 && (
             <button
               onClick={onApproveAll}
-              className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
+              className="px-3.5 py-1.5 bg-settled hover:bg-settled text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
             >
               <Zap size={14} /> Accept All Recommended ({proposals.length})
             </button>
@@ -91,14 +91,14 @@ export default function MemoryProposalPanel({
 
       {/* Low-Fatigue Summary Strip */}
       {!isExpanded && (
-        <div className="px-6 py-3.5 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-600 border-b border-slate-200 gap-2">
+        <div className="px-6 py-3.5 bg-paper-2 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-ink-2 border-b border-rule gap-2">
           <div className="flex items-center gap-3 flex-wrap">
-            <span className="font-semibold text-slate-900">
+            <span className="font-semibold text-ink">
               {pendingCount === 0 ? '✓ All Proposals Processed' : `${pendingCount} updates ready to commit to FHIR memory:`}
             </span>
             <div className="flex items-center gap-1.5 flex-wrap">
               {proposals.map(p => (
-                <span key={p.id} className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 bg-white border border-slate-200 rounded text-slate-700 font-medium">
+                <span key={p.id} className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 bg-paper border border-rule rounded text-ink-2 font-medium">
                   {p.title}
                 </span>
               ))}
@@ -116,16 +116,16 @@ export default function MemoryProposalPanel({
       {/* Proposals List (Progressively Disclosed) */}
       {isExpanded && (
         <div className="p-6 space-y-3">
-          <div className="flex items-center justify-between text-xs text-slate-500 pb-1">
+          <div className="flex items-center justify-between text-xs text-on-solid0 pb-1">
             <span>
               {approvedCount} Approved &bull; {rejectedCount} Rejected &bull; {pendingCount} Pending Review
             </span>
-            <span className="text-[11px] font-medium text-slate-400">
+            <span className="text-[11px] font-medium text-ink-3">
               Unapproved changes will NEVER mutate FHIR confirmed memory
             </span>
           </div>
 
-          <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden bg-slate-50/30">
+          <div className="divide-y divide-rule border border-rule rounded-xl overflow-hidden bg-paper-2/30">
             {proposals.map((prop) => {
               const isApproved = prop.status === 'APPROVED';
               const isRejected = prop.status === 'REJECTED';
@@ -134,14 +134,14 @@ export default function MemoryProposalPanel({
               const categoryBadge = () => {
                 switch (prop.category) {
                   case 'NEW':
-                    return <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800">+ NEW</span>;
+                    return <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-accent-wash text-accent-ink">+ NEW</span>;
                   case 'CHANGED':
-                    return <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-900">→ CHANGED</span>;
+                    return <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-caution-wash text-caution">→ CHANGED</span>;
                   case 'RESOLVED':
-                    return <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-900">✓ RESOLVED</span>;
+                    return <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-settled-wash text-settled">✓ RESOLVED</span>;
                   case 'PENDING':
                   default:
-                    return <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-900">PENDING</span>;
+                    return <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-accent-wash text-accent-ink">PENDING</span>;
                 }
               };
 
@@ -149,18 +149,18 @@ export default function MemoryProposalPanel({
                 <div
                   key={prop.id}
                   className={`p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 transition-colors ${
-                    isApproved ? 'bg-emerald-50/30' : isRejected ? 'bg-slate-50 opacity-60' : 'bg-white'
+                    isApproved ? 'bg-settled-wash/30' : isRejected ? 'bg-paper-2 opacity-60' : 'bg-paper'
                   }`}
                 >
                   <div className="space-y-1 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       {categoryBadge()}
-                      <span className="font-bold text-slate-900 text-xs">{prop.title}</span>
+                      <span className="font-bold text-ink text-xs">{prop.title}</span>
                       <span className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${
-                        isApproved ? 'bg-emerald-100 text-emerald-800 border-emerald-300' :
-                        isRejected ? 'bg-slate-200 text-slate-600 border-slate-300' :
-                        prop.status === 'EDITED' ? 'bg-blue-100 text-blue-800 border-blue-300' :
-                        'bg-amber-50 text-amber-800 border-amber-200'
+                        isApproved ? 'bg-settled-wash text-settled border-settled-line' :
+                        isRejected ? 'bg-rule text-ink-2 border-rule' :
+                        prop.status === 'EDITED' ? 'bg-accent-wash text-accent-ink border-accent-line' :
+                        'bg-caution-wash text-caution border-caution-line'
                       }`}>
                         {prop.status}
                       </span>
@@ -172,7 +172,7 @@ export default function MemoryProposalPanel({
                           type="text"
                           value={editText}
                           onChange={(e) => setEditText(e.target.value)}
-                          className="flex-1 text-xs border border-brand-300 rounded px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-brand-500 bg-white"
+                          className="flex-1 text-xs border border-brand-300 rounded px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-brand-500 bg-paper"
                         />
                         <button
                           onClick={() => handleSaveEdit(prop.id)}
@@ -182,18 +182,18 @@ export default function MemoryProposalPanel({
                         </button>
                         <button
                           onClick={() => setEditingId(null)}
-                          className="px-2.5 py-1.5 bg-slate-200 text-slate-700 rounded text-xs font-semibold hover:bg-slate-300 cursor-pointer"
+                          className="px-2.5 py-1.5 bg-rule text-ink-2 rounded text-xs font-semibold hover:bg-rule cursor-pointer"
                         >
                           Cancel
                         </button>
                       </div>
                     ) : (
-                      <p className={`text-xs ${isRejected ? 'line-through text-slate-400' : 'text-slate-800 font-medium'}`}>
+                      <p className={`text-xs ${isRejected ? 'line-through text-ink-3' : 'text-ink font-medium'}`}>
                         {prop.editedContent || prop.proposedChange}
                       </p>
                     )}
 
-                    <p className="text-[11px] text-slate-500 italic">
+                    <p className="text-[11px] text-on-solid0 italic">
                       Reasoning: {prop.reasoning}
                     </p>
                   </div>
@@ -203,7 +203,7 @@ export default function MemoryProposalPanel({
                     {!isEditing && (
                       <button
                         onClick={() => handleStartEdit(prop)}
-                        className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                        className="p-1.5 text-ink-3 hover:text-brand-600 hover:bg-paper-2 rounded-lg transition-colors cursor-pointer"
                         title="Edit proposal"
                       >
                         <Edit2 size={14} />
@@ -214,8 +214,8 @@ export default function MemoryProposalPanel({
                       onClick={() => onApprove(prop.id)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer ${
                         isApproved
-                          ? 'bg-emerald-600 text-white shadow-xs'
-                          : 'bg-slate-100 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700'
+                          ? 'bg-settled text-white shadow-xs'
+                          : 'bg-paper-2 text-ink-2 hover:bg-settled-wash hover:text-settled'
                       }`}
                     >
                       <Check size={13} /> {isApproved ? 'Approved' : 'Approve'}
@@ -225,8 +225,8 @@ export default function MemoryProposalPanel({
                       onClick={() => onReject(prop.id)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer ${
                         isRejected
-                          ? 'bg-slate-700 text-white shadow-xs'
-                          : 'bg-slate-100 text-slate-700 hover:bg-red-50 hover:text-red-700'
+                          ? 'bg-solid text-white shadow-xs'
+                          : 'bg-paper-2 text-ink-2 hover:bg-critical-wash hover:text-critical'
                       }`}
                     >
                       <X size={13} /> {isRejected ? 'Rejected' : 'Reject'}

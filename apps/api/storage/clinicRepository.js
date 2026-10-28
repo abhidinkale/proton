@@ -10,6 +10,7 @@
 const crypto = require('crypto');
 const { getDatabase } = require('./db');
 const seed = require('../services/clinic/clinicSeed');
+const { safetyGate } = require('../services/safety/safetyGate');
 
 const DEFAULT_TENANT = 'org-default';
 const DEFAULT_ACTOR = {
@@ -1002,6 +1003,48 @@ function signNote(actor, noteId, input = {}) {
   }
   if (note.status === 'SIGNED') return { note, alreadySigned: true };
 
+  // A signature is a clinical write. It is the last place a HIGH finding can be
+  // caught before the note becomes the record; the gate must be re-run here,
+  // not only during the AI pipeline.
+  const patientRow = db.prepare('SELECT * FROM clinic_patients WHERE id = ? AND tenant_id = ?;')
+    .get(note.patientId, normalized.tenantId);
+  const patient = patientRow ? parseJson(patientRow.data_json, {}) : {};
+  const prescriptionsToCheck = Array.isArray(input.prescriptions)
+    ? input.prescriptions
+    : (Array.isArray(note.prescriptions) ? note.prescriptions : []);
+
+  let safetyVerdict = null;
+  if (prescriptionsToCheck.length > 0) {
+    safetyVerdict = safetyGate.verifyMedicationGate({
+      prescriptions: prescriptionsToCheck,
+      patientProfile: {
+        allergies: patient.allergies || [],
+        medications: patient.medications || [],
+        age: patient.age ?? null,
+        eGFR: patient.eGFR ?? patient.egfr ?? null,
+        weightKg: patient.weightKg ?? null
+      },
+      actor: {
+        actorId: normalized.id,
+        actorRole: normalized.role,
+        tenantId: normalized.tenantId
+      },
+      physicianDirective: input.physicianDirective || null
+    });
+
+    if (!safetyVerdict.cleared) {
+      const err = new Error(
+        safetyVerdict.hardStop
+          ? 'This prescription has a critical safety contraindication and cannot be signed.'
+          : 'This prescription requires safety review before it can be signed.'
+      );
+      err.status = 409;
+      err.code = safetyVerdict.hardStop ? 'CONTRAINDICATION_HARD_STOP' : 'SAFETY_REVIEW_REQUIRED';
+      err.safetyVerdict = safetyVerdict;
+      throw err;
+    }
+  }
+
   const now = isoNow();
   const signed = {
     ...note,
@@ -1018,7 +1061,8 @@ function signNote(actor, noteId, input = {}) {
       npi: normalized.npi,
       role: normalized.role,
       attestation: input.attestation || 'I reviewed the clinical content and attest to its accuracy.',
-      method: 'session_signature'
+      method: 'session_signature',
+      safetyVerdict
     }
   };
 
@@ -1031,8 +1075,6 @@ function signNote(actor, noteId, input = {}) {
     updateAppointment(normalized, signed.appointmentId, { queueCategory: 'COMPLETED' });
   }
 
-  const patientRow = db.prepare('SELECT * FROM clinic_patients WHERE id = ? AND tenant_id = ?;')
-    .get(signed.patientId, normalized.tenantId);
   if (patientRow) {
     const patient = { ...parseJson(patientRow.data_json, {}), status: 'completed', updatedAt: now };
     db.prepare('UPDATE clinic_patients SET data_json = ?, updated_at = ? WHERE id = ?;')

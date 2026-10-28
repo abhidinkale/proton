@@ -39,15 +39,15 @@ export const Avatar = forwardRef<HTMLDivElement, AvatarProps>(function Avatar(
   const cfg = sizeStyles[size];
 
   const statusColors = {
-    online: 'bg-emerald-500',
-    busy: 'bg-rose-500',
-    offline: 'bg-[#88909A]'
+    online: 'bg-settled-wash0',
+    busy: 'bg-critical-wash0',
+    offline: 'bg-rule-strong'
   };
 
   return (
     <div
       ref={ref}
-      className={`relative inline-flex items-center justify-center rounded-full bg-[#151619] text-white font-bold tracking-tight shrink-0 select-none ${cfg.container} ${cfg.text} ${className}`}
+      className={`relative inline-flex items-center justify-center rounded-full bg-solid text-white font-bold tracking-tight shrink-0 select-none ${cfg.container} ${cfg.text} ${className}`}
       title={name}
       aria-label={name}
     >

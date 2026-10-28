@@ -38,11 +38,11 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
         <div
           className={`w-4 h-4 rounded-md border flex items-center justify-center transition-all duration-150 cursor-pointer ${
             checked
-              ? 'bg-[#151619] border-[#151619] text-white'
-              : 'bg-white border-[#E8E5DC] hover:border-[#D5D2C9]'
+              ? 'bg-solid border-rule-strong text-white'
+              : 'bg-paper border-rule hover:border-rule-strong'
           } ${
-            error ? 'border-[#EF4444]' : ''
-          } peer-focus-visible:ring-2 peer-focus-visible:ring-[#151619] peer-focus-visible:ring-offset-2 peer-disabled:bg-[#F4F2EC] peer-disabled:border-[#E8E5DC] peer-disabled:cursor-not-allowed`}
+            error ? 'border-critical-line' : ''
+          } peer-focus-visible:ring-2 peer-focus-visible:ring-rule-strong peer-focus-visible:ring-offset-2 peer-disabled:bg-paper-2 peer-disabled:border-rule peer-disabled:cursor-not-allowed`}
         >
           {checked && <Check size={11} strokeWidth={3} />}
         </div>
@@ -54,19 +54,19 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
             <label
               htmlFor={checkboxId}
               className={`text-xs font-semibold cursor-pointer select-none ${
-                disabled ? 'text-[#88909A] cursor-not-allowed' : 'text-[#151719]'
+                disabled ? 'text-ink-3 cursor-not-allowed' : 'text-ink'
               }`}
             >
               {label}
             </label>
           )}
           {description && (
-            <p className="text-[11px] text-[#575D65] leading-relaxed select-none">
+            <p className="text-[11px] text-ink-2 leading-relaxed select-none">
               {description}
             </p>
           )}
           {error && (
-            <p className="text-[11px] font-semibold text-[#991B1B] mt-0.5">
+            <p className="text-[11px] font-semibold text-critical mt-0.5">
               {error}
             </p>
           )}

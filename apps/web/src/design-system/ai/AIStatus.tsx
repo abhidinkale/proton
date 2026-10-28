@@ -21,30 +21,30 @@ export const AIStatus = forwardRef<HTMLSpanElement, AIStatusProps>(function AISt
 ) {
   const statusConfig = {
     idle: {
-      bg: 'bg-[#F4F2EC]',
-      text: 'text-[#575D65]',
-      border: 'border-[#E5E1D6]',
+      bg: 'bg-paper-2',
+      text: 'text-ink-2',
+      border: 'border-rule',
       icon: Sparkles,
       label: 'AI Ready'
     },
     synthesizing: {
-      bg: 'bg-[#FCE7F3]',
-      text: 'text-[#9D174D]',
-      border: 'border-[#FBCFE8]',
+      bg: 'bg-accent-wash',
+      text: 'text-accent-ink',
+      border: 'border-accent-line',
       icon: Loader2,
       label: 'Synthesizing...'
     },
     ready: {
-      bg: 'bg-[#ECFDF5]',
-      text: 'text-[#065F46]',
-      border: 'border-[#A7F3D0]',
+      bg: 'bg-settled-wash',
+      text: 'text-settled',
+      border: 'border-settled-line',
       icon: CheckCircle2,
       label: 'Synthesis Complete'
     },
     degraded: {
-      bg: 'bg-[#FEF08A]',
-      text: 'text-[#854D0E]',
-      border: 'border-[#FDE047]',
+      bg: 'bg-caution-wash',
+      text: 'text-caution',
+      border: 'border-caution-line',
       icon: AlertCircle,
       label: 'Degraded / Manual Mode'
     }

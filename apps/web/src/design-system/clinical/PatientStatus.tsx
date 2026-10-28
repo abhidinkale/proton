@@ -27,58 +27,58 @@ export interface PatientStatusProps {
 
 const statusConfig: Record<PatientStatusType, { bg: string; text: string; border: string; dot: string; icon: any; defaultLabel: string }> = {
   stable: {
-    bg: 'bg-[#DCFCE7]',
-    text: 'text-[#166534]',
-    border: 'border-[#BBF7D0]',
-    dot: 'bg-[#10B981]',
+    bg: 'bg-settled-wash',
+    text: 'text-settled',
+    border: 'border-settled-line',
+    dot: 'bg-accent',
     icon: CheckCircle2,
     defaultLabel: 'Stable'
   },
   attention: {
-    bg: 'bg-[#FEF08A]',
-    text: 'text-[#854D0E]',
-    border: 'border-[#FDE047]',
-    dot: 'bg-[#EAB308]',
+    bg: 'bg-caution-wash',
+    text: 'text-caution',
+    border: 'border-caution-line',
+    dot: 'bg-caution',
     icon: AlertTriangle,
     defaultLabel: 'Needs Attention'
   },
   critical: {
-    bg: 'bg-[#FEE2E2]',
-    text: 'text-[#991B1B]',
-    border: 'border-[#FECACA]',
-    dot: 'bg-[#EF4444]',
+    bg: 'bg-critical-wash',
+    text: 'text-critical',
+    border: 'border-critical-line',
+    dot: 'bg-critical',
     icon: AlertCircle,
     defaultLabel: 'Critical'
   },
   waiting: {
-    bg: 'bg-[#FAF9F6]',
-    text: 'text-[#575D65]',
-    border: 'border-[#E8E5DC]',
-    dot: 'bg-[#88909A]',
+    bg: 'bg-canvas',
+    text: 'text-ink-2',
+    border: 'border-rule',
+    dot: 'bg-rule-strong',
     icon: Clock,
     defaultLabel: 'Waiting Room'
   },
   'in-consultation': {
-    bg: 'bg-[#ECFDF5]',
-    text: 'text-[#065F46]',
-    border: 'border-[#A7F3D0]',
-    dot: 'bg-[#10B981]',
+    bg: 'bg-settled-wash',
+    text: 'text-settled',
+    border: 'border-settled-line',
+    dot: 'bg-accent',
     icon: Activity,
     defaultLabel: 'In Consultation'
   },
   admitted: {
-    bg: 'bg-[#EFF6FF]',
-    text: 'text-[#1E40AF]',
-    border: 'border-[#BFDBFE]',
-    dot: 'bg-[#3B82F6]',
+    bg: 'bg-accent-wash',
+    text: 'text-accent-ink',
+    border: 'border-accent-line',
+    dot: 'bg-accent',
     icon: Bed,
     defaultLabel: 'Inpatient Admitted'
   },
   discharged: {
-    bg: 'bg-[#F4F2EC]',
-    text: 'text-[#575D65]',
-    border: 'border-[#E5E1D6]',
-    dot: 'bg-[#88909A]',
+    bg: 'bg-paper-2',
+    text: 'text-ink-2',
+    border: 'border-rule',
+    dot: 'bg-rule-strong',
     icon: LogOut,
     defaultLabel: 'Discharged'
   }

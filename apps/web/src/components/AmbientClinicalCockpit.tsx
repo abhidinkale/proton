@@ -389,7 +389,7 @@ export default function AmbientClinicalCockpit({
         practitionerName: note.signature?.actorName || clinicianLabel,
         npi: note.signature?.npi || npiSignature,
         patientId: patient.id,
-        merkleRoot: note.id,
+        signatureRecordId: note.id,
         timestamp: note.signedAt || new Date().toISOString(),
         attestationStatement: note.signature?.attestation
       });
@@ -408,29 +408,29 @@ export default function AmbientClinicalCockpit({
     .join('');
 
   return (
-    <div className="flex flex-col gap-4 pb-4 text-[#111315]">
+    <div className="flex flex-col gap-4 pb-4 text-ink">
 
       {/* ── Encounter header ─────────────────────────────────────────────── */}
       <header className="proton-glass proton-specular flex flex-wrap items-center justify-between gap-3 rounded-[22px] px-4 py-3">
         <div className="flex min-w-0 items-center gap-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#E3EDF8] to-[#F6E6CC] text-[12px] font-semibold text-[#0F4C81]">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent-wash to-caution-wash text-[12px] font-semibold text-accent-ink">
             {initials}
           </span>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="truncate text-[16px] font-semibold tracking-[-0.025em]">{patient.name}</h1>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/60 bg-emerald-100/50 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-emerald-800">
-                <LiveDot size={5} color="#0F9D67" />
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-settled-line/60 bg-settled-wash/50 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-settled">
+                <LiveDot size={5} color="var(--c-settled)" />
                 Live
               </span>
               {primaryAllergy && (
-                <span className="inline-flex max-w-[170px] items-center gap-1 rounded-full border border-red-200/80 bg-red-50/80 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em] text-red-700">
+                <span className="inline-flex max-w-[170px] items-center gap-1 rounded-full border border-critical-line/80 bg-critical-wash/80 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em] text-critical">
                   <AlertTriangle className="h-2.5 w-2.5 shrink-0" />
                   <span className="truncate">Allergy · {primaryAllergy}</span>
                 </span>
               )}
             </div>
-            <div className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[11px] text-[#7A8188]">
+            <div className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[11px] text-ink-2">
               <span>Age {patient.age ?? 58}</span>
               {patient.gender && <span>· {patient.gender}</span>}
               <span>· {patient.mrn || 'MRN-784920'}</span>
@@ -440,27 +440,27 @@ export default function AmbientClinicalCockpit({
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="hidden items-center gap-1.5 rounded-full border border-white/80 bg-white/60 px-2.5 py-1 font-mono-clinical text-[10px] text-[#5A6065] sm:inline-flex">
-            <Volume2 className="h-3 w-3 text-emerald-600" />
+          <span className="hidden items-center gap-1.5 rounded-full border border-rule/80 bg-paper/60 px-2.5 py-1 font-mono-clinical text-[10px] text-ink-2 sm:inline-flex">
+            <Volume2 className="h-3 w-3 text-settled" />
             Whisper 16 kHz
           </span>
 
           {onSwitchMode && (
             <div className="proton-segment flex items-center gap-0.5 rounded-full p-0.5">
-              <span className="rounded-full bg-white px-2.5 py-1 text-[10.5px] font-semibold text-[#111315] shadow-[0_2px_8px_-4px_rgba(16,18,22,0.4)]">
+              <span className="rounded-full bg-paper px-2.5 py-1 text-[10.5px] font-semibold text-ink shadow-[0_2px_8px_-4px_rgba(16,18,22,0.4)]">
                 Cockpit
               </span>
               <button
                 type="button"
                 onClick={() => onSwitchMode('guided')}
-                className="rounded-full px-2.5 py-1 text-[10.5px] font-medium text-[#6E757C] transition-colors hover:text-[#111315] cursor-pointer"
+                className="rounded-full px-2.5 py-1 text-[10.5px] font-medium text-ink-2 transition-colors hover:text-ink cursor-pointer"
               >
                 Guided
               </button>
               <button
                 type="button"
                 onClick={() => onSwitchMode('desk')}
-                className="rounded-full px-2.5 py-1 text-[10.5px] font-medium text-[#6E757C] transition-colors hover:text-[#111315] cursor-pointer"
+                className="rounded-full px-2.5 py-1 text-[10.5px] font-medium text-ink-2 transition-colors hover:text-ink cursor-pointer"
               >
                 Desk
               </button>
@@ -470,7 +470,7 @@ export default function AmbientClinicalCockpit({
           <button
             type="button"
             onClick={onBackToDesk}
-            className="flex items-center gap-1 rounded-full border border-white/80 bg-white/60 px-3 py-1.5 text-[11px] font-semibold text-[#4C535A] transition-all hover:-translate-y-0.5 hover:bg-white/85 hover:text-[#111315] active:translate-y-0 cursor-pointer"
+            className="flex items-center gap-1 rounded-full border border-rule/80 bg-paper/60 px-3 py-1.5 text-[11px] font-semibold text-ink-2 transition-all hover:-translate-y-0.5 hover:bg-paper/85 hover:text-ink active:translate-y-0 cursor-pointer"
           >
             Exit
             <ChevronRight className="h-3 w-3" />
@@ -486,28 +486,28 @@ export default function AmbientClinicalCockpit({
           className="xl:col-span-4"
           header={
             <>
-              <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#7A8188]">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-2">
                 Acoustic diarization
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2 py-0.5 font-mono-clinical text-[9.5px] font-semibold text-emerald-700">
-                <LiveDot size={4} color="#0F9D67" />
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-settled-wash px-2 py-0.5 font-mono-clinical text-[9.5px] font-semibold text-settled">
+                <LiveDot size={4} color="var(--c-settled)" />
                 Streaming
               </span>
             </>
           }
           footer={
-            <div className="flex items-center justify-between gap-3 text-[10.5px] text-[#7A8188]">
-              <span>Talk ratio <strong className="font-semibold text-[#3F464D]">48% MD</strong> · <strong className="font-semibold text-[#3F464D]">52% patient</strong></span>
-              <span className="text-emerald-700">Pharmacology steer active</span>
+            <div className="flex items-center justify-between gap-3 text-[10.5px] text-ink-2">
+              <span>Talk ratio <strong className="font-semibold text-ink">48% MD</strong> · <strong className="font-semibold text-ink">52% patient</strong></span>
+              <span className="text-settled">Pharmacology steer active</span>
             </div>
           }
         >
           <div className="border-b border-black/[0.055] px-4 py-3">
-            <div className="flex h-9 items-center justify-center gap-[3px] overflow-hidden rounded-xl bg-[#111315] px-3 py-2">
+            <div className="flex h-9 items-center justify-center gap-[3px] overflow-hidden rounded-xl bg-solid px-3 py-2">
               {WAVE_HEIGHTS.map((height, index) => (
                 <span
                   key={index}
-                  className="proton-wave-bar w-[3px] rounded-full bg-emerald-400/90"
+                  className="proton-wave-bar w-[3px] rounded-full bg-settled/90"
                   style={{
                     height: `${height}%`,
                     animationDelay: `${index * 55}ms`,
@@ -517,12 +517,12 @@ export default function AmbientClinicalCockpit({
               ))}
             </div>
             {activeAudioSnippet && (
-              <div className="mt-2.5 flex items-center justify-between rounded-xl border border-emerald-200/80 bg-emerald-50/80 px-3 py-1.5 text-[10.5px] text-emerald-800">
+              <div className="mt-2.5 flex items-center justify-between rounded-xl border border-settled-line/80 bg-settled-wash/80 px-3 py-1.5 text-[10.5px] text-settled">
                 <span className="flex items-center gap-1.5 font-medium">
-                  <Play className="h-3 w-3 fill-emerald-600 text-emerald-600" />
+                  <Play className="h-3 w-3 fill-settled text-settled" />
                   Playing provenance {activeAudioSnippet}
                 </span>
-                <span className="font-mono-clinical text-emerald-700">16 kHz PCM</span>
+                <span className="font-mono-clinical text-settled">16 kHz PCM</span>
               </div>
             )}
           </div>
@@ -534,23 +534,23 @@ export default function AmbientClinicalCockpit({
                 <li key={utterance.id}>
                   <div className="flex items-center justify-between gap-2">
                     <span className="flex min-w-0 items-center gap-1.5 text-[11px] font-semibold">
-                      <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[8.5px] font-bold ${isDoctor ? 'bg-[#0F4C81] text-white' : 'bg-[#F3E3D3] text-[#8A5A2B]'}`}>
+                      <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[8.5px] font-bold ${isDoctor ? 'bg-accent text-white' : 'bg-caution-wash text-caution'}`}>
                         {isDoctor ? 'MD' : 'PT'}
                       </span>
                       <span className="truncate">{isDoctor ? clinicianLabel : utterance.speakerLabel}</span>
-                      <span className="shrink-0 font-normal text-[#A0A6AD]">{Math.round(utterance.confidence * 100)}%</span>
+                      <span className="shrink-0 font-normal text-ink-3">{Math.round(utterance.confidence * 100)}%</span>
                     </span>
                     <button
                       type="button"
                       onClick={() => playAudioSnippet(utterance.audioSnippetId)}
-                      className="flex shrink-0 items-center gap-1 rounded-full border border-black/[0.07] bg-white/70 px-2 py-0.5 font-mono-clinical text-[9.5px] text-[#6E757C] transition-colors hover:border-emerald-300 hover:text-emerald-700 cursor-pointer"
+                      className="flex shrink-0 items-center gap-1 rounded-full border border-black/[0.07] bg-paper/70 px-2 py-0.5 font-mono-clinical text-[9.5px] text-ink-2 transition-colors hover:border-settled-line hover:text-settled cursor-pointer"
                       aria-label={`Play audio from ${Math.floor(utterance.startMs / 1000)} to ${Math.floor(utterance.endMs / 1000)} seconds`}
                     >
                       <Play className="h-2.5 w-2.5" />
                       {Math.floor(utterance.startMs / 1000)}–{Math.floor(utterance.endMs / 1000)}s
                     </button>
                   </div>
-                  <p className={`mt-1.5 rounded-2xl border px-3 py-2.5 text-[12.5px] leading-relaxed ${isDoctor ? 'border-[#DCE8F4]/80 bg-[#F3F8FC]/80 text-[#243746]' : 'border-white/80 bg-white/65 text-[#3F464D]'}`}>
+                  <p className={`mt-1.5 rounded-2xl border px-3 py-2.5 text-[12.5px] leading-relaxed ${isDoctor ? 'border-accent-line/80 bg-accent-wash/80 text-ink' : 'border-rule/80 bg-paper/65 text-ink'}`}>
                     {utterance.text}
                   </p>
                 </li>
@@ -574,13 +574,13 @@ export default function AmbientClinicalCockpit({
                   aria-selected={activeTab === tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`relative flex-1 rounded-full px-3 py-1.5 text-[11px] font-semibold transition-colors cursor-pointer ${
-                    activeTab === tab.id ? 'text-[#111315]' : 'text-[#6E757C] hover:text-[#111315]'
+                    activeTab === tab.id ? 'text-ink' : 'text-ink-2 hover:text-ink'
                   }`}
                 >
                   {activeTab === tab.id && (
                     <motion.span
                       layoutId="cockpit-tab-pill"
-                      className="absolute inset-0 rounded-full bg-white shadow-[0_2px_8px_-4px_rgba(16,18,22,0.4)]"
+                      className="absolute inset-0 rounded-full bg-paper shadow-[0_2px_8px_-4px_rgba(16,18,22,0.4)]"
                       transition={{ type: 'spring', stiffness: 420, damping: 34 }}
                     />
                   )}
@@ -595,13 +595,13 @@ export default function AmbientClinicalCockpit({
               <div className="space-y-4 p-4">
 
                 {/* Draft agent input */}
-                <div className="rounded-2xl border border-white/80 bg-white/60 p-3.5">
+                <div className="rounded-2xl border border-rule/80 bg-paper/60 p-3.5">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#7A8188]">
-                      <Sparkles className="h-3.5 w-3.5 text-[#0F4C81]" />
+                    <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-2">
+                      <Sparkles className="h-3.5 w-3.5 text-accent-ink" />
                       Diagnostic agent
                     </span>
-                    <span className="rounded-full border border-amber-300/60 bg-amber-100/60 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em] text-amber-800">
+                    <span className="rounded-full border border-caution-line/60 bg-caution-wash/60 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em] text-caution">
                       Draft · unsigned
                     </span>
                   </div>
@@ -619,22 +619,22 @@ export default function AmbientClinicalCockpit({
                       onChange={(event) => setCustomSymptoms(event.target.value)}
                       placeholder="Describe symptoms — e.g. acute RLQ pain, migraine, dysuria…"
                       aria-label="Symptoms to evaluate"
-                      className="min-w-0 flex-1 rounded-full border border-white/80 bg-white/85 px-3.5 py-2 text-[12px] text-[#111315] outline-none transition-colors placeholder:text-[#9AA0A6] focus:border-[#0F4C81]/40 focus:ring-2 focus:ring-[#0F4C81]/15"
+                      className="min-w-0 flex-1 rounded-full border border-rule/80 bg-paper/85 px-3.5 py-2 text-[12px] text-ink outline-none transition-colors placeholder:text-ink-3 focus:border-accent/40 focus:ring-2 focus:ring-accent/15"
                     />
                     <button
                       type="submit"
                       disabled={isDiagnosing || !customSymptoms.trim()}
-                      className="flex shrink-0 items-center gap-1.5 rounded-full bg-[#111315] px-3.5 py-2 text-[11.5px] font-semibold text-white transition-all hover:bg-[#24272C] disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
+                      className="flex shrink-0 items-center gap-1.5 rounded-full bg-solid px-3.5 py-2 text-[11.5px] font-semibold text-white transition-all hover:bg-solid disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
                     >
                       {isDiagnosing
-                        ? <Loader2 className="h-3.5 w-3.5 animate-spin text-emerald-400" />
-                        : <Send className="h-3.5 w-3.5 text-emerald-400" />}
+                        ? <Loader2 className="h-3.5 w-3.5 animate-spin text-settled-on-solid" />
+                        : <Send className="h-3.5 w-3.5 text-settled-on-solid" />}
                       Diagnose
                     </button>
                   </form>
 
                   <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-                    <span className="text-[9.5px] uppercase tracking-[0.1em] text-[#9AA0A6]">Scenarios</span>
+                    <span className="text-[9.5px] uppercase tracking-[0.1em] text-ink-3">Scenarios</span>
                     {[
                       { label: 'Appendicitis', query: 'Acute right lower quadrant abdominal pain, anorexia, fever, nausea, McBurney point tenderness' },
                       { label: 'Migraine', query: 'Unilateral throbbing headache with photophobia and nausea for 6 hours' },
@@ -650,7 +650,7 @@ export default function AmbientClinicalCockpit({
                           setCustomSymptoms(scenario.query);
                           void runLiveDiagnosis(scenario.query);
                         }}
-                        className="rounded-full border border-black/[0.07] bg-white/70 px-2.5 py-1 text-[10px] font-medium text-[#525763] transition-colors hover:border-[#0F4C81]/30 hover:bg-[#EDF3F9] hover:text-[#0F4C81] cursor-pointer"
+                        className="rounded-full border border-black/[0.07] bg-paper/70 px-2.5 py-1 text-[10px] font-medium text-ink-2 transition-colors hover:border-accent/30 hover:bg-accent-wash hover:text-accent-ink cursor-pointer"
                       >
                         {scenario.label}
                       </button>
@@ -658,22 +658,22 @@ export default function AmbientClinicalCockpit({
                   </div>
 
                   {activeDiagnosisLabel && (
-                    <div className="mt-2.5 flex items-center gap-1.5 border-t border-black/[0.055] pt-2 text-[10.5px] text-[#6E757C]">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                      <span className="truncate">Evaluating <strong className="font-semibold text-[#3F464D]">{activeDiagnosisLabel}</strong></span>
+                    <div className="mt-2.5 flex items-center gap-1.5 border-t border-black/[0.055] pt-2 text-[10.5px] text-ink-2">
+                      <span className="h-1.5 w-1.5 rounded-full bg-settled-wash0" />
+                      <span className="truncate">Evaluating <strong className="font-semibold text-ink">{activeDiagnosisLabel}</strong></span>
                     </div>
                   )}
                 </div>
 
                 {/* Can't-miss emergencies */}
                 {cantMissEmergencies.length > 0 && (
-                  <div className="rounded-2xl border border-rose-200/80 bg-rose-50/80 p-3.5">
-                    <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.11em] text-rose-800">
-                      <AlertTriangle className="h-3.5 w-3.5 text-rose-600" />
+                  <div className="rounded-2xl border border-critical-line/80 bg-critical-wash/80 p-3.5">
+                    <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.11em] text-critical">
+                      <AlertTriangle className="h-3.5 w-3.5 text-critical" />
                       Can&apos;t-miss emergencies
                     </div>
                     {cantMissEmergencies.map((emergency, index) => (
-                      <p key={index} className="mt-1.5 text-[11.5px] leading-relaxed text-rose-900">
+                      <p key={index} className="mt-1.5 text-[11.5px] leading-relaxed text-critical">
                         <strong className="font-semibold">{emergency.condition} ({emergency.icd10})</strong> — {emergency.rationale}
                       </p>
                     ))}
@@ -682,74 +682,74 @@ export default function AmbientClinicalCockpit({
 
                 {/* Pre-test probability */}
                 <div>
-                  <h2 className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#7A8188]">
-                    <Activity className="h-3.5 w-3.5 text-[#0F4C81]" />
+                  <h2 className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-2">
+                    <Activity className="h-3.5 w-3.5 text-accent-ink" />
                     Pre-test probability
                   </h2>
                   <div className="grid grid-cols-2 gap-2.5">
-                    <div className="rounded-2xl border border-white/80 bg-white/60 p-3">
-                      <div className="text-[9.5px] font-semibold uppercase tracking-[0.1em] text-[#8A9199]">Wells PE</div>
+                    <div className="rounded-2xl border border-rule/80 bg-paper/60 p-3">
+                      <div className="text-[9.5px] font-semibold uppercase tracking-[0.1em] text-ink-3">Wells PE</div>
                       <div className="mt-1 flex items-baseline gap-1">
                         <span className="text-[24px] font-semibold tabular-nums tracking-[-0.04em]">{clinicalScores.wellsPE.score}</span>
-                        <span className="text-[10px] text-[#9AA0A6]">pts</span>
+                        <span className="text-[10px] text-ink-3">pts</span>
                       </div>
-                      <div className="mt-1 text-[10px] font-medium leading-snug text-amber-700">{clinicalScores.wellsPE.riskLevel}</div>
+                      <div className="mt-1 text-[10px] font-medium leading-snug text-caution">{clinicalScores.wellsPE.riskLevel}</div>
                     </div>
-                    <div className="rounded-2xl border border-white/80 bg-white/60 p-3">
-                      <div className="text-[9.5px] font-semibold uppercase tracking-[0.1em] text-[#8A9199]">CURB-65</div>
+                    <div className="rounded-2xl border border-rule/80 bg-paper/60 p-3">
+                      <div className="text-[9.5px] font-semibold uppercase tracking-[0.1em] text-ink-3">CURB-65</div>
                       <div className="mt-1 flex items-baseline gap-1">
                         <span className="text-[24px] font-semibold tabular-nums tracking-[-0.04em]">{clinicalScores.curb65.score}</span>
-                        <span className="text-[10px] text-[#9AA0A6]">pts</span>
+                        <span className="text-[10px] text-ink-3">pts</span>
                       </div>
-                      <div className="mt-1 text-[10px] font-medium leading-snug text-emerald-700">{clinicalScores.curb65.mortalityRisk}</div>
+                      <div className="mt-1 text-[10px] font-medium leading-snug text-settled">{clinicalScores.curb65.mortalityRisk}</div>
                     </div>
                   </div>
                 </div>
 
                 {/* Differential */}
                 <div>
-                  <h2 className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#7A8188]">
-                    <Stethoscope className="h-3.5 w-3.5 text-[#0F4C81]" />
+                  <h2 className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-2">
+                    <Stethoscope className="h-3.5 w-3.5 text-accent-ink" />
                     Ranked differential
                   </h2>
                   <div className="space-y-2.5">
                     {differential.map((item) => {
                       const percent = probabilityPercent(item.probability);
                       return (
-                        <article key={item.rank} className="rounded-2xl border border-white/80 bg-white/65 p-3.5 transition-colors hover:border-[#0F4C81]/25">
+                        <article key={item.rank} className="rounded-2xl border border-rule/80 bg-paper/65 p-3.5 transition-colors hover:border-accent/25">
                           <div className="flex items-start justify-between gap-2.5">
                             <div className="flex min-w-0 items-start gap-2">
-                              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#111315] font-mono-clinical text-[10px] font-bold text-white">
+                              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-solid font-mono-clinical text-[10px] font-bold text-white">
                                 {item.rank}
                               </span>
                               <h3 className="text-[12.5px] font-semibold leading-snug">{item.condition}</h3>
                             </div>
-                            <span className="shrink-0 rounded-full bg-[#EDF3F9] px-2 py-0.5 text-[9.5px] font-semibold text-[#0F4C81]">
+                            <span className="shrink-0 rounded-full bg-accent-wash px-2 py-0.5 text-[9.5px] font-semibold text-accent-ink">
                               {item.probability}
                             </span>
                           </div>
 
                           {percent > 0 && (
                             <div className="mt-2.5 h-1 overflow-hidden rounded-full bg-black/[0.055]">
-                              <div className="h-full rounded-full bg-[#0F4C81]" style={{ width: `${percent}%` }} />
+                              <div className="h-full rounded-full bg-accent" style={{ width: `${percent}%` }} />
                             </div>
                           )}
 
-                          <ul className="mt-2.5 space-y-1 text-[11px] text-[#525763]">
+                          <ul className="mt-2.5 space-y-1 text-[11px] text-ink-2">
                             {item.supportingEvidence.map((evidence, index) => (
                               <li key={index} className="flex items-start gap-1.5">
-                                <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-emerald-600" />
+                                <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-settled" />
                                 <span>{evidence}</span>
                               </li>
                             ))}
                           </ul>
 
-                          <div className="mt-2.5 flex items-center gap-1.5 rounded-xl border border-emerald-200/70 bg-emerald-50/70 px-2.5 py-1.5 text-[10px] text-emerald-800">
-                            <Sparkles className="h-3 w-3 shrink-0 text-emerald-600" />
+                          <div className="mt-2.5 flex items-center gap-1.5 rounded-xl border border-settled-line/70 bg-settled-wash/70 px-2.5 py-1.5 text-[10px] text-settled">
+                            <Sparkles className="h-3 w-3 shrink-0 text-settled" />
                             <span className="truncate">{item.evidenceCitation}</span>
                           </div>
 
-                          <div className="mt-2 flex items-center gap-2 font-mono-clinical text-[9px] text-[#9AA0A6]">
+                          <div className="mt-2 flex items-center gap-2 font-mono-clinical text-[9px] text-ink-3">
                             <span>ICD-10 {item.icd10}</span>
                             <span>SNOMED {item.snomed}</span>
                           </div>
@@ -760,27 +760,27 @@ export default function AmbientClinicalCockpit({
                 </div>
 
                 {/* Evidence loop */}
-                <div className="rounded-2xl bg-[#111315] p-4 text-white shadow-[0_24px_60px_-32px_rgba(0,0,0,0.65)]">
+                <div className="rounded-2xl bg-solid p-4 text-white shadow-[0_24px_60px_-32px_rgba(0,0,0,0.65)]">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-300">
+                    <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-settled-on-solid">
                       <ShieldCheck className="h-3.5 w-3.5" />
                       Evidence loop
                     </span>
-                    <span className="rounded-full border border-emerald-800/60 bg-emerald-950/60 px-2 py-0.5 font-mono-clinical text-[9px] text-emerald-300">
+                    <span className="rounded-full border border-settled/60 bg-solid/60 px-2 py-0.5 font-mono-clinical text-[9px] text-settled-on-solid">
                       Grounded
                     </span>
                   </div>
-                  <p className="mt-2 text-[11.5px] leading-relaxed text-[#A0A6AD]">
+                  <p className="mt-2 text-[11.5px] leading-relaxed text-ink-3">
                     Every claim is tied to an atomic fact, filtered through the causation firewall, and checked against Tier 1 guidance.
                   </p>
-                  <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-2.5">
-                    <span className="font-mono-clinical text-[10px] text-[#7A8188]">
+                  <div className="mt-3 flex items-center justify-between border-t border-rule/10 pt-2.5">
+                    <span className="font-mono-clinical text-[10px] text-ink-2">
                       {groundedData?.auditLedger?.totalClaimsAudited || DEFAULT_TRACEABLE_CLAIMS.length} claims audited
                     </span>
                     <button
                       type="button"
                       onClick={() => setIsInspectorOpen(true)}
-                      className="flex items-center gap-1 rounded-full bg-white/10 px-3 py-1.5 text-[10.5px] font-semibold text-white transition-colors hover:bg-white/[0.18] cursor-pointer"
+                      className="flex items-center gap-1 rounded-full bg-paper/10 px-3 py-1.5 text-[10.5px] font-semibold text-white transition-colors hover:bg-paper/[0.18] cursor-pointer"
                     >
                       Inspect
                       <ArrowRight className="h-3 w-3" />
@@ -790,19 +790,19 @@ export default function AmbientClinicalCockpit({
 
                 {/* Pending information */}
                 {groundedData?.unknownAndPending?.pendingTests?.length > 0 && (
-                  <div className="rounded-2xl border border-amber-200/80 bg-amber-50/80 p-3.5">
-                    <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.11em] text-amber-900">
-                      <HelpCircle className="h-3.5 w-3.5 text-amber-600" />
+                  <div className="rounded-2xl border border-caution-line/80 bg-caution-wash/80 p-3.5">
+                    <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.11em] text-caution">
+                      <HelpCircle className="h-3.5 w-3.5 text-caution" />
                       Unknown &amp; pending ({groundedData.unknownAndPending.pendingTests.length})
                     </div>
-                    <p className="mt-1.5 text-[11px] leading-relaxed text-amber-800">
+                    <p className="mt-1.5 text-[11px] leading-relaxed text-caution">
                       These tests are still pending. Proton keeps them as hypotheses and holds dependent high-risk orders.
                     </p>
                     <div className="mt-2 space-y-1.5">
                       {groundedData.unknownAndPending.pendingTests.map((test: any, index: number) => (
-                        <div key={index} className="flex items-center justify-between gap-2 rounded-xl border border-amber-200/80 bg-white/80 px-2.5 py-1.5">
-                          <span className="text-[11px] font-semibold text-amber-950">{test.testName}</span>
-                          <span className="rounded-full bg-amber-100 px-2 py-0.5 font-mono-clinical text-[9px] font-bold text-amber-900">
+                        <div key={index} className="flex items-center justify-between gap-2 rounded-xl border border-caution-line/80 bg-paper/80 px-2.5 py-1.5">
+                          <span className="text-[11px] font-semibold text-caution">{test.testName}</span>
+                          <span className="rounded-full bg-caution-wash px-2 py-0.5 font-mono-clinical text-[9px] font-bold text-caution">
                             PENDING
                           </span>
                         </div>
@@ -813,17 +813,17 @@ export default function AmbientClinicalCockpit({
 
                 {/* Falsification */}
                 {groundedData?.whatWouldChangeMyMind && (
-                  <div className="rounded-2xl border border-white/80 bg-white/60 p-3.5">
-                    <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#7A8188]">
-                      <Activity className="h-3.5 w-3.5 text-[#0F4C81]" />
+                  <div className="rounded-2xl border border-rule/80 bg-paper/60 p-3.5">
+                    <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-2">
+                      <Activity className="h-3.5 w-3.5 text-accent-ink" />
                       What would change my mind
                     </div>
-                    <p className="mt-2 text-[11.5px] leading-relaxed text-[#525763]">
-                      <strong className="font-semibold text-[#111315]">Primary hypothesis:</strong>{' '}
+                    <p className="mt-2 text-[11.5px] leading-relaxed text-ink-2">
+                      <strong className="font-semibold text-ink">Primary hypothesis:</strong>{' '}
                       {groundedData.whatWouldChangeMyMind.primaryHypothesis}
                     </p>
-                    <p className="mt-1 text-[10.5px] leading-relaxed text-[#8A9199]">
-                      <strong className="font-semibold text-[#6E757C]">Falsification:</strong>{' '}
+                    <p className="mt-1 text-[10.5px] leading-relaxed text-ink-3">
+                      <strong className="font-semibold text-ink-2">Falsification:</strong>{' '}
                       {groundedData.whatWouldChangeMyMind.falsificationEvents?.join(' · ')}
                     </p>
                   </div>
@@ -834,21 +834,21 @@ export default function AmbientClinicalCockpit({
             {activeTab === 'soap' && (
               <div className="space-y-2.5 p-4">
                 {soapSections.map((section) => (
-                  <article key={section.key} className="rounded-2xl border border-white/80 bg-white/60 p-3.5">
+                  <article key={section.key} className="rounded-2xl border border-rule/80 bg-paper/60 p-3.5">
                     <div className="flex items-center gap-2">
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#111315] font-mono-clinical text-[10px] font-bold text-white">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-solid font-mono-clinical text-[10px] font-bold text-white">
                         {section.key}
                       </span>
-                      <span className="text-[9.5px] font-semibold uppercase tracking-[0.13em] text-[#7A8188]">
+                      <span className="text-[9.5px] font-semibold uppercase tracking-[0.13em] text-ink-2">
                         {section.label}
                       </span>
                     </div>
-                    <p className="mt-2 whitespace-pre-line text-[12.5px] leading-relaxed text-[#3F464D]">
+                    <p className="mt-2 whitespace-pre-line text-[12.5px] leading-relaxed text-ink">
                       {section.body}
                     </p>
                   </article>
                 ))}
-                <p className="px-1 pt-1 text-[10px] leading-relaxed text-[#9AA0A6]">
+                <p className="px-1 pt-1 text-[10px] leading-relaxed text-ink-3">
                   Draft note generated from the encounter. Nothing enters the record until the attending signs.
                 </p>
               </div>
@@ -861,10 +861,10 @@ export default function AmbientClinicalCockpit({
           className="xl:col-span-3"
           header={
             <>
-              <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#7A8188]">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-2">
                 Staged orders
               </span>
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-semibold text-emerald-700">
+              <span className="inline-flex items-center gap-1 rounded-full bg-settled-wash px-2 py-0.5 text-[9px] font-semibold text-settled">
                 <ShieldCheck className="h-2.5 w-2.5" />
                 4-tier gated
               </span>
@@ -872,43 +872,43 @@ export default function AmbientClinicalCockpit({
           }
           footer={
             isSigned ? (
-              <div className="rounded-2xl border border-emerald-300/70 bg-emerald-50/80 p-3 text-center">
-                <div className="flex items-center justify-center gap-1.5 text-[11px] font-bold text-emerald-800">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+              <div className="rounded-2xl border border-settled-line/70 bg-settled-wash/80 p-3 text-center">
+                <div className="flex items-center justify-center gap-1.5 text-[11px] font-bold text-settled">
+                  <CheckCircle2 className="h-4 w-4 text-settled" />
                   Signed &amp; committed
                 </div>
-                <div className="mt-1 text-[10.5px] font-medium text-emerald-800">
+                <div className="mt-1 text-[10.5px] font-medium text-settled">
                   {attestationPayload?.practitionerName || 'Attending physician'} · {attestationPayload?.npi || npiSignature}
                 </div>
-                <div className="mt-0.5 truncate font-mono-clinical text-[9.5px] text-emerald-700">
-                  Note {String(attestationPayload?.merkleRoot || '—').substring(0, 18)}…
+                <div className="mt-0.5 truncate font-mono-clinical text-[9.5px] text-settled">
+                  Record {String(attestationPayload?.signatureRecordId || '—').substring(0, 18)}…
                 </div>
               </div>
             ) : (
               <div>
-                <div className="flex items-center justify-between text-[10.5px] text-[#7A8188]">
+                <div className="flex items-center justify-between text-[10.5px] text-ink-2">
                   <span>Signing clinician</span>
-                  <span className="font-mono-clinical font-semibold text-[#111315]">{npiSignature}</span>
+                  <span className="font-mono-clinical font-semibold text-ink">{npiSignature}</span>
                 </div>
                 <button
                   type="button"
                   onClick={() => { void handleSignEncounter(); }}
                   disabled={isSigning}
-                  className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-full bg-[#111315] py-2.5 text-[12px] font-semibold text-white shadow-[0_16px_34px_-20px_rgba(17,19,21,0.85)] transition-all hover:-translate-y-0.5 hover:bg-[#24272C] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+                  className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-full bg-solid py-2.5 text-[12px] font-semibold text-white shadow-[0_16px_34px_-20px_rgba(17,19,21,0.85)] transition-all hover:-translate-y-0.5 hover:bg-solid active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
                 >
                   {isSigning ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin text-emerald-400" />
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-settled-on-solid" />
                   ) : (
-                    <Lock className="h-3.5 w-3.5 text-emerald-400" />
+                    <Lock className="h-3.5 w-3.5 text-settled-on-solid" />
                   )}
                   {isSigning ? 'Signing…' : 'Sign & commit to record'}
                 </button>
                 {signError && (
-                  <p className="mt-1.5 rounded-lg border border-rose-200 bg-rose-50 px-2 py-1 text-center text-[9.5px] leading-relaxed text-rose-800">
+                  <p className="mt-1.5 rounded-lg border border-critical-line bg-critical-wash px-2 py-1 text-center text-[9.5px] leading-relaxed text-critical">
                     {signError}
                   </p>
                 )}
-                <p className="mt-1.5 text-center text-[9.5px] text-[#9AA0A6]">
+                <p className="mt-1.5 text-center text-[9.5px] text-ink-3">
                   Draft orders · nothing released until signed
                 </p>
               </div>
@@ -917,37 +917,37 @@ export default function AmbientClinicalCockpit({
         >
           <div className="space-y-4 p-4">
 
-            <div className="rounded-2xl border border-emerald-800/30 bg-[#111315] p-3 text-white">
+            <div className="rounded-2xl border border-settled/30 bg-solid p-3 text-white">
               <div className="flex items-center justify-between gap-2">
-                <span className="flex items-center gap-1.5 text-[9.5px] font-semibold uppercase tracking-[0.1em] text-emerald-300">
+                <span className="flex items-center gap-1.5 text-[9.5px] font-semibold uppercase tracking-[0.1em] text-settled-on-solid">
                   <ShieldCheck className="h-3 w-3" />
                   Attending review
                 </span>
-                <span className="rounded-full border border-emerald-700/50 bg-emerald-900/50 px-2 py-0.5 font-mono-clinical text-[8.5px] text-emerald-300">
+                <span className="rounded-full border border-settled/50 bg-solid/50 px-2 py-0.5 font-mono-clinical text-[8.5px] text-settled-on-solid">
                   ~10s
                 </span>
               </div>
-              <p className="mt-1.5 text-[10.5px] leading-relaxed text-[#A8B2C1]">
+              <p className="mt-1.5 text-[10.5px] leading-relaxed text-ink-3">
                 The draft agent assembled history, physical, and lab proposals. Review the reasoning, then authorize or reject.
               </p>
             </div>
 
             <div>
-              <h2 className="text-[9.5px] font-semibold uppercase tracking-[0.12em] text-[#8A9199]">
+              <h2 className="text-[9.5px] font-semibold uppercase tracking-[0.12em] text-ink-3">
                 Diagnostic tests · LOINC
               </h2>
               <ul className="mt-2 space-y-2">
                 {investigations.map((investigation, index) => {
                   const isStat = investigation.urgency.includes('STAT');
                   return (
-                    <li key={index} className="rounded-2xl border border-white/80 bg-white/65 p-2.5">
+                    <li key={index} className="rounded-2xl border border-rule/80 bg-paper/65 p-2.5">
                       <div className="flex items-start justify-between gap-2">
                         <span className="text-[11.5px] font-semibold leading-snug">{investigation.testName}</span>
-                        <span className={`shrink-0 rounded-full px-1.5 py-0.5 font-mono-clinical text-[8.5px] font-semibold ${isStat ? 'bg-rose-50 text-rose-700' : 'bg-black/[0.045] text-[#6E757C]'}`}>
+                        <span className={`shrink-0 rounded-full px-1.5 py-0.5 font-mono-clinical text-[8.5px] font-semibold ${isStat ? 'bg-critical-wash text-critical' : 'bg-black/[0.045] text-ink-2'}`}>
                           {urgencyLabel(investigation.urgency)}
                         </span>
                       </div>
-                      <div className="mt-1 flex items-center justify-between font-mono-clinical text-[9px] text-[#9AA0A6]">
+                      <div className="mt-1 flex items-center justify-between font-mono-clinical text-[9px] text-ink-3">
                         <span>LOINC {investigation.loinc}</span>
                         <span>CPT {investigation.cpt}</span>
                       </div>
@@ -958,49 +958,49 @@ export default function AmbientClinicalCockpit({
             </div>
 
             <div>
-              <h2 className="text-[9.5px] font-semibold uppercase tracking-[0.12em] text-[#8A9199]">
+              <h2 className="text-[9.5px] font-semibold uppercase tracking-[0.12em] text-ink-3">
                 Prescriptions · RxNorm
               </h2>
               <ul className="mt-2 space-y-2">
                 {medications.map((medication, index) => (
-                  <li key={index} className="rounded-2xl border border-white/80 bg-white/65 p-2.5">
+                  <li key={index} className="rounded-2xl border border-rule/80 bg-paper/65 p-2.5">
                     <div className="flex items-start justify-between gap-2">
                       <span className="text-[11.5px] font-semibold leading-snug">{medication.name}</span>
-                      <span className="shrink-0 rounded-full border border-amber-200/80 bg-amber-50 px-1.5 py-0.5 font-mono-clinical text-[8.5px] font-bold text-amber-800">
+                      <span className="shrink-0 rounded-full border border-caution-line/80 bg-caution-wash px-1.5 py-0.5 font-mono-clinical text-[8.5px] font-bold text-caution">
                         MD gate
                       </span>
                     </div>
-                    <div className="mt-0.5 text-[10.5px] text-[#525763]">
+                    <div className="mt-0.5 text-[10.5px] text-ink-2">
                       {medication.dose} · {medication.frequency}
                     </div>
-                    <div className="mt-1.5 flex items-center justify-between border-t border-black/[0.05] pt-1.5 font-mono-clinical text-[9px] text-[#9AA0A6]">
+                    <div className="mt-1.5 flex items-center justify-between border-t border-black/[0.05] pt-1.5 font-mono-clinical text-[9px] text-ink-3">
                       <span>RxNorm {medication.rxnorm}</span>
-                      <span className="font-sans font-medium text-emerald-700">Allergy cleared</span>
+                      <span className="font-sans font-medium text-settled">Allergy cleared</span>
                     </div>
                   </li>
                 ))}
               </ul>
             </div>
 
-            <div className="rounded-2xl bg-[#111315] p-3 text-white">
+            <div className="rounded-2xl bg-solid p-3 text-white">
               <div className="flex items-center justify-between gap-2">
-                <span className="flex items-center gap-1 text-[9.5px] font-semibold uppercase tracking-[0.1em] text-emerald-300">
+                <span className="flex items-center gap-1 text-[9.5px] font-semibold uppercase tracking-[0.1em] text-settled-on-solid">
                   <Sparkles className="h-3 w-3" />
                   Specialist council
                 </span>
-                <span className="font-mono-clinical text-[8.5px] text-[#7A8188]">ACC/AHA · GOLD</span>
+                <span className="font-mono-clinical text-[8.5px] text-ink-2">ACC/AHA · GOLD</span>
               </div>
-              <p className="mt-1.5 text-[10.5px] leading-relaxed text-[#A8B2C1]">
+              <p className="mt-1.5 text-[10.5px] leading-relaxed text-ink-3">
                 Adversarial red-team found no unexplained acute findings or discordant lab values.
               </p>
             </div>
 
-            <div className="rounded-2xl border border-amber-200/80 bg-amber-50/70 p-3">
-              <div className="flex items-center gap-1.5 text-[9.5px] font-bold uppercase tracking-[0.1em] text-amber-900">
-                <ShieldCheck className="h-3 w-3 text-amber-700" />
+            <div className="rounded-2xl border border-caution-line/80 bg-caution-wash/70 p-3">
+              <div className="flex items-center gap-1.5 text-[9.5px] font-bold uppercase tracking-[0.1em] text-caution">
+                <ShieldCheck className="h-3 w-3 text-caution" />
                 Prior-auth defense
               </div>
-              <p className="mt-1 text-[10.5px] leading-relaxed text-amber-800">
+              <p className="mt-1 text-[10.5px] leading-relaxed text-caution">
                 Letter of medical necessity pre-compiled citing ADA 2026 Grade A guidance and metformin monotherapy failure.
               </p>
             </div>

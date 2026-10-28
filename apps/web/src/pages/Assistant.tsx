@@ -113,29 +113,29 @@ Recent Labs: ${activePatient.recentLabs.map(l => `${l.name}: ${l.value} (${l.sta
       <div className="mx-auto flex h-full min-h-0 w-full max-w-4xl flex-col font-sans animate-in fade-in">
         
         {/* Top Header & Patient Context Selector */}
-        <header className="p-4 sm:p-5 bg-white border border-[#EAE8E3] rounded-2xl shadow-sm mb-4 shrink-0 space-y-3">
+        <header className="p-4 sm:p-5 bg-paper border border-rule rounded-2xl shadow-sm mb-4 shrink-0 space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center">
+                <div className="w-7 h-7 rounded-xl bg-caution-wash text-caution flex items-center justify-center">
                   <Sparkles size={15} />
                 </div>
-                <h2 className="text-base sm:text-lg font-bold tracking-tight text-[#111315]">
+                <h2 className="text-base sm:text-lg font-bold tracking-tight text-ink">
                   Clinical AI Assistant
                 </h2>
               </div>
-              <p className="text-xs text-[#6E767E] mt-0.5">
+              <p className="text-xs text-ink-2 mt-0.5">
                 Advisory diagnostic reasoning grounded in patient records • Clinician decision authoritative
               </p>
             </div>
 
             {/* Patient Context Dropdown */}
             <div className="flex items-center gap-2">
-              <span className="text-xs text-[#6E767E] font-medium hidden sm:inline">Active Patient:</span>
+              <span className="text-xs text-ink-2 font-medium hidden sm:inline">Active Patient:</span>
               <select
                 value={selectedPatientId}
                 onChange={e => setSelectedPatientId(e.target.value)}
-                className="bg-[#F8F8F6] border border-[#EAE8E3] text-xs font-semibold text-[#111315] rounded-xl px-3 py-2 outline-none focus:border-[#111315] transition-colors cursor-pointer"
+                className="bg-paper-2 border border-rule text-xs font-semibold text-ink rounded-xl px-3 py-2 outline-none focus:border-solid transition-colors cursor-pointer"
               >
                 {TODAY_CLINIC_SCHEDULE.map(p => (
                   <option key={p.id} value={p.id}>
@@ -149,20 +149,20 @@ Recent Labs: ${activePatient.recentLabs.map(l => `${l.name}: ${l.value} (${l.sta
 
           {/* Active Patient Vitals & Allergy Strip */}
           {activePatient && (
-            <div className="p-3 bg-[#FAF9F6] border border-[#EAE8E3] rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs text-[#50575F]">
+            <div className="p-3 bg-canvas border border-rule rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs text-ink-2">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-[#111315]">{activePatient.name}</span>
-                <span className="font-mono text-[#8C949D]">MRN: {activePatient.mrn}</span>
+                <span className="font-bold text-ink">{activePatient.name}</span>
+                <span className="font-mono text-ink-3">MRN: {activePatient.mrn}</span>
                 {activePatient.allergies.length > 0 && (
-                  <span className="px-2 py-0.5 bg-red-50 text-red-700 border border-red-200 rounded font-semibold text-[10px]">
+                  <span className="px-2 py-0.5 bg-critical-wash text-critical border border-critical-line rounded font-semibold text-[10px]">
                     Allergy: {activePatient.allergies.join(', ')}
                   </span>
                 )}
               </div>
               <div className="flex items-center gap-3 font-mono text-[11px]">
-                <span>BP <strong className="text-[#111315]">{activePatient.vitals.bp}</strong></span>
-                <span>HR <strong className="text-[#111315]">{activePatient.vitals.hr}</strong></span>
-                <span>SpO2 <strong className="text-[#111315]">{activePatient.vitals.spo2}</strong></span>
+                <span>BP <strong className="text-ink">{activePatient.vitals.bp}</strong></span>
+                <span>HR <strong className="text-ink">{activePatient.vitals.hr}</strong></span>
+                <span>SpO2 <strong className="text-ink">{activePatient.vitals.spo2}</strong></span>
               </div>
             </div>
           )}
@@ -179,7 +179,7 @@ Recent Labs: ${activePatient.recentLabs.map(l => `${l.name}: ${l.value} (${l.sta
                 className={`flex gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}
               >
                 {!isUser && (
-                  <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0 border border-amber-200/80 mt-1">
+                  <div className="w-8 h-8 rounded-xl bg-caution-wash text-caution flex items-center justify-center shrink-0 border border-caution-line/80 mt-1">
                     <Sparkles size={15} />
                   </div>
                 )}
@@ -187,23 +187,23 @@ Recent Labs: ${activePatient.recentLabs.map(l => `${l.name}: ${l.value} (${l.sta
                 <div
                   className={`max-w-[85%] rounded-2xl p-4 sm:p-5 text-xs sm:text-sm leading-relaxed space-y-3 ${
                     isUser
-                      ? 'bg-[#111315] text-white shadow-xs rounded-tr-xs'
-                      : 'bg-white border border-[#EAE8E3] text-[#121417] shadow-2xs rounded-tl-xs'
+                      ? 'bg-solid text-white shadow-xs rounded-tr-xs'
+                      : 'bg-paper border border-rule text-ink shadow-2xs rounded-tl-xs'
                   }`}
                 >
                   {!isUser && (
-                    <div className="flex items-center justify-between gap-3 pb-2 border-b border-[#F2F1EC]">
+                    <div className="flex items-center justify-between gap-3 pb-2 border-b border-rule">
                       <div className="flex items-center gap-1.5">
                         <ProvenanceBadge provenance="AI_SUGGESTION" size="xs" />
-                        <span className="text-[10px] font-mono text-[#8C949D]">Advisory Model</span>
+                        <span className="text-[10px] font-mono text-ink-3">Advisory Model</span>
                       </div>
                       <button
                         type="button"
                         onClick={() => copyResponse(m.content, idx)}
-                        className="text-[#8C949D] hover:text-[#111315] p-1 rounded transition-colors"
+                        className="text-ink-3 hover:text-ink p-1 rounded transition-colors"
                         title="Copy to clipboard"
                       >
-                        {copiedIndex === idx ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
+                        {copiedIndex === idx ? <Check size={13} className="text-settled" /> : <Copy size={13} />}
                       </button>
                     </div>
                   )}
@@ -215,22 +215,22 @@ Recent Labs: ${activePatient.recentLabs.map(l => `${l.name}: ${l.value} (${l.sta
 
                   {/* Context Citations & Advisory Footnote for Assistant replies */}
                   {!isUser && activePatient && (
-                    <div className="pt-2 border-t border-[#F2F1EC] text-[11px] text-[#6E767E] space-y-2">
+                    <div className="pt-2 border-t border-rule text-[11px] text-ink-2 space-y-2">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-mono text-[9px] uppercase text-[#8C949D]">Sources Cited:</span>
-                        <span className="px-1.5 py-0.5 bg-[#FAF9F6] border border-[#EAE8E3] rounded text-[#50575F]">
+                        <span className="font-mono text-[9px] uppercase text-ink-3">Sources Cited:</span>
+                        <span className="px-1.5 py-0.5 bg-canvas border border-rule rounded text-ink-2">
                           FHIR R4 Patient Chart
                         </span>
-                        <span className="px-1.5 py-0.5 bg-[#FAF9F6] border border-[#EAE8E3] rounded text-[#50575F]">
+                        <span className="px-1.5 py-0.5 bg-canvas border border-rule rounded text-ink-2">
                           Recent Labs (60d)
                         </span>
-                        <span className="px-1.5 py-0.5 bg-[#FAF9F6] border border-[#EAE8E3] rounded text-[#50575F]">
+                        <span className="px-1.5 py-0.5 bg-canvas border border-rule rounded text-ink-2">
                           Active Medications
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-1.5 text-amber-800 bg-amber-50/70 px-2 py-1 rounded-lg">
-                        <HelpCircle size={12} className="shrink-0 text-amber-700" />
+                      <div className="flex items-center gap-1.5 text-caution bg-caution-wash/70 px-2 py-1 rounded-lg">
+                        <HelpCircle size={12} className="shrink-0 text-caution" />
                         <span>Clinical judgment advisory: Verify all suggested medication titrations against clinical vitals.</span>
                       </div>
                     </div>
@@ -238,7 +238,7 @@ Recent Labs: ${activePatient.recentLabs.map(l => `${l.name}: ${l.value} (${l.sta
                 </div>
 
                 {isUser && (
-                  <div className="w-8 h-8 rounded-xl bg-[#F4F3EE] text-[#111315] flex items-center justify-center shrink-0 border border-[#EAE8E3] mt-1 font-bold text-xs">
+                  <div className="w-8 h-8 rounded-xl bg-paper-2 text-ink flex items-center justify-center shrink-0 border border-rule mt-1 font-bold text-xs">
                     MD
                   </div>
                 )}
@@ -248,11 +248,11 @@ Recent Labs: ${activePatient.recentLabs.map(l => `${l.name}: ${l.value} (${l.sta
 
           {isSending && (
             <div className="flex gap-3 justify-start items-center">
-              <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0 border border-amber-200">
-                <LoaderCircle size={15} className="animate-spin text-amber-600" />
+              <div className="w-8 h-8 rounded-xl bg-caution-wash text-caution flex items-center justify-center shrink-0 border border-caution-line">
+                <LoaderCircle size={15} className="animate-spin text-caution" />
               </div>
-              <div className="bg-white border border-[#EAE8E3] rounded-2xl px-4 py-2.5 text-xs text-[#6E767E] flex items-center gap-2">
-                <Sparkles size={13} className="text-amber-500 animate-pulse" />
+              <div className="bg-paper border border-rule rounded-2xl px-4 py-2.5 text-xs text-ink-2 flex items-center gap-2">
+                <Sparkles size={13} className="text-caution-on-solid0 animate-pulse" />
                 <span>Synthesizing chart intelligence...</span>
               </div>
             </div>
@@ -269,7 +269,7 @@ Recent Labs: ${activePatient.recentLabs.map(l => `${l.name}: ${l.value} (${l.sta
               type="button"
               onClick={() => submitMessage(prompt)}
               disabled={isSending}
-              className="px-3 py-1.5 bg-white hover:bg-[#F4F3EE] text-[#50575F] hover:text-[#111315] border border-[#EAE8E3] rounded-xl text-xs font-medium whitespace-nowrap transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
+              className="px-3 py-1.5 bg-paper hover:bg-paper-2 text-ink-2 hover:text-ink border border-rule rounded-xl text-xs font-medium whitespace-nowrap transition-colors shadow-2xs cursor-pointer disabled:opacity-50"
             >
               {prompt}
             </button>
@@ -277,9 +277,9 @@ Recent Labs: ${activePatient.recentLabs.map(l => `${l.name}: ${l.value} (${l.sta
         </div>
 
         {/* Composer Input Bar (Nolla style) */}
-        <footer className="mt-2 shrink-0 bg-white border border-[#EAE8E3] rounded-3xl p-2.5 sm:p-3 shadow-md focus-within:border-[#111315] focus-within:ring-1 focus-within:ring-[#111315] transition-all">
+        <footer className="mt-2 shrink-0 bg-paper border border-rule rounded-3xl p-2.5 sm:p-3 shadow-md focus-within:border-solid focus-within:ring-1 focus-within:ring-solid transition-all">
           {error && (
-            <div className="p-2 mb-2 text-xs text-rose-700 bg-rose-50 rounded-xl">
+            <div className="p-2 mb-2 text-xs text-critical bg-critical-wash rounded-xl">
               {error}
             </div>
           )}
@@ -291,15 +291,15 @@ Recent Labs: ${activePatient.recentLabs.map(l => `${l.name}: ${l.value} (${l.sta
               onKeyDown={handleComposerKeyDown}
               placeholder={activePatient ? `Ask about ${activePatient.name}'s trajectory, interactions, or evidence...` : "I have a question about this case..."}
               rows={2}
-              className="w-full bg-transparent px-3 py-1.5 text-xs sm:text-sm text-[#111315] placeholder-[#949CA4] outline-hidden resize-none"
+              className="w-full bg-transparent px-3 py-1.5 text-xs sm:text-sm text-ink placeholder-ink-3 outline-hidden resize-none"
             />
 
-            <div className="flex items-center justify-between pt-1 border-t border-[#F4F3EE]">
+            <div className="flex items-center justify-between pt-1 border-t border-rule">
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => navigate('/document-review')}
-                  className="px-3 py-1.5 rounded-xl bg-[#F8F8F6] hover:bg-[#EFECE6] text-[#50575F] hover:text-[#111315] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer border border-[#EAE8E3]"
+                  className="px-3 py-1.5 rounded-xl bg-paper-2 hover:bg-paper-2 text-ink-2 hover:text-ink text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer border border-rule"
                 >
                   <Camera size={13} />
                   <span>Analyze Image</span>
@@ -312,8 +312,8 @@ Recent Labs: ${activePatient.recentLabs.map(l => `${l.name}: ${l.value} (${l.sta
                   onClick={toggleDictation}
                   className={`p-2 rounded-xl transition-all cursor-pointer ${
                     isListening 
-                      ? 'bg-rose-50 text-rose-600 animate-pulse ring-2 ring-rose-400' 
-                      : 'text-[#6E767E] hover:text-[#111315] hover:bg-[#F8F8F6]'
+                      ? 'bg-critical-wash text-critical animate-pulse ring-2 ring-critical' 
+                      : 'text-ink-2 hover:text-ink hover:bg-paper-2'
                   }`}
                   title={isListening ? "Listening... Speak your clinical query" : "Click to dictate clinical query"}
                 >
@@ -324,7 +324,7 @@ Recent Labs: ${activePatient.recentLabs.map(l => `${l.name}: ${l.value} (${l.sta
                   type="button"
                   onClick={() => submitMessage()}
                   disabled={!draft.trim() || isSending}
-                  className="w-8 h-8 rounded-full bg-[#111315] hover:bg-[#272B30] text-white flex items-center justify-center shrink-0 transition-all shadow-xs cursor-pointer disabled:opacity-40"
+                  className="w-8 h-8 rounded-full bg-solid hover:bg-solid text-white flex items-center justify-center shrink-0 transition-all shadow-xs cursor-pointer disabled:opacity-40"
                   title="Send message (Enter)"
                 >
                   {isSending ? <LoaderCircle size={14} className="animate-spin" /> : <ArrowUp size={15} strokeWidth={2.5} />}

@@ -189,7 +189,7 @@ export function HoverLift({
  */
 export function LiveDot({
   className = '',
-  color = '#10B981',
+  color = 'var(--c-settled)',
   size = 8
 }: {
   className?: string;

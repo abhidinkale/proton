@@ -107,12 +107,12 @@ function timeAgo(iso: string | null): string {
 }
 
 function toneFor(appointment: ClinicAppointment) {
-  if (appointment.status === 'CANCELLED') return { card: 'bg-[#F3F2EF] border-[#E2DFD6] text-[#8A8A87]', badge: 'neutral' as const };
-  if (appointment.priority === 'critical') return { card: 'bg-[#FDF2F5] border-[#F6C9D5] text-[#9D174D]', badge: 'critical' as const };
-  if (appointment.queueCategory === 'IN_CONSULTATION') return { card: 'bg-[#FEF8E7] border-[#F3DFA5] text-[#854D0E]', badge: 'attention' as const };
-  if (appointment.queueCategory === 'READY_FOR_REVIEW') return { card: 'bg-[#EEF4FC] border-[#C9DCF4] text-[#1E3A8A]', badge: 'info' as const };
-  if (appointment.queueCategory === 'COMPLETED') return { card: 'bg-[#EFF6EC] border-[#D3E5CC] text-[#3F6B37]', badge: 'stable' as const };
-  return { card: 'bg-[#FAF9F6] border-[#E8E5DC] text-[#151719]', badge: 'stable' as const };
+  if (appointment.status === 'CANCELLED') return { card: 'bg-paper-2 border-rule text-ink-3', badge: 'neutral' as const };
+  if (appointment.priority === 'critical') return { card: 'bg-critical-wash border-critical-line text-accent-ink', badge: 'critical' as const };
+  if (appointment.queueCategory === 'IN_CONSULTATION') return { card: 'bg-caution-wash border-caution-line text-caution', badge: 'attention' as const };
+  if (appointment.queueCategory === 'READY_FOR_REVIEW') return { card: 'bg-accent-wash border-accent-line text-accent-ink', badge: 'info' as const };
+  if (appointment.queueCategory === 'COMPLETED') return { card: 'bg-settled-wash border-settled-line text-settled', badge: 'stable' as const };
+  return { card: 'bg-canvas border-rule text-ink', badge: 'stable' as const };
 }
 
 export default function Schedule() {
@@ -341,8 +341,8 @@ export default function Schedule() {
     <Layout>
       <div className="space-y-6 animate-in fade-in pb-12 relative">
         {toast && (
-          <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 rounded-2xl bg-[#151719] px-4 py-2.5 text-xs font-semibold text-white shadow-xl animate-in fade-in slide-in-from-bottom-2">
-            <CheckCircle2 size={16} className="shrink-0 text-emerald-400" />
+          <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 rounded-2xl bg-solid px-4 py-2.5 text-xs font-semibold text-white shadow-xl animate-in fade-in slide-in-from-bottom-2">
+            <CheckCircle2 size={16} className="shrink-0 text-settled-on-solid" />
             <span>{toast}</span>
           </div>
         )}
@@ -350,24 +350,24 @@ export default function Schedule() {
         {/* Header */}
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#A5A4A0]">Clinic schedule</p>
-            <h1 className="mt-1 text-[30px] font-medium tracking-[-0.04em] text-[#151719] sm:text-[34px]">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-3">Clinic schedule</p>
+            <h1 className="mt-1 text-[30px] font-medium tracking-[-0.04em] text-ink sm:text-[34px]">
               {labelFor(anchor, view)}
             </h1>
-            <p className="mt-1 text-[12px] text-[#8A8A87]">
+            <p className="mt-1 text-[12px] text-ink-3">
               {appointments.length} appointment{appointments.length === 1 ? '' : 's'} in view · availability and conflicts are computed from the live schedule.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center rounded-full border border-[#DDD9CE] bg-[#EAE7DE] p-1">
+            <div className="flex items-center rounded-full border border-rule-strong bg-paper-2 p-1">
               {(['day', 'week', 'month'] as const).map((mode) => (
                 <button
                   key={mode}
                   type="button"
                   onClick={() => setView(mode)}
                   className={`rounded-full px-3 py-1 text-[11px] font-semibold capitalize transition-all cursor-pointer ${
-                    view === mode ? 'bg-[#151619] text-white shadow-xs' : 'text-[#575D65] hover:text-[#151719]'
+                    view === mode ? 'bg-solid text-white shadow-xs' : 'text-ink-2 hover:text-ink'
                   }`}
                 >
                   {mode}
@@ -375,11 +375,11 @@ export default function Schedule() {
               ))}
             </div>
 
-            <div className="flex items-center gap-1 rounded-full bg-white px-1 py-1 shadow-xs">
+            <div className="flex items-center gap-1 rounded-full bg-paper px-1 py-1 shadow-xs">
               <button
                 type="button"
                 onClick={() => move(-1)}
-                className="flex h-7 w-7 items-center justify-center rounded-full text-[#575D65] hover:bg-[#F3F2EF] cursor-pointer"
+                className="flex h-7 w-7 items-center justify-center rounded-full text-ink-2 hover:bg-paper-2 cursor-pointer"
                 aria-label="Previous"
               >
                 <ChevronLeft size={14} />
@@ -387,14 +387,14 @@ export default function Schedule() {
               <button
                 type="button"
                 onClick={() => setAnchor(today)}
-                className="rounded-full px-2.5 py-1 text-[10.5px] font-semibold text-[#2A2A28] hover:bg-[#F3F2EF] cursor-pointer"
+                className="rounded-full px-2.5 py-1 text-[10.5px] font-semibold text-ink hover:bg-paper-2 cursor-pointer"
               >
                 Today
               </button>
               <button
                 type="button"
                 onClick={() => move(1)}
-                className="flex h-7 w-7 items-center justify-center rounded-full text-[#575D65] hover:bg-[#F3F2EF] cursor-pointer"
+                className="flex h-7 w-7 items-center justify-center rounded-full text-ink-2 hover:bg-paper-2 cursor-pointer"
                 aria-label="Next"
               >
                 <ChevronRight size={14} />
@@ -404,7 +404,7 @@ export default function Schedule() {
             <button
               type="button"
               onClick={() => setRefreshTick((tick) => tick + 1)}
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-[#E8E5DC] bg-white text-[#575D65] shadow-xs transition-colors hover:text-[#151719] cursor-pointer"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-rule bg-paper text-ink-2 shadow-xs transition-colors hover:text-ink cursor-pointer"
               title="Refresh schedule"
               aria-label="Refresh schedule"
             >
@@ -426,12 +426,12 @@ export default function Schedule() {
         </div>
 
         {error && (
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
-            <p className="text-[11.5px] text-amber-900">{error}</p>
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-caution-line bg-caution-wash px-4 py-3">
+            <p className="text-[11.5px] text-caution">{error}</p>
             <button
               type="button"
               onClick={() => setRefreshTick((tick) => tick + 1)}
-              className="rounded-full bg-[#151719] px-3 py-1.5 text-[10.5px] font-semibold text-white cursor-pointer"
+              className="rounded-full bg-solid px-3 py-1.5 text-[10.5px] font-semibold text-white cursor-pointer"
             >
               Retry
             </button>
@@ -442,11 +442,11 @@ export default function Schedule() {
         {view === 'day' && (
           <div className="grid grid-cols-1 gap-5 xl:grid-cols-12">
             <div className="space-y-4 xl:col-span-8">
-              <div className="rounded-3xl border border-[#E8E5DC] bg-white p-5 shadow-sm">
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#F0ECE1] pb-3">
+              <div className="rounded-3xl border border-rule bg-paper p-5 shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-rule pb-3">
                   <div>
-                    <h2 className="text-[15px] font-semibold text-[#151719]">Encounters</h2>
-                    <p className="mt-0.5 text-[11px] text-[#8A8A87]">
+                    <h2 className="text-[15px] font-semibold text-ink">Encounters</h2>
+                    <p className="mt-0.5 text-[11px] text-ink-3">
                       {dayAppointments.length} scheduled · {dayAppointments.filter((entry) => entry.queueCategory === 'COMPLETED').length} completed
                     </p>
                   </div>
@@ -454,7 +454,7 @@ export default function Schedule() {
                     {(['WAITING', 'IN_CONSULTATION', 'READY_FOR_REVIEW', 'COMPLETED'] as const).map((queue) => {
                       const count = dayAppointments.filter((entry) => entry.queueCategory === queue).length;
                       return (
-                        <span key={queue} className="rounded-full bg-[#F6F5F3] px-2 py-0.5 text-[9.5px] font-medium text-[#6F6F6C]">
+                        <span key={queue} className="rounded-full bg-paper-2 px-2 py-0.5 text-[9.5px] font-medium text-ink-2">
                           {queue.replaceAll('_', ' ').toLowerCase()} {count}
                         </span>
                       );
@@ -463,21 +463,21 @@ export default function Schedule() {
                 </div>
 
                 {loading && !dayAppointments.length ? (
-                  <div className="flex items-center justify-center gap-2 py-16 text-[11.5px] text-[#8A8A87]">
+                  <div className="flex items-center justify-center gap-2 py-16 text-[11.5px] text-ink-3">
                     <LoaderCircle size={15} className="animate-spin" />
                     Loading the day…
                   </div>
                 ) : dayAppointments.length === 0 ? (
                   <div className="flex flex-col items-center gap-2 py-16 text-center">
-                    <Clock className="h-8 w-8 text-[#D6D2C4]" />
-                    <p className="text-[12.5px] font-semibold text-[#151719]">Nothing booked for this day</p>
-                    <p className="max-w-xs text-[11px] leading-relaxed text-[#8A8A87]">
+                    <Clock className="h-8 w-8 text-ink-3" />
+                    <p className="text-[12.5px] font-semibold text-ink">Nothing booked for this day</p>
+                    <p className="max-w-xs text-[11px] leading-relaxed text-ink-3">
                       Open the book flow to see live free slots and reserve one. Conflicts are rejected by the server.
                     </p>
                     <button
                       type="button"
                       onClick={() => setIsBookingOpen(true)}
-                      className="mt-1 rounded-full bg-[#151719] px-4 py-2 text-[11px] font-semibold text-white cursor-pointer"
+                      className="mt-1 rounded-full bg-solid px-4 py-2 text-[11px] font-semibold text-white cursor-pointer"
                     >
                       Find a slot
                     </button>
@@ -497,27 +497,27 @@ export default function Schedule() {
                             onClick={() => { setSelected(appointment); setActionError(null); setRescheduleOpen(false); }}
                             className="flex min-w-0 flex-1 items-start gap-3.5 text-left cursor-pointer"
                           >
-                            <div className="w-[70px] shrink-0 rounded-xl border border-black/[0.06] bg-white/80 py-2 text-center shadow-2xs">
-                              <span className="block font-mono text-[11px] font-bold text-[#151719]">{appointment.time.replace(' ', '')}</span>
-                              <span className="block text-[9px] text-[#8A8A87]">{appointment.durationMinutes}m</span>
+                            <div className="w-[70px] shrink-0 rounded-xl border border-black/[0.06] bg-paper/80 py-2 text-center shadow-2xs">
+                              <span className="block font-mono text-[11px] font-bold text-ink">{appointment.time.replace(' ', '')}</span>
+                              <span className="block text-[9px] text-ink-3">{appointment.durationMinutes}m</span>
                             </div>
                             <div className="min-w-0">
                               <div className="flex flex-wrap items-center gap-2">
-                                <h4 className="text-[13px] font-semibold text-[#151719]">{appointment.patientName}</h4>
+                                <h4 className="text-[13px] font-semibold text-ink">{appointment.patientName}</h4>
                                 <ProtonBadge label={appointment.appointmentType.toUpperCase()} variant={tone.badge} size="sm" />
                                 {appointment.priority !== 'normal' && (
-                                  <span className="rounded-full bg-white/70 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.06em]">
+                                  <span className="rounded-full bg-paper/70 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.06em]">
                                     {appointment.priority}
                                   </span>
                                 )}
                               </div>
-                              <p className="mt-0.5 flex items-center gap-1 text-[10.5px] text-[#6F6F6C]">
+                              <p className="mt-0.5 flex items-center gap-1 text-[10.5px] text-ink-2">
                                 <MapPin size={10} />
                                 {appointment.roomOrVirtual}
-                                <span className="mx-1 text-[#C2C1BD]">·</span>
+                                <span className="mx-1 text-ink-3">·</span>
                                 {appointment.queueCategory.replaceAll('_', ' ').toLowerCase()}
                               </p>
-                              <p className="mt-1 line-clamp-1 text-[10.5px] text-[#8A8A87]">
+                              <p className="mt-1 line-clamp-1 text-[10.5px] text-ink-3">
                                 {appointment.chiefComplaint || 'No chief complaint recorded'}
                               </p>
                             </div>
@@ -527,7 +527,7 @@ export default function Schedule() {
                               <button
                                 type="button"
                                 onClick={() => { void updateStatus(appointment, 'IN_CONSULTATION'); }}
-                                className="rounded-full bg-white px-3 py-1.5 text-[10.5px] font-semibold text-[#3A3A38] shadow-xs transition-colors hover:bg-[#F3F2EF] cursor-pointer"
+                                className="rounded-full bg-paper px-3 py-1.5 text-[10.5px] font-semibold text-ink shadow-xs transition-colors hover:bg-paper-2 cursor-pointer"
                               >
                                 Start
                               </button>
@@ -535,7 +535,7 @@ export default function Schedule() {
                             <button
                               type="button"
                               onClick={() => navigate(`/consultation?patient=${appointment.patientId}`)}
-                              className="rounded-full bg-[#151619] px-3.5 py-1.5 text-[10.5px] font-semibold text-white transition-colors hover:bg-[#252830] cursor-pointer"
+                              className="rounded-full bg-solid px-3.5 py-1.5 text-[10.5px] font-semibold text-white transition-colors hover:bg-solid cursor-pointer"
                             >
                               Open encounter
                             </button>
@@ -550,14 +550,14 @@ export default function Schedule() {
 
             {/* Day rail */}
             <div className="space-y-4 xl:col-span-4">
-              <div className="rounded-3xl border border-[#E8E5DC] bg-white p-5 shadow-sm">
+              <div className="rounded-3xl border border-rule bg-paper p-5 shadow-sm">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-[12px] font-semibold text-[#151719]">Live availability</h3>
-                  <span className="rounded-full bg-[#EFF6EC] px-2 py-0.5 text-[9px] font-semibold text-[#3F6B37]">
+                  <h3 className="text-[12px] font-semibold text-ink">Live availability</h3>
+                  <span className="rounded-full bg-settled-wash px-2 py-0.5 text-[9px] font-semibold text-settled">
                     {freeCount} free
                   </span>
                 </div>
-                <p className="mt-1 text-[10.5px] text-[#8A8A87]">30-minute slots · 08:00 to 17:00</p>
+                <p className="mt-1 text-[10.5px] text-ink-3">30-minute slots · 08:00 to 17:00</p>
                 <div className="mt-3 grid grid-cols-3 gap-1.5">
                   {(availability?.slots || []).map((slot) => (
                     <button
@@ -571,21 +571,21 @@ export default function Schedule() {
                       }}
                       className={`rounded-xl border px-1 py-1.5 text-[10px] font-semibold transition-colors ${
                         slot.available
-                          ? 'border-[#DCE6D7] bg-[#F4F9F1] text-[#3F6B37] hover:bg-[#E9F2E4] cursor-pointer'
-                          : 'border-[#EFEDE7] bg-[#F7F6F3] text-[#B0AFAB] cursor-not-allowed'
+                          ? 'border-settled-line bg-settled-wash text-settled hover:bg-settled-wash cursor-pointer'
+                          : 'border-rule bg-paper-2 text-ink-3 cursor-not-allowed'
                       }`}
                     >
                       {slot.time.replace(' ', '')}
                     </button>
                   ))}
                 </div>
-                <p className="mt-3 text-[9.5px] leading-relaxed text-[#A5A4A0]">
+                <p className="mt-3 text-[9.5px] leading-relaxed text-ink-3">
                   Free slots are computed from persisted appointments. Booking a taken slot returns a real 409 conflict.
                 </p>
               </div>
 
-              <div className="rounded-3xl border border-[#E8E5DC] bg-white p-5 shadow-sm">
-                <h3 className="text-[12px] font-semibold text-[#151719]">Day checklist</h3>
+              <div className="rounded-3xl border border-rule bg-paper p-5 shadow-sm">
+                <h3 className="text-[12px] font-semibold text-ink">Day checklist</h3>
                 <ul className="mt-3 space-y-2.5">
                   {[
                     { label: 'All patients roomed', done: dayAppointments.length > 0 && dayAppointments.every((entry) => entry.queueCategory !== 'WAITING') },
@@ -593,8 +593,8 @@ export default function Schedule() {
                     { label: 'No open critical alerts', done: dayAppointments.every((entry) => entry.priority !== 'critical') },
                     { label: 'Every visit has a room', done: dayAppointments.every((entry) => Boolean(entry.roomOrVirtual)) }
                   ].map((item) => (
-                    <li key={item.label} className="flex items-center gap-2 text-[11px] text-[#575D65]">
-                      <span className={`flex h-4 w-4 items-center justify-center rounded-full ${item.done ? 'bg-[#EFF6EC] text-[#3F6B37]' : 'bg-[#F6F5F3] text-[#B0AFAB]'}`}>
+                    <li key={item.label} className="flex items-center gap-2 text-[11px] text-ink-2">
+                      <span className={`flex h-4 w-4 items-center justify-center rounded-full ${item.done ? 'bg-settled-wash text-settled' : 'bg-paper-2 text-ink-3'}`}>
                         <CheckCircle2 size={10} />
                       </span>
                       {item.label}
@@ -608,7 +608,7 @@ export default function Schedule() {
 
         {/* Week view */}
         {view === 'week' && (
-          <div className="overflow-x-auto rounded-3xl border border-[#E8E5DC] bg-white p-4 shadow-sm sm:p-5">
+          <div className="overflow-x-auto rounded-3xl border border-rule bg-paper p-4 shadow-sm sm:p-5">
             <div
               className="grid min-w-[980px]"
               style={{ gridTemplateColumns: '64px repeat(7, minmax(0, 1fr))', gridTemplateRows: `auto repeat(${SLOT_COUNT}, 46px)` }}
@@ -625,15 +625,15 @@ export default function Schedule() {
                     onClick={() => { setAnchor(date); setView('day'); }}
                     className="mb-2 px-1 text-center cursor-pointer"
                   >
-                    <span className="block text-[9.5px] font-semibold uppercase tracking-[0.1em] text-[#A5A4A0]">
+                    <span className="block text-[9.5px] font-semibold uppercase tracking-[0.1em] text-ink-3">
                       {WEEKDAYS[(parsed.getDay() + 6) % 7]}
                     </span>
                     <span className={`mt-1 inline-flex h-7 min-w-7 items-center justify-center rounded-full px-1.5 text-[12px] font-semibold ${
-                      isToday ? 'bg-[#151619] text-white' : 'text-[#2A2A28] hover:bg-[#F3F2EF]'
+                      isToday ? 'bg-solid text-white' : 'text-ink hover:bg-paper-2'
                     }`}>
                       {parsed.getDate()}
                     </span>
-                    <span className="mt-0.5 block text-[8.5px] text-[#B0AFAB]">{count || '—'}</span>
+                    <span className="mt-0.5 block text-[8.5px] text-ink-3">{count || '—'}</span>
                   </button>
                 );
               })}
@@ -643,13 +643,13 @@ export default function Schedule() {
                 const label = `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
                 return (
                   <div key={`row-${slotIndex}`} className="contents">
-                    <div className="pr-3 text-right font-mono text-[9px] text-[#A5A4A0]" style={{ gridRow: slotIndex + 2 }}>
+                    <div className="pr-3 text-right font-mono text-[9px] text-ink-3" style={{ gridRow: slotIndex + 2 }}>
                       {slotIndex % 2 === 0 ? label : ''}
                     </div>
                     {weekDates.map((date) => (
                       <div
                         key={`${date}-${slotIndex}`}
-                        className={`border-t border-[#F0ECE1] ${date === today ? 'bg-[#FBFAF6]/70' : ''}`}
+                        className={`border-t border-rule ${date === today ? 'bg-paper-2/70' : ''}`}
                         style={{ gridRow: slotIndex + 2, gridColumn: weekDates.indexOf(date) + 2 }}
                       />
                     ))}
@@ -675,7 +675,7 @@ export default function Schedule() {
                       }}
                     >
                       <span className="block text-[8.5px] font-mono opacity-75">{appointment.time.replace(' ', '')}</span>
-                      <span className="mt-0.5 block truncate text-[10px] font-semibold text-[#151719]">{appointment.patientName}</span>
+                      <span className="mt-0.5 block truncate text-[10px] font-semibold text-ink">{appointment.patientName}</span>
                       <span className="hidden truncate text-[8.5px] opacity-80 sm:block">{appointment.appointmentType}</span>
                     </button>
                   );
@@ -687,10 +687,10 @@ export default function Schedule() {
 
         {/* Month view */}
         {view === 'month' && (
-          <div className="rounded-3xl border border-[#E8E5DC] bg-white p-5 shadow-sm">
+          <div className="rounded-3xl border border-rule bg-paper p-5 shadow-sm">
             <div className="grid grid-cols-7 gap-1.5">
               {WEEKDAYS.map((weekday) => (
-                <div key={weekday} className="py-1 text-center text-[9.5px] font-bold uppercase tracking-wider text-[#A5A4A0]">
+                <div key={weekday} className="py-1 text-center text-[9.5px] font-bold uppercase tracking-wider text-ink-3">
                   {weekday}
                 </div>
               ))}
@@ -705,15 +705,15 @@ export default function Schedule() {
                     type="button"
                     onClick={() => { setAnchor(date); setView('day'); }}
                     className={`min-h-[86px] rounded-2xl border p-2 text-left transition-all cursor-pointer ${
-                      inMonth ? 'border-[#E8E5DC] bg-[#FAF9F6] hover:bg-white' : 'border-[#F3F1EB] bg-[#FCFBF8] opacity-60'
-                    } ${isToday ? 'ring-1 ring-[#151719]/25' : ''}`}
+                      inMonth ? 'border-rule bg-canvas hover:bg-paper' : 'border-rule bg-paper-2 opacity-60'
+                    } ${isToday ? 'ring-1 ring-rule-strong/25' : ''}`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className={`text-[11px] font-semibold ${isToday ? 'rounded-full bg-[#151619] px-1.5 text-white' : 'text-[#151719]'}`}>
+                      <span className={`text-[11px] font-semibold ${isToday ? 'rounded-full bg-solid px-1.5 text-white' : 'text-ink'}`}>
                         {parsed.getDate()}
                       </span>
                       {dayAppointments.length > 0 && (
-                        <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-[#151619] px-1 text-[9px] font-bold text-white">
+                        <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-solid px-1 text-[9px] font-bold text-white">
                           {dayAppointments.length}
                         </span>
                       )}
@@ -721,12 +721,12 @@ export default function Schedule() {
                     <div className="mt-1 space-y-0.5">
                       {dayAppointments.slice(0, 2).map((appointment) => (
                         <div key={appointment.id} className="flex items-center gap-1">
-                          <span className={`h-1 w-1 shrink-0 rounded-full ${appointment.priority === 'critical' ? 'bg-[#E4587A]' : appointment.queueCategory === 'COMPLETED' ? 'bg-[#5AC46A]' : 'bg-[#C2C1BD]'}`} />
-                          <span className="truncate text-[8.5px] text-[#6F6F6C]">{appointment.patientName.split(' ')[0]}</span>
+                          <span className={`h-1 w-1 shrink-0 rounded-full ${appointment.priority === 'critical' ? 'bg-critical' : appointment.queueCategory === 'COMPLETED' ? 'bg-accent' : 'bg-paper-2'}`} />
+                          <span className="truncate text-[8.5px] text-ink-2">{appointment.patientName.split(' ')[0]}</span>
                         </div>
                       ))}
                       {dayAppointments.length > 2 && (
-                        <div className="pl-2 text-[8px] text-[#A5A4A0]">+{dayAppointments.length - 2} more</div>
+                        <div className="pl-2 text-[8px] text-ink-3">+{dayAppointments.length - 2} more</div>
                       )}
                     </div>
                   </button>
@@ -739,21 +739,21 @@ export default function Schedule() {
         {/* Appointment detail modal */}
         {selected && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 backdrop-blur-xs">
-            <div className="w-full max-w-lg space-y-4 rounded-3xl border border-[#E8E5DC] bg-white p-6 shadow-2xl animate-in zoom-in-95">
-              <div className="flex items-start justify-between gap-3 border-b border-[#F0ECE1] pb-3">
+            <div className="w-full max-w-lg space-y-4 rounded-3xl border border-rule bg-paper p-6 shadow-2xl animate-in zoom-in-95">
+              <div className="flex items-start justify-between gap-3 border-b border-rule pb-3">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-[16px] font-semibold text-[#151719]">{selected.patientName}</h3>
+                    <h3 className="text-[16px] font-semibold text-ink">{selected.patientName}</h3>
                     <ProtonBadge label={selected.appointmentType.toUpperCase()} variant={toneFor(selected).badge} size="sm" />
                   </div>
-                  <p className="mt-0.5 text-[11px] text-[#8A8A87]">
+                  <p className="mt-0.5 text-[11px] text-ink-3">
                     {selected.date} · {selected.time} · {selected.durationMinutes} minutes
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setSelected(null)}
-                  className="rounded-full p-1 text-[#88909A] hover:bg-[#F9F8F5] hover:text-[#151719] cursor-pointer"
+                  className="rounded-full p-1 text-ink-3 hover:bg-canvas hover:text-ink cursor-pointer"
                   aria-label="Close"
                 >
                   <X size={16} />
@@ -761,50 +761,50 @@ export default function Schedule() {
               </div>
 
               <dl className="grid grid-cols-2 gap-3 text-[11px]">
-                <div className="rounded-2xl bg-[#F9F8F5] p-3">
-                  <dt className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#A5A4A0]">Status</dt>
-                  <dd className="mt-0.5 font-medium capitalize text-[#151719]">{selected.queueCategory.replaceAll('_', ' ').toLowerCase()}</dd>
+                <div className="rounded-2xl bg-canvas p-3">
+                  <dt className="text-[9px] font-semibold uppercase tracking-[0.1em] text-ink-3">Status</dt>
+                  <dd className="mt-0.5 font-medium capitalize text-ink">{selected.queueCategory.replaceAll('_', ' ').toLowerCase()}</dd>
                 </div>
-                <div className="rounded-2xl bg-[#F9F8F5] p-3">
-                  <dt className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#A5A4A0]">Room</dt>
-                  <dd className="mt-0.5 font-medium text-[#151719]">{selected.roomOrVirtual}</dd>
+                <div className="rounded-2xl bg-canvas p-3">
+                  <dt className="text-[9px] font-semibold uppercase tracking-[0.1em] text-ink-3">Room</dt>
+                  <dd className="mt-0.5 font-medium text-ink">{selected.roomOrVirtual}</dd>
                 </div>
-                <div className="rounded-2xl bg-[#F9F8F5] p-3">
-                  <dt className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#A5A4A0]">MRN</dt>
-                  <dd className="mt-0.5 font-mono text-[10.5px] font-medium text-[#151719]">{selected.mrn || '—'}</dd>
+                <div className="rounded-2xl bg-canvas p-3">
+                  <dt className="text-[9px] font-semibold uppercase tracking-[0.1em] text-ink-3">MRN</dt>
+                  <dd className="mt-0.5 font-mono text-[10.5px] font-medium text-ink">{selected.mrn || '—'}</dd>
                 </div>
-                <div className="rounded-2xl bg-[#F9F8F5] p-3">
-                  <dt className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#A5A4A0]">Last update</dt>
-                  <dd className="mt-0.5 font-medium text-[#151719]">{timeAgo(selected.updatedAt)}</dd>
+                <div className="rounded-2xl bg-canvas p-3">
+                  <dt className="text-[9px] font-semibold uppercase tracking-[0.1em] text-ink-3">Last update</dt>
+                  <dd className="mt-0.5 font-medium text-ink">{timeAgo(selected.updatedAt)}</dd>
                 </div>
               </dl>
 
               <div>
-                <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-[#A5A4A0]">Chief complaint</p>
-                <p className="mt-1 text-[11.5px] leading-relaxed text-[#4F4F4C]">{selected.chiefComplaint || 'Not recorded.'}</p>
+                <p className="text-[9px] font-semibold uppercase tracking-[0.1em] text-ink-3">Chief complaint</p>
+                <p className="mt-1 text-[11.5px] leading-relaxed text-ink-2">{selected.chiefComplaint || 'Not recorded.'}</p>
               </div>
 
               {selected.criticalAllergies && selected.criticalAllergies.length > 0 && (
-                <div className="flex items-start gap-2 rounded-2xl border border-[#F6C9D5] bg-[#FDF2F5] p-3">
-                  <AlertTriangle size={13} className="mt-0.5 shrink-0 text-[#B3425C]" />
-                  <p className="text-[10.5px] leading-relaxed text-[#9D174D]">
+                <div className="flex items-start gap-2 rounded-2xl border border-critical-line bg-critical-wash p-3">
+                  <AlertTriangle size={13} className="mt-0.5 shrink-0 text-critical" />
+                  <p className="text-[10.5px] leading-relaxed text-accent-ink">
                     <span className="font-semibold">Allergy guard:</span> {selected.criticalAllergies.join(', ')}
                   </p>
                 </div>
               )}
 
               {actionError && (
-                <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[10.5px] text-red-800">{actionError}</p>
+                <p className="rounded-xl border border-critical-line bg-critical-wash px-3 py-2 text-[10.5px] text-critical">{actionError}</p>
               )}
 
               {rescheduleOpen ? (
-                <div className="space-y-3 rounded-2xl border border-[#E8E5DC] p-3.5">
+                <div className="space-y-3 rounded-2xl border border-rule p-3.5">
                   <div className="flex items-center justify-between">
-                    <p className="text-[11px] font-semibold text-[#151719]">Reschedule</p>
+                    <p className="text-[11px] font-semibold text-ink">Reschedule</p>
                     <button
                       type="button"
                       onClick={() => setRescheduleOpen(false)}
-                      className="text-[10px] font-semibold text-[#8A8A87] hover:text-[#151719] cursor-pointer"
+                      className="text-[10px] font-semibold text-ink-3 hover:text-ink cursor-pointer"
                     >
                       Cancel
                     </button>
@@ -813,12 +813,12 @@ export default function Schedule() {
                     type="date"
                     value={rescheduleDate}
                     onChange={(event) => setRescheduleDate(event.target.value)}
-                    className="w-full rounded-xl border border-[#E8E5DC] px-3 py-2 text-[11px] focus:border-[#151719] focus:outline-none"
+                    className="w-full rounded-xl border border-rule px-3 py-2 text-[11px] focus:border-rule-strong focus:outline-none"
                   />
                   <select
                     value={rescheduleTime}
                     onChange={(event) => setRescheduleTime(event.target.value)}
-                    className="w-full rounded-xl border border-[#E8E5DC] px-3 py-2 text-[11px] focus:border-[#151719] focus:outline-none"
+                    className="w-full rounded-xl border border-rule px-3 py-2 text-[11px] focus:border-rule-strong focus:outline-none"
                   >
                     <option value="">Choose a free slot</option>
                     {(rescheduleSlots?.slots || []).filter((slot) => slot.available).map((slot) => (
@@ -826,18 +826,18 @@ export default function Schedule() {
                     ))}
                   </select>
                   {rescheduleSlots && rescheduleSlots.availableCount === 0 && (
-                    <p className="text-[10px] text-[#9D174D]">No free slots with this duration. Try another day.</p>
+                    <p className="text-[10px] text-accent-ink">No free slots with this duration. Try another day.</p>
                   )}
                   <button
                     type="button"
                     onClick={() => { void handleReschedule(); }}
-                    className="w-full rounded-full bg-[#151719] py-2 text-[11px] font-semibold text-white hover:bg-[#2A2A28] cursor-pointer"
+                    className="w-full rounded-full bg-solid py-2 text-[11px] font-semibold text-white hover:bg-solid cursor-pointer"
                   >
                     Move appointment
                   </button>
                 </div>
               ) : (
-                <div className="flex flex-wrap items-center gap-2 border-t border-[#F0ECE1] pt-3">
+                <div className="flex flex-wrap items-center gap-2 border-t border-rule pt-3">
                   <ProtonButton
                     variant="secondary"
                     icon={<ExternalLink className="w-3.5 h-3.5" />}
@@ -871,7 +871,7 @@ export default function Schedule() {
                   <button
                     type="button"
                     onClick={() => { void cancelAppointment(selected); }}
-                    className="ml-auto rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-[10.5px] font-semibold text-red-700 transition-colors hover:bg-red-100 cursor-pointer"
+                    className="ml-auto rounded-full border border-critical-line bg-critical-wash px-3 py-1.5 text-[10.5px] font-semibold text-critical transition-colors hover:bg-critical-wash cursor-pointer"
                   >
                     Cancel visit
                   </button>
@@ -884,16 +884,16 @@ export default function Schedule() {
         {/* Booking modal */}
         {isBookingOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 backdrop-blur-xs">
-            <form onSubmit={handleBook} className="max-h-[92vh] w-full max-w-lg space-y-4 overflow-y-auto rounded-3xl border border-[#E8E5DC] bg-white p-6 shadow-2xl animate-in zoom-in-95">
-              <div className="flex items-center justify-between border-b border-[#F0ECE1] pb-3">
+            <form onSubmit={handleBook} className="max-h-[92vh] w-full max-w-lg space-y-4 overflow-y-auto rounded-3xl border border-rule bg-paper p-6 shadow-2xl animate-in zoom-in-95">
+              <div className="flex items-center justify-between border-b border-rule pb-3">
                 <div>
-                  <h3 className="text-[16px] font-semibold text-[#151719]">Book an appointment</h3>
-                  <p className="mt-0.5 text-[10.5px] text-[#8A8A87]">Slots come from the live schedule. Conflicts are rejected, not overwritten.</p>
+                  <h3 className="text-[16px] font-semibold text-ink">Book an appointment</h3>
+                  <p className="mt-0.5 text-[10.5px] text-ink-3">Slots come from the live schedule. Conflicts are rejected, not overwritten.</p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setIsBookingOpen(false)}
-                  className="rounded-full p-1 text-[#88909A] hover:bg-[#F9F8F5] hover:text-[#151719] cursor-pointer"
+                  className="rounded-full p-1 text-ink-3 hover:bg-canvas hover:text-ink cursor-pointer"
                   aria-label="Close"
                 >
                   <X size={16} />
@@ -902,11 +902,11 @@ export default function Schedule() {
 
               <div className="space-y-3">
                 <div>
-                  <label className="mb-1 block text-[10.5px] font-semibold text-[#151719]">Patient</label>
+                  <label className="mb-1 block text-[10.5px] font-semibold text-ink">Patient</label>
                   <select
                     value={booking.patientId}
                     onChange={(event) => setBooking((current) => ({ ...current, patientId: event.target.value }))}
-                    className="w-full rounded-xl border border-[#E8E5DC] px-3 py-2 text-[11.5px] focus:border-[#151719] focus:outline-none"
+                    className="w-full rounded-xl border border-rule px-3 py-2 text-[11.5px] focus:border-rule-strong focus:outline-none"
                     required
                   >
                     {patients.map((patient) => (
@@ -919,22 +919,22 @@ export default function Schedule() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="mb-1 block text-[10.5px] font-semibold text-[#151719]">Date</label>
+                    <label className="mb-1 block text-[10.5px] font-semibold text-ink">Date</label>
                     <input
                       type="date"
                       value={booking.date}
                       min={today}
                       onChange={(event) => setBooking((current) => ({ ...current, date: event.target.value, time: '' }))}
-                      className="w-full rounded-xl border border-[#E8E5DC] px-3 py-2 text-[11.5px] focus:border-[#151719] focus:outline-none"
+                      className="w-full rounded-xl border border-rule px-3 py-2 text-[11.5px] focus:border-rule-strong focus:outline-none"
                       required
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-[10.5px] font-semibold text-[#151719]">Duration</label>
+                    <label className="mb-1 block text-[10.5px] font-semibold text-ink">Duration</label>
                     <select
                       value={booking.durationMinutes}
                       onChange={(event) => setBooking((current) => ({ ...current, durationMinutes: Number(event.target.value), time: '' }))}
-                      className="w-full rounded-xl border border-[#E8E5DC] px-3 py-2 text-[11.5px] focus:border-[#151719] focus:outline-none"
+                      className="w-full rounded-xl border border-rule px-3 py-2 text-[11.5px] focus:border-rule-strong focus:outline-none"
                     >
                       {[15, 20, 30, 45, 60].map((minutes) => (
                         <option key={minutes} value={minutes}>{minutes} minutes</option>
@@ -945,12 +945,12 @@ export default function Schedule() {
 
                 <div>
                   <div className="mb-1 flex items-center justify-between">
-                    <label className="text-[10.5px] font-semibold text-[#151719]">Available slots</label>
-                    <span className="text-[9.5px] text-[#8A8A87]">
+                    <label className="text-[10.5px] font-semibold text-ink">Available slots</label>
+                    <span className="text-[9.5px] text-ink-3">
                       {availability ? `${availability.availableCount} free` : 'Checking…'}
                     </span>
                   </div>
-                  <div className="grid max-h-32 grid-cols-4 gap-1.5 overflow-y-auto rounded-xl border border-[#F0ECE1] p-2">
+                  <div className="grid max-h-32 grid-cols-4 gap-1.5 overflow-y-auto rounded-xl border border-rule p-2">
                     {(availability?.slots || []).map((slot) => (
                       <button
                         key={slot.startMinutes}
@@ -959,10 +959,10 @@ export default function Schedule() {
                         onClick={() => setBooking((current) => ({ ...current, time: slot.time }))}
                         className={`rounded-lg border px-1 py-1.5 text-[10px] font-semibold transition-colors ${
                           booking.time === slot.time
-                            ? 'border-[#151719] bg-[#151719] text-white'
+                            ? 'border-rule-strong bg-solid text-white'
                             : slot.available
-                              ? 'border-[#E8E5DC] bg-[#FAF9F6] text-[#3A3A38] hover:bg-white cursor-pointer'
-                              : 'border-[#F3F1EB] bg-[#FCFBF8] text-[#C2C1BD] cursor-not-allowed line-through'
+                              ? 'border-rule bg-canvas text-ink hover:bg-paper cursor-pointer'
+                              : 'border-rule bg-paper-2 text-ink-3 cursor-not-allowed line-through'
                         }`}
                         title={slot.available ? 'Available' : `Booked · ${slot.patientName}`}
                       >
@@ -971,17 +971,17 @@ export default function Schedule() {
                     ))}
                   </div>
                   {availability && availability.availableCount === 0 && (
-                    <p className="mt-1 text-[10px] text-[#9D174D]">No free slots for this duration on this date.</p>
+                    <p className="mt-1 text-[10px] text-accent-ink">No free slots for this duration on this date.</p>
                   )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="mb-1 block text-[10.5px] font-semibold text-[#151719]">Visit type</label>
+                    <label className="mb-1 block text-[10.5px] font-semibold text-ink">Visit type</label>
                     <select
                       value={booking.appointmentType}
                       onChange={(event) => setBooking((current) => ({ ...current, appointmentType: event.target.value }))}
-                      className="w-full rounded-xl border border-[#E8E5DC] px-3 py-2 text-[11.5px] focus:border-[#151719] focus:outline-none"
+                      className="w-full rounded-xl border border-rule px-3 py-2 text-[11.5px] focus:border-rule-strong focus:outline-none"
                     >
                       {APPOINTMENT_TYPES.map((type) => (
                         <option key={type} value={type}>{type}</option>
@@ -989,11 +989,11 @@ export default function Schedule() {
                     </select>
                   </div>
                   <div>
-                    <label className="mb-1 block text-[10.5px] font-semibold text-[#151719]">Room</label>
+                    <label className="mb-1 block text-[10.5px] font-semibold text-ink">Room</label>
                     <select
                       value={booking.roomOrVirtual}
                       onChange={(event) => setBooking((current) => ({ ...current, roomOrVirtual: event.target.value }))}
-                      className="w-full rounded-xl border border-[#E8E5DC] px-3 py-2 text-[11.5px] focus:border-[#151719] focus:outline-none"
+                      className="w-full rounded-xl border border-rule px-3 py-2 text-[11.5px] focus:border-rule-strong focus:outline-none"
                     >
                       {ROOMS.map((room) => (
                         <option key={room} value={room}>{room}</option>
@@ -1003,26 +1003,26 @@ export default function Schedule() {
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-[10.5px] font-semibold text-[#151719]">Reason for visit</label>
+                  <label className="mb-1 block text-[10.5px] font-semibold text-ink">Reason for visit</label>
                   <input
                     type="text"
                     value={booking.chiefComplaint}
                     onChange={(event) => setBooking((current) => ({ ...current, chiefComplaint: event.target.value }))}
                     placeholder="Defaults to the patient's recorded complaint"
-                    className="w-full rounded-xl border border-[#E8E5DC] px-3 py-2 text-[11.5px] focus:border-[#151719] focus:outline-none"
+                    className="w-full rounded-xl border border-rule px-3 py-2 text-[11.5px] focus:border-rule-strong focus:outline-none"
                   />
                 </div>
               </div>
 
               {bookingError && (
-                <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5">
-                  <AlertTriangle size={13} className="mt-0.5 shrink-0 text-amber-700" />
-                  <p className="text-[10.5px] leading-relaxed text-amber-900">{bookingError}</p>
+                <div className="flex items-start gap-2 rounded-xl border border-caution-line bg-caution-wash px-3 py-2.5">
+                  <AlertTriangle size={13} className="mt-0.5 shrink-0 text-caution" />
+                  <p className="text-[10.5px] leading-relaxed text-caution">{bookingError}</p>
                 </div>
               )}
 
-              <div className="flex items-center justify-between gap-2 border-t border-[#F0ECE1] pt-3">
-                <span className="flex items-center gap-1 text-[9.5px] text-[#A5A4A0]">
+              <div className="flex items-center justify-between gap-2 border-t border-rule pt-3">
+                <span className="flex items-center gap-1 text-[9.5px] text-ink-3">
                   <CalendarIcon size={10} />
                   {freeCount} slots free on {booking.date}
                 </span>

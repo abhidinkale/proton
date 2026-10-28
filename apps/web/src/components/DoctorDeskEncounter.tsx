@@ -855,7 +855,7 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
   if (encounterPhase === 'completed') {
     const elapsedSeconds = Math.round((Date.now() - encounterStartTimeRef.current) / 1000);
     return (
-      <div className="min-h-screen bg-[#fafaf9] p-6 lg:p-12 flex items-center justify-center font-sans">
+      <div className="min-h-screen bg-canvas p-6 lg:p-12 flex items-center justify-center font-sans">
         <EncounterCompletionSummary
           patient={patient}
           durationSeconds={completedSummaryData?.durationSeconds || elapsedSeconds}
@@ -869,7 +869,7 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
 
   if (encounterPhase === 'handoff') {
     return (
-      <div className="min-h-screen bg-[#fafaf9] p-6 lg:p-12 flex items-center justify-center font-sans">
+      <div className="min-h-screen bg-canvas p-6 lg:p-12 flex items-center justify-center font-sans">
         <PatientHandoffView
           patient={patient}
           plan={structuredPlan}
@@ -880,38 +880,38 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
   }
 
   return (
-    <div className="flex h-screen w-full flex-col bg-[#fafaf9] text-[#18181b] overflow-hidden font-sans antialiased">
+    <div className="flex h-screen w-full flex-col bg-canvas text-ink overflow-hidden font-sans antialiased">
       {/* TOP DESK HEADER */}
-      <header className="h-16 shrink-0 border-b border-[#e4e4e7] bg-white px-6 flex items-center justify-between shadow-2xs z-10">
+      <header className="h-16 shrink-0 border-b border-rule bg-paper px-6 flex items-center justify-between shadow-2xs z-10">
         <div className="flex items-center gap-4">
           <button
             onClick={onBackToDesk}
-            className="flex items-center gap-1.5 text-xs font-semibold text-[#52525b] hover:text-[#09090b] transition-colors p-2 rounded-xl hover:bg-[#f4f4f5] cursor-pointer"
+            className="flex items-center gap-1.5 text-xs font-semibold text-ink-2 hover:text-ink transition-colors p-2 rounded-xl hover:bg-paper-2 cursor-pointer"
             title="Back to queue"
           >
             <ArrowLeft size={16} />
             <span className="hidden sm:inline">Back</span>
           </button>
-          <div className="h-4 w-[1px] bg-[#e4e4e7]" />
+          <div className="h-4 w-[1px] bg-paper-2" />
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-base font-bold text-[#09090b] tracking-tight">{patient.name}</h1>
-              <span className="text-xs text-[#71717a]">({patient.age}y, {patient.gender})</span>
+              <h1 className="text-base font-bold text-ink tracking-tight">{patient.name}</h1>
+              <span className="text-xs text-ink-2">({patient.age}y, {patient.gender})</span>
               {patient.allergies.length > 0 && (
-                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-red-700 bg-red-50 border border-red-200/70 px-2 py-0.5 rounded-full ml-1">
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-critical bg-critical-wash border border-critical-line/70 px-2 py-0.5 rounded-full ml-1">
                   <AlertTriangle size={11} className="shrink-0" />
                   Allergy: {patient.allergies.join(', ')}
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-2.5 text-xs text-[#52525b] mt-0.5">
-              <span>BP <strong className="text-[#09090b]">{patient.vitals.bp}</strong></span>
+            <div className="flex items-center gap-2.5 text-xs text-ink-2 mt-0.5">
+              <span>BP <strong className="text-ink">{patient.vitals.bp}</strong></span>
               <span>•</span>
-              <span>HR <strong className="text-[#09090b]">{patient.vitals.hr}</strong></span>
+              <span>HR <strong className="text-ink">{patient.vitals.hr}</strong></span>
               <span>•</span>
-              <span>SpO2 <strong className="text-[#09090b]">{patient.vitals.spo2}</strong></span>
+              <span>SpO2 <strong className="text-ink">{patient.vitals.spo2}</strong></span>
               <span>•</span>
-              <span>BMI <strong className="text-[#09090b]">{patient.vitals.bmi}</strong></span>
+              <span>BMI <strong className="text-ink">{patient.vitals.bmi}</strong></span>
             </div>
           </div>
         </div>
@@ -920,7 +920,7 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowPdfModal(true)}
-            className="flex items-center gap-1.5 bg-white hover:bg-[#f4f4f5] text-[#3f3f46] text-xs font-medium px-3 py-2 rounded-xl border border-[#e4e4e7] transition-all cursor-pointer"
+            className="flex items-center gap-1.5 bg-paper hover:bg-paper-2 text-ink text-xs font-medium px-3 py-2 rounded-xl border border-rule transition-all cursor-pointer"
             title="Export Prescription PDF"
           >
             <Printer size={13} />
@@ -929,7 +929,7 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
 
           <button
             onClick={() => setShowCaptureModal(true)}
-            className="flex items-center gap-1.5 bg-white hover:bg-[#f4f4f5] text-[#3f3f46] text-xs font-medium px-3 py-2 rounded-xl border border-[#e4e4e7] transition-all cursor-pointer"
+            className="flex items-center gap-1.5 bg-paper hover:bg-paper-2 text-ink text-xs font-medium px-3 py-2 rounded-xl border border-rule transition-all cursor-pointer"
             title="Mobile QR capture"
           >
             <Smartphone size={13} />
@@ -943,7 +943,7 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
               }
               setShowVisionModal(true);
             }}
-            className="flex items-center gap-1.5 bg-white hover:bg-[#f4f4f5] text-[#3f3f46] text-xs font-medium px-3 py-2 rounded-xl border border-[#e4e4e7] transition-all cursor-pointer"
+            className="flex items-center gap-1.5 bg-paper hover:bg-paper-2 text-ink text-xs font-medium px-3 py-2 rounded-xl border border-rule transition-all cursor-pointer"
             title="Review visual AI images"
           >
             <Eye size={13} />
@@ -952,34 +952,34 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
 
           <button
             onClick={() => setShowVoiceOutreachModal(true)}
-            className="flex items-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold px-3 py-2 rounded-xl border border-indigo-200 transition-all cursor-pointer"
+            className="flex items-center gap-1.5 bg-accent-wash hover:bg-accent-wash text-accent-ink text-xs font-semibold px-3 py-2 rounded-xl border border-accent-line transition-all cursor-pointer"
             title="Launch Autonomous Patient Voice Outreach"
           >
-            <PhoneCall size={13} className="text-indigo-600" />
+            <PhoneCall size={13} className="text-accent-ink" />
             <span className="hidden md:inline">Voice Outreach</span>
           </button>
 
           <button
             onClick={() => setShowAvsModal(true)}
-            className="flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold px-3 py-2 rounded-xl border border-emerald-200 transition-all cursor-pointer"
+            className="flex items-center gap-1.5 bg-settled-wash hover:bg-settled-wash text-settled text-xs font-semibold px-3 py-2 rounded-xl border border-settled-line transition-all cursor-pointer"
             title="Patient After-Visit Summary & Discharge Instructions"
           >
-            <FileText size={13} className="text-emerald-600" />
+            <FileText size={13} className="text-settled" />
             <span className="hidden md:inline">After-Care AVS</span>
           </button>
 
           {deskShortcutFeedback && (
-            <div className="flex items-center gap-1.5 bg-[#18181b] text-white px-2.5 py-1.5 rounded-xl text-xs font-medium shadow-md">
-              <CheckCircle2 size={12} className="text-emerald-400" />
+            <div className="flex items-center gap-1.5 bg-solid text-white px-2.5 py-1.5 rounded-xl text-xs font-medium shadow-md">
+              <CheckCircle2 size={12} className="text-settled-on-solid" />
               <span>{deskShortcutFeedback}</span>
             </div>
           )}
 
           <button
             onClick={() => setIsSignOffModalOpen(true)}
-            className="flex items-center gap-1.5 bg-[#111315] hover:bg-[#272B30] text-white font-semibold text-xs px-4 py-2 rounded-xl shadow-xs transition-all cursor-pointer ml-1"
+            className="flex items-center gap-1.5 bg-solid hover:bg-solid text-white font-semibold text-xs px-4 py-2 rounded-xl shadow-xs transition-all cursor-pointer ml-1"
           >
-            <Check size={14} strokeWidth={2.5} className="text-emerald-400" />
+            <Check size={14} strokeWidth={2.5} className="text-settled-on-solid" />
             <span>Sign Off</span>
             <span className="text-[10px] opacity-60 font-mono hidden sm:inline">⌘↵</span>
           </button>
@@ -989,9 +989,9 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
       {/* MAIN TWO-COLUMN SPLIT WORKSPACE */}
       <div className="flex flex-1 min-h-0 w-full overflow-hidden">
         {/* LEFT PANEL: CLINICAL WORKSPACE (65%) */}
-        <section className="flex flex-col flex-1 min-w-0 border-r border-[#e4e4e7] bg-[#fbfbfa]">
+        <section className="flex flex-col flex-1 min-w-0 border-r border-rule bg-paper-2">
           {/* TAB BAR & AMBIENT CONTROLS */}
-          <div className="h-12 border-b border-[#e4e4e7] bg-white px-6 flex items-center justify-between shrink-0">
+          <div className="h-12 border-b border-rule bg-paper px-6 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-1.5 overflow-x-auto">
               {[
                 { id: 'note', label: 'Consultation Note', icon: ClipboardList },
@@ -1008,13 +1008,13 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
                     onClick={() => setActiveTab(tab.id as any)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors cursor-pointer shrink-0 ${
                       active
-                        ? 'bg-[#18181b] text-white shadow-2xs font-semibold'
+                        ? 'bg-solid text-white shadow-2xs font-semibold'
                         : tab.id === 'billing'
-                        ? 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100 hover:text-emerald-800'
-                        : 'text-[#71717a] hover:text-[#09090b] hover:bg-[#f4f4f5]'
+                        ? 'text-settled bg-settled-wash hover:bg-settled-wash hover:text-settled'
+                        : 'text-ink-2 hover:text-ink hover:bg-paper-2'
                     }`}
                   >
-                    <tab.icon size={13} className={tab.id === 'billing' && !active ? 'text-emerald-600' : ''} />
+                    <tab.icon size={13} className={tab.id === 'billing' && !active ? 'text-settled' : ''} />
                     <span>{tab.label}</span>
                   </button>
                 );
@@ -1046,53 +1046,53 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
                   <div 
                     className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-all ${
                       scribeState === 'LISTENING'
-                        ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                        ? 'bg-settled-wash border-settled-line text-settled'
                         : scribeState === 'PAUSED'
-                        ? 'bg-amber-50 border-amber-200 text-amber-800'
+                        ? 'bg-caution-wash border-caution-line text-caution'
                         : scribeState === 'PROCESSING'
-                        ? 'bg-sky-50 border-sky-200 text-sky-800'
+                        ? 'bg-accent-wash border-accent-line text-accent-ink'
                         : scribeState === 'OFFLINE'
-                        ? 'bg-slate-100 border-slate-200 text-slate-700'
+                        ? 'bg-paper-2 border-rule text-ink-2'
                         : scribeState === 'ERROR'
-                        ? 'bg-rose-50 border-rose-200 text-rose-800'
-                        : 'bg-[#fafaf9] border-[#e4e4e7] text-[#52525b]'
+                        ? 'bg-critical-wash border-critical-line text-critical'
+                        : 'bg-canvas border-rule text-ink-2'
                     }`}
                     role="status"
                     aria-label={`Ambient Scribe Status: ${scribeState}`}
                   >
                     {scribeState === 'LISTENING' && (
                       <>
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        <span className="w-2 h-2 rounded-full bg-settled-wash0 animate-pulse" />
                         <span>LISTENING ({formatSeconds(recordingSeconds)})</span>
                       </>
                     )}
                     {scribeState === 'PAUSED' && (
                       <>
-                        <span className="w-2 h-2 rounded-full bg-amber-500" />
+                        <span className="w-2 h-2 rounded-full bg-caution-wash0" />
                         <span>PAUSED ({formatSeconds(recordingSeconds)})</span>
                       </>
                     )}
                     {scribeState === 'PROCESSING' && (
                       <>
-                        <Loader2 size={11} className="animate-spin text-sky-600" />
+                        <Loader2 size={11} className="animate-spin text-accent-ink" />
                         <span>PROCESSING</span>
                       </>
                     )}
                     {scribeState === 'READY' && (
                       <>
-                        <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                        <span className="w-2 h-2 rounded-full bg-settled" />
                         <span>READY (⌥Space)</span>
                       </>
                     )}
                     {scribeState === 'OFFLINE' && (
                       <>
-                        <span className="w-2 h-2 rounded-full bg-slate-400" />
+                        <span className="w-2 h-2 rounded-full bg-ink-3" />
                         <span>OFFLINE</span>
                       </>
                     )}
                     {scribeState === 'ERROR' && (
                       <>
-                        <span className="w-2 h-2 rounded-full bg-rose-500" />
+                        <span className="w-2 h-2 rounded-full bg-critical-wash0" />
                         <span>ERROR</span>
                       </>
                     )}
@@ -1102,7 +1102,7 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
 
               <button
                 onClick={testSampleAudioDialogue}
-                className="text-[11px] text-[#71717a] hover:text-[#09090b] px-2 py-1 hover:bg-[#f4f4f5] rounded-md transition-colors cursor-pointer"
+                className="text-[11px] text-ink-2 hover:text-ink px-2 py-1 hover:bg-paper-2 rounded-md transition-colors cursor-pointer"
                 title="Load sample dialogue"
               >
                 Sample Dialogue
@@ -1111,18 +1111,18 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
               {isRecording && (
                 <button
                   onClick={togglePauseRecording}
-                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium border border-rule dark:border-rule-strong hover:bg-paper-2 dark:hover:bg-solid transition-colors cursor-pointer"
                   title={isPaused ? "Resume recording" : "Pause recording"}
                 >
                   {isPaused ? (
                     <>
-                      <Play size={11} className="fill-emerald-600 text-emerald-600" />
-                      <span className="text-emerald-700 dark:text-emerald-400 font-semibold">Resume</span>
+                      <Play size={11} className="fill-settled text-settled" />
+                      <span className="text-settled dark:text-settled-on-solid font-semibold">Resume</span>
                     </>
                   ) : (
                     <>
-                      <Pause size={11} className="fill-amber-600 text-amber-600" />
-                      <span className="text-amber-700 dark:text-amber-400 font-semibold">Pause</span>
+                      <Pause size={11} className="fill-caution text-caution" />
+                      <span className="text-caution dark:text-caution-on-solid font-semibold">Pause</span>
                     </>
                   )}
                 </button>
@@ -1133,9 +1133,9 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                   isRecording
                     ? isPaused
-                      ? 'bg-amber-600 text-white shadow-xs'
-                      : 'bg-red-600 text-white animate-pulse shadow-xs'
-                    : 'bg-[#18181b] hover:bg-[#27272a] text-white shadow-2xs'
+                      ? 'bg-caution text-white shadow-xs'
+                      : 'bg-critical text-white animate-pulse shadow-xs'
+                    : 'bg-solid hover:bg-solid text-white shadow-2xs'
                 }`}
               >
                 {isRecording ? (
@@ -1145,13 +1145,13 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
                   </>
                 ) : (
                   <>
-                    <Mic size={12} className="text-emerald-400" />
+                    <Mic size={12} className="text-settled-on-solid" />
                     <span>Capture Dialogue</span>
                   </>
                 )}
               </button>
               {isTranscribing && (
-                <span className="flex items-center gap-1 text-xs text-[#0284c7]">
+                <span className="flex items-center gap-1 text-xs text-accent-ink">
                   <Loader2 size={12} className="animate-spin" />
                   <span>Transcribing...</span>
                 </span>
@@ -1183,30 +1183,30 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
 
               {/* OFFLINE / DEGRADED MODE ALERT BANNER (Section 30 & 31) */}
               {patient.scenarioKey === 'scenario-f' && (
-                <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-300 text-amber-950 text-xs flex items-center justify-between">
+                <div className="p-3.5 rounded-2xl bg-caution-wash border border-caution-line text-caution text-xs flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <AlertCircle size={15} className="text-amber-700 shrink-0" />
+                    <AlertCircle size={15} className="text-caution shrink-0" />
                     <span>
                       <strong>Degraded Mode Active:</strong> Primary AI reasoning service unavailable. Manual clinician documentation enabled without interruption.
                     </span>
                   </div>
-                  <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] font-bold text-caution bg-caution-wash px-2 py-0.5 rounded-full">
                     MANUAL OVERRIDE
                   </span>
                 </div>
               )}
 
               {/* Collapsible Transcript Drawer (Section 12) */}
-              <div className="rounded-2xl border border-[#e4e4e7] bg-white p-4 shadow-2xs space-y-2">
+              <div className="rounded-2xl border border-rule bg-paper p-4 shadow-2xs space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Mic size={13} className="text-[#0284c7]" />
-                    <span className="text-xs font-bold text-[#52525b]">
+                    <Mic size={13} className="text-accent-ink" />
+                    <span className="text-xs font-bold text-ink-2">
                       Ambient Dialogue & Transcription
                     </span>
                     {triageLabel && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-[10px] font-semibold">
-                        <Tag size={10} className="text-blue-500" />
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent-wash border border-accent-line text-accent-ink text-[10px] font-semibold">
+                        <Tag size={10} className="text-accent-ink0" />
                         <span>{triageLabel}</span>
                       </span>
                     )}
@@ -1215,19 +1215,19 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
                     <button
                       type="button"
                       onClick={() => setIsTranscriptCollapsed(!isTranscriptCollapsed)}
-                      className="text-xs font-semibold text-[#52525b] hover:text-[#09090b] px-2 py-1 rounded hover:bg-[#f4f4f5] transition-colors cursor-pointer"
+                      className="text-xs font-semibold text-ink-2 hover:text-ink px-2 py-1 rounded hover:bg-paper-2 transition-colors cursor-pointer"
                     >
                       {isTranscriptCollapsed ? 'Show Full Transcript (⌘T)' : 'Collapse (⌘T)'}
                     </button>
                     {streamProgress.isStreaming && (
-                      <span className="text-[11px] text-blue-600 animate-pulse font-medium">
+                      <span className="text-[11px] text-accent-ink animate-pulse font-medium">
                         {streamProgress.message || 'Synthesizing...'}
                       </span>
                     )}
                     <button
                       onClick={() => generateNoteFromTranscript()}
                       disabled={isGeneratingNote}
-                      className="flex items-center gap-1 text-xs text-[#09090b] hover:text-[#0284c7] font-medium px-2 py-1 rounded-md hover:bg-[#f4f4f5] transition-colors cursor-pointer"
+                      className="flex items-center gap-1 text-xs text-ink hover:text-accent-ink font-medium px-2 py-1 rounded-md hover:bg-paper-2 transition-colors cursor-pointer"
                     >
                       <RefreshCw size={11} className={isGeneratingNote ? 'animate-spin' : ''} />
                       <span>{isGeneratingNote ? 'Synthesizing...' : 'Regenerate Note'}</span>
@@ -1235,11 +1235,11 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
                   </div>
                 </div>
                 {!isTranscriptCollapsed ? (
-                  <p className="text-xs text-[#52525b] leading-relaxed max-h-36 overflow-y-auto whitespace-pre-wrap font-mono bg-[#fafaf9] p-3 rounded-xl border border-[#e4e4e7]/60">
+                  <p className="text-xs text-ink-2 leading-relaxed max-h-36 overflow-y-auto whitespace-pre-wrap font-mono bg-canvas p-3 rounded-xl border border-rule/60">
                     {transcript}
                   </p>
                 ) : (
-                  <p className="text-[11px] text-[#71717a] truncate font-mono bg-[#fafaf9] px-3 py-1.5 rounded-lg border border-[#e4e4e7]/60">
+                  <p className="text-[11px] text-ink-2 truncate font-mono bg-canvas px-3 py-1.5 rounded-lg border border-rule/60">
                     {transcript.slice(0, 140)}...
                   </p>
                 )}
@@ -1249,8 +1249,8 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Sliders size={13} className="text-[#52525b]" />
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-[#52525b]">
+                    <Sliders size={13} className="text-ink-2" />
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-ink-2">
                       Clinical Note Format:
                     </h3>
                     <select
@@ -1260,7 +1260,7 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
                         setSelectedTemplate(t);
                         void generateNoteFromTranscript(undefined, t);
                       }}
-                      className="text-xs font-semibold bg-white border border-[#e4e4e7] rounded-lg px-2.5 py-1 text-[#111315] outline-none cursor-pointer hover:border-slate-400 shadow-2xs"
+                      className="text-xs font-semibold bg-paper border border-rule rounded-lg px-2.5 py-1 text-ink outline-none cursor-pointer hover:border-rule-strong shadow-2xs"
                     >
                       {availableTemplates.length > 0 ? (
                         availableTemplates.map(tmpl => (
@@ -1278,13 +1278,13 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
                   </div>
                   <div className="flex items-center gap-2">
                     {copySuccess && (
-                      <span className="text-xs text-emerald-600 font-medium animate-in fade-in">
+                      <span className="text-xs text-settled font-medium animate-in fade-in">
                         {copySuccess}
                       </span>
                     )}
                     <button
                       onClick={copyNoteForEhr}
-                      className="flex items-center gap-1 text-xs font-medium text-[#52525b] hover:text-[#09090b] px-2.5 py-1 rounded-lg border border-[#e4e4e7] bg-white hover:bg-[#f4f4f5] transition-colors cursor-pointer"
+                      className="flex items-center gap-1 text-xs font-medium text-ink-2 hover:text-ink px-2.5 py-1 rounded-lg border border-rule bg-paper hover:bg-paper-2 transition-colors cursor-pointer"
                     >
                       <Copy size={12} />
                       <span>Copy for EHR</span>
@@ -1293,81 +1293,81 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
                 </div>
 
                 {/* S - Subjective */}
-                <div className="rounded-2xl border border-[#e4e4e7] bg-white p-4 focus-within:border-[#111315] transition-colors shadow-2xs space-y-2">
+                <div className="rounded-2xl border border-rule bg-paper p-4 focus-within:border-solid transition-colors shadow-2xs space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="w-5 h-5 rounded bg-[#111315] text-white font-bold text-[10px] flex items-center justify-center font-mono">S</span>
-                      <span className="text-xs font-bold text-[#111315]">Subjective</span>
+                      <span className="w-5 h-5 rounded bg-solid text-white font-bold text-[10px] flex items-center justify-center font-mono">S</span>
+                      <span className="text-xs font-bold text-ink">Subjective</span>
                     </div>
-                    <span className="text-[10px] text-[#71717a] font-medium">Patient Reported</span>
+                    <span className="text-[10px] text-ink-2 font-medium">Patient Reported</span>
                   </div>
                   <textarea
                     rows={3}
                     value={note.subjective}
                     onChange={e => setNote({ ...note, subjective: e.target.value })}
-                    className="w-full bg-transparent text-xs text-[#111315] leading-relaxed resize-y outline-none"
+                    className="w-full bg-transparent text-xs text-ink leading-relaxed resize-y outline-none"
                     placeholder="Patient narrative, symptoms, timeline..."
                   />
                 </div>
 
                 {/* O - Objective */}
-                <div className="rounded-2xl border border-[#e4e4e7] bg-white p-4 focus-within:border-[#111315] transition-colors shadow-2xs space-y-2">
+                <div className="rounded-2xl border border-rule bg-paper p-4 focus-within:border-solid transition-colors shadow-2xs space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="w-5 h-5 rounded bg-[#111315] text-white font-bold text-[10px] flex items-center justify-center font-mono">O</span>
-                      <span className="text-xs font-bold text-[#111315]">Objective</span>
+                      <span className="w-5 h-5 rounded bg-solid text-white font-bold text-[10px] flex items-center justify-center font-mono">O</span>
+                      <span className="text-xs font-bold text-ink">Objective</span>
                     </div>
-                    <span className="text-[10px] text-[#71717a] font-medium">Vitals & Labs</span>
+                    <span className="text-[10px] text-ink-2 font-medium">Vitals & Labs</span>
                   </div>
                   <textarea
                     rows={3}
                     value={note.objective}
                     onChange={e => setNote({ ...note, objective: e.target.value })}
-                    className="w-full bg-transparent text-xs text-[#111315] leading-relaxed resize-y outline-none"
+                    className="w-full bg-transparent text-xs text-ink leading-relaxed resize-y outline-none"
                     placeholder="Physical examination findings, vitals, labs..."
                   />
                 </div>
 
                 {/* A - Assessment */}
-                <div className="rounded-2xl border border-[#e4e4e7] bg-white p-4 focus-within:border-[#111315] transition-colors shadow-2xs space-y-2">
+                <div className="rounded-2xl border border-rule bg-paper p-4 focus-within:border-solid transition-colors shadow-2xs space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="w-5 h-5 rounded bg-[#111315] text-white font-bold text-[10px] flex items-center justify-center font-mono">A</span>
-                      <span className="text-xs font-bold text-[#111315]">Assessment</span>
+                      <span className="w-5 h-5 rounded bg-solid text-white font-bold text-[10px] flex items-center justify-center font-mono">A</span>
+                      <span className="text-xs font-bold text-ink">Assessment</span>
                     </div>
-                    <span className="text-[10px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full font-medium">AI Advisory</span>
+                    <span className="text-[10px] text-caution bg-caution-wash px-2 py-0.5 rounded-full font-medium">AI Advisory</span>
                   </div>
                   <textarea
                     rows={3}
                     value={note.assessment}
                     onChange={e => setNote({ ...note, assessment: e.target.value })}
-                    className="w-full bg-transparent text-xs text-[#111315] leading-relaxed resize-y outline-none"
+                    className="w-full bg-transparent text-xs text-ink leading-relaxed resize-y outline-none"
                     placeholder="Clinical impression and differential diagnoses..."
                   />
                 </div>
 
                 {/* P - Plan */}
-                <div className="rounded-2xl border border-[#e4e4e7] bg-white p-4 focus-within:border-[#111315] transition-colors shadow-2xs space-y-2">
+                <div className="rounded-2xl border border-rule bg-paper p-4 focus-within:border-solid transition-colors shadow-2xs space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="w-5 h-5 rounded bg-[#111315] text-white font-bold text-[10px] flex items-center justify-center font-mono">P</span>
-                      <span className="text-xs font-bold text-[#111315]">Plan</span>
+                      <span className="w-5 h-5 rounded bg-solid text-white font-bold text-[10px] flex items-center justify-center font-mono">P</span>
+                      <span className="text-xs font-bold text-ink">Plan</span>
                     </div>
-                    <span className="text-[10px] text-emerald-700 font-medium">Clinician Orders</span>
+                    <span className="text-[10px] text-settled font-medium">Clinician Orders</span>
                   </div>
                   <textarea
                     rows={4}
                     value={note.plan}
                     onChange={e => setNote({ ...note, plan: e.target.value })}
-                    className="w-full bg-transparent text-xs text-[#111315] leading-relaxed resize-y outline-none"
+                    className="w-full bg-transparent text-xs text-ink leading-relaxed resize-y outline-none"
                     placeholder="Pharmacology, diagnostic orders, patient counseling..."
                   />
                 </div>
 
                 {/* Physician Pilot Feedback Bar (Berta AI Quality Feedback) */}
-                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900/60 p-3 flex flex-wrap items-center justify-between gap-3 text-xs shadow-2xs">
-                  <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                    <span className="font-semibold text-slate-900 dark:text-slate-100">AI Note Quality:</span>
+                <div className="rounded-xl border border-rule dark:border-rule-strong bg-paper-2/90 dark:bg-solid/60 p-3 flex flex-wrap items-center justify-between gap-3 text-xs shadow-2xs">
+                  <div className="flex items-center gap-2 text-ink-2 dark:text-ink-3">
+                    <span className="font-semibold text-ink dark:text-on-solid">AI Note Quality:</span>
                     <div className="flex items-center gap-0.5">
                       {[1, 2, 3, 4, 5].map((star) => (
                         <button
@@ -1376,8 +1376,8 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
                           onClick={() => handleFeedback(star, 'minor_edit')}
                           className={`px-1 text-sm transition-colors cursor-pointer ${
                             feedbackRating !== null && feedbackRating >= star
-                              ? 'text-amber-500 font-bold'
-                              : 'text-slate-300 dark:text-slate-600 hover:text-amber-400'
+                              ? 'text-caution-on-solid0 font-bold'
+                              : 'text-ink-3 dark:text-ink-2 hover:text-caution-on-solid'
                           }`}
                           title={`Rate ${star} star`}
                         >
@@ -1390,7 +1390,7 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
                     <button
                       type="button"
                       onClick={() => handleFeedback(5, 'accepted_unchanged')}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 font-medium transition-colors cursor-pointer"
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-settled-wash dark:bg-solid/40 hover:bg-settled-wash border border-settled-line dark:border-settled text-settled dark:text-settled-on-solid font-medium transition-colors cursor-pointer"
                     >
                       <ThumbsUp size={12} />
                       <span>Accurate</span>
@@ -1398,13 +1398,13 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
                     <button
                       type="button"
                       onClick={() => handleFeedback(2, 'major_edit')}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 font-medium transition-colors cursor-pointer"
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-critical-wash dark:bg-solid/40 hover:bg-critical-wash border border-critical-line dark:border-critical text-critical dark:text-critical-on-solid font-medium transition-colors cursor-pointer"
                     >
                       <ThumbsDown size={12} />
                       <span>Needs Revision</span>
                     </button>
                     {feedbackSubmitted && (
-                      <span className="text-emerald-600 dark:text-emerald-400 text-xs font-semibold flex items-center gap-1 animate-in fade-in">
+                      <span className="text-settled dark:text-settled-on-solid text-xs font-semibold flex items-center gap-1 animate-in fade-in">
                         <CheckCheck size={13} />
                         <span>Logged to Audit</span>
                       </span>
@@ -1419,12 +1419,12 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
           {activeTab === 'chart' && (
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               {patient.recentLabs.some(l => l.status === 'high') && (
-                <div className="rounded-2xl border border-[#fecaca] bg-[#fef2f2] p-4 shadow-xs">
+                <div className="rounded-2xl border border-critical-line bg-critical-wash p-4 shadow-xs">
                   <div className="flex items-start gap-3">
-                    <AlertCircle size={18} className="text-[#dc2626] shrink-0 mt-0.5" />
+                    <AlertCircle size={18} className="text-critical shrink-0 mt-0.5" />
                     <div>
-                      <h4 className="text-xs font-bold text-[#991b1b]">Clinical Escalation Flagged</h4>
-                      <p className="text-xs text-[#b91c1c] mt-1 leading-relaxed">
+                      <h4 className="text-xs font-bold text-critical">Clinical Escalation Flagged</h4>
+                      <p className="text-xs text-critical mt-1 leading-relaxed">
                         Abnormal metabolic or cardiac findings require physician attention for therapy adjustment.
                       </p>
                     </div>
@@ -1433,26 +1433,26 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
               )}
 
               {/* Diagnostic Labs Table */}
-              <div className="rounded-2xl border border-[#e4e4e7] bg-white p-5 shadow-xs">
-                <h3 className="text-xs font-bold text-[#52525b] uppercase tracking-wider mb-3">
+              <div className="rounded-2xl border border-rule bg-paper p-5 shadow-xs">
+                <h3 className="text-xs font-bold text-ink-2 uppercase tracking-wider mb-3">
                   Recent Laboratory Observations
                 </h3>
-                <div className="divide-y divide-[#f4f4f5]">
+                <div className="divide-y divide-rule">
                   {patient.recentLabs.map((lab, i) => (
                     <div key={i} className="py-2.5 flex items-center justify-between text-xs">
                       <div>
-                        <span className="font-semibold text-[#09090b]">{lab.name}</span>
-                        <span className="text-[11px] text-[#71717a] ml-2">({lab.date})</span>
-                        {lab.note && <span className="text-[11px] text-[#71717a] ml-2 italic">— {lab.note}</span>}
+                        <span className="font-semibold text-ink">{lab.name}</span>
+                        <span className="text-[11px] text-ink-2 ml-2">({lab.date})</span>
+                        {lab.note && <span className="text-[11px] text-ink-2 ml-2 italic">— {lab.note}</span>}
                       </div>
                       <div className="flex items-center gap-2">
                         <span className={`font-mono font-bold ${
-                          lab.status === 'high' ? 'text-[#dc2626]' : lab.status === 'low' ? 'text-[#d97706]' : 'text-[#16a34a]'
+                          lab.status === 'high' ? 'text-critical' : lab.status === 'low' ? 'text-caution' : 'text-settled'
                         }`}>
                           {lab.value}
                         </span>
                         {lab.status === 'high' && (
-                          <span className="bg-[#fee2e2] text-[#dc2626] text-[10px] px-2 py-0.5 rounded font-bold border border-[#fecaca]">ABNORMAL</span>
+                          <span className="bg-critical-wash text-critical text-[10px] px-2 py-0.5 rounded font-bold border border-critical-line">ABNORMAL</span>
                         )}
                       </div>
                     </div>
@@ -1461,19 +1461,19 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
               </div>
 
               {/* Diagnostic Reports & Documents */}
-              <div className="rounded-2xl border border-[#e4e4e7] bg-white p-5 shadow-xs">
-                <h3 className="text-xs font-bold text-[#52525b] uppercase tracking-wider mb-3">
+              <div className="rounded-2xl border border-rule bg-paper p-5 shadow-xs">
+                <h3 className="text-xs font-bold text-ink-2 uppercase tracking-wider mb-3">
                   Extracted Clinical Documents & Imaging
                 </h3>
                 <div className="space-y-3">
                   {patient.documents.map((doc, idx) => (
-                    <div key={idx} className="p-3.5 rounded-xl border border-[#e4e4e7] bg-[#fafaf9] flex items-start justify-between">
+                    <div key={idx} className="p-3.5 rounded-xl border border-rule bg-canvas flex items-start justify-between">
                       <div className="flex items-start gap-3">
-                        <FileText size={17} className="text-[#0284c7] shrink-0 mt-0.5" />
+                        <FileText size={17} className="text-accent-ink shrink-0 mt-0.5" />
                         <div>
-                          <span className="text-xs font-semibold text-[#09090b]">{doc.name}</span>
-                          <span className="text-[11px] text-[#71717a] ml-2">({doc.date})</span>
-                          <p className="text-xs text-[#52525b] mt-1 leading-relaxed">{doc.summary}</p>
+                          <span className="text-xs font-semibold text-ink">{doc.name}</span>
+                          <span className="text-[11px] text-ink-2 ml-2">({doc.date})</span>
+                          <p className="text-xs text-ink-2 mt-1 leading-relaxed">{doc.summary}</p>
                         </div>
                       </div>
                     </div>
@@ -1482,13 +1482,13 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
               </div>
 
               {/* Active Conditions */}
-              <div className="rounded-2xl border border-[#e4e4e7] bg-white p-5 shadow-xs">
-                <h3 className="text-xs font-bold text-[#52525b] uppercase tracking-wider mb-3">
+              <div className="rounded-2xl border border-rule bg-paper p-5 shadow-xs">
+                <h3 className="text-xs font-bold text-ink-2 uppercase tracking-wider mb-3">
                   Active Diagnoses & Conditions
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {patient.conditions.map((c, i) => (
-                    <span key={i} className="bg-[#f4f4f5] border border-[#e4e4e7] text-[#18181b] text-xs px-3 py-1 rounded-lg font-medium">
+                    <span key={i} className="bg-paper-2 border border-rule text-ink text-xs px-3 py-1 rounded-lg font-medium">
                       {c}
                     </span>
                   ))}
@@ -1543,14 +1543,14 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
           {/* TAB 4: NURSE ROOMING & PATIENT INTAKE */}
           {activeTab === 'intake' && (
             <div className="flex-1 overflow-hidden flex flex-col">
-              <div className="bg-slate-900 border-b border-slate-800 px-6 py-2.5 flex items-center justify-between shrink-0">
+              <div className="bg-solid border-b border-rule-strong px-6 py-2.5 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setIntakeSubTab('rooming')}
                     className={`px-3 py-1 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
                       intakeSubTab === 'rooming'
-                        ? 'bg-teal-600 text-white'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                        ? 'bg-settled text-white'
+                        : 'text-ink-3 hover:text-on-solid hover:bg-solid'
                     }`}
                   >
                     Nurse Rooming & Vitals (MA/RN)
@@ -1559,14 +1559,14 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
                     onClick={() => setIntakeSubTab('questionnaire')}
                     className={`px-3 py-1 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
                       intakeSubTab === 'questionnaire'
-                        ? 'bg-teal-600 text-white'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                        ? 'bg-settled text-white'
+                        : 'text-ink-3 hover:text-on-solid hover:bg-solid'
                     }`}
                   >
                     FHIR Digital Questionnaire
                   </button>
                 </div>
-                <span className="text-[11px] text-slate-400 font-mono">
+                <span className="text-[11px] text-ink-3 font-mono">
                   Rooming Handoff Protocol &bull; Standardized Protocol
                 </span>
               </div>
@@ -1594,7 +1594,7 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
 
           {/* TAB 5: BILLING & REVENUE INTEGRITY (4.0X ROI) */}
           {activeTab === 'billing' && (
-            <div className="flex-1 overflow-y-auto p-6 bg-slate-950">
+            <div className="flex-1 overflow-y-auto p-6 bg-solid">
               <BillingCodingAdvisor
                 note={note}
                 patient={patient}
@@ -1605,7 +1605,7 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
 
           {/* TAB 6: EVIDENCE GROUNDING & PUBMED RAG */}
           {activeTab === 'evidence' && (
-            <div className="flex-1 overflow-y-auto p-6 bg-slate-950">
+            <div className="flex-1 overflow-y-auto p-6 bg-solid">
               <EvidenceGroundingPanel
                 conditions={patient.conditions}
                 medications={patient.medications}
@@ -1624,17 +1624,17 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
         </section>
 
         {/* RIGHT PANEL: CLINICAL PERSPECTIVES & COPILOT SIDEBAR (35%) */}
-        <aside className="w-[430px] shrink-0 flex flex-col bg-white border-l border-zinc-200/80">
+        <aside className="w-[430px] shrink-0 flex flex-col bg-paper border-l border-rule/80">
           {/* PERSPECTIVES vs CHAT MODE TOGGLE (Section 15 & 18) */}
-          <div className="h-12 border-b border-zinc-200/80 bg-white px-4 flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-1 bg-[#f4f4f5] p-0.5 rounded-lg border border-[#e4e4e7]">
+          <div className="h-12 border-b border-rule/80 bg-paper px-4 flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-1 bg-paper-2 p-0.5 rounded-lg border border-rule">
               <button
                 type="button"
                 onClick={() => setRightPanelMode('68md')}
                 className={`px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer ${
                   rightPanelMode === '68md'
-                    ? 'bg-white text-[#09090b] shadow-2xs'
-                    : 'text-[#71717a] hover:text-[#09090b]'
+                    ? 'bg-paper text-ink shadow-2xs'
+                    : 'text-ink-2 hover:text-ink'
                 }`}
               >
                 68-MD Board
@@ -1644,8 +1644,8 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
                 onClick={() => setRightPanelMode('perspectives')}
                 className={`px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer ${
                   rightPanelMode === 'perspectives'
-                    ? 'bg-white text-[#09090b] shadow-2xs'
-                    : 'text-[#71717a] hover:text-[#09090b]'
+                    ? 'bg-paper text-ink shadow-2xs'
+                    : 'text-ink-2 hover:text-ink'
                 }`}
               >
                 Specialist Perspectives
@@ -1655,22 +1655,22 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
                 onClick={() => setRightPanelMode('copilot')}
                 className={`px-2.5 py-1 text-xs font-bold rounded-md transition-all cursor-pointer ${
                   rightPanelMode === 'copilot'
-                    ? 'bg-white text-[#09090b] shadow-2xs'
-                    : 'text-[#71717a] hover:text-[#09090b]'
+                    ? 'bg-paper text-ink shadow-2xs'
+                    : 'text-ink-2 hover:text-ink'
                 }`}
               >
                 Copilot Chat
               </button>
             </div>
 
-            <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full text-[10px] text-emerald-700 font-semibold">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <div className="flex items-center gap-1.5 bg-settled-wash border border-settled-line px-2 py-0.5 rounded-full text-[10px] text-settled font-semibold">
+              <span className="w-1.5 h-1.5 rounded-full bg-settled-wash0 animate-pulse" />
               68 Specialists Active
             </div>
           </div>
 
           {rightPanelMode === '68md' ? (
-            <div className="flex-1 min-h-0 overflow-y-auto p-4 bg-[#fbfbfa]">
+            <div className="flex-1 min-h-0 overflow-y-auto p-4 bg-paper-2">
               <MDSpecialistBoardPanel
                 patientId={patient.id || 'PAT-007'}
                 onSignedSuccess={(_summary) => {
@@ -1700,27 +1700,27 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
           ) : (
             <div className="flex flex-col flex-1 min-h-0">
               {/* COPILOT PROMPT CHIPS */}
-              <div className="p-3 border-b border-zinc-200/80 bg-zinc-50/60 space-y-1.5">
-                <div className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">Quick Clinical Prompts:</div>
+              <div className="p-3 border-b border-rule/80 bg-paper-2/60 space-y-1.5">
+                <div className="text-[10px] font-semibold text-ink-3 uppercase tracking-wider">Quick Clinical Prompts:</div>
                 <div className="flex flex-wrap gap-1.5">
                   <button
                     type="button"
                     onClick={() => handleSendChat("Are there any drug-drug interactions between current medications and new orders?")}
-                    className="text-xs bg-white hover:bg-zinc-100 text-zinc-700 font-medium px-2.5 py-1 rounded-lg border border-zinc-200/80 shadow-2xs transition-colors cursor-pointer"
+                    className="text-xs bg-paper hover:bg-paper-2 text-ink-2 font-medium px-2.5 py-1 rounded-lg border border-rule/80 shadow-2xs transition-colors cursor-pointer"
                   >
                     💊 Drug Interactions
                   </button>
                   <button
                     type="button"
                     onClick={() => handleSendChat(`Summarize ${patient.name}'s metabolic and organ function trends.`)}
-                    className="text-xs bg-white hover:bg-zinc-100 text-zinc-700 font-medium px-2.5 py-1 rounded-lg border border-zinc-200/80 shadow-2xs transition-colors cursor-pointer"
+                    className="text-xs bg-paper hover:bg-paper-2 text-ink-2 font-medium px-2.5 py-1 rounded-lg border border-rule/80 shadow-2xs transition-colors cursor-pointer"
                   >
                     📈 Lab Trends
                   </button>
                   <button
                     type="button"
                     onClick={() => handleSendChat(`Draft personalized patient discharge instructions for ${patient.name}.`)}
-                    className="text-xs bg-white hover:bg-zinc-100 text-zinc-700 font-medium px-2.5 py-1 rounded-lg border border-zinc-200/80 shadow-2xs transition-colors cursor-pointer"
+                    className="text-xs bg-paper hover:bg-paper-2 text-ink-2 font-medium px-2.5 py-1 rounded-lg border border-rule/80 shadow-2xs transition-colors cursor-pointer"
                   >
                     📝 Patient Instructions
                   </button>
@@ -1728,20 +1728,20 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
               </div>
 
               {/* CHAT MESSAGES SCROLLER */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#fbfbfa]">
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-paper-2">
                 {chatMessages.map((msg, idx) => (
                   <div
                     key={idx}
                     className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
                   >
-                    <span className="text-[10px] text-[#71717a] mb-1 font-mono font-medium">
+                    <span className="text-[10px] text-ink-2 mb-1 font-mono font-medium">
                       {msg.role === 'user' ? 'You' : 'Clinical Copilot'}
                     </span>
                     <div
                       className={`text-xs leading-relaxed rounded-2xl p-3.5 max-w-[95%] whitespace-pre-wrap ${
                         msg.role === 'user'
-                          ? 'bg-[#18181b] text-white shadow-xs'
-                          : 'bg-white text-[#18181b] border border-[#e4e4e7] shadow-[0_1px_2px_rgba(0,0,0,0.03)]'
+                          ? 'bg-solid text-white shadow-xs'
+                          : 'bg-paper text-ink border border-rule shadow-[0_1px_2px_rgba(0,0,0,0.03)]'
                       }`}
                     >
                       {msg.content}
@@ -1752,12 +1752,12 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
                         <button
                           type="button"
                           onClick={() => insertIntoPlan(msg.content)}
-                          className="flex items-center gap-1 text-[11px] text-[#0284c7] hover:text-[#0369a1] font-semibold cursor-pointer"
+                          className="flex items-center gap-1 text-[11px] text-accent-ink hover:text-accent-ink font-semibold cursor-pointer"
                         >
                           <Plus size={11} />
                           Insert into Plan
                         </button>
-                        <span className="text-[#d4d4d8]">•</span>
+                        <span className="text-ink-3">•</span>
                         <button
                           type="button"
                           onClick={() => {
@@ -1765,7 +1765,7 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
                             setCopySuccess('Copied to clipboard');
                             setTimeout(() => setCopySuccess(null), 2000);
                           }}
-                          className="flex items-center gap-1 text-[11px] text-[#71717a] hover:text-[#09090b] cursor-pointer"
+                          className="flex items-center gap-1 text-[11px] text-ink-2 hover:text-ink cursor-pointer"
                         >
                           <Copy size={11} />
                           Copy
@@ -1775,8 +1775,8 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
                   </div>
                 ))}
                 {isChatSending && (
-                  <div className="flex items-center gap-2 text-xs text-[#71717a] pl-1 font-medium">
-                    <Loader2 size={13} className="animate-spin text-[#0284c7]" />
+                  <div className="flex items-center gap-2 text-xs text-ink-2 pl-1 font-medium">
+                    <Loader2 size={13} className="animate-spin text-accent-ink" />
                     Analyzing clinical chart context...
                   </div>
                 )}
@@ -1784,20 +1784,20 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
               </div>
 
               {/* CHAT INPUT FORM */}
-              <div className="p-3 border-t border-[#e4e4e7] bg-white">
-                <form onSubmit={e => { e.preventDefault(); void handleSendChat(); }} className="relative flex items-end bg-[#f4f4f5] rounded-2xl p-2 border border-[#e4e4e7] focus-within:border-[#18181b] transition-colors">
+              <div className="p-3 border-t border-rule bg-paper">
+                <form onSubmit={e => { e.preventDefault(); void handleSendChat(); }} className="relative flex items-end bg-paper-2 rounded-2xl p-2 border border-rule focus-within:border-rule-strong transition-colors">
                   <textarea
                     rows={2}
                     placeholder={`Ask Copilot about ${patient.name}...`}
                     value={chatInput}
                     onChange={e => setChatInput(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    className="flex-1 bg-transparent px-2.5 py-1 text-xs text-[#09090b] placeholder-[#a1a1aa] outline-none resize-none"
+                    className="flex-1 bg-transparent px-2.5 py-1 text-xs text-ink placeholder-ink-3 outline-none resize-none"
                   />
                   <button
                     type="submit"
                     disabled={!chatInput.trim() || isChatSending}
-                    className="w-8 h-8 rounded-xl bg-[#18181b] hover:bg-[#27272a] disabled:opacity-30 text-white flex items-center justify-center shrink-0 transition-all cursor-pointer shadow-2xs"
+                    className="w-8 h-8 rounded-xl bg-solid hover:bg-solid disabled:opacity-30 text-white flex items-center justify-center shrink-0 transition-all cursor-pointer shadow-2xs"
                     title="Send message"
                   >
                     <ArrowUp size={15} />
@@ -1855,10 +1855,10 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
       {/* DYNAMIC PATIENT INTAKE MODAL */}
       {showIntakeModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-[#fbfbfa] border border-[#e4e4e7] rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl flex flex-col relative animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-paper-2 border border-rule rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl flex flex-col relative animate-in fade-in zoom-in-95 duration-150">
             <button
               onClick={() => setShowIntakeModal(false)}
-              className="absolute top-4 right-4 z-10 p-2 text-[#71717a] hover:text-[#09090b] hover:bg-[#f4f4f5] rounded-full transition-colors cursor-pointer"
+              className="absolute top-4 right-4 z-10 p-2 text-ink-2 hover:text-ink hover:bg-paper-2 rounded-full transition-colors cursor-pointer"
             >
               <X size={18} />
             </button>

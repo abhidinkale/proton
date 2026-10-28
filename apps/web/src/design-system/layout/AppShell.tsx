@@ -15,6 +15,7 @@ import { MotionConfig } from 'motion/react';
 import { PageTransition } from '../motion/primitives';
 import { SESSION_EXPIRED_EVENT } from '../../lib/api';
 import { clinicApi, type ClinicNotification } from '../../lib/clinicApi';
+import { applyAppearance } from '../theme/palettes';
 import { DEFAULT_GENERAL_NAV, DEFAULT_TOOLS_NAV } from './Sidebar';
 
 export interface AppShellProps {
@@ -77,8 +78,8 @@ export function AppShell({
         if (!active) return;
         if (preferences.appearance !== 'system') {
           localStorage.setItem('proton_appearance', preferences.appearance);
-          document.documentElement.dataset.theme = preferences.appearance;
-          document.documentElement.style.colorScheme = preferences.appearance;
+          // The server stores light/dark; the screen is one of six palettes.
+          applyAppearance(preferences.appearance);
         }
         document.documentElement.dataset.density = preferences.density;
         document.documentElement.dataset.reduceMotion = String(preferences.reduceMotion);
@@ -186,7 +187,7 @@ export function AppShell({
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className={`proton-workspace-root relative min-h-screen w-full bg-[#F7F4EC] text-[#14161A] flex flex-col font-sans antialiased selection:bg-[#E8E2D0] selection:text-[#14161A] ${className}`}>
+      <div className={`proton-workspace-root relative min-h-screen w-full bg-canvas text-ink flex flex-col font-sans antialiased selection:bg-accent-wash selection:text-ink ${className}`}>
 
       {/* Paper, not chrome: one flat warm ground with a whisper of grain. */}
       <div className="proton-workspace-ambient" aria-hidden="true">
@@ -240,7 +241,7 @@ export function AppShell({
         onClose={() => setIsNotificationsOpen(false)}
         title={
           <div className="flex items-center gap-2">
-            <Bell className="w-4 h-4 text-[#151719]" />
+            <Bell className="w-4 h-4 text-ink" />
             <span>Clinical Attention Queue</span>
           </div>
         }
@@ -264,18 +265,18 @@ export function AppShell({
             className="fixed inset-0 bg-black/40 backdrop-blur-2xs"
             onClick={() => setIsMobileMenuOpen(false)}
           />
-          <div className="relative z-10 flex h-full w-72 flex-col gap-5 border-r border-[#E2DCCD] bg-[#F7F4EC] p-4 shadow-2xl">
+          <div className="relative z-10 flex h-full w-72 flex-col gap-5 border-r border-rule-strong bg-canvas p-4 shadow-2xl">
             <div className="flex items-center justify-between px-1 pb-1">
               <div className="flex items-center gap-2">
-                <span className="flex h-8 w-8 items-center justify-center rounded-[7px] bg-[#14161A] text-[13px] font-semibold text-[#FBF9F3]">
+                <span className="flex h-8 w-8 items-center justify-center rounded-[7px] bg-solid text-[13px] font-semibold text-on-solid">
                   p
                 </span>
-                <span className="font-editorial text-[24px] lowercase leading-none tracking-[-0.01em] text-[#14161A]">proton</span>
+                <span className="font-editorial text-[24px] lowercase leading-none tracking-[-0.01em] text-ink">proton</span>
               </div>
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-white/80 text-[#6F6F6D] hover:text-[#151719] cursor-pointer"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-paper/80 text-ink-2 hover:text-ink cursor-pointer"
                 aria-label="Close navigation menu"
               >
                 <X size={16} />
@@ -284,7 +285,7 @@ export function AppShell({
 
             <nav className="flex-1 space-y-4 overflow-y-auto">
               <div className="space-y-1">
-                <div className="px-3 pb-1 font-mono text-[8.5px] uppercase tracking-[0.18em] text-[#A9A394]">Clinical</div>
+                <div className="px-3 pb-1 font-mono text-[8.5px] uppercase tracking-[0.18em] text-ink-3">Clinical</div>
                 {DEFAULT_GENERAL_NAV.map((item) => (
                   <NavLink
                     key={item.to}
@@ -294,8 +295,8 @@ export function AppShell({
                     className={({ isActive }) =>
                       `flex h-10 items-center gap-3 rounded-[7px] px-3 text-[12.5px] font-medium transition-colors ${
                         isActive
-                          ? 'bg-[#EBE5D5] text-[#14161A]'
-                          : 'text-[#6E6A61] hover:bg-[#F1ECDE] hover:text-[#14161A]'
+                          ? 'bg-accent-wash text-ink'
+                          : 'text-ink-2 hover:bg-paper-2 hover:text-ink'
                       }`
                     }
                   >
@@ -306,7 +307,7 @@ export function AppShell({
               </div>
 
               <div className="space-y-1">
-                <div className="px-3 pb-1 font-mono text-[8.5px] uppercase tracking-[0.18em] text-[#A9A394]">Tools</div>
+                <div className="px-3 pb-1 font-mono text-[8.5px] uppercase tracking-[0.18em] text-ink-3">Tools</div>
                 {DEFAULT_TOOLS_NAV.map((item) => (
                   <NavLink
                     key={item.to}
@@ -315,8 +316,8 @@ export function AppShell({
                     className={({ isActive }) =>
                       `flex h-10 items-center gap-3 rounded-[7px] px-3 text-[12.5px] font-medium transition-colors ${
                         isActive
-                          ? 'bg-[#EBE5D5] text-[#14161A]'
-                          : 'text-[#6E6A61] hover:bg-[#F1ECDE] hover:text-[#14161A]'
+                          ? 'bg-accent-wash text-ink'
+                          : 'text-ink-2 hover:bg-paper-2 hover:text-ink'
                       }`
                     }
                   >
@@ -327,19 +328,19 @@ export function AppShell({
               </div>
             </nav>
 
-            <div className="rounded-[10px] border border-[#E2DCCD] bg-[#F1ECDE] p-3">
-              <span className="inline-flex items-center gap-1.5 rounded-[4px] border border-[#D8C99B] px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-[0.12em] text-[#8A6A1F]">
+            <div className="rounded-[10px] border border-rule-strong bg-paper-2 p-3">
+              <span className="inline-flex items-center gap-1.5 rounded-[4px] border border-rule-strong px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-[0.12em] text-caution">
                 Synthetic
               </span>
-              <p className="mt-2 font-editorial text-[15px] leading-tight text-[#14161A]">Validation cohort</p>
-              <p className="mt-0.5 text-[9.5px] leading-relaxed text-[#8A8578]">
+              <p className="mt-2 font-editorial text-[15px] leading-tight text-ink">Validation cohort</p>
+              <p className="mt-0.5 text-[9.5px] leading-relaxed text-ink-3">
                 No real PHI. Every write needs a signature.
               </p>
             </div>
 
             <button
               onClick={handleLogout}
-              className="flex h-10 w-full items-center gap-3 rounded-full px-3.5 text-[11.5px] font-medium text-[#8A8A87] hover:bg-white/60 hover:text-[#C0483F] cursor-pointer"
+              className="flex h-10 w-full items-center gap-3 rounded-full px-3.5 text-[11.5px] font-medium text-ink-3 hover:bg-paper/60 hover:text-critical cursor-pointer"
             >
               <LogOut size={15} />
               <span>Log out</span>

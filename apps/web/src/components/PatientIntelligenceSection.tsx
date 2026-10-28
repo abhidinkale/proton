@@ -39,11 +39,11 @@ export default function PatientIntelligenceSection({
       {/* ================================================== */}
       {/* 1. PATIENT INTELLIGENCE BRIEF                      */}
       {/* ================================================== */}
-      <div className="proton-patient-intelligence bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
+      <div className="proton-patient-intelligence bg-paper border border-rule rounded-2xl shadow-xs overflow-hidden">
         {/* Top Header */}
-        <div className="bg-gradient-to-r from-brand-900 via-brand-800 to-slate-900 text-white px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="bg-gradient-to-r from-brand-900 via-brand-800 to-solid text-white px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-lg bg-white/10 text-brand-200 flex items-center justify-center border border-white/10">
+            <div className="h-8 w-8 rounded-lg bg-paper/10 text-brand-200 flex items-center justify-center border border-rule/10">
               <BookOpen size={17} />
             </div>
             <div>
@@ -62,7 +62,7 @@ export default function PatientIntelligenceSection({
           </div>
 
           <div className="flex items-center gap-2 text-xs">
-            <span className="px-2.5 py-1 rounded-md bg-white/10 text-white font-medium border border-white/10">
+            <span className="px-2.5 py-1 rounded-md bg-paper/10 text-white font-medium border border-rule/10">
               {intelligence.changes.length} Clinical Change{intelligence.changes.length === 1 ? '' : 's'} Detected
             </span>
           </div>
@@ -84,20 +84,20 @@ export default function PatientIntelligenceSection({
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
               {intelligence.whatMattersToday.map((item) => (
-                <div key={item.id} className="bg-white border border-brand-200/80 rounded-xl p-3 shadow-2xs flex flex-col justify-between">
+                <div key={item.id} className="bg-paper border border-brand-200/80 rounded-xl p-3 shadow-2xs flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between gap-1 mb-1">
-                      <span className="font-bold text-xs text-slate-900 truncate">{item.title}</span>
+                      <span className="font-bold text-xs text-ink truncate">{item.title}</span>
                       <span className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase bg-brand-100 text-brand-800">
                         {item.provenance}
                       </span>
                     </div>
-                    <p className="text-[11px] text-slate-700 leading-relaxed">
+                    <p className="text-[11px] text-ink-2 leading-relaxed">
                       {item.statement}
                     </p>
                   </div>
-                  <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px]">
-                    <span className="text-slate-400 truncate max-w-[120px]">
+                  <div className="mt-2 pt-2 border-t border-rule flex items-center justify-between text-[10px]">
+                    <span className="text-ink-3 truncate max-w-[120px]">
                       {item.sourceDate ? `${item.sourceDate} &bull; ` : ''}{item.source}
                     </span>
                     {item.evidence && (
@@ -116,19 +116,19 @@ export default function PatientIntelligenceSection({
         )}
 
         {/* Change Detection Alert Cards */}
-        <div className="p-6 bg-slate-50/50 border-b border-slate-200">
+        <div className="p-6 bg-paper-2/50 border-b border-rule">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+            <h3 className="text-xs font-bold text-ink-2 uppercase tracking-wider flex items-center gap-1.5">
               <Clock size={14} className="text-brand-600" />
               What changed since last consultation
             </h3>
-            <span className="text-[11px] font-medium text-slate-400">
+            <span className="text-[11px] font-medium text-ink-3">
               Deterministic temporal comparison
             </span>
           </div>
 
           {intelligence.changes.length === 0 ? (
-            <div className="p-4 bg-white border border-slate-200 rounded-xl text-center text-xs text-slate-500">
+            <div className="p-4 bg-paper border border-rule rounded-xl text-center text-xs text-on-solid0">
               No significant clinical trajectory changes detected since baseline encounter.
             </div>
           ) : (
@@ -138,22 +138,22 @@ export default function PatientIntelligenceSection({
                 const isWarning = change.severity === 'warning';
                 
                 const dotColor = isCritical 
-                  ? 'bg-red-500' 
+                  ? 'bg-critical-wash0' 
                   : isWarning 
-                    ? 'bg-amber-500' 
+                    ? 'bg-caution-wash0' 
                     : change.category === 'RESOLVED' 
-                      ? 'bg-emerald-500' 
+                      ? 'bg-settled-wash0' 
                       : change.category === 'PERSISTENT'
-                        ? 'bg-indigo-500'
+                        ? 'bg-accent-wash0'
                         : change.category === 'UNRESOLVED'
-                          ? 'bg-orange-500'
+                          ? 'bg-caution-wash0'
                           : 'bg-brand-500';
 
                 const borderAccent = isCritical
-                  ? 'border-red-200 bg-red-50/30'
+                  ? 'border-critical-line bg-critical-wash/30'
                   : isWarning
-                    ? 'border-amber-200 bg-amber-50/20'
-                    : 'border-slate-200 bg-white';
+                    ? 'border-caution-line bg-caution-wash/20'
+                    : 'border-rule bg-paper';
 
                 return (
                   <div 
@@ -164,36 +164,36 @@ export default function PatientIntelligenceSection({
                       <div className="flex items-center justify-between gap-2 mb-1.5">
                         <div className="flex items-center gap-1.5">
                           <span className={`h-2.5 w-2.5 rounded-full ${dotColor} shrink-0`} />
-                          <span className="text-xs font-bold text-slate-900 tracking-tight">
+                          <span className="text-xs font-bold text-ink tracking-tight">
                             {change.title}
                           </span>
                         </div>
                         <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded uppercase ${
-                          change.category === 'NEW' ? 'bg-blue-100 text-blue-800' :
-                          change.category === 'CHANGED' ? 'bg-amber-100 text-amber-900' :
-                          change.category === 'RESOLVED' ? 'bg-emerald-100 text-emerald-900' :
-                          change.category === 'PERSISTENT' ? 'bg-indigo-100 text-indigo-900' :
-                          change.category === 'UNRESOLVED' ? 'bg-orange-100 text-orange-900' :
-                          change.category === 'POSSIBLE DISCREPANCY' ? 'bg-purple-100 text-purple-900' :
-                          'bg-slate-100 text-slate-800'
+                          change.category === 'NEW' ? 'bg-accent-wash text-accent-ink' :
+                          change.category === 'CHANGED' ? 'bg-caution-wash text-caution' :
+                          change.category === 'RESOLVED' ? 'bg-settled-wash text-settled' :
+                          change.category === 'PERSISTENT' ? 'bg-accent-wash text-accent-ink' :
+                          change.category === 'UNRESOLVED' ? 'bg-caution-wash text-caution' :
+                          change.category === 'POSSIBLE DISCREPANCY' ? 'bg-accent-wash text-accent-ink' :
+                          'bg-paper-2 text-ink'
                         }`}>
                           {change.category}
                         </span>
                       </div>
 
-                      <p className="text-xs text-slate-800 font-medium leading-relaxed">
+                      <p className="text-xs text-ink font-medium leading-relaxed">
                         {change.statement}
                       </p>
 
                       {change.detail && (
-                        <p className="text-[11px] text-slate-500 mt-1 leading-normal">
+                        <p className="text-[11px] text-on-solid0 mt-1 leading-normal">
                           {change.detail}
                         </p>
                       )}
                     </div>
 
-                    <div className="pt-3 mt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
-                      <span className="text-slate-400 font-medium truncate max-w-[170px]" title={change.evidence?.title}>
+                    <div className="pt-3 mt-2 border-t border-rule flex items-center justify-between text-[11px]">
+                      <span className="text-ink-3 font-medium truncate max-w-[170px]" title={change.evidence?.title}>
                         Source: {change.evidence?.title} ({change.evidence?.date})
                       </span>
                       <button
@@ -212,7 +212,7 @@ export default function PatientIntelligenceSection({
 
         {/* Current Clinical State Grid */}
         <div className="p-6">
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">
+          <h3 className="text-xs font-bold text-ink-3 uppercase tracking-wider mb-4">
             Current Clinical State
           </h3>
 
@@ -220,12 +220,12 @@ export default function PatientIntelligenceSection({
             {/* Key Concerns */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-600">Key Concerns</span>
-                <span className="text-xs font-semibold text-slate-500">{intelligence.activeConcerns.length}</span>
+                <span className="text-xs font-bold text-ink-2">Key Concerns</span>
+                <span className="text-xs font-semibold text-on-solid0">{intelligence.activeConcerns.length}</span>
               </div>
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 min-h-[105px]">
+              <div className="bg-paper-2 border border-rule rounded-xl p-3.5 min-h-[105px]">
                 {intelligence.activeConcerns.length > 0 ? (
-                  <ul className="space-y-1.5 text-xs text-slate-800">
+                  <ul className="space-y-1.5 text-xs text-ink">
                     {intelligence.activeConcerns.map((c, i) => (
                       <li key={i} className="flex items-start justify-between gap-1 font-medium">
                         <span className="truncate">• {c.name}</span>
@@ -241,7 +241,7 @@ export default function PatientIntelligenceSection({
                     ))}
                   </ul>
                 ) : (
-                  <div className="text-xs text-slate-400 italic">No active diagnoses recorded</div>
+                  <div className="text-xs text-ink-3 italic">No active diagnoses recorded</div>
                 )}
               </div>
             </div>
@@ -249,15 +249,15 @@ export default function PatientIntelligenceSection({
             {/* Current Medications */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-purple-800">Current Medications</span>
-                <span className="text-xs font-semibold text-purple-700">{intelligence.currentMedications.length}</span>
+                <span className="text-xs font-bold text-accent-ink">Current Medications</span>
+                <span className="text-xs font-semibold text-accent-ink">{intelligence.currentMedications.length}</span>
               </div>
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 min-h-[105px]">
+              <div className="bg-paper-2 border border-rule rounded-xl p-3.5 min-h-[105px]">
                 {intelligence.currentMedications.length > 0 ? (
-                  <ul className="space-y-1.5 text-xs text-slate-800">
+                  <ul className="space-y-1.5 text-xs text-ink">
                     {intelligence.currentMedications.map((m, i) => (
                       <li key={i} className="flex items-start justify-between gap-1 font-medium">
-                        <span className="truncate text-purple-950">• {m.name}</span>
+                        <span className="truncate text-accent-ink">• {m.name}</span>
                         {m.evidence && (
                           <button
                             onClick={() => handleOpenEvidence(m.evidence)}
@@ -270,7 +270,7 @@ export default function PatientIntelligenceSection({
                     ))}
                   </ul>
                 ) : (
-                  <div className="text-xs text-slate-400 italic">No active medications</div>
+                  <div className="text-xs text-ink-3 italic">No active medications</div>
                 )}
               </div>
             </div>
@@ -278,21 +278,21 @@ export default function PatientIntelligenceSection({
             {/* Allergies */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-amber-800">Allergies & Alerts</span>
-                <span className="text-xs font-semibold text-amber-700">{intelligence.allergies.length}</span>
+                <span className="text-xs font-bold text-caution">Allergies & Alerts</span>
+                <span className="text-xs font-semibold text-caution">{intelligence.allergies.length}</span>
               </div>
               <div className={`rounded-xl p-3.5 min-h-[105px] border ${
-                intelligence.allergies.length > 0 ? 'bg-amber-50/50 border-amber-200' : 'bg-slate-50 border-slate-200'
+                intelligence.allergies.length > 0 ? 'bg-caution-wash/50 border-caution-line' : 'bg-paper-2 border-rule'
               }`}>
                 {intelligence.allergies.length > 0 ? (
-                  <ul className="space-y-1.5 text-xs text-amber-950 font-medium">
+                  <ul className="space-y-1.5 text-xs text-caution font-medium">
                     {intelligence.allergies.map((a, i) => (
                       <li key={i} className="flex items-start justify-between gap-1">
                         <span className="truncate">• {a.allergen}</span>
                         {a.evidence && (
                           <button
                             onClick={() => handleOpenEvidence(a.evidence)}
-                            className="text-[10px] text-amber-800 hover:underline shrink-0 font-normal cursor-pointer"
+                            className="text-[10px] text-caution hover:underline shrink-0 font-normal cursor-pointer"
                           >
                             [src]
                           </button>
@@ -301,7 +301,7 @@ export default function PatientIntelligenceSection({
                     ))}
                   </ul>
                 ) : (
-                  <div className="text-xs text-slate-400 italic">No allergies documented</div>
+                  <div className="text-xs text-ink-3 italic">No allergies documented</div>
                 )}
               </div>
             </div>
@@ -309,18 +309,18 @@ export default function PatientIntelligenceSection({
             {/* Recent Findings */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-emerald-800">Recent Findings</span>
-                <span className="text-xs font-semibold text-emerald-700">{intelligence.recentFindings.length}</span>
+                <span className="text-xs font-bold text-settled">Recent Findings</span>
+                <span className="text-xs font-semibold text-settled">{intelligence.recentFindings.length}</span>
               </div>
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 min-h-[105px]">
+              <div className="bg-paper-2 border border-rule rounded-xl p-3.5 min-h-[105px]">
                 {intelligence.recentFindings.length > 0 ? (
-                  <ul className="space-y-1.5 text-xs text-slate-800">
+                  <ul className="space-y-1.5 text-xs text-ink">
                     {intelligence.recentFindings.slice(0, 3).map((f, i) => (
                       <li key={i} className="flex items-center justify-between gap-1 text-xs">
                         <span className="truncate font-medium">{f.test}</span>
                         <div className="flex items-center gap-1 shrink-0">
                           <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
-                            f.isAbnormal ? 'bg-red-100 text-red-700' : 'bg-slate-200 text-slate-700'
+                            f.isAbnormal ? 'bg-critical-wash text-critical' : 'bg-rule text-ink-2'
                           }`}>
                             {f.value}
                           </span>
@@ -337,7 +337,7 @@ export default function PatientIntelligenceSection({
                     ))}
                   </ul>
                 ) : (
-                  <div className="text-xs text-slate-400 italic">No recent labs on record</div>
+                  <div className="text-xs text-ink-3 italic">No recent labs on record</div>
                 )}
               </div>
             </div>
@@ -347,23 +347,23 @@ export default function PatientIntelligenceSection({
         {/* Outstanding Attention Items */}
         {intelligence.outstandingItems.length > 0 && (
           <div className="px-6 pb-6">
-            <div className="p-4 bg-amber-50/70 border border-amber-200/90 rounded-xl space-y-2">
+            <div className="p-4 bg-caution-wash/70 border border-caution-line/90 rounded-xl space-y-2">
               <div className="flex items-center gap-2">
-                <AlertCircle size={16} className="text-amber-700 shrink-0" />
-                <h4 className="text-xs font-bold text-amber-900 uppercase tracking-wider">
+                <AlertCircle size={16} className="text-caution shrink-0" />
+                <h4 className="text-xs font-bold text-caution uppercase tracking-wider">
                   Outstanding Items Requiring Attention ({intelligence.outstandingItems.length})
                 </h4>
               </div>
 
-              <div className="divide-y divide-amber-200/60">
+              <div className="divide-y divide-caution-line/60">
                 {intelligence.outstandingItems.map(item => (
                   <div key={item.id} className="py-2.5 first:pt-1 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
-                      <p className="text-xs font-bold text-amber-950">
+                      <p className="text-xs font-bold text-caution">
                         {item.title}
                       </p>
-                      <p className="text-xs text-amber-900 mt-0.5">
-                        {item.statement} {item.detail && <span className="text-amber-800/80 font-normal">— {item.detail}</span>}
+                      <p className="text-xs text-caution mt-0.5">
+                        {item.statement} {item.detail && <span className="text-caution/80 font-normal">— {item.detail}</span>}
                       </p>
                     </div>
                     {item.evidence && (
@@ -385,19 +385,19 @@ export default function PatientIntelligenceSection({
       {/* ================================================== */}
       {/* 2. CLINICAL STORY (LONGITUDINAL NARRATIVE)         */}
       {/* ================================================== */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
-        <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+      <div className="bg-paper border border-rule rounded-2xl shadow-xs overflow-hidden">
+        <div className="bg-paper-2 px-6 py-4 border-b border-rule flex items-center justify-between">
           <div className="flex items-center gap-2">
             <BookOpen size={16} className="text-brand-600" />
-            <h3 className="font-bold text-slate-900 text-sm tracking-wide uppercase">
+            <h3 className="font-bold text-ink text-sm tracking-wide uppercase">
               Clinical Story & Longitudinal Narrative
             </h3>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-accent-ink bg-accent-wash border border-accent-line px-2 py-0.5 rounded">
               AI-GENERATED CLINICAL SUMMARY
             </span>
-            <span className="text-[11px] font-semibold text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded shadow-2xs">
+            <span className="text-[11px] font-semibold text-on-solid0 bg-paper border border-rule px-2 py-0.5 rounded shadow-2xs">
               Physician verification required &bull; Generated purely from approved FHIR history
             </span>
           </div>
@@ -405,11 +405,11 @@ export default function PatientIntelligenceSection({
 
         <div className="p-6 space-y-4">
           {intelligence.clinicalStory.paragraphs.map((p, idx) => (
-            <div key={idx} className="bg-slate-50/50 p-4 rounded-xl border border-slate-200/80 leading-relaxed text-slate-800 text-sm">
+            <div key={idx} className="bg-paper-2/50 p-4 rounded-xl border border-rule/80 leading-relaxed text-ink text-sm">
               <p>{p.text}</p>
               {p.evidenceIds.length > 0 && (
-                <div className="mt-2.5 pt-2 border-t border-slate-200/60 flex items-center gap-2 flex-wrap">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                <div className="mt-2.5 pt-2 border-t border-rule/60 flex items-center gap-2 flex-wrap">
+                  <span className="text-[10px] font-bold text-ink-3 uppercase tracking-wider">
                     Evidence Citations:
                   </span>
                   {p.evidenceIds.map(evId => {

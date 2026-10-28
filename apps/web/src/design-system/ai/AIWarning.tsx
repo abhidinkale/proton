@@ -31,12 +31,12 @@ export const AIWarning = forwardRef<HTMLDivElement, AIWarningProps>(function AIW
       role="alert"
       className={`p-4 rounded-2xl border transition-all ${
         isHardStop
-          ? 'bg-[#FEF2F2] border-[#FECACA] text-[#991B1B]'
-          : 'bg-[#FFEDD5] border-[#FED7AA] text-[#9A3412]'
+          ? 'bg-critical-wash border-critical-line text-critical'
+          : 'bg-caution-wash border-caution-line text-caution'
       } ${className}`}
     >
       <div className="flex items-start gap-3">
-        <div className={`p-2 rounded-xl shrink-0 ${isHardStop ? 'bg-[#FEE2E2]' : 'bg-[#FED7AA]/50'}`}>
+        <div className={`p-2 rounded-xl shrink-0 ${isHardStop ? 'bg-critical-wash' : 'bg-caution-wash/50'}`}>
           {isHardStop ? <ShieldAlert size={18} /> : <AlertTriangle size={18} />}
         </div>
 

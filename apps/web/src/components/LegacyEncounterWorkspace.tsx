@@ -979,23 +979,23 @@ export default function LegacyEncounterWorkspace({
 
   return (
     <Layout>
-      <div className="proton-consultation-workspace h-[calc(100vh-80px)] flex flex-col bg-slate-50 rounded-xl overflow-hidden border border-slate-200">
+      <div className="proton-consultation-workspace h-[calc(100vh-80px)] flex flex-col bg-paper-2 rounded-xl overflow-hidden border border-rule">
         
         {/* Switch back to desk banner */}
-        <div className="bg-[#121824] text-white px-4 py-2 flex items-center justify-between text-xs border-b border-[#1c2433]">
+        <div className="bg-solid text-white px-4 py-2 flex items-center justify-between text-xs border-b border-rule-strong">
           <span>Viewing Legacy Verification Screen.</span>
           <button
             onClick={onSwitchToDesk}
-            className="bg-[#0284c7] hover:bg-[#0369a1] text-white px-3 py-1 rounded-lg font-semibold text-xs cursor-pointer"
+            className="bg-accent hover:bg-accent text-white px-3 py-1 rounded-lg font-semibold text-xs cursor-pointer"
           >
             ← Back to Doctor's Desk
           </button>
         </div>
         
         {/* Header */}
-        <header className="proton-consultation-header bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0">
+        <header className="proton-consultation-header bg-paper border-b border-rule px-6 py-4 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-4">
-            <Link to={patientId ? `/patients/${patientId}` : "/patients"} className="text-slate-400 hover:text-slate-700 transition-colors">
+            <Link to={patientId ? `/patients/${patientId}` : "/patients"} className="text-ink-3 hover:text-ink-2 transition-colors">
               <ArrowLeft size={20} />
             </Link>
             <div className="flex items-center gap-2">
@@ -1003,7 +1003,7 @@ export default function LegacyEncounterWorkspace({
                 <Mic size={18} />
               </div>
               <div>
-                <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium mb-0.5">
+                <div className="flex items-center gap-1.5 text-[11px] text-ink-3 font-medium mb-0.5">
                   <Link to="/" className="hover:text-brand-600 transition-colors">Command Center</Link>
                   <span>&rarr;</span>
                   {patient ? (
@@ -1019,17 +1019,17 @@ export default function LegacyEncounterWorkspace({
                       <span>&rarr;</span>
                     </>
                   )}
-                  <span className="text-slate-700 font-semibold">Consultation</span>
+                  <span className="text-ink-2 font-semibold">Consultation</span>
                 </div>
-                <h1 className="font-semibold text-slate-800 text-lg tracking-tight">Active Consultation</h1>
-                <p className="text-xs text-slate-400">Record, review note draft & compose prescriptions</p>
+                <h1 className="font-semibold text-ink text-lg tracking-tight">Active Consultation</h1>
+                <p className="text-xs text-ink-3">Record, review note draft & compose prescriptions</p>
               </div>
             </div>
           </div>
           <div className="flex items-center gap-3">
             {shortcutFeedback && (
-              <span className="px-3 py-1 bg-zinc-900 text-white rounded-lg text-xs font-medium shadow-md flex items-center gap-1.5">
-                <CheckCircle2 size={13} className="text-emerald-400" />
+              <span className="px-3 py-1 bg-solid text-white rounded-lg text-xs font-medium shadow-md flex items-center gap-1.5">
+                <CheckCircle2 size={13} className="text-settled-on-solid" />
                 {shortcutFeedback}
               </span>
             )}
@@ -1039,7 +1039,7 @@ export default function LegacyEncounterWorkspace({
                 disabled={!canApprove}
                 className={`px-5 py-2 rounded-lg font-medium shadow-sm transition-all flex items-center gap-2 ${
                   !canApprove
-                    ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                    ? 'bg-rule text-ink-3 cursor-not-allowed'
                     : 'bg-brand-600 hover:bg-brand-700 text-white cursor-pointer'
                 }`}
               >
@@ -1047,7 +1047,7 @@ export default function LegacyEncounterWorkspace({
               </button>
             )}
             {status === 'saving' && (
-              <button disabled className="bg-slate-200 text-slate-500 px-5 py-2 rounded-lg font-medium flex items-center gap-2 cursor-not-allowed">
+              <button disabled className="bg-rule text-on-solid0 px-5 py-2 rounded-lg font-medium flex items-center gap-2 cursor-not-allowed">
                 <Loader2 size={16} className="animate-spin"/> Saving atomically...
               </button>
             )}
@@ -1056,12 +1056,12 @@ export default function LegacyEncounterWorkspace({
                 {prescriptions.length > 0 && (
                   <button
                     onClick={() => setShowPdfModal(true)}
-                    className="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 shadow-xs transition-colors cursor-pointer"
+                    className="bg-paper border border-rule text-ink-2 hover:bg-paper-2 px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 shadow-xs transition-colors cursor-pointer"
                   >
                     <Printer size={16} className="text-brand-600" /> Print Prescription PDF
                   </button>
                 )}
-                <div className="bg-green-100 text-green-700 px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 border border-green-200">
+                <div className="bg-settled-wash text-settled px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 border border-settled-line">
                   <Check size={18} /> Consultation Approved & Saved
                 </div>
               </div>
@@ -1070,25 +1070,25 @@ export default function LegacyEncounterWorkspace({
         </header>
 
         {/* Primary Action Guidance Banner */}
-        <div className="proton-consultation-stage bg-slate-100/80 border-b border-slate-200 px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs shrink-0">
+        <div className="proton-consultation-stage bg-paper-2/80 border-b border-rule px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs shrink-0">
           <div className="flex items-center gap-3">
-            <span className="font-bold text-slate-500 uppercase tracking-wider text-[10px]">
+            <span className="font-bold text-on-solid0 uppercase tracking-wider text-[10px]">
               Current Stage:
             </span>
             <div className="flex items-center gap-2 font-semibold">
-              <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wider uppercase ${status === 'idle' ? 'bg-brand-700 text-white shadow-2xs' : 'bg-slate-200/80 text-slate-600'}`}>
+              <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wider uppercase ${status === 'idle' ? 'bg-brand-700 text-white shadow-2xs' : 'bg-rule/80 text-ink-2'}`}>
                 1. Capture
               </span>
-              <span className="text-slate-300 font-bold">&rarr;</span>
-              <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wider uppercase ${['recording', 'transcribing', 'generating'].includes(status) ? 'bg-brand-700 text-white animate-pulse' : 'bg-slate-200/80 text-slate-600'}`}>
+              <span className="text-ink-3 font-bold">&rarr;</span>
+              <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wider uppercase ${['recording', 'transcribing', 'generating'].includes(status) ? 'bg-brand-700 text-white animate-pulse' : 'bg-rule/80 text-ink-2'}`}>
                 2. AI Synthesis
               </span>
-              <span className="text-slate-300 font-bold">&rarr;</span>
-              <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wider uppercase ${status === 'review' ? 'bg-amber-600 text-white shadow-2xs' : 'bg-slate-200/80 text-slate-600'}`}>
+              <span className="text-ink-3 font-bold">&rarr;</span>
+              <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wider uppercase ${status === 'review' ? 'bg-caution text-white shadow-2xs' : 'bg-rule/80 text-ink-2'}`}>
                 3. Physician Review & Safety
               </span>
-              <span className="text-slate-300 font-bold">&rarr;</span>
-              <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wider uppercase ${status === 'complete' ? 'bg-emerald-600 text-white shadow-2xs' : 'bg-slate-200/80 text-slate-600'}`}>
+              <span className="text-ink-3 font-bold">&rarr;</span>
+              <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wider uppercase ${status === 'complete' ? 'bg-settled text-white shadow-2xs' : 'bg-rule/80 text-ink-2'}`}>
                 4. Approved
               </span>
             </div>
@@ -1096,11 +1096,11 @@ export default function LegacyEncounterWorkspace({
 
           <div className="flex items-center gap-3">
             {draftRestored && status !== 'complete' && (
-              <div className="flex items-center gap-2 bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-0.5 rounded-md text-[11px]">
+              <div className="flex items-center gap-2 bg-accent-wash text-accent-ink border border-accent-line px-2.5 py-0.5 rounded-md text-[11px]">
                 <span>Draft restored from local session</span>
                 <button
                   onClick={handleDiscardDraft}
-                  className="text-blue-900 underline font-semibold hover:text-red-600 cursor-pointer"
+                  className="text-accent-ink underline font-semibold hover:text-critical cursor-pointer"
                 >
                   Discard Draft
                 </button>
@@ -1108,21 +1108,21 @@ export default function LegacyEncounterWorkspace({
             )}
 
             {status === 'idle' && (
-              <span className="text-slate-600">
+              <span className="text-ink-2">
                 Primary Action: <strong className="text-brand-700">Start Recording or Load Sample Dialogue</strong>
               </span>
             )}
             {status === 'recording' && (
-              <span className="text-red-600 font-semibold flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-red-500" /> Live audio active &mdash; Click "Stop & Generate Note" when done
+              <span className="text-critical font-semibold flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-critical-wash0" /> Live audio active &mdash; Click "Stop & Generate Note" when done
               </span>
             )}
             {status === 'review' && (
-              <span className="text-slate-700">
+              <span className="text-ink-2">
                 {!canApprove ? (
-                  <span className="text-amber-800 font-medium">Action: Review draft, acknowledge warnings & confirm review checkbox</span>
+                  <span className="text-caution font-medium">Action: Review draft, acknowledge warnings & confirm review checkbox</span>
                 ) : (
-                  <span className="text-emerald-700 font-semibold">Ready: Click "Approve & Save to FHIR" above</span>
+                  <span className="text-settled font-semibold">Ready: Click "Approve & Save to FHIR" above</span>
                 )}
               </span>
             )}
@@ -1133,17 +1133,17 @@ export default function LegacyEncounterWorkspace({
         <div className="proton-consultation-grid flex-1 flex overflow-hidden">
           
           {/* Left Context Panel */}
-          <div className="w-80 bg-white border-r border-slate-200 overflow-y-auto shrink-0 flex flex-col">
-            <div className="p-5 border-b border-slate-100">
-              <h2 className="text-xs font-bold tracking-wider text-slate-400 uppercase mb-3">Patient Context</h2>
+          <div className="w-80 bg-paper border-r border-rule overflow-y-auto shrink-0 flex flex-col">
+            <div className="p-5 border-b border-rule">
+              <h2 className="text-xs font-bold tracking-wider text-ink-3 uppercase mb-3">Patient Context</h2>
               {patient ? (
                 <div>
-                  <p className="font-semibold text-slate-900 text-lg">{patient.name?.[0]?.given?.join(' ')} {patient.name?.[0]?.family}</p>
-                  <p className="text-sm text-slate-500 mt-1 capitalize">{patient.birthDate} &bull; {patient.gender}</p>
+                  <p className="font-semibold text-ink text-lg">{patient.name?.[0]?.given?.join(' ')} {patient.name?.[0]?.family}</p>
+                  <p className="text-sm text-on-solid0 mt-1 capitalize">{patient.birthDate} &bull; {patient.gender}</p>
                 </div>
               ) : (
                 <div>
-                  <p className="text-sm text-slate-500 italic mb-2">No patient assigned</p>
+                  <p className="text-sm text-on-solid0 italic mb-2">No patient assigned</p>
                   {panelPatients.length > 0 ? (
                     <select
                       onChange={(e) => {
@@ -1152,7 +1152,7 @@ export default function LegacyEncounterWorkspace({
                         }
                       }}
                       defaultValue=""
-                      className="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg p-2 font-medium text-slate-800"
+                      className="w-full text-xs bg-paper-2 border border-rule rounded-lg p-2 font-medium text-ink"
                     >
                       <option value="" disabled>Select patient...</option>
                       {panelPatients.map(p => (
@@ -1170,27 +1170,27 @@ export default function LegacyEncounterWorkspace({
               )}
             </div>
 
-            <div className="p-5 border-b border-slate-100 space-y-4">
+            <div className="p-5 border-b border-rule space-y-4">
               <div>
-                <h2 className="text-xs font-bold tracking-wider text-slate-400 uppercase mb-1">Key Conditions</h2>
-                <div className="text-sm text-slate-700">{conditions.length ? conditions.map(c => c.code?.coding?.[0]?.display).join(', ') : 'None recorded'}</div>
+                <h2 className="text-xs font-bold tracking-wider text-ink-3 uppercase mb-1">Key Conditions</h2>
+                <div className="text-sm text-ink-2">{conditions.length ? conditions.map(c => c.code?.coding?.[0]?.display).join(', ') : 'None recorded'}</div>
               </div>
               
               <div>
-                <h2 className="text-xs font-bold tracking-wider text-slate-400 uppercase mb-1">Current Medications</h2>
-                <div className="text-sm text-slate-700">{meds.length ? meds.map(m => m.medicationCodeableConcept?.coding?.[0]?.display).join(', ') : 'None recorded'}</div>
+                <h2 className="text-xs font-bold tracking-wider text-ink-3 uppercase mb-1">Current Medications</h2>
+                <div className="text-sm text-ink-2">{meds.length ? meds.map(m => m.medicationCodeableConcept?.coding?.[0]?.display).join(', ') : 'None recorded'}</div>
               </div>
               
               <div>
-                <h2 className="text-xs font-bold tracking-wider text-slate-400 uppercase mb-1">Allergies</h2>
-                <div className="text-sm text-slate-700">{allergies.length ? allergies.map(a => a.code?.coding?.[0]?.display).join(', ') : 'None recorded'}</div>
+                <h2 className="text-xs font-bold tracking-wider text-ink-3 uppercase mb-1">Allergies</h2>
+                <div className="text-sm text-ink-2">{allergies.length ? allergies.map(a => a.code?.coding?.[0]?.display).join(', ') : 'None recorded'}</div>
               </div>
             </div>
 
-            <div className="p-5 border-b border-slate-100 bg-slate-50">
-              <h2 className="text-xs font-bold tracking-wider text-slate-400 uppercase mb-3">Note Template</h2>
+            <div className="p-5 border-b border-rule bg-paper-2">
+              <h2 className="text-xs font-bold tracking-wider text-ink-3 uppercase mb-3">Note Template</h2>
               <select 
-                className="w-full text-sm bg-white border border-slate-300 rounded-lg px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="w-full text-sm bg-paper border border-rule rounded-lg px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                 value={template}
                 onChange={(e) => setTemplate(e.target.value)}
                 disabled={status !== 'idle' && status !== 'error'}
@@ -1203,22 +1203,22 @@ export default function LegacyEncounterWorkspace({
             </div>
 
             <div className="p-5">
-              <h2 className="text-xs font-bold tracking-wider text-slate-400 uppercase mb-3">Workflow Progress</h2>
+              <h2 className="text-xs font-bold tracking-wider text-ink-3 uppercase mb-3">Workflow Progress</h2>
               <div className="space-y-4 text-xs font-medium">
-                <div className={`flex items-center gap-3 ${status !== 'idle' ? 'text-brand-600 font-semibold' : 'text-slate-400'}`}>
-                  <div className={`h-2.5 w-2.5 rounded-full ${status !== 'idle' ? 'bg-brand-500 ring-2 ring-brand-100' : 'bg-slate-300'}`}></div>
+                <div className={`flex items-center gap-3 ${status !== 'idle' ? 'text-brand-600 font-semibold' : 'text-ink-3'}`}>
+                  <div className={`h-2.5 w-2.5 rounded-full ${status !== 'idle' ? 'bg-brand-500 ring-2 ring-brand-100' : 'bg-rule'}`}></div>
                   1. Capture Audio
                 </div>
-                <div className={`flex items-center gap-3 ${['generating', 'review', 'saving', 'complete'].includes(status) ? 'text-brand-600 font-semibold' : 'text-slate-400'}`}>
-                  <div className={`h-2.5 w-2.5 rounded-full ${['generating', 'review', 'saving', 'complete'].includes(status) ? 'bg-brand-500 ring-2 ring-brand-100' : 'bg-slate-300'}`}></div>
+                <div className={`flex items-center gap-3 ${['generating', 'review', 'saving', 'complete'].includes(status) ? 'text-brand-600 font-semibold' : 'text-ink-3'}`}>
+                  <div className={`h-2.5 w-2.5 rounded-full ${['generating', 'review', 'saving', 'complete'].includes(status) ? 'bg-brand-500 ring-2 ring-brand-100' : 'bg-rule'}`}></div>
                   2. AI Note & Rx Synthesis
                 </div>
-                <div className={`flex items-center gap-3 ${['review', 'saving', 'complete'].includes(status) ? 'text-brand-600 font-semibold' : 'text-slate-400'}`}>
-                  <div className={`h-2.5 w-2.5 rounded-full ${['review', 'saving', 'complete'].includes(status) ? 'bg-brand-500 ring-2 ring-brand-100' : 'bg-slate-300'}`}></div>
+                <div className={`flex items-center gap-3 ${['review', 'saving', 'complete'].includes(status) ? 'text-brand-600 font-semibold' : 'text-ink-3'}`}>
+                  <div className={`h-2.5 w-2.5 rounded-full ${['review', 'saving', 'complete'].includes(status) ? 'bg-brand-500 ring-2 ring-brand-100' : 'bg-rule'}`}></div>
                   3. Doctor Review & Rx Builder
                 </div>
-                <div className={`flex items-center gap-3 ${status === 'complete' ? 'text-green-600 font-semibold' : 'text-slate-400'}`}>
-                  <div className={`h-2.5 w-2.5 rounded-full ${status === 'complete' ? 'bg-green-500 ring-2 ring-green-100' : 'bg-slate-300'}`}></div>
+                <div className={`flex items-center gap-3 ${status === 'complete' ? 'text-settled font-semibold' : 'text-ink-3'}`}>
+                  <div className={`h-2.5 w-2.5 rounded-full ${status === 'complete' ? 'bg-settled-wash0 ring-2 ring-settled-line' : 'bg-rule'}`}></div>
                   4. Approved & FHIR Persisted
                 </div>
               </div>
@@ -1246,23 +1246,23 @@ export default function LegacyEncounterWorkspace({
 
             {/* Real-time Medication Discrepancy Alert */}
             {discrepancies.length > 0 && (
-              <div className="bg-amber-50 border border-amber-300 rounded-xl p-4 shadow-xs space-y-2 animate-in fade-in">
+              <div className="bg-caution-wash border border-caution-line rounded-xl p-4 shadow-xs space-y-2 animate-in fade-in">
                 <div className="flex items-center gap-2">
-                  <AlertOctagon size={18} className="text-amber-700 shrink-0" />
-                  <h3 className="text-xs font-bold text-amber-900 uppercase tracking-wider">
+                  <AlertOctagon size={18} className="text-caution shrink-0" />
+                  <h3 className="text-xs font-bold text-caution uppercase tracking-wider">
                     Medication Discrepancy Detected ({discrepancies.length})
                   </h3>
                 </div>
                 <div className="space-y-2">
                   {discrepancies.map(d => (
-                    <div key={d.id} className="bg-white/80 p-3 rounded-lg border border-amber-200 text-xs text-slate-800">
-                      <div className="font-semibold text-amber-950 flex items-center justify-between">
+                    <div key={d.id} className="bg-paper/80 p-3 rounded-lg border border-caution-line text-xs text-ink">
+                      <div className="font-semibold text-caution flex items-center justify-between">
                         <span>{d.medicationName}</span>
-                        <span className="text-[10px] text-amber-700 bg-amber-100 px-2 py-0.5 rounded font-mono">Flag &bull; Doctor Decision</span>
+                        <span className="text-[10px] text-caution bg-caution-wash px-2 py-0.5 rounded font-mono">Flag &bull; Doctor Decision</span>
                       </div>
                       <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
-                        <div><strong className="text-slate-500">Approved Order:</strong> {d.approvedOrder}</div>
-                        <div><strong className="text-amber-800">Patient-Reported:</strong> {d.patientReported}</div>
+                        <div><strong className="text-on-solid0">Approved Order:</strong> {d.approvedOrder}</div>
+                        <div><strong className="text-caution">Patient-Reported:</strong> {d.patientReported}</div>
                       </div>
                     </div>
                   ))}
@@ -1272,19 +1272,19 @@ export default function LegacyEncounterWorkspace({
 
             {/* Error Message & Recovery Alert */}
             {status === 'error' && errorMessage && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+              <div className="p-4 bg-critical-wash border border-critical-line rounded-xl text-xs text-critical flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
                 <div className="flex items-center gap-2.5">
-                  <AlertCircle size={18} className="text-red-600 shrink-0" />
+                  <AlertCircle size={18} className="text-critical shrink-0" />
                   <div>
-                    <p className="font-bold text-red-900">Processing Interrupted</p>
-                    <p className="font-medium text-red-700">{errorMessage}</p>
+                    <p className="font-bold text-critical">Processing Interrupted</p>
+                    <p className="font-medium text-critical">{errorMessage}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   {transcript && (
                     <button 
                       onClick={handleRetryAI}
-                      className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer shadow-xs"
+                      className="px-3 py-1.5 bg-critical hover:bg-critical text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer shadow-xs"
                     >
                       Retry AI Generation
                     </button>
@@ -1297,13 +1297,13 @@ export default function LegacyEncounterWorkspace({
                       setStatus('review');
                       setErrorMessage('');
                     }}
-                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer shadow-xs"
+                    className="px-3 py-1.5 bg-solid hover:bg-solid text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer shadow-xs"
                   >
                     Continue Note Manually
                   </button>
                   <button 
                     onClick={() => { setStatus('idle'); setErrorMessage(''); }}
-                    className="px-3 py-1.5 bg-white hover:bg-red-100 text-red-800 border border-red-300 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+                    className="px-3 py-1.5 bg-paper hover:bg-critical-wash text-critical border border-critical-line rounded-lg text-xs font-semibold transition-colors cursor-pointer"
                   >
                     Reset to Ready
                   </button>
@@ -1312,15 +1312,15 @@ export default function LegacyEncounterWorkspace({
             )}
 
             {/* 1. Transcript Section */}
-            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-xs">
+            <div className="bg-paper border border-rule rounded-xl p-6 shadow-xs">
               <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2 text-slate-800">
-                  <LayoutList size={18} className="text-slate-400"/>
+                <div className="flex items-center gap-2 text-ink">
+                  <LayoutList size={18} className="text-ink-3"/>
                   <h2 className="font-semibold text-base">Consultation Transcript</h2>
                   {(status === 'recording' || status === 'transcribing') && (
                     <span className="flex items-center gap-1.5 ml-2">
-                      <span className="inline-flex h-2 w-2 rounded-full bg-red-500"></span>
-                      <span className="text-xs text-slate-500 font-medium">Recording</span>
+                      <span className="inline-flex h-2 w-2 rounded-full bg-critical-wash0"></span>
+                      <span className="text-xs text-on-solid0 font-medium">Recording</span>
                     </span>
                   )}
                 </div>
@@ -1328,18 +1328,18 @@ export default function LegacyEncounterWorkspace({
               
               <div>
                 {transcript && status !== 'idle' ? (
-                  <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 text-slate-700 text-sm leading-relaxed whitespace-pre-wrap font-mono max-h-48 overflow-y-auto">
+                  <div className="bg-paper-2 p-4 rounded-lg border border-rule text-ink-2 text-sm leading-relaxed whitespace-pre-wrap font-mono max-h-48 overflow-y-auto">
                     {transcript}
                   </div>
                 ) : (
-                  <div className="p-8 text-center bg-slate-50 border border-dashed border-slate-200 rounded-xl">
-                    <div className={`mx-auto h-16 w-16 rounded-full flex items-center justify-center mb-3 transition-colors ${status === 'recording' ? 'bg-red-50 text-red-500 ring-4 ring-red-100' : 'bg-white text-slate-400 border border-slate-200'}`}>
+                  <div className="p-8 text-center bg-paper-2 border border-dashed border-rule rounded-xl">
+                    <div className={`mx-auto h-16 w-16 rounded-full flex items-center justify-center mb-3 transition-colors ${status === 'recording' ? 'bg-critical-wash text-critical-on-solid0 ring-4 ring-critical-line' : 'bg-paper text-ink-3 border border-rule'}`}>
                       {status === 'recording' ? <Mic size={28} className="animate-pulse" /> : <Mic size={28} />}
                     </div>
                     {(status === 'idle' || status === 'error') && (
                       <>
-                        <h3 className="text-sm font-semibold text-slate-700">Ready to capture consultation</h3>
-                        <p className="text-xs text-slate-500 mt-1 mb-4">Speak naturally with the patient. Proton captures clinical dialogue securely.</p>
+                        <h3 className="text-sm font-semibold text-ink-2">Ready to capture consultation</h3>
+                        <p className="text-xs text-on-solid0 mt-1 mb-4">Speak naturally with the patient. Proton captures clinical dialogue securely.</p>
                         <div className="flex items-center justify-center gap-3 flex-wrap">
                           <button 
                             onClick={startRecording}
@@ -1352,30 +1352,30 @@ export default function LegacyEncounterWorkspace({
                               const sampleDialogue = "Patient presents with a 3-day history of moderate frontal headache and mild nausea. They have taken ibuprofen with minimal relief. No recent travel. No fever.";
                               void generateNoteFromDialogue(sampleDialogue);
                             }}
-                            className="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-5 py-2.5 rounded-full text-sm font-medium inline-flex items-center gap-2 transition-colors shadow-xs cursor-pointer"
+                            className="bg-paper border border-rule hover:bg-paper-2 text-ink-2 px-5 py-2.5 rounded-full text-sm font-medium inline-flex items-center gap-2 transition-colors shadow-xs cursor-pointer"
                             title="Simulate dialogue without microphone hardware"
                           >
                             <FileText size={16} className="text-brand-600" /> Use Sample Dialogue
                           </button>
                         </div>
-                        <div className="mt-4 pt-3 border-t border-slate-100 max-w-md mx-auto w-full">
+                        <div className="mt-4 pt-3 border-t border-rule max-w-md mx-auto w-full">
                           <input
                             type="text"
                             placeholder="Or type consultation dialogue (e.g., patient mentions diabetes control)..."
                             value={transcript}
                             onChange={(e) => setTranscript(e.target.value)}
-                            className="w-full text-xs px-3 py-1.5 border border-slate-200 rounded-lg text-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-500 bg-white"
+                            className="w-full text-xs px-3 py-1.5 border border-rule rounded-lg text-ink-2 focus:outline-none focus:ring-1 focus:ring-brand-500 bg-paper"
                           />
                         </div>
                       </>
                     )}
                     {status === 'recording' && (
                       <>
-                        <h3 className="text-sm font-bold text-red-600">Recording live consultation...</h3>
-                        <p className="text-xs text-slate-500 mt-1 mb-4">Audio stream active.</p>
+                        <h3 className="text-sm font-bold text-critical">Recording live consultation...</h3>
+                        <p className="text-xs text-on-solid0 mt-1 mb-4">Audio stream active.</p>
                         <button 
                           onClick={stopRecording}
-                          className="bg-slate-800 hover:bg-slate-900 text-white px-6 py-2.5 rounded-full text-sm font-medium inline-flex items-center gap-2 transition-colors shadow-xs cursor-pointer"
+                          className="bg-solid hover:bg-solid text-white px-6 py-2.5 rounded-full text-sm font-medium inline-flex items-center gap-2 transition-colors shadow-xs cursor-pointer"
                         >
                           <Square size={14} fill="currentColor" /> Stop & Generate Note
                         </button>
@@ -1387,35 +1387,35 @@ export default function LegacyEncounterWorkspace({
             </div>
 
             {/* 2. Clinical Note Area */}
-            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-xs">
+            <div className="bg-paper border border-rule rounded-xl p-6 shadow-xs">
               <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2 text-slate-800">
+                <div className="flex items-center gap-2 text-ink">
                   <FileText size={18} className="text-brand-600"/>
                   <h2 className="font-semibold text-base">Clinical Note Draft</h2>
                 </div>
                 {status === 'review' && (
                   <div className="flex items-center gap-2">
                     {noteProvenance === 'doctor_edited' ? (
-                      <span className="flex items-center gap-1.5 text-xs font-semibold text-blue-700 bg-blue-100 px-3 py-1 rounded-full border border-blue-200">
+                      <span className="flex items-center gap-1.5 text-xs font-semibold text-accent-ink bg-accent-wash px-3 py-1 rounded-full border border-accent-line">
                         <Edit2 size={13} /> Edited by physician
                       </span>
                     ) : (
-                      <span className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-100 px-3 py-1 rounded-full border border-amber-200">
+                      <span className="flex items-center gap-1.5 text-xs font-semibold text-caution bg-caution-wash px-3 py-1 rounded-full border border-caution-line">
                         <FileText size={13} /> AI-generated draft — physician review required
                       </span>
                     )}
                   </div>
                 )}
                 {status === 'complete' && (
-                  <span className="flex items-center gap-1.5 text-xs font-semibold text-green-700 bg-green-100 px-3 py-1 rounded-full border border-green-200">
+                  <span className="flex items-center gap-1.5 text-xs font-semibold text-settled bg-settled-wash px-3 py-1 rounded-full border border-settled-line">
                     <ShieldCheck size={14} /> Physician approved
                   </span>
                 )}
               </div>
 
-              <div className={`border ${status === 'review' ? 'border-amber-200 ring-2 ring-amber-50' : 'border-slate-200'} rounded-xl overflow-hidden min-h-[160px] flex flex-col`}>
+              <div className={`border ${status === 'review' ? 'border-caution-line ring-2 ring-caution-line' : 'border-rule'} rounded-xl overflow-hidden min-h-[160px] flex flex-col`}>
                 {status === 'idle' || status === 'recording' ? (
-                  <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-slate-400">
+                  <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-ink-3">
                     <FileText size={36} className="mb-2 opacity-20" />
                     <p className="text-xs">Clinical note draft will be synthesized automatically when recording stops.</p>
                   </div>
@@ -1430,21 +1430,21 @@ export default function LegacyEncounterWorkspace({
                 ) : (
                   <>
                     {status === 'error' && (
-                      <div className="p-3 bg-red-50/90 border-b border-red-200 flex items-center justify-between text-xs text-red-700">
+                      <div className="p-3 bg-critical-wash/90 border-b border-critical-line flex items-center justify-between text-xs text-critical">
                         <div className="flex items-center gap-2">
-                          <AlertCircle size={16} className="text-red-500 shrink-0" />
+                          <AlertCircle size={16} className="text-critical-on-solid0 shrink-0" />
                           <span>{errorMessage || 'Action could not be processed. Your note is safely preserved.'}</span>
                         </div>
                         <button 
                           onClick={() => { setStatus('review'); setErrorMessage(''); }}
-                          className="px-2.5 py-1 bg-white border border-red-300 rounded font-semibold text-[11px] hover:bg-red-50 cursor-pointer"
+                          className="px-2.5 py-1 bg-paper border border-critical-line rounded font-semibold text-[11px] hover:bg-critical-wash cursor-pointer"
                         >
                           Dismiss
                         </button>
                       </div>
                     )}
                     <textarea
-                      className={`w-full p-4 text-sm leading-relaxed resize-y min-h-[180px] focus:outline-none border-0 ${status === 'complete' ? 'bg-slate-50 text-slate-600 cursor-default' : 'text-slate-800 focus:ring-1 focus:ring-brand-200 font-mono text-xs'}`}
+                      className={`w-full p-4 text-sm leading-relaxed resize-y min-h-[180px] focus:outline-none border-0 ${status === 'complete' ? 'bg-paper-2 text-ink-2 cursor-default' : 'text-ink focus:ring-1 focus:ring-brand-200 font-mono text-xs'}`}
                       value={note}
                       onChange={(e) => handleNoteChange(e.target.value)}
                       placeholder="Clinical note draft..."
@@ -1470,16 +1470,16 @@ export default function LegacyEncounterWorkspace({
 
             {/* 3. Prescription Section */}
             {['review', 'saving', 'complete'].includes(status) && (
-              <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-xs space-y-6">
+              <div className="bg-paper border border-rule rounded-xl p-6 shadow-xs space-y-6">
                 
-                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div className="flex items-center justify-between border-b border-rule pb-4">
                   <div className="flex items-center gap-2">
                     <div className="h-7 w-7 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center">
                       <Pill size={16} />
                     </div>
                     <div>
-                      <h2 className="font-semibold text-base text-slate-900">Prescription Builder</h2>
-                      <p className="text-xs text-slate-500">Compose and verify structured medication orders</p>
+                      <h2 className="font-semibold text-base text-ink">Prescription Builder</h2>
+                      <p className="text-xs text-on-solid0">Compose and verify structured medication orders</p>
                     </div>
                   </div>
                   {status === 'review' && (
@@ -1494,53 +1494,53 @@ export default function LegacyEncounterWorkspace({
 
                 {/* AI Suggestions (if any) */}
                 {aiSuggestions.length > 0 && status === 'review' && (
-                  <div className="bg-amber-50/70 border border-amber-200 rounded-xl p-5 space-y-3">
+                  <div className="bg-caution-wash/70 border border-caution-line rounded-xl p-5 space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-200 text-amber-900 px-2 py-0.5 rounded">
+                        <span className="text-[10px] font-bold uppercase tracking-wider bg-caution-line text-caution px-2 py-0.5 rounded">
                           AI DRAFT &mdash; REVIEW REQUIRED
                         </span>
-                        <h3 className="text-xs font-bold text-amber-900">
+                        <h3 className="text-xs font-bold text-caution">
                           AI-generated prescription suggestions
                         </h3>
                       </div>
-                      <span className="text-[11px] text-amber-700 font-medium">
+                      <span className="text-[11px] text-caution font-medium">
                         Treating physician must accept, edit, or reject
                       </span>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
                       {aiSuggestions.map(sug => (
-                        <div key={sug.id} className="bg-white border border-amber-200 rounded-lg p-3.5 shadow-xs flex flex-col justify-between">
+                        <div key={sug.id} className="bg-paper border border-caution-line rounded-lg p-3.5 shadow-xs flex flex-col justify-between">
                           <div>
                             <div className="flex items-start justify-between">
-                              <span className="font-bold text-slate-900 text-sm">{sug.name}</span>
-                              <span className="text-xs font-semibold bg-slate-100 text-slate-700 px-2 py-0.5 rounded">{sug.strength}</span>
+                              <span className="font-bold text-ink text-sm">{sug.name}</span>
+                              <span className="text-xs font-semibold bg-paper-2 text-ink-2 px-2 py-0.5 rounded">{sug.strength}</span>
                             </div>
-                            <div className="text-xs text-slate-600 mt-1 space-y-0.5">
-                              <p><span className="font-medium text-slate-500">Dose:</span> {sug.dose} &bull; <span className="font-medium text-slate-500">Route:</span> {sug.route}</p>
-                              <p><span className="font-medium text-slate-500">Freq:</span> {sug.frequency} &bull; <span className="font-medium text-slate-500">Duration:</span> {sug.duration}</p>
+                            <div className="text-xs text-ink-2 mt-1 space-y-0.5">
+                              <p><span className="font-medium text-on-solid0">Dose:</span> {sug.dose} &bull; <span className="font-medium text-on-solid0">Route:</span> {sug.route}</p>
+                              <p><span className="font-medium text-on-solid0">Freq:</span> {sug.frequency} &bull; <span className="font-medium text-on-solid0">Duration:</span> {sug.duration}</p>
                               {sug.instructions && (
-                                <p className="text-slate-500 italic mt-1">{sug.instructions}</p>
+                                <p className="text-on-solid0 italic mt-1">{sug.instructions}</p>
                               )}
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 mt-3 pt-2 border-t border-slate-100">
+                          <div className="flex items-center gap-2 mt-3 pt-2 border-t border-rule">
                             <button
                               onClick={() => handleAcceptSuggestion(sug)}
-                              className="flex-1 bg-green-50 text-green-700 hover:bg-green-100 border border-green-200 py-1 rounded text-xs font-semibold transition-colors cursor-pointer"
+                              className="flex-1 bg-settled-wash text-settled hover:bg-settled-wash border border-settled-line py-1 rounded text-xs font-semibold transition-colors cursor-pointer"
                             >
                               Accept
                             </button>
                             <button
                               onClick={() => handleEditSuggestion(sug)}
-                              className="flex-1 bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200 py-1 rounded text-xs font-semibold transition-colors cursor-pointer"
+                              className="flex-1 bg-paper-2 text-ink-2 hover:bg-paper-2 border border-rule py-1 rounded text-xs font-semibold transition-colors cursor-pointer"
                             >
                               Edit
                             </button>
                             <button
                               onClick={() => handleRejectSuggestion(sug.id)}
-                              className="px-2 py-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded text-xs font-semibold transition-colors cursor-pointer"
+                              className="px-2 py-1 text-ink-3 hover:text-critical hover:bg-critical-wash rounded text-xs font-semibold transition-colors cursor-pointer"
                             >
                               Reject
                             </button>
@@ -1554,62 +1554,62 @@ export default function LegacyEncounterWorkspace({
                 {/* Prescription List */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                    <h3 className="text-xs font-bold text-ink-3 uppercase tracking-wider">
                       Prescription Orders ({prescriptions.length})
                     </h3>
                   </div>
 
                   {prescriptions.length === 0 ? (
-                    <div className="p-8 text-center bg-slate-50 border border-dashed border-slate-200 rounded-xl text-slate-400 text-xs">
-                      <Pill size={28} className="mx-auto mb-2 opacity-30 text-slate-400" />
-                      <p className="font-medium text-slate-600">No medications added yet.</p>
-                      <p className="text-slate-400 mt-0.5">Accept AI suggestions above or click "+ Add Medicine" to prescribe.</p>
+                    <div className="p-8 text-center bg-paper-2 border border-dashed border-rule rounded-xl text-ink-3 text-xs">
+                      <Pill size={28} className="mx-auto mb-2 opacity-30 text-ink-3" />
+                      <p className="font-medium text-ink-2">No medications added yet.</p>
+                      <p className="text-ink-3 mt-0.5">Accept AI suggestions above or click "+ Add Medicine" to prescribe.</p>
                     </div>
                   ) : (
-                    <div className="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100">
+                    <div className="border border-rule rounded-xl overflow-hidden divide-y divide-rule">
                       {prescriptions.map(med => (
-                        <div key={med.id} className="p-4 bg-white flex flex-col md:flex-row md:items-center justify-between gap-3 hover:bg-slate-50/50 transition-colors">
+                        <div key={med.id} className="p-4 bg-paper flex flex-col md:flex-row md:items-center justify-between gap-3 hover:bg-paper-2/50 transition-colors">
                           <div className="space-y-1">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-bold text-slate-900 text-sm">{med.name}</span>
+                              <span className="font-bold text-ink text-sm">{med.name}</span>
                               <span className="text-xs font-semibold bg-brand-50 text-brand-700 border border-brand-200 px-2 py-0.5 rounded">
                                 {med.strength || 'No strength'}
                               </span>
-                              <span className="text-xs text-slate-500 font-medium">
+                              <span className="text-xs text-on-solid0 font-medium">
                                 ({med.route || 'No route'})
                               </span>
                               <span className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${
                                 medProvenanceMap[med.id] === 'ai_suggested' 
-                                  ? 'bg-amber-50 text-amber-800 border-amber-200' 
+                                  ? 'bg-caution-wash text-caution border-caution-line' 
                                   : medProvenanceMap[med.id] === 'doctor_edited' 
-                                    ? 'bg-blue-50 text-blue-800 border-blue-200' 
-                                    : 'bg-purple-50 text-purple-800 border-purple-200'
+                                    ? 'bg-accent-wash text-accent-ink border-accent-line' 
+                                    : 'bg-accent-wash text-accent-ink border-accent-line'
                               }`}>
                                 {medProvenanceMap[med.id] === 'ai_suggested' ? 'AI suggestion' :
                                  medProvenanceMap[med.id] === 'doctor_edited' ? 'Edited by physician' : 'Added by physician'}
                               </span>
                             </div>
-                            <div className="text-xs text-slate-600 flex flex-wrap gap-x-4 gap-y-1">
-                              <span><strong className="text-slate-500">Dose:</strong> {med.dose || <span className="text-red-500 font-bold">Missing</span>}</span>
-                              <span><strong className="text-slate-500">Frequency:</strong> {med.frequency || <span className="text-red-500 font-bold">Missing</span>}</span>
-                              <span><strong className="text-slate-500">Duration:</strong> {med.duration || <span className="text-amber-600">Unspecified</span>}</span>
+                            <div className="text-xs text-ink-2 flex flex-wrap gap-x-4 gap-y-1">
+                              <span><strong className="text-on-solid0">Dose:</strong> {med.dose || <span className="text-critical-on-solid0 font-bold">Missing</span>}</span>
+                              <span><strong className="text-on-solid0">Frequency:</strong> {med.frequency || <span className="text-critical-on-solid0 font-bold">Missing</span>}</span>
+                              <span><strong className="text-on-solid0">Duration:</strong> {med.duration || <span className="text-caution">Unspecified</span>}</span>
                             </div>
                             {med.instructions && (
-                              <p className="text-xs text-slate-500 italic mt-0.5">Instructions: {med.instructions}</p>
+                              <p className="text-xs text-on-solid0 italic mt-0.5">Instructions: {med.instructions}</p>
                             )}
                           </div>
                           {status === 'review' && (
                             <div className="flex items-center gap-2 shrink-0">
                               <button
                                 onClick={() => handleEditMedicine(med)}
-                                className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors cursor-pointer"
+                                className="p-1.5 text-ink-3 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors cursor-pointer"
                                 title="Edit medication"
                               >
                                 <Edit2 size={15} />
                               </button>
                               <button
                                 onClick={() => handleRemoveMedicine(med.id)}
-                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                                className="p-1.5 text-ink-3 hover:text-critical hover:bg-critical-wash rounded-lg transition-colors cursor-pointer"
                                 title="Remove medication"
                               >
                                 <Trash2 size={15} />
@@ -1634,45 +1634,45 @@ export default function LegacyEncounterWorkspace({
                     />
 
                     {/* Safety Scenarios Toolbar for Simulation */}
-                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
-                      <div className="flex items-center gap-1.5 text-slate-600 font-semibold">
+                    <div className="bg-paper-2 border border-rule rounded-xl p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+                      <div className="flex items-center gap-1.5 text-ink-2 font-semibold">
                         <FlaskConical size={14} className="text-brand-600" />
                         <span>Safety Test Scenarios:</span>
                       </div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <button
                           onClick={handleSimulateIncompleteNote}
-                          className="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded text-[11px] font-medium transition-colors cursor-pointer"
+                          className="px-2.5 py-1 bg-paper hover:bg-paper-2 text-ink-2 border border-rule rounded text-[11px] font-medium transition-colors cursor-pointer"
                         >
                           Test: Incomplete Note
                         </button>
                         <button
                           onClick={handleSimulateAllergyConflict}
-                          className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded text-[11px] font-medium transition-colors cursor-pointer"
+                          className="px-2.5 py-1 bg-caution-wash hover:bg-caution-wash text-caution border border-caution-line rounded text-[11px] font-medium transition-colors cursor-pointer"
                         >
                           Test: Allergy Conflict
                         </button>
                         <button
                           onClick={handleSimulateDuplicateMed}
-                          className="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded text-[11px] font-medium transition-colors cursor-pointer"
+                          className="px-2.5 py-1 bg-paper hover:bg-paper-2 text-ink-2 border border-rule rounded text-[11px] font-medium transition-colors cursor-pointer"
                         >
                           Test: Duplicate Med
                         </button>
                         <button
                           onClick={handleSimulateMissingField}
-                          className="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-800 border border-red-300 rounded text-[11px] font-medium transition-colors cursor-pointer"
+                          className="px-2.5 py-1 bg-critical-wash hover:bg-critical-wash text-critical border border-critical-line rounded text-[11px] font-medium transition-colors cursor-pointer"
                         >
                           Test: Missing Field
                         </button>
                         <button
                           onClick={handleSimulateDiscrepancy}
-                          className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded text-[11px] font-medium transition-colors cursor-pointer"
+                          className="px-2.5 py-1 bg-caution-wash hover:bg-caution-wash text-caution border border-caution-line rounded text-[11px] font-medium transition-colors cursor-pointer"
                         >
                           Test: Discrepancy Flag
                         </button>
                         <button
                           onClick={handleSimulateMemoryProposal}
-                          className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-300 rounded text-[11px] font-medium transition-colors cursor-pointer"
+                          className="px-2.5 py-1 bg-accent-wash hover:bg-accent-wash text-accent-ink border border-accent-line rounded text-[11px] font-medium transition-colors cursor-pointer"
                         >
                           Test: Memory Proposal
                         </button>
@@ -1683,96 +1683,96 @@ export default function LegacyEncounterWorkspace({
 
                 {/* Post-Consultation Intelligence: Consultation Changes (Phase 7) */}
                 {consultChanges && (status === 'review' || status === 'complete') && (
-                  <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4">
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <div className="bg-paper border border-rule rounded-xl p-5 shadow-xs space-y-4">
+                    <div className="flex items-center justify-between border-b border-rule pb-3">
                       <div className="flex items-center gap-2">
-                        <div className="h-7 w-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                        <div className="h-7 w-7 rounded-lg bg-settled-wash text-settled flex items-center justify-center">
                           <Activity size={16} />
                         </div>
                         <div>
-                          <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                          <h3 className="text-xs font-bold text-ink uppercase tracking-wider">
                             Consultation Changes & Longitudinal Delta
                           </h3>
-                          <p className="text-[11px] text-slate-500">
+                          <p className="text-[11px] text-on-solid0">
                             Synthesized clinical trajectory changes from current encounter
                           </p>
                         </div>
                       </div>
-                      <span className="text-[10px] uppercase font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                      <span className="text-[10px] uppercase font-bold text-on-solid0 bg-paper-2 px-2 py-0.5 rounded">
                         Clinical Delta
                       </span>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
                       {/* NEW */}
-                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-1.5">
-                        <span className="font-bold text-[11px] text-emerald-700 uppercase tracking-wider block">
+                      <div className="bg-paper-2 border border-rule rounded-lg p-3 space-y-1.5">
+                        <span className="font-bold text-[11px] text-settled uppercase tracking-wider block">
                           NEW ({consultChanges.newItems.length})
                         </span>
                         {consultChanges.newItems.length > 0 ? (
-                          <ul className="space-y-1 text-slate-700">
+                          <ul className="space-y-1 text-ink-2">
                             {consultChanges.newItems.map((item, idx) => (
                               <li key={idx} className="truncate">
-                                &bull; <strong className="text-slate-800">{item.title}:</strong> {item.statement}
+                                &bull; <strong className="text-ink">{item.title}:</strong> {item.statement}
                               </li>
                             ))}
                           </ul>
                         ) : (
-                          <span className="text-slate-400 italic">None newly recorded</span>
+                          <span className="text-ink-3 italic">None newly recorded</span>
                         )}
                       </div>
 
                       {/* CHANGED */}
-                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-1.5">
+                      <div className="bg-paper-2 border border-rule rounded-lg p-3 space-y-1.5">
                         <span className="font-bold text-[11px] text-brand-700 uppercase tracking-wider block">
                           CHANGED ({consultChanges.changedItems.length})
                         </span>
                         {consultChanges.changedItems.length > 0 ? (
-                          <ul className="space-y-1 text-slate-700">
+                          <ul className="space-y-1 text-ink-2">
                             {consultChanges.changedItems.map((item, idx) => (
                               <li key={idx} className="truncate">
-                                &bull; <strong className="text-slate-800">{item.title}:</strong> {item.statement}
+                                &bull; <strong className="text-ink">{item.title}:</strong> {item.statement}
                               </li>
                             ))}
                           </ul>
                         ) : (
-                          <span className="text-slate-400 italic">No dosage adjustments</span>
+                          <span className="text-ink-3 italic">No dosage adjustments</span>
                         )}
                       </div>
 
                       {/* RESOLVED */}
-                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-1.5">
-                        <span className="font-bold text-[11px] text-blue-700 uppercase tracking-wider block">
+                      <div className="bg-paper-2 border border-rule rounded-lg p-3 space-y-1.5">
+                        <span className="font-bold text-[11px] text-accent-ink uppercase tracking-wider block">
                           RESOLVED ({consultChanges.resolvedItems.length})
                         </span>
                         {consultChanges.resolvedItems.length > 0 ? (
-                          <ul className="space-y-1 text-slate-700">
+                          <ul className="space-y-1 text-ink-2">
                             {consultChanges.resolvedItems.map((item, idx) => (
                               <li key={idx} className="truncate">
-                                &bull; <strong className="text-slate-800">{item.title}:</strong> {item.statement}
+                                &bull; <strong className="text-ink">{item.title}:</strong> {item.statement}
                               </li>
                             ))}
                           </ul>
                         ) : (
-                          <span className="text-slate-400 italic">No conditions resolved</span>
+                          <span className="text-ink-3 italic">No conditions resolved</span>
                         )}
                       </div>
 
                       {/* FOLLOW-UP */}
-                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-1.5">
-                        <span className="font-bold text-[11px] text-amber-700 uppercase tracking-wider block">
+                      <div className="bg-paper-2 border border-rule rounded-lg p-3 space-y-1.5">
+                        <span className="font-bold text-[11px] text-caution uppercase tracking-wider block">
                           FOLLOW-UP ({consultChanges.followUpItems.length})
                         </span>
                         {consultChanges.followUpItems.length > 0 ? (
-                          <ul className="space-y-1 text-slate-700">
+                          <ul className="space-y-1 text-ink-2">
                             {consultChanges.followUpItems.map((item, idx) => (
                               <li key={idx} className="truncate">
-                                &bull; <strong className="text-slate-800">{item.title}:</strong> {item.statement}
+                                &bull; <strong className="text-ink">{item.title}:</strong> {item.statement}
                               </li>
                             ))}
                           </ul>
                         ) : (
-                          <span className="text-slate-400 italic">Routine schedule</span>
+                          <span className="text-ink-3 italic">Routine schedule</span>
                         )}
                       </div>
                     </div>
@@ -1791,20 +1791,20 @@ export default function LegacyEncounterWorkspace({
                 )}
 
                 {/* Doctor Approval & Sign-Off Block */}
-                <div className="border-t border-slate-200 pt-5">
+                <div className="border-t border-rule pt-5">
                   <div className="flex items-center justify-between mb-3">
                     <div>
-                      <h3 className="font-semibold text-slate-900 text-sm">Physician Review & Approval</h3>
-                      <p className="text-xs text-slate-500 mt-0.5">
+                      <h3 className="font-semibold text-ink text-sm">Physician Review & Approval</h3>
+                      <p className="text-xs text-on-solid0 mt-0.5">
                         Explicit physician review and confirmation are required before prescribing.
                       </p>
                     </div>
                     {status === 'complete' ? (
-                      <span className="inline-flex items-center gap-1 text-xs font-bold text-green-700 bg-green-100 px-2.5 py-1 rounded-full border border-green-200">
+                      <span className="inline-flex items-center gap-1 text-xs font-bold text-settled bg-settled-wash px-2.5 py-1 rounded-full border border-settled-line">
                         <CheckCircle2 size={14} /> APPROVED
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full border border-amber-200">
+                      <span className="inline-flex items-center gap-1 text-xs font-bold text-caution bg-caution-wash px-2.5 py-1 rounded-full border border-caution-line">
                         <FileText size={14} /> DRAFT &mdash; REVIEW REQUIRED
                       </span>
                     )}
@@ -1813,27 +1813,27 @@ export default function LegacyEncounterWorkspace({
                   {status !== 'complete' ? (
                     <div className="space-y-4">
                       {prescriptions.length > 0 && (
-                        <label className="flex items-start gap-3 p-3.5 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-100/70 transition-colors">
+                        <label className="flex items-start gap-3 p-3.5 bg-paper-2 border border-rule rounded-lg cursor-pointer hover:bg-paper-2/70 transition-colors">
                           <input
                             type="checkbox"
-                            className="mt-0.5 h-4 w-4 rounded text-brand-600 focus:ring-brand-500 border-slate-300 cursor-pointer"
+                            className="mt-0.5 h-4 w-4 rounded text-brand-600 focus:ring-brand-500 border-rule cursor-pointer"
                             checked={reviewedConfirmed}
                             onChange={(e) => setReviewedConfirmed(e.target.checked)}
                           />
-                          <span className="text-xs font-semibold text-slate-800">
+                          <span className="text-xs font-semibold text-ink">
                             I have reviewed the medications, dosage, frequency and duration.
                           </span>
                         </label>
                       )}
 
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
-                        <div className="text-xs text-slate-500">
+                        <div className="text-xs text-on-solid0">
                           {rxReport.blockedCount > 0 ? (
-                            <span className="text-red-600 font-semibold flex items-center gap-1">
+                            <span className="text-critical font-semibold flex items-center gap-1">
                               <AlertCircle size={13} /> Action blocked: Resolve missing required fields before saving.
                             </span>
                           ) : (rxReport.unacknowledgedWarningCount > 0 || noteReport.unacknowledgedWarningCount > 0) ? (
-                            <span className="text-amber-700 font-semibold flex items-center gap-1">
+                            <span className="text-caution font-semibold flex items-center gap-1">
                               <AlertTriangle size={13} /> Physician review required: Acknowledge flagged warnings above.
                             </span>
                           ) : prescriptions.length === 0 ? (
@@ -1847,7 +1847,7 @@ export default function LegacyEncounterWorkspace({
                           disabled={!canApprove}
                           className={`px-6 py-2.5 rounded-lg text-xs font-semibold flex items-center gap-2 shadow-xs transition-all ${
                             !canApprove
-                              ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                              ? 'bg-rule text-ink-3 cursor-not-allowed'
                               : 'bg-brand-600 hover:bg-brand-700 text-white cursor-pointer'
                           }`}
                         >
@@ -1860,15 +1860,15 @@ export default function LegacyEncounterWorkspace({
                       </div>
                     </div>
                   ) : (
-                    <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="bg-settled-wash border border-settled-line rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div>
-                        <p className="text-xs font-bold text-green-900 flex items-center gap-1.5">
+                        <p className="text-xs font-bold text-settled flex items-center gap-1.5">
                           <CheckCircle2 size={15} /> Approved by doctor
                         </p>
-                        <p className="text-xs text-green-800 mt-1">
+                        <p className="text-xs text-settled mt-1">
                           {approvalInfo?.doctor || 'Dr. Alex Morgan, MD'} &bull; {approvalInfo?.timestamp || new Date().toLocaleString()}
                         </p>
-                        <p className="text-xs font-medium text-slate-600 mt-0.5">
+                        <p className="text-xs font-medium text-ink-2 mt-0.5">
                           {prescriptions.length} medication{prescriptions.length === 1 ? '' : 's'} recorded as active FHIR MedicationRequest orders.
                         </p>
                       </div>
@@ -1876,7 +1876,7 @@ export default function LegacyEncounterWorkspace({
                         {prescriptions.length > 0 && (
                           <button
                             onClick={() => setShowPdfModal(true)}
-                            className="bg-white border border-green-300 text-green-800 hover:bg-green-100/70 px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 shadow-xs transition-colors cursor-pointer"
+                            className="bg-paper border border-settled-line text-settled hover:bg-settled-wash/70 px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 shadow-xs transition-colors cursor-pointer"
                           >
                             <Printer size={15} /> View / Print Prescription PDF
                           </button>
@@ -1894,20 +1894,20 @@ export default function LegacyEncounterWorkspace({
 
                 {/* Post-Consultation Physician Feedback Widget (Phase 6) */}
                 {status === 'complete' && (
-                  <div className="mt-6 pt-5 border-t border-slate-200">
-                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 shadow-xs">
-                      <div className="flex items-center justify-between mb-3 border-b border-slate-200 pb-3">
+                  <div className="mt-6 pt-5 border-t border-rule">
+                    <div className="bg-paper-2 border border-rule rounded-xl p-5 shadow-xs">
+                      <div className="flex items-center justify-between mb-3 border-b border-rule pb-3">
                         <div className="flex items-center gap-2">
                           <div className="h-7 w-7 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center">
                             <Activity size={16} />
                           </div>
                           <div>
-                            <h3 className="font-semibold text-sm text-slate-900">Physician Feedback Loop</h3>
-                            <p className="text-[11px] text-slate-500">How useful was Proton for this consultation?</p>
+                            <h3 className="font-semibold text-sm text-ink">Physician Feedback Loop</h3>
+                            <p className="text-[11px] text-on-solid0">How useful was Proton for this consultation?</p>
                           </div>
                         </div>
                         {feedbackSubmitted && (
-                          <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full flex items-center gap-1">
+                          <span className="text-xs font-semibold text-settled bg-settled-wash border border-settled-line px-2.5 py-1 rounded-full flex items-center gap-1">
                             <Check size={13} /> Feedback Recorded
                           </span>
                         )}
@@ -1916,7 +1916,7 @@ export default function LegacyEncounterWorkspace({
                       {!feedbackSubmitted ? (
                         <div className="space-y-4 text-xs">
                           <div>
-                            <label className="font-semibold text-slate-700 block mb-1.5">
+                            <label className="font-semibold text-ink-2 block mb-1.5">
                               Clinical Utility Rating (1 = Poor, 5 = Essential)
                             </label>
                             <div className="flex items-center gap-2 flex-wrap">
@@ -1928,7 +1928,7 @@ export default function LegacyEncounterWorkspace({
                                   className={`px-3.5 py-1.5 rounded-lg border font-semibold text-xs transition-colors cursor-pointer ${
                                     feedbackRating === score
                                       ? 'bg-brand-600 text-white border-brand-600 shadow-xs'
-                                      : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
+                                      : 'bg-paper text-ink-2 border-rule hover:bg-paper-2'
                                   }`}
                                 >
                                   {score} {score === 1 ? '— Poor' : score === 2 ? '— Fair' : score === 3 ? '— Useful' : score === 4 ? '— Very Useful' : '— Essential'}
@@ -1938,7 +1938,7 @@ export default function LegacyEncounterWorkspace({
                           </div>
 
                           <div>
-                            <label className="font-semibold text-slate-700 block mb-1.5">
+                            <label className="font-semibold text-ink-2 block mb-1.5">
                               What did you have to correct? (Select all that apply)
                             </label>
                             <div className="flex flex-wrap gap-2">
@@ -1963,7 +1963,7 @@ export default function LegacyEncounterWorkspace({
                                     className={`px-2.5 py-1 rounded-md text-[11px] font-medium border transition-colors cursor-pointer ${
                                       isSelected
                                         ? 'bg-brand-50 border-brand-300 text-brand-800'
-                                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                                        : 'bg-paper border-rule text-ink-2 hover:bg-paper-2'
                                     }`}
                                   >
                                     {isSelected ? '✓ ' : '+ '}{tag}
@@ -1974,7 +1974,7 @@ export default function LegacyEncounterWorkspace({
                           </div>
 
                           <div>
-                            <label className="font-semibold text-slate-700 block mb-1">
+                            <label className="font-semibold text-ink-2 block mb-1">
                               Physician Notes (Optional)
                             </label>
                             <input
@@ -1982,7 +1982,7 @@ export default function LegacyEncounterWorkspace({
                               value={feedbackComment}
                               onChange={(e) => setFeedbackComment(e.target.value)}
                               placeholder="e.g., Note generated accurately; adjusted ibuprofen duration."
-                              className="w-full text-xs bg-white border border-slate-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                              className="w-full text-xs bg-paper border border-rule rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-brand-500"
                             />
                           </div>
 
@@ -1993,7 +1993,7 @@ export default function LegacyEncounterWorkspace({
                               onClick={handleSubmitFeedback}
                               className={`px-4 py-2 rounded-lg font-semibold text-xs transition-colors shadow-xs ${
                                 feedbackRating === 0
-                                  ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                                  ? 'bg-rule text-ink-3 cursor-not-allowed'
                                   : 'bg-brand-600 hover:bg-brand-700 text-white cursor-pointer'
                               }`}
                             >
@@ -2002,7 +2002,7 @@ export default function LegacyEncounterWorkspace({
                           </div>
                         </div>
                       ) : (
-                        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-800">
+                        <div className="p-3 bg-settled-wash border border-settled-line rounded-lg text-xs text-settled">
                           Thank you. Your feedback has been recorded into the clinical verification audit trail.
                         </div>
                       )}
@@ -2018,18 +2018,18 @@ export default function LegacyEncounterWorkspace({
 
         {/* Modal: Medicine Composer */}
         {isComposerOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
-            <div className="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-lg overflow-hidden">
-              <div className="bg-slate-50 px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-solid/50 backdrop-blur-xs p-4">
+            <div className="bg-paper rounded-xl shadow-xl border border-rule w-full max-w-lg overflow-hidden">
+              <div className="bg-paper-2 px-5 py-4 border-b border-rule flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Pill size={18} className="text-brand-600" />
-                  <h3 className="font-semibold text-slate-800 text-sm">
+                  <h3 className="font-semibold text-ink text-sm">
                     {editingId ? 'Edit Medication' : 'Add Medication to Prescription'}
                   </h3>
                 </div>
                 <button
                   onClick={() => setIsComposerOpen(false)}
-                  className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+                  className="text-ink-3 hover:text-ink-2 p-1 rounded-lg"
                 >
                   <X size={18} />
                 </button>
@@ -2037,17 +2037,17 @@ export default function LegacyEncounterWorkspace({
 
               <div className="p-6 space-y-4">
                 {formError && (
-                  <div className="p-2.5 bg-red-50 border border-red-200 rounded-lg text-xs text-red-600 font-medium">
+                  <div className="p-2.5 bg-critical-wash border border-critical-line rounded-lg text-xs text-critical font-medium">
                     {formError}
                   </div>
                 )}
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2 sm:col-span-1">
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Medicine Name *</label>
+                    <label className="block text-xs font-semibold text-ink-2 mb-1">Medicine Name *</label>
                     <input
                       type="text"
-                      className="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      className="w-full text-xs border border-rule rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
                       placeholder="e.g. Metformin"
                       value={medForm.name}
                       onChange={(e) => setMedForm(prev => ({ ...prev, name: e.target.value }))}
@@ -2055,10 +2055,10 @@ export default function LegacyEncounterWorkspace({
                   </div>
 
                   <div className="col-span-2 sm:col-span-1">
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Strength *</label>
+                    <label className="block text-xs font-semibold text-ink-2 mb-1">Strength *</label>
                     <input
                       type="text"
-                      className="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      className="w-full text-xs border border-rule rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
                       placeholder="e.g. 500 mg"
                       value={medForm.strength}
                       onChange={(e) => setMedForm(prev => ({ ...prev, strength: e.target.value }))}
@@ -2068,10 +2068,10 @@ export default function LegacyEncounterWorkspace({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Dose *</label>
+                    <label className="block text-xs font-semibold text-ink-2 mb-1">Dose *</label>
                     <input
                       type="text"
-                      className="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      className="w-full text-xs border border-rule rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
                       placeholder="e.g. 1 tablet"
                       value={medForm.dose}
                       onChange={(e) => setMedForm(prev => ({ ...prev, dose: e.target.value }))}
@@ -2079,9 +2079,9 @@ export default function LegacyEncounterWorkspace({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Route *</label>
+                    <label className="block text-xs font-semibold text-ink-2 mb-1">Route *</label>
                     <select
-                      className="w-full text-xs bg-white border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      className="w-full text-xs bg-paper border border-rule rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
                       value={medForm.route}
                       onChange={(e) => setMedForm(prev => ({ ...prev, route: e.target.value }))}
                     >
@@ -2094,11 +2094,11 @@ export default function LegacyEncounterWorkspace({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Frequency *</label>
+                    <label className="block text-xs font-semibold text-ink-2 mb-1">Frequency *</label>
                     <input
                       list="freq-options"
                       type="text"
-                      className="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      className="w-full text-xs border border-rule rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
                       placeholder="e.g. Twice daily"
                       value={medForm.frequency}
                       onChange={(e) => setMedForm(prev => ({ ...prev, frequency: e.target.value }))}
@@ -2111,10 +2111,10 @@ export default function LegacyEncounterWorkspace({
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">Duration *</label>
+                    <label className="block text-xs font-semibold text-ink-2 mb-1">Duration *</label>
                     <input
                       type="text"
-                      className="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      className="w-full text-xs border border-rule rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
                       placeholder="e.g. 30 days"
                       value={medForm.duration}
                       onChange={(e) => setMedForm(prev => ({ ...prev, duration: e.target.value }))}
@@ -2123,10 +2123,10 @@ export default function LegacyEncounterWorkspace({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Patient Instructions</label>
+                  <label className="block text-xs font-semibold text-ink-2 mb-1">Patient Instructions</label>
                   <input
                     type="text"
-                    className="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="w-full text-xs border border-rule rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500"
                     placeholder="e.g. Take after meals with plenty of water"
                     value={medForm.instructions}
                     onChange={(e) => setMedForm(prev => ({ ...prev, instructions: e.target.value }))}
@@ -2134,11 +2134,11 @@ export default function LegacyEncounterWorkspace({
                 </div>
               </div>
 
-              <div className="bg-slate-50 px-6 py-3 border-t border-slate-200 flex items-center justify-end gap-3">
+              <div className="bg-paper-2 px-6 py-3 border-t border-rule flex items-center justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setIsComposerOpen(false)}
-                  className="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+                  className="px-4 py-2 text-xs font-medium text-ink-2 hover:bg-rule rounded-lg transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>

@@ -144,7 +144,7 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
         title: 'Open Clinic Schedule',
         subtitle: 'Multi-provider timetable and room assignments',
         shortcut: 'G S',
-        icon: <Calendar size={16} className="text-[#151719]" />,
+        icon: <Calendar size={16} className="text-ink" />,
         onSelect: () => {
           navigate('/schedule');
           onClose();
@@ -156,7 +156,7 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
         title: 'Clinical Knowledge & Education',
         subtitle: 'Live CME, clinical guidelines & research updates',
         shortcut: 'G E',
-        icon: <BookOpen size={16} className="text-[#9D174D]" />,
+        icon: <BookOpen size={16} className="text-accent-ink" />,
         onSelect: () => {
           navigate('/education');
           onClose();
@@ -168,7 +168,7 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
         title: 'Patient Billing & Invoices',
         subtitle: 'Claims ledger, E/M coding attribution & payouts',
         shortcut: 'G B',
-        icon: <DollarSign size={16} className="text-[#1E40AF]" />,
+        icon: <DollarSign size={16} className="text-accent-ink" />,
         onSelect: () => {
           navigate('/billing');
           onClose();
@@ -180,7 +180,7 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
         title: 'View Patient Directory',
         subtitle: 'All synthetic clinical patient profiles',
         shortcut: 'G P',
-        icon: <Users size={16} className="text-slate-600" />,
+        icon: <Users size={16} className="text-ink-2" />,
         onSelect: () => {
           navigate('/patients');
           onClose();
@@ -192,7 +192,7 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
         title: 'Start New Consultation',
         subtitle: 'Launch clinical dialogue capture & copilot',
         shortcut: 'N C',
-        icon: <Mic size={16} className="text-emerald-600" />,
+        icon: <Mic size={16} className="text-settled" />,
         onSelect: () => {
           navigate('/consultation');
           onClose();
@@ -204,7 +204,7 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
         title: 'Open Review Center',
         subtitle: 'Verify unconfirmed AI facts & document intake',
         shortcut: 'G R',
-        icon: <ShieldCheck size={16} className="text-amber-600" />,
+        icon: <ShieldCheck size={16} className="text-caution" />,
         onSelect: () => {
           navigate('/document-review');
           onClose();
@@ -215,7 +215,7 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
         category: 'WORKFLOW',
         title: 'Upload Previous Clinical Records',
         subtitle: 'Ingest lab reports, discharge summaries & PDFs',
-        icon: <FileText size={16} className="text-blue-600" />,
+        icon: <FileText size={16} className="text-accent-ink" />,
         onSelect: () => {
           navigate('/document-review');
           onClose();
@@ -227,7 +227,7 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
         title: 'Settings & Clinical Policies',
         subtitle: 'Physician identity, AI engine parameters & safety rules',
         shortcut: 'G S',
-        icon: <LayoutDashboard size={16} className="text-slate-600" />,
+        icon: <LayoutDashboard size={16} className="text-ink-2" />,
         onSelect: () => {
           navigate('/settings');
           onClose();
@@ -268,7 +268,7 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
         category: 'PATIENT',
         title: note.title,
         subtitle: `${note.patientName} · ${note.status === 'SIGNED' ? 'Signed note' : 'Unsigned draft'} · ${note.updatedAt.slice(0, 10)}`,
-        icon: <FileText size={16} className="text-amber-600" />,
+        icon: <FileText size={16} className="text-caution" />,
         onSelect: () => {
           navigate(`/consultation?patient=${note.patientId}`);
           onClose();
@@ -282,7 +282,7 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
         category: 'PATIENT',
         title: `${appointment.patientName} · ${appointment.time}`,
         subtitle: `${appointment.date} · ${appointment.appointmentType} · ${appointment.roomOrVirtual}`,
-        icon: <Calendar size={16} className="text-[#1E40AF]" />,
+        icon: <Calendar size={16} className="text-accent-ink" />,
         onSelect: () => {
           navigate('/schedule');
           onClose();
@@ -321,14 +321,14 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4 bg-slate-950/40 backdrop-blur-sm animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4 bg-solid/40 backdrop-blur-sm animate-in fade-in duration-150">
       <div 
-        className="bg-white rounded-2xl shadow-2xl border border-slate-200/90 w-full max-w-xl overflow-hidden animate-in zoom-in-95 duration-150 flex flex-col max-h-[80vh]"
+        className="bg-paper rounded-2xl shadow-2xl border border-rule/90 w-full max-w-xl overflow-hidden animate-in zoom-in-95 duration-150 flex flex-col max-h-[80vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search Input Bar */}
-        <div className="relative border-b border-slate-200 px-4 py-3.5 flex items-center gap-3">
-          <Search size={18} className="text-slate-400 shrink-0" />
+        <div className="relative border-b border-rule px-4 py-3.5 flex items-center gap-3">
+          <Search size={18} className="text-ink-3 shrink-0" />
           <input
             ref={inputRef}
             type="text"
@@ -336,37 +336,37 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Search patients, actions, or jump to workspace..."
-            className="flex-1 bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none font-medium"
+            className="flex-1 bg-transparent text-sm text-ink placeholder:text-ink-3 focus:outline-none font-medium"
           />
           {query && (
             <button
               onClick={() => setQuery('')}
-              className="text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer"
+              className="text-ink-3 hover:text-ink-2 p-0.5 rounded cursor-pointer"
             >
               <X size={14} />
             </button>
           )}
-          <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-slate-500 bg-slate-100 border border-slate-200 rounded">
+          <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-on-solid0 bg-paper-2 border border-rule rounded">
             ESC
           </kbd>
         </div>
 
         {/* Results List */}
-        <div className="overflow-y-auto divide-y divide-slate-100 flex-1 p-2">
+        <div className="overflow-y-auto divide-y divide-rule flex-1 p-2">
           {searchState === 'loading' && (
-            <div className="flex items-center gap-2 px-3.5 py-2 text-[11px] text-slate-500">
+            <div className="flex items-center gap-2 px-3.5 py-2 text-[11px] text-on-solid0">
               <LoaderCircle size={12} className="animate-spin" />
               Searching the clinic record…
             </div>
           )}
           {searchState === 'error' && (
-            <div className="flex items-center gap-2 px-3.5 py-2 text-[11px] text-amber-800">
+            <div className="flex items-center gap-2 px-3.5 py-2 text-[11px] text-caution">
               <AlertTriangle size={12} />
               Search is unavailable. Check that the clinic API is running.
             </div>
           )}
           {actions.length === 0 ? (
-            <div className="p-8 text-center text-slate-500 text-xs">
+            <div className="p-8 text-center text-on-solid0 text-xs">
               No matching patients or actions found.
             </div>
           ) : (
@@ -378,35 +378,35 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
                   onMouseEnter={() => setSelectedIndex(idx)}
                   onClick={act.onSelect}
                   className={`px-3.5 py-2.5 rounded-xl flex items-center justify-between gap-3 cursor-pointer transition-colors ${
-                    isSelected ? 'bg-brand-50 text-brand-950' : 'hover:bg-slate-50 text-slate-800'
+                    isSelected ? 'bg-brand-50 text-brand-950' : 'hover:bg-paper-2 text-ink'
                   }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className={`p-2 rounded-lg shrink-0 ${isSelected ? 'bg-white shadow-2xs' : 'bg-slate-100'}`}>
+                    <div className={`p-2 rounded-lg shrink-0 ${isSelected ? 'bg-paper shadow-2xs' : 'bg-paper-2'}`}>
                       {act.icon}
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-sm truncate">{act.title}</span>
                         {act.category === 'PATIENT' && (
-                          <span className="text-[10px] uppercase font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-600">
+                          <span className="text-[10px] uppercase font-bold px-1.5 py-0.2 rounded bg-paper-2 text-ink-2">
                             Patient
                           </span>
                         )}
                       </div>
                       {act.subtitle && (
-                        <p className="text-xs text-slate-500 truncate mt-0.5">{act.subtitle}</p>
+                        <p className="text-xs text-on-solid0 truncate mt-0.5">{act.subtitle}</p>
                       )}
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
                     {act.shortcut && (
-                      <kbd className="hidden md:inline-flex text-[10px] font-mono text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200">
+                      <kbd className="hidden md:inline-flex text-[10px] font-mono text-ink-3 bg-paper-2 px-1.5 py-0.5 rounded border border-rule">
                         {act.shortcut}
                       </kbd>
                     )}
-                    <ChevronRight size={14} className={isSelected ? 'text-brand-600' : 'text-slate-300'} />
+                    <ChevronRight size={14} className={isSelected ? 'text-brand-600' : 'text-ink-3'} />
                   </div>
                 </div>
               );
@@ -415,16 +415,16 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
         </div>
 
         {/* Footer Shortcut Bar */}
-        <div className="bg-slate-50 px-4 py-2 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-500 shrink-0">
+        <div className="bg-paper-2 px-4 py-2 border-t border-rule flex items-center justify-between text-[11px] text-on-solid0 shrink-0">
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1">
-              <kbd className="px-1 py-0.5 bg-white border border-slate-200 rounded font-mono text-[10px]">↑↓</kbd> Navigate
+              <kbd className="px-1 py-0.5 bg-paper border border-rule rounded font-mono text-[10px]">↑↓</kbd> Navigate
             </span>
             <span className="flex items-center gap-1">
-              <kbd className="px-1 py-0.5 bg-white border border-slate-200 rounded font-mono text-[10px]">↵</kbd> Select
+              <kbd className="px-1 py-0.5 bg-paper border border-rule rounded font-mono text-[10px]">↵</kbd> Select
             </span>
             <span className="flex items-center gap-1">
-              <kbd className="px-1 py-0.5 bg-white border border-slate-200 rounded font-mono text-[10px]">ESC</kbd> Close
+              <kbd className="px-1 py-0.5 bg-paper border border-rule rounded font-mono text-[10px]">ESC</kbd> Close
             </span>
           </div>
           <span className="font-medium text-brand-700">

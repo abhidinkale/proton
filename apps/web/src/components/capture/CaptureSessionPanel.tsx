@@ -108,23 +108,23 @@ export default function CaptureSessionPanel({
   }, [session, sessionState?.status, onMediaCaptured]);
 
   return (
-    <div className="bg-white border border-[#e4e4e7] rounded-3xl p-6 shadow-sm max-w-md w-full mx-auto flex flex-col gap-5 text-[#09090b]">
+    <div className="bg-paper border border-rule rounded-3xl p-6 shadow-sm max-w-md w-full mx-auto flex flex-col gap-5 text-ink">
       {/* HEADER */}
-      <div className="flex items-center justify-between border-b border-[#f4f4f5] pb-4">
+      <div className="flex items-center justify-between border-b border-rule pb-4">
         <div className="flex items-center gap-2.5">
-          <div className="p-2 bg-[#f4f4f5] rounded-xl text-[#18181b]">
+          <div className="p-2 bg-paper-2 rounded-xl text-ink">
             <Smartphone size={20} />
           </div>
           <div>
             <h3 className="text-base font-bold tracking-tight">Mobile Capture Session</h3>
-            <p className="text-xs text-[#71717a]">Pair your mobile camera with this encounter</p>
+            <p className="text-xs text-ink-2">Pair your mobile camera with this encounter</p>
           </div>
         </div>
 
         {onClose && (
           <button
             onClick={onClose}
-            className="p-1.5 text-[#71717a] hover:text-[#09090b] hover:bg-[#f4f4f5] rounded-full transition-colors cursor-pointer"
+            className="p-1.5 text-ink-2 hover:text-ink hover:bg-paper-2 rounded-full transition-colors cursor-pointer"
           >
             <X size={16} />
           </button>
@@ -133,7 +133,7 @@ export default function CaptureSessionPanel({
 
       {/* ERROR BANNER */}
       {error && (
-        <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-start gap-2">
+        <div className="p-3 bg-critical-wash border border-critical-line text-critical text-xs rounded-xl flex items-start gap-2">
           <span>{error}</span>
         </div>
       )}
@@ -141,19 +141,19 @@ export default function CaptureSessionPanel({
       {/* MAIN CONTENT AREA */}
       {!session ? (
         <div className="flex flex-col items-center text-center py-6 gap-4">
-          <div className="p-4 bg-[#f4f4f5] rounded-full text-[#71717a]">
+          <div className="p-4 bg-paper-2 rounded-full text-ink-2">
             <Lock size={32} />
           </div>
           <div>
             <h4 className="text-sm font-semibold">Start Secure Cross-Device Pairing</h4>
-            <p className="text-xs text-[#71717a] max-w-xs mt-1">
+            <p className="text-xs text-ink-2 max-w-xs mt-1">
               Creates a short-lived, single-use pairing capability. The patient’s mobile device can join via QR code without exchanging clinical credentials.
             </p>
           </div>
           <button
             onClick={startSession}
             disabled={loading}
-            className="mt-2 flex items-center gap-2 px-5 py-2.5 bg-[#09090b] hover:bg-[#27272a] text-white text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+            className="mt-2 flex items-center gap-2 px-5 py-2.5 bg-solid hover:bg-solid text-white text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer disabled:opacity-50"
           >
             {loading ? <RefreshCw size={14} className="animate-spin" /> : <Smartphone size={14} />}
             <span>{loading ? 'Initializing Session...' : 'Generate Pairing QR'}</span>
@@ -171,13 +171,13 @@ export default function CaptureSessionPanel({
           {sessionState?.status === 'PAIRING' && (
             <>
               <CaptureQRCode payload={session.qrPayload} />
-              <p className="text-xs text-center text-[#71717a] max-w-xs">
+              <p className="text-xs text-center text-ink-2 max-w-xs">
                 Scan this code with the patient’s mobile camera to securely link this clinical encounter.
               </p>
               <div className="flex items-center gap-2 mt-2 w-full">
                 <button
                   onClick={handleCancel}
-                  className="flex-1 px-4 py-2 text-xs font-medium text-[#71717a] hover:text-[#09090b] hover:bg-[#f4f4f5] rounded-xl transition-colors cursor-pointer"
+                  className="flex-1 px-4 py-2 text-xs font-medium text-ink-2 hover:text-ink hover:bg-paper-2 rounded-xl transition-colors cursor-pointer"
                 >
                   Cancel Session
                 </button>
@@ -186,20 +186,20 @@ export default function CaptureSessionPanel({
           )}
 
           {(sessionState?.status === 'PAIRED' || sessionState?.status === 'ACTIVE') && (
-            <div className="flex flex-col items-center text-center py-6 gap-3 bg-emerald-50/50 border border-emerald-100 rounded-2xl p-6 w-full">
-              <CheckCircle2 size={40} className="text-emerald-600 animate-pulse" />
+            <div className="flex flex-col items-center text-center py-6 gap-3 bg-settled-wash/50 border border-settled-line rounded-2xl p-6 w-full">
+              <CheckCircle2 size={40} className="text-settled animate-pulse" />
               <div>
-                <h4 className="text-sm font-bold text-emerald-900">Mobile Device Connected</h4>
-                <p className="text-xs text-emerald-700 mt-1 max-w-xs">
+                <h4 className="text-sm font-bold text-settled">Mobile Device Connected</h4>
+                <p className="text-xs text-settled mt-1 max-w-xs">
                   Device is actively capturing photo. Waiting for submission...
                 </p>
               </div>
-              <div className="mt-2 text-xs font-mono text-[#71717a]">
+              <div className="mt-2 text-xs font-mono text-ink-2">
                 Session ID: {session.sessionId.substring(0, 16)}...
               </div>
               <button
                 onClick={handleCancel}
-                className="mt-3 px-4 py-1.5 text-xs font-medium text-zinc-600 hover:text-zinc-900 bg-white border border-zinc-200 rounded-lg shadow-xs cursor-pointer"
+                className="mt-3 px-4 py-1.5 text-xs font-medium text-ink-2 hover:text-ink bg-paper border border-rule rounded-lg shadow-xs cursor-pointer"
               >
                 Cancel Session
               </button>
@@ -207,38 +207,38 @@ export default function CaptureSessionPanel({
           )}
 
           {sessionState?.status === 'COMPLETED' && (
-            <div className="flex flex-col items-center text-center py-5 gap-3 bg-blue-50/60 border border-blue-200 rounded-2xl p-5 w-full">
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
+            <div className="flex flex-col items-center text-center py-5 gap-3 bg-accent-wash/60 border border-accent-line rounded-2xl p-5 w-full">
+              <div className="w-12 h-12 bg-accent-wash rounded-full flex items-center justify-center text-accent-ink">
                 <FileCheck size={26} />
               </div>
               <div>
-                <h4 className="text-sm font-bold text-blue-950">Photo Received & Verified</h4>
-                <p className="text-xs text-blue-700 mt-1">
+                <h4 className="text-sm font-bold text-accent-ink">Photo Received & Verified</h4>
+                <p className="text-xs text-accent-ink mt-1">
                   FHIR Media resource successfully committed to encounter.
                 </p>
               </div>
 
               {capturedMedia.length > 0 && (
-                <div className="w-full bg-white border border-blue-100 rounded-xl p-3 text-left space-y-1.5 text-xs mt-1">
-                  <div className="flex items-center justify-between text-[#71717a]">
+                <div className="w-full bg-paper border border-accent-line rounded-xl p-3 text-left space-y-1.5 text-xs mt-1">
+                  <div className="flex items-center justify-between text-ink-2">
                     <span>Resolution:</span>
-                    <strong className="text-[#09090b] font-mono">
+                    <strong className="text-ink font-mono">
                       {capturedMedia[0].width}x{capturedMedia[0].height} px
                     </strong>
                   </div>
-                  <div className="flex items-center justify-between text-[#71717a]">
+                  <div className="flex items-center justify-between text-ink-2">
                     <span>File Size:</span>
-                    <strong className="text-[#09090b] font-mono">
+                    <strong className="text-ink font-mono">
                       {Math.round(capturedMedia[0].fileSize / 1024)} KB
                     </strong>
                   </div>
-                  <div className="flex items-center justify-between text-[#71717a]">
+                  <div className="flex items-center justify-between text-ink-2">
                     <span>MIME Type:</span>
-                    <span className="text-[#09090b] font-mono">{capturedMedia[0].mimeType}</span>
+                    <span className="text-ink font-mono">{capturedMedia[0].mimeType}</span>
                   </div>
-                  <div className="flex items-center justify-between text-[#71717a] pt-1 border-t border-[#f4f4f5]">
+                  <div className="flex items-center justify-between text-ink-2 pt-1 border-t border-rule">
                     <span>FHIR Resource:</span>
-                    <span className="text-[#10b981] font-mono font-medium">
+                    <span className="text-settled font-mono font-medium">
                       Media/{capturedMedia[0].id}
                     </span>
                   </div>
@@ -247,7 +247,7 @@ export default function CaptureSessionPanel({
 
               <button
                 onClick={onClose}
-                className="mt-2 w-full py-2 bg-[#09090b] text-white text-xs font-semibold rounded-xl hover:bg-[#27272a] transition-colors cursor-pointer"
+                className="mt-2 w-full py-2 bg-solid text-white text-xs font-semibold rounded-xl hover:bg-solid transition-colors cursor-pointer"
               >
                 Close & Return to Chart
               </button>
@@ -256,10 +256,10 @@ export default function CaptureSessionPanel({
 
           {sessionState?.status === 'EXPIRED' && (
             <div className="flex flex-col items-center text-center py-4 gap-3">
-              <p className="text-xs text-red-600 font-medium">Session has expired.</p>
+              <p className="text-xs text-critical font-medium">Session has expired.</p>
               <button
                 onClick={startSession}
-                className="px-4 py-2 text-xs font-semibold bg-[#09090b] text-white rounded-xl cursor-pointer"
+                className="px-4 py-2 text-xs font-semibold bg-solid text-white rounded-xl cursor-pointer"
               >
                 Create New Session
               </button>
@@ -268,10 +268,10 @@ export default function CaptureSessionPanel({
 
           {sessionState?.status === 'CANCELLED' && (
             <div className="flex flex-col items-center text-center py-4 gap-3">
-              <p className="text-xs text-[#71717a]">This session was cancelled.</p>
+              <p className="text-xs text-ink-2">This session was cancelled.</p>
               <button
                 onClick={startSession}
-                className="px-4 py-2 text-xs font-semibold bg-[#09090b] text-white rounded-xl cursor-pointer"
+                className="px-4 py-2 text-xs font-semibold bg-solid text-white rounded-xl cursor-pointer"
               >
                 Start New Session
               </button>
@@ -281,7 +281,7 @@ export default function CaptureSessionPanel({
       )}
 
       {/* FOOTER PRIVACY NOTE */}
-      <div className="border-t border-[#f4f4f5] pt-3 flex items-center justify-between text-[11px] text-[#a1a1aa]">
+      <div className="border-t border-rule pt-3 flex items-center justify-between text-[11px] text-ink-3">
         <div className="flex items-center gap-1">
           <Shield size={12} />
           <span>Server-Controlled Invariant</span>

@@ -31,38 +31,38 @@ export default function CaptureSessionStatus({ status, expiresAt }: CaptureSessi
     switch (status) {
       case 'PAIRING':
         return (
-          <div className="flex items-center gap-2 text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-full text-xs font-semibold">
-            <Loader2 size={14} className="animate-spin text-amber-600" />
+          <div className="flex items-center gap-2 text-caution bg-caution-wash border border-caution-line px-3 py-1.5 rounded-full text-xs font-semibold">
+            <Loader2 size={14} className="animate-spin text-caution" />
             <span>Waiting for Mobile Device</span>
           </div>
         );
       case 'PAIRED':
       case 'ACTIVE':
         return (
-          <div className="flex items-center gap-2 text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full text-xs font-semibold">
-            <CheckCircle2 size={14} className="text-emerald-600" />
+          <div className="flex items-center gap-2 text-settled bg-settled-wash border border-settled-line px-3 py-1.5 rounded-full text-xs font-semibold">
+            <CheckCircle2 size={14} className="text-settled" />
             <span>Phone Paired & Secure</span>
           </div>
         );
       case 'COMPLETED':
         return (
-          <div className="flex items-center gap-2 text-blue-700 bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-full text-xs font-semibold">
-            <CheckCircle2 size={14} className="text-blue-600" />
+          <div className="flex items-center gap-2 text-accent-ink bg-accent-wash border border-accent-line px-3 py-1.5 rounded-full text-xs font-semibold">
+            <CheckCircle2 size={14} className="text-accent-ink" />
             <span>Session Completed</span>
           </div>
         );
       case 'EXPIRED':
         return (
-          <div className="flex items-center gap-2 text-red-700 bg-red-50 border border-red-200 px-3 py-1.5 rounded-full text-xs font-semibold">
-            <AlertTriangle size={14} className="text-red-600" />
+          <div className="flex items-center gap-2 text-critical bg-critical-wash border border-critical-line px-3 py-1.5 rounded-full text-xs font-semibold">
+            <AlertTriangle size={14} className="text-critical" />
             <span>Session Expired</span>
           </div>
         );
       case 'CANCELLED':
       case 'REVOKED':
         return (
-          <div className="flex items-center gap-2 text-zinc-700 bg-zinc-100 border border-zinc-200 px-3 py-1.5 rounded-full text-xs font-semibold">
-            <XCircle size={14} className="text-zinc-500" />
+          <div className="flex items-center gap-2 text-ink-2 bg-paper-2 border border-rule px-3 py-1.5 rounded-full text-xs font-semibold">
+            <XCircle size={14} className="text-on-solid0" />
             <span>Session Cancelled</span>
           </div>
         );
@@ -76,9 +76,9 @@ export default function CaptureSessionStatus({ status, expiresAt }: CaptureSessi
       {getStatusBadge()}
       
       {status === 'PAIRING' && timeLeft > 0 && (
-        <div className="flex items-center gap-1.5 text-xs text-[#71717a]">
+        <div className="flex items-center gap-1.5 text-xs text-ink-2">
           <Clock size={12} />
-          <span>Token expires in: <strong className="text-[#09090b] font-mono">{formatSeconds(timeLeft)}</strong></span>
+          <span>Token expires in: <strong className="text-ink font-mono">{formatSeconds(timeLeft)}</strong></span>
         </div>
       )}
     </div>

@@ -54,6 +54,32 @@ Proton enforces a **linear, fail-closed safety sequence**:
 4. **Missing Context Invariant:**
    - If a patient record has no documented allergy history, `allergyStatus` is explicitly set to `NOT_DOCUMENTED`. The system emits a `MISSING_ALLERGY_CONTEXT` warning and **never assumes the patient has no allergies**.
 
+### Kernel v2 additions (2026-10-28)
+
+The deterministic kernel was hardened after an adversarial probe found four
+orders that passed under `kernel_v1`. See
+[`moat/kernel-adversarial-cases.md`](./moat/kernel-adversarial-cases.md).
+
+- **Frequency and units are parsed, not whitelisted.** `q4h`, `every 4 hours`,
+  `2 tablets four times daily`, liquids, and ranges are converted to a daily mg
+  total. An unparseable frequency on a ceiling drug is `REVIEW_REQUIRED`, not a
+  default of one dose per day.
+- **Duplicate ingredient orders are refused.** Brand, generic, and combination
+  names resolve through the pharmacology graph; the same active ingredient twice
+  in one proposal is `RULE_DUPLICATE_INGREDIENT` (CRITICAL).
+- **Renal context is enforced.** `SafetyGate` forwards `eGFR`, `weightKg`, and
+  `age`. Metformin at eGFR < 30 is a hard stop; 30–44 is review; NSAIDs at eGFR
+  < 30 are review. Missing eGFR is a warning, not a silent pass.
+- **`HIGH` is not `cleared`.** A HIGH or MEDIUM finding produces
+  `REVIEW_REQUIRED` with `cleared: false`; only a physician directive with a
+  documented rationale can override it. The gate result records
+  `kernelVersion: 'kernel_v2'`.
+- **The verdict binds the write.** `clinicalPipeline` refuses to build a
+  signable output when `cleared` is false. The clinic `signNote` re-runs the
+  gate over the prescriptions being signed, refuses a HIGH or CRITICAL finding
+  without a directive, and stores the verdict in the signature. The workflow
+  `sign` transition runs the same check in the signing transaction.
+
 ---
 
 ## 3. Strict Stop Conditions (Phase Q Governance)

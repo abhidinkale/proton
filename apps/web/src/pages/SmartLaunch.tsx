@@ -69,59 +69,59 @@ export default function SmartLaunch() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-6">
-      <div className="max-w-lg w-full bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-8 space-y-6">
-        <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+    <div className="min-h-screen bg-solid text-on-solid flex items-center justify-center p-6">
+      <div className="max-w-lg w-full bg-solid border border-rule-strong rounded-2xl shadow-2xl p-8 space-y-6">
+        <div className="flex items-center gap-3 border-b border-rule-strong pb-4">
           <div className="h-10 w-10 rounded-xl bg-brand-600/20 border border-brand-500/30 flex items-center justify-center text-brand-400">
             <Shield size={20} />
           </div>
           <div>
             <h2 className="text-base font-bold text-white">SMART on FHIR &bull; EHR Embedded Launch (Simulation)</h2>
-            <p className="text-xs text-slate-400">HL7 SMART App Launch 2.0.0 Handshake Simulator</p>
+            <p className="text-xs text-ink-3">HL7 SMART App Launch 2.0.0 Handshake Simulator</p>
           </div>
         </div>
 
         <div className="space-y-4">
-          <div className="flex items-center gap-3 p-3 bg-slate-950 rounded-xl border border-slate-800/80">
+          <div className="flex items-center gap-3 p-3 bg-solid rounded-xl border border-rule-strong/80">
             <Building2 size={18} className="text-brand-400 shrink-0" />
             <div className="min-w-0 text-xs">
-              <span className="text-slate-400 block">EHR Endpoint (ISS):</span>
-              <span className="font-mono text-slate-200 truncate block">{iss}</span>
+              <span className="text-ink-3 block">EHR Endpoint (ISS):</span>
+              <span className="font-mono text-on-solid truncate block">{iss}</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 p-3 bg-slate-950 rounded-xl border border-slate-800/80">
-            <Server size={18} className="text-emerald-400 shrink-0" />
+          <div className="flex items-center gap-3 p-3 bg-solid rounded-xl border border-rule-strong/80">
+            <Server size={18} className="text-settled-on-solid shrink-0" />
             <div className="min-w-0 text-xs">
-              <span className="text-slate-400 block">Launch Token / Handshake:</span>
-              <span className="font-mono text-slate-200 truncate block">{launchToken}</span>
+              <span className="text-ink-3 block">Launch Token / Handshake:</span>
+              <span className="font-mono text-on-solid truncate block">{launchToken}</span>
             </div>
           </div>
 
           {step === 'connecting' && (
-            <div className="p-4 bg-slate-950/60 rounded-xl border border-slate-800 flex items-center gap-3 text-xs text-slate-300">
+            <div className="p-4 bg-solid/60 rounded-xl border border-rule-strong flex items-center gap-3 text-xs text-ink-3">
               <Loader2 size={16} className="animate-spin text-brand-400" />
               <span>Initiating mutual TLS and OAuth2 PKCE token discovery...</span>
             </div>
           )}
 
           {step === 'authorizing' && (
-            <div className="p-4 bg-slate-950/60 rounded-xl border border-slate-800 flex items-center gap-3 text-xs text-slate-300">
-              <Loader2 size={16} className="animate-spin text-amber-400" />
+            <div className="p-4 bg-solid/60 rounded-xl border border-rule-strong flex items-center gap-3 text-xs text-ink-3">
+              <Loader2 size={16} className="animate-spin text-caution-on-solid" />
               <span>Resolving active clinician persona and patient encounter scope...</span>
             </div>
           )}
 
           {step === 'resolved' && (
-            <div className="p-4 bg-emerald-950/40 border border-emerald-800/60 rounded-xl space-y-2 text-xs">
-              <div className="flex items-center gap-2 text-emerald-400 font-bold">
+            <div className="p-4 bg-solid/40 border border-settled/60 rounded-xl space-y-2 text-xs">
+              <div className="flex items-center gap-2 text-settled-on-solid font-bold">
                 <CheckCircle2 size={15} />
                 <span>Launch Context Authenticated & Verified</span>
               </div>
-              <div className="text-slate-300 space-y-1 pt-1">
+              <div className="text-ink-3 space-y-1 pt-1">
                 <p>EHR Platform: <strong className="text-white">{resolvedContext?.ehrVendor}</strong></p>
                 <p>Clinician: <strong className="text-white">{resolvedContext?.practitionerName}</strong></p>
-                <p>Patient Record: <strong className="text-emerald-300 font-mono">{resolvedContext?.patientId}</strong></p>
+                <p>Patient Record: <strong className="text-settled-on-solid font-mono">{resolvedContext?.patientId}</strong></p>
               </div>
             </div>
           )}

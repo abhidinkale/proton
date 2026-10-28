@@ -21,8 +21,8 @@ export const Pagination = forwardRef<HTMLElement, PaginationProps>(function Pagi
 
   return (
     <nav ref={ref} aria-label="Pagination" className={`flex items-center justify-between gap-4 text-xs ${className}`}>
-      <div className="flex items-center gap-1.5 font-mono text-[11px] text-[#575D65]">
-        <span>Page <strong className="text-[#151719]">{currentPage}</strong> of <strong className="text-[#151719]">{totalPages}</strong></span>
+      <div className="flex items-center gap-1.5 font-mono text-[11px] text-ink-2">
+        <span>Page <strong className="text-ink">{currentPage}</strong> of <strong className="text-ink">{totalPages}</strong></span>
       </div>
 
       <div className="flex items-center gap-1">
@@ -30,7 +30,7 @@ export const Pagination = forwardRef<HTMLElement, PaginationProps>(function Pagi
           type="button"
           disabled={currentPage <= 1}
           onClick={() => onPageChange(currentPage - 1)}
-          className="p-1.5 rounded-full border border-[#E8E5DC] text-[#575D65] hover:text-[#151719] hover:bg-[#F9F8F5] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          className="p-1.5 rounded-full border border-rule text-ink-2 hover:text-ink hover:bg-canvas disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
           aria-label="Previous page"
         >
           <ChevronLeft size={14} />
@@ -40,7 +40,7 @@ export const Pagination = forwardRef<HTMLElement, PaginationProps>(function Pagi
           type="button"
           disabled={currentPage >= totalPages}
           onClick={() => onPageChange(currentPage + 1)}
-          className="p-1.5 rounded-full border border-[#E8E5DC] text-[#575D65] hover:text-[#151719] hover:bg-[#F9F8F5] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          className="p-1.5 rounded-full border border-rule text-ink-2 hover:text-ink hover:bg-canvas disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
           aria-label="Next page"
         >
           <ChevronRight size={14} />

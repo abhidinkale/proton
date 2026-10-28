@@ -700,12 +700,12 @@ export default function DoctorGuidedEncounter({
   };
 
   return (
-    <div className="min-h-screen bg-[#F7F4EE] text-[#151719] flex flex-col font-sans p-2 sm:p-5 pb-24">
+    <div className="min-h-screen bg-canvas text-ink flex flex-col font-sans p-2 sm:p-5 pb-24">
       
       {/* ── TOAST NOTIFICATION ── */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-[#151719] text-white shadow-2xl border border-white/10 animate-in slide-in-from-bottom-5">
-          <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-solid text-white shadow-2xl border border-rule/10 animate-in slide-in-from-bottom-5">
+          <CheckCircle2 size={18} className="text-settled-on-solid shrink-0" />
           <span className="text-sm font-medium">{toastMessage}</span>
         </div>
       )}
@@ -717,16 +717,16 @@ export default function DoctorGuidedEncounter({
           <button
             type="button"
             onClick={() => navigate('/')}
-            className="w-9 h-9 rounded-full bg-white border border-[#E8E4DA] text-[#151719] hover:bg-[#F2EFE9] flex items-center justify-center transition-colors shadow-2xs cursor-pointer"
+            className="w-9 h-9 rounded-full bg-paper border border-rule-strong text-ink hover:bg-paper-2 flex items-center justify-center transition-colors shadow-2xs cursor-pointer"
             title="Return to Dashboard"
           >
             <ArrowLeft size={16} />
           </button>
           
-          <div className="flex items-center gap-2 text-xs font-medium text-[#575D65]">
-            <span onClick={() => navigate('/patients')} className="hover:text-[#151719] cursor-pointer">All patients</span>
-            <span className="text-[#88909A]">→</span>
-            <span className="font-bold text-[#151719] bg-white px-3 py-1 rounded-full border border-[#E8E4DA] shadow-2xs">
+          <div className="flex items-center gap-2 text-xs font-medium text-ink-2">
+            <span onClick={() => navigate('/patients')} className="hover:text-ink cursor-pointer">All patients</span>
+            <span className="text-ink-3">→</span>
+            <span className="font-bold text-ink bg-paper px-3 py-1 rounded-full border border-rule-strong shadow-2xs">
               {patient.mrn} – {patient.name}
             </span>
           </div>
@@ -735,7 +735,7 @@ export default function DoctorGuidedEncounter({
           <button
             type="button"
             onClick={() => setShowNewPatientModal(true)}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#151719] text-white text-xs font-bold hover:bg-[#2D3139] shadow-2xs cursor-pointer ml-1"
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-solid text-white text-xs font-bold hover:bg-solid shadow-2xs cursor-pointer ml-1"
           >
             <Plus size={13} />
             <span>New Patient Consultation</span>
@@ -749,24 +749,24 @@ export default function DoctorGuidedEncounter({
             <button
               type="button"
               onClick={() => setIsPatientDropdownOpen(!isPatientDropdownOpen)}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-white border border-[#E8E4DA] hover:border-[#D6D2C4] shadow-2xs text-xs font-semibold cursor-pointer transition-all"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-paper border border-rule-strong hover:border-rule-strong shadow-2xs text-xs font-semibold cursor-pointer transition-all"
             >
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[#88909A]">Switch:</span>
-              <span className="text-[#151719] truncate max-w-[120px]">{patient.name}</span>
-              <ChevronDown size={14} className="text-[#88909A]" />
+              <span className="w-2 h-2 rounded-full bg-settled-wash0 animate-pulse" />
+              <span className="text-ink-3">Switch:</span>
+              <span className="text-ink truncate max-w-[120px]">{patient.name}</span>
+              <ChevronDown size={14} className="text-ink-3" />
             </button>
 
             {isPatientDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-80 bg-white rounded-3xl shadow-xl border border-[#E8E4DA] py-2 z-50 animate-in fade-in zoom-in-95">
-                <div className="px-4 py-2 border-b border-[#F0ECE1] flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-[#88909A]">
+              <div className="absolute right-0 mt-2 w-80 bg-paper rounded-3xl shadow-xl border border-rule-strong py-2 z-50 animate-in fade-in zoom-in-95">
+                <div className="px-4 py-2 border-b border-rule flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-ink-3">
                   <span>Select Consultation Patient</span>
                   <button
                     onClick={() => {
                       setIsPatientDropdownOpen(false);
                       setShowNewPatientModal(true);
                     }}
-                    className="text-[#9D174D] hover:underline cursor-pointer flex items-center gap-1"
+                    className="text-accent-ink hover:underline cursor-pointer flex items-center gap-1"
                   >
                     <Plus size={11} /> New
                   </button>
@@ -783,15 +783,15 @@ export default function DoctorGuidedEncounter({
                         setIsPatientDropdownOpen(false);
                         showToast(`Switched active encounter to ${p.name}`);
                       }}
-                      className={`w-full text-left px-4 py-2.5 hover:bg-[#FAF9F6] flex items-center justify-between text-xs transition-colors ${
-                        p.id === patient.id ? 'bg-[#FCE7F3]/40 font-bold text-[#9D174D]' : 'text-[#151719]'
+                      className={`w-full text-left px-4 py-2.5 hover:bg-canvas flex items-center justify-between text-xs transition-colors ${
+                        p.id === patient.id ? 'bg-accent-wash/40 font-bold text-accent-ink' : 'text-ink'
                       }`}
                     >
                       <div>
                         <div className="font-semibold">{p.name}</div>
-                        <div className="text-[10px] text-[#88909A]">{p.age}y {p.gender} • {p.mrn}</div>
+                        <div className="text-[10px] text-ink-3">{p.age}y {p.gender} • {p.mrn}</div>
                       </div>
-                      <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-[#FAF9F6] text-[#575D65]">
+                      <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-canvas text-ink-2">
                         {p.time}
                       </span>
                     </button>
@@ -810,17 +810,17 @@ export default function DoctorGuidedEncounter({
               setEditDocNpi(doctorProfile.npi);
               setShowDoctorModal(true);
             }}
-            className="flex items-center gap-2.5 pl-1.5 pr-4 py-1.5 rounded-full bg-white border border-[#E8E4DA] shadow-2xs hover:border-[#9D174D] cursor-pointer transition-all group"
+            className="flex items-center gap-2.5 pl-1.5 pr-4 py-1.5 rounded-full bg-paper border border-rule-strong shadow-2xs hover:border-accent cursor-pointer transition-all group"
             title="Click to customize Doctor profile"
           >
-            <div className="w-7 h-7 rounded-full bg-[#151619] group-hover:bg-[#9D174D] text-white flex items-center justify-center font-bold text-xs transition-colors">
+            <div className="w-7 h-7 rounded-full bg-solid group-hover:bg-accent text-white flex items-center justify-center font-bold text-xs transition-colors">
               <User size={14} />
             </div>
             <div className="flex flex-col leading-tight">
-              <span className="text-xs font-bold text-[#151719] truncate">{doctorProfile.name}</span>
-              <span className="text-[10px] text-[#88909A]">{doctorProfile.room}</span>
+              <span className="text-xs font-bold text-ink truncate">{doctorProfile.name}</span>
+              <span className="text-[10px] text-ink-3">{doctorProfile.room}</span>
             </div>
-            <Edit3 size={11} className="text-[#88909A] opacity-0 group-hover:opacity-100 transition-opacity ml-1" />
+            <Edit3 size={11} className="text-ink-3 opacity-0 group-hover:opacity-100 transition-opacity ml-1" />
           </div>
 
           {/* Multi-Tab Switcher */}
@@ -828,7 +828,7 @@ export default function DoctorGuidedEncounter({
             <button
               type="button"
               onClick={onSwitchToPowerDesk}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white border border-[#E8E4DA] text-xs font-semibold text-[#575D65] hover:text-[#151719] hover:bg-[#FAF9F6] cursor-pointer shadow-2xs"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-paper border border-rule-strong text-xs font-semibold text-ink-2 hover:text-ink hover:bg-canvas cursor-pointer shadow-2xs"
             >
               <Sliders size={13} />
               <span className="hidden sm:inline">Advanced View</span>
@@ -846,34 +846,34 @@ export default function DoctorGuidedEncounter({
         <aside className="lg:col-span-4 xl:col-span-3.5 space-y-4">
           
           {/* Patient Card Header */}
-          <div className="p-5 rounded-[28px] bg-white border border-[#E8E4DA] shadow-xs">
+          <div className="p-5 rounded-[28px] bg-paper border border-rule-strong shadow-xs">
             <div className="flex items-center gap-4">
               <div className="relative">
-                <div className="w-16 h-16 rounded-[22px] bg-gradient-to-tr from-[#FCE7F3] to-[#FEF08A] text-[#9D174D] flex items-center justify-center font-extrabold text-2xl shadow-xs">
+                <div className="w-16 h-16 rounded-[22px] bg-gradient-to-tr from-accent-wash to-caution-wash text-accent-ink flex items-center justify-center font-extrabold text-2xl shadow-xs">
                   {patient.name.split(' ').map(n => n[0]).join('')}
                 </div>
                 {/* Decorative Pink Star Pill */}
-                <div className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-[#FCE7F3] border-2 border-white text-[#9D174D] flex items-center justify-center text-xs font-bold shadow-2xs">
+                <div className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-accent-wash border-2 border-rule text-accent-ink flex items-center justify-center text-xs font-bold shadow-2xs">
                   ★
                 </div>
               </div>
 
               <div>
-                <h2 className="text-xl font-extrabold text-[#151719] tracking-tight">{patient.name}</h2>
-                <div className="flex items-center gap-1.5 text-xs text-[#575D65] mt-0.5">
-                  <span className="font-semibold text-[#88909A]">{patient.mrn}</span>
+                <h2 className="text-xl font-extrabold text-ink tracking-tight">{patient.name}</h2>
+                <div className="flex items-center gap-1.5 text-xs text-ink-2 mt-0.5">
+                  <span className="font-semibold text-ink-3">{patient.mrn}</span>
                   <span>•</span>
                   <span>{patient.time}</span>
                 </div>
-                <div className="text-[10px] text-[#88909A] mt-0.5 uppercase tracking-wider font-semibold">
+                <div className="text-[10px] text-ink-3 mt-0.5 uppercase tracking-wider font-semibold">
                   {patient.visitType || 'Clinical Consultation'}
                 </div>
               </div>
             </div>
 
             {/* OLIVE DEMOGRAPHIC CARD (Reference 4 Signature Style) */}
-            <div className="mt-4 p-4 rounded-[22px] bg-[#E2EBD8] text-[#243E1B] border border-[#CDE0C1] shadow-2xs space-y-2">
-              <div className="flex items-center justify-between pb-2 border-b border-[#243E1B]/15 text-[11px] font-bold">
+            <div className="mt-4 p-4 rounded-[22px] bg-settled-wash text-settled border border-settled-line shadow-2xs space-y-2">
+              <div className="flex items-center justify-between pb-2 border-b border-rule-strong/15 text-[11px] font-bold">
                 <span className="font-mono">{patient.mrn}-MK72</span>
                 <span className="opacity-75">{new Date().toLocaleDateString()}</span>
               </div>
@@ -900,28 +900,28 @@ export default function DoctorGuidedEncounter({
 
             {/* ALLERGIES & ALERTS SECTION */}
             <div className="mt-4 space-y-2.5">
-              <div className="flex items-center justify-between text-xs font-bold text-[#151719]">
+              <div className="flex items-center justify-between text-xs font-bold text-ink">
                 <div className="flex items-center gap-1.5">
-                  <AlertTriangle size={14} className="text-rose-600" />
+                  <AlertTriangle size={14} className="text-critical" />
                   <span>Allergies & Alerts</span>
-                  <span className="px-2 py-0.2 rounded-full bg-rose-100 text-rose-800 text-[10px] font-bold">
+                  <span className="px-2 py-0.2 rounded-full bg-critical-wash text-critical text-[10px] font-bold">
                     {patient.allergies.length} documented
                   </span>
                 </div>
               </div>
 
               {/* Medication Allergy Card */}
-              <div className="p-3.5 rounded-[20px] bg-[#FDECEF] border border-[#F8C8D4] text-xs">
+              <div className="p-3.5 rounded-[20px] bg-critical-wash border border-critical-line text-xs">
                 <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-1.5 font-bold text-[#881337]">
-                    <Pill size={13} className="text-rose-600" />
+                  <div className="flex items-center gap-1.5 font-bold text-critical">
+                    <Pill size={13} className="text-critical" />
                     <span>Documented Allergies</span>
                   </div>
-                  <span className="px-2 py-0.5 rounded-full bg-rose-200 text-rose-900 text-[9px] font-bold uppercase tracking-wider">
+                  <span className="px-2 py-0.5 rounded-full bg-critical-line text-critical text-[9px] font-bold uppercase tracking-wider">
                     ATTENTION!
                   </span>
                 </div>
-                <div className="text-[#881337] mt-1">
+                <div className="text-critical mt-1">
                   <span className="font-semibold">{patient.allergies.join(', ')}</span>
                 </div>
               </div>
@@ -929,30 +929,30 @@ export default function DoctorGuidedEncounter({
 
             {/* PREVIOUS DIAGNOSES */}
             <div className="mt-5 space-y-2">
-              <div className="flex items-center justify-between text-xs font-bold text-[#151719]">
+              <div className="flex items-center justify-between text-xs font-bold text-ink">
                 <span>Active Problem List</span>
-                <span className="text-[10px] text-[#88909A]">History</span>
+                <span className="text-[10px] text-ink-3">History</span>
               </div>
 
               {patient.conditions.slice(0, 3).map((cond, idx) => (
                 <div
                   key={cond}
-                  className="flex items-center justify-between p-3 rounded-[18px] bg-[#FAF9F6] hover:bg-[#F2EFE9] border border-[#E8E4DA] transition-colors cursor-pointer group"
+                  className="flex items-center justify-between p-3 rounded-[18px] bg-canvas hover:bg-paper-2 border border-rule-strong transition-colors cursor-pointer group"
                 >
                   <div className="flex items-center gap-3">
                     <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold ${
-                      idx === 0 ? 'bg-blue-100 text-blue-700' : idx === 1 ? 'bg-pink-100 text-pink-700' : 'bg-emerald-100 text-emerald-700'
+                      idx === 0 ? 'bg-accent-wash text-accent-ink' : idx === 1 ? 'bg-accent-wash text-accent-ink' : 'bg-settled-wash text-settled'
                     }`}>
                       +
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold text-[#151719] group-hover:text-[#9D174D] transition-colors truncate max-w-[160px]">
+                      <h4 className="text-xs font-bold text-ink group-hover:text-accent-ink transition-colors truncate max-w-[160px]">
                         {cond}
                       </h4>
-                      <span className="text-[10px] text-[#88909A]">Verified • Active</span>
+                      <span className="text-[10px] text-ink-3">Verified • Active</span>
                     </div>
                   </div>
-                  <ExternalLink size={13} className="text-[#88909A] group-hover:text-[#151719]" />
+                  <ExternalLink size={13} className="text-ink-3 group-hover:text-ink" />
                 </div>
               ))}
             </div>
@@ -966,19 +966,19 @@ export default function DoctorGuidedEncounter({
         <main className="lg:col-span-8 xl:col-span-8.5 space-y-5">
           
           {/* HEADER VISIT TITLE & STATUS */}
-          <div className="p-6 rounded-[28px] bg-white border border-[#E8E4DA] shadow-xs">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#F0ECE1]">
+          <div className="p-6 rounded-[28px] bg-paper border border-rule-strong shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-rule">
               <div>
                 <div className="flex items-center gap-2.5">
-                  <h1 className="text-2xl font-extrabold text-[#151719] tracking-tight">
+                  <h1 className="text-2xl font-extrabold text-ink tracking-tight">
                     {patient.time} – {patient.visitType || 'Clinical Encounter'}
                   </h1>
-                  <span className="px-3 py-1 rounded-full bg-[#151619] text-white text-xs font-mono font-bold flex items-center gap-1.5 shadow-2xs">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="px-3 py-1 rounded-full bg-solid text-white text-xs font-mono font-bold flex items-center gap-1.5 shadow-2xs">
+                    <span className="w-2 h-2 rounded-full bg-settled animate-pulse" />
                     In progress {Math.floor(recordingSeconds / 60)}:{String(recordingSeconds % 60).padStart(2, '0')}
                   </span>
                 </div>
-                <p className="text-xs text-[#575D65] mt-1">
+                <p className="text-xs text-ink-2 mt-1">
                   Physician Workstation • {doctorProfile.name} • {doctorProfile.room} • {doctorProfile.specialty}
                 </p>
               </div>
@@ -988,7 +988,7 @@ export default function DoctorGuidedEncounter({
                   type="button"
                   onClick={() => setShowAiAssistant(!showAiAssistant)}
                   className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer shadow-2xs ${
-                    showAiAssistant ? 'bg-[#FCE7F3] text-[#9D174D] border border-[#FBCFE8]' : 'bg-[#FAF9F6] text-[#575D65] border border-[#E8E4DA]'
+                    showAiAssistant ? 'bg-accent-wash text-accent-ink border border-accent-line' : 'bg-canvas text-ink-2 border border-rule-strong'
                   }`}
                 >
                   <Sparkles size={13} />
@@ -1014,19 +1014,19 @@ export default function DoctorGuidedEncounter({
                     }}
                     className={`flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer ${
                       isActive
-                        ? 'bg-[#151619] text-white shadow-sm scale-[1.02]'
+                        ? 'bg-solid text-white shadow-sm scale-[1.02]'
                         : isPassed
-                        ? 'bg-[#E2EBD8] text-[#243E1B] border border-[#CDE0C1]'
-                        : 'bg-[#FAF9F6] text-[#88909A] hover:bg-[#F2EFE9] hover:text-[#151719] border border-[#E8E4DA]'
+                        ? 'bg-settled-wash text-settled border border-settled-line'
+                        : 'bg-canvas text-ink-3 hover:bg-paper-2 hover:text-ink border border-rule-strong'
                     }`}
                   >
                     <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                      isActive ? 'bg-[#9D174D] text-white' : isPassed ? 'bg-[#243E1B] text-white' : 'bg-[#E8E4DA] text-[#575D65]'
+                      isActive ? 'bg-accent text-white' : isPassed ? 'bg-solid text-white' : 'bg-paper-2 text-ink-2'
                     }`}>
                       {isPassed ? <Check size={11} strokeWidth={3} /> : s.number}
                     </div>
                     <span>{s.label}</span>
-                    <SIcon size={13} className={isActive ? 'text-[#FCE7F3]' : 'opacity-60'} />
+                    <SIcon size={13} className={isActive ? 'text-on-solid' : 'opacity-60'} />
                   </button>
                 );
               })}
@@ -1040,13 +1040,13 @@ export default function DoctorGuidedEncounter({
             <div className="space-y-5 animate-in fade-in duration-200">
               
               {/* Summary Card with Symptoms & Observation */}
-              <div className="p-6 rounded-[28px] bg-white border border-[#E8E4DA] shadow-xs space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-[#F0ECE1]">
-                  <h3 className="text-base font-extrabold text-[#151719]">Encounter Summary & Complaints</h3>
+              <div className="p-6 rounded-[28px] bg-paper border border-rule-strong shadow-xs space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-rule">
+                  <h3 className="text-base font-extrabold text-ink">Encounter Summary & Complaints</h3>
                   <button
                     type="button"
                     onClick={() => setShowNewPatientModal(true)}
-                    className="flex items-center gap-1.5 text-xs font-bold text-[#9D174D] hover:underline cursor-pointer"
+                    className="flex items-center gap-1.5 text-xs font-bold text-accent-ink hover:underline cursor-pointer"
                   >
                     <Plus size={13} />
                     <span>Change Patient</span>
@@ -1055,13 +1055,13 @@ export default function DoctorGuidedEncounter({
 
                 {/* Complains Symptom Chips */}
                 <div>
-                  <h4 className="text-xs font-bold text-[#88909A] uppercase tracking-wider mb-2">Patient Presentation:</h4>
+                  <h4 className="text-xs font-bold text-ink-3 uppercase tracking-wider mb-2">Patient Presentation:</h4>
                   <div className="flex flex-wrap gap-2">
-                    <span className="px-3.5 py-1.5 rounded-full bg-[#FAF9F6] border border-[#E8E4DA] text-xs font-semibold text-[#151719] shadow-2xs">
+                    <span className="px-3.5 py-1.5 rounded-full bg-canvas border border-rule-strong text-xs font-semibold text-ink shadow-2xs">
                       {patient.chiefComplaint}
                     </span>
                     {patient.allergies.map(a => (
-                      <span key={a} className="px-3.5 py-1.5 rounded-full bg-rose-50 border border-rose-200 text-xs font-semibold text-rose-900 shadow-2xs">
+                      <span key={a} className="px-3.5 py-1.5 rounded-full bg-critical-wash border border-critical-line text-xs font-semibold text-critical shadow-2xs">
                         Allergy: {a}
                       </span>
                     ))}
@@ -1070,95 +1070,95 @@ export default function DoctorGuidedEncounter({
 
                 {/* Visit Observation */}
                 <div className="pt-2">
-                  <h4 className="text-xs font-bold text-[#88909A] uppercase tracking-wider mb-1.5">Clinical Rooming Observation:</h4>
-                  <p className="text-sm text-[#2D3139] leading-relaxed bg-[#FAF9F6] p-4 rounded-[20px] border border-[#E8E4DA]">
+                  <h4 className="text-xs font-bold text-ink-3 uppercase tracking-wider mb-1.5">Clinical Rooming Observation:</h4>
+                  <p className="text-sm text-ink leading-relaxed bg-canvas p-4 rounded-[20px] border border-rule-strong">
                     Patient presents for evaluation by {doctorProfile.name}. Vitals recorded at rooming: BP {patient.vitals.bp}, HR {patient.vitals.hr}, SpO2 {patient.vitals.spo2}. Afebrile, alert, and oriented x 4.
                   </p>
                 </div>
               </div>
 
               {/* CLINICAL BLOOD TEST RESULTS & METERS */}
-              <div className="p-6 rounded-[28px] bg-white border border-[#E8E4DA] shadow-xs space-y-4">
-                <div className="flex items-center justify-between pb-2 border-b border-[#F0ECE1]">
-                  <h3 className="text-base font-extrabold text-[#151719]">Clinical Vital Signs & Baseline Gauges</h3>
-                  <span className="text-xs font-mono text-[#88909A]">LOINC & FHIR Verified</span>
+              <div className="p-6 rounded-[28px] bg-paper border border-rule-strong shadow-xs space-y-4">
+                <div className="flex items-center justify-between pb-2 border-b border-rule">
+                  <h3 className="text-base font-extrabold text-ink">Clinical Vital Signs & Baseline Gauges</h3>
+                  <span className="text-xs font-mono text-ink-3">LOINC & FHIR Verified</span>
                 </div>
 
                 {/* Metric Gauges Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
                   
                   {/* Gauge 1: Blood Pressure */}
-                  <div className="p-4 rounded-[22px] bg-[#FAF9F6] border border-[#E8E4DA] space-y-2">
+                  <div className="p-4 rounded-[22px] bg-canvas border border-rule-strong space-y-2">
                     <div className="flex items-center justify-between text-xs font-bold">
-                      <span className="text-[#575D65]">Blood Pressure</span>
-                      <span className="text-base font-black text-amber-700">{patient.vitals.bp}</span>
+                      <span className="text-ink-2">Blood Pressure</span>
+                      <span className="text-base font-black text-caution">{patient.vitals.bp}</span>
                     </div>
-                    <div className="w-full h-2 rounded-full bg-[#E8E4DA] overflow-hidden">
-                      <div className="h-full bg-amber-500 rounded-full" style={{ width: '70%' }} />
+                    <div className="w-full h-2 rounded-full bg-paper-2 overflow-hidden">
+                      <div className="h-full bg-caution-wash0 rounded-full" style={{ width: '70%' }} />
                     </div>
                     <div className="flex items-center justify-between text-[10px] font-bold">
-                      <span className="text-amber-700">MILD SYSTOLIC</span>
-                      <span className="text-[#88909A]">Target &lt; 130/80</span>
+                      <span className="text-caution">MILD SYSTOLIC</span>
+                      <span className="text-ink-3">Target &lt; 130/80</span>
                     </div>
                   </div>
 
                   {/* Gauge 2: Heart Rate */}
-                  <div className="p-4 rounded-[22px] bg-[#FAF9F6] border border-[#E8E4DA] space-y-2">
+                  <div className="p-4 rounded-[22px] bg-canvas border border-rule-strong space-y-2">
                     <div className="flex items-center justify-between text-xs font-bold">
-                      <span className="text-[#575D65]">Heart Rate</span>
-                      <span className="text-base font-black text-emerald-700">{patient.vitals.hr}</span>
+                      <span className="text-ink-2">Heart Rate</span>
+                      <span className="text-base font-black text-settled">{patient.vitals.hr}</span>
                     </div>
-                    <div className="w-full h-2 rounded-full bg-[#E8E4DA] overflow-hidden">
-                      <div className="h-full bg-emerald-500 rounded-full" style={{ width: '65%' }} />
+                    <div className="w-full h-2 rounded-full bg-paper-2 overflow-hidden">
+                      <div className="h-full bg-settled-wash0 rounded-full" style={{ width: '65%' }} />
                     </div>
                     <div className="flex items-center justify-between text-[10px] font-bold">
-                      <span className="text-emerald-700">NORMAL SINUS</span>
-                      <span className="text-[#88909A]">60-100 bpm</span>
+                      <span className="text-settled">NORMAL SINUS</span>
+                      <span className="text-ink-3">60-100 bpm</span>
                     </div>
                   </div>
 
                   {/* Gauge 3: Oxygen SpO2 */}
-                  <div className="p-4 rounded-[22px] bg-[#FAF9F6] border border-[#E8E4DA] space-y-2">
+                  <div className="p-4 rounded-[22px] bg-canvas border border-rule-strong space-y-2">
                     <div className="flex items-center justify-between text-xs font-bold">
-                      <span className="text-[#575D65]">Oxygen SpO2</span>
-                      <span className="text-base font-black text-emerald-700">{patient.vitals.spo2}</span>
+                      <span className="text-ink-2">Oxygen SpO2</span>
+                      <span className="text-base font-black text-settled">{patient.vitals.spo2}</span>
                     </div>
-                    <div className="w-full h-2 rounded-full bg-[#E8E4DA] overflow-hidden">
-                      <div className="h-full bg-emerald-500 rounded-full" style={{ width: '98%' }} />
+                    <div className="w-full h-2 rounded-full bg-paper-2 overflow-hidden">
+                      <div className="h-full bg-settled-wash0 rounded-full" style={{ width: '98%' }} />
                     </div>
                     <div className="flex items-center justify-between text-[10px] font-bold">
-                      <span className="text-emerald-700">ROOM AIR</span>
-                      <span className="text-[#88909A]">&gt; 95%</span>
+                      <span className="text-settled">ROOM AIR</span>
+                      <span className="text-ink-3">&gt; 95%</span>
                     </div>
                   </div>
 
                   {/* Gauge 4: Temperature / BMI */}
-                  <div className="p-4 rounded-[22px] bg-[#FAF9F6] border border-[#E8E4DA] space-y-2">
+                  <div className="p-4 rounded-[22px] bg-canvas border border-rule-strong space-y-2">
                     <div className="flex items-center justify-between text-xs font-bold">
-                      <span className="text-[#575D65]">Temperature</span>
-                      <span className="text-base font-black text-emerald-700">{patient.vitals.temp}</span>
+                      <span className="text-ink-2">Temperature</span>
+                      <span className="text-base font-black text-settled">{patient.vitals.temp}</span>
                     </div>
-                    <div className="w-full h-2 rounded-full bg-[#E8E4DA] overflow-hidden">
-                      <div className="h-full bg-emerald-500 rounded-full" style={{ width: '50%' }} />
+                    <div className="w-full h-2 rounded-full bg-paper-2 overflow-hidden">
+                      <div className="h-full bg-settled-wash0 rounded-full" style={{ width: '50%' }} />
                     </div>
                     <div className="flex items-center justify-between text-[10px] font-bold">
-                      <span className="text-emerald-700">AFEBRILE</span>
-                      <span className="text-[#88909A]">97.8 - 99.1°F</span>
+                      <span className="text-settled">AFEBRILE</span>
+                      <span className="text-ink-3">97.8 - 99.1°F</span>
                     </div>
                   </div>
 
                 </div>
 
                 {/* Laboratory Yellow Card */}
-                <div className="p-4.5 rounded-[22px] bg-[#FEF08A] text-[#854D0E] border border-[#FDE047] shadow-xs space-y-3">
+                <div className="p-4.5 rounded-[22px] bg-caution-wash text-caution border border-caution-line shadow-xs space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-xl bg-[#854D0E] text-white flex items-center justify-center font-bold text-xs">
+                      <div className="w-8 h-8 rounded-xl bg-caution text-white flex items-center justify-center font-bold text-xs">
                         🧪
                       </div>
                       <div>
-                        <h4 className="text-sm font-extrabold text-[#854D0E]">Clinical Diagnostic Profile</h4>
-                        <span className="px-2 py-0.2 rounded-full bg-white/70 text-[#854D0E] text-[10px] font-mono font-bold">
+                        <h4 className="text-sm font-extrabold text-caution">Clinical Diagnostic Profile</h4>
+                        <span className="px-2 py-0.2 rounded-full bg-paper/70 text-caution text-[10px] font-mono font-bold">
                           Attending: {doctorProfile.name}
                         </span>
                       </div>
@@ -1166,7 +1166,7 @@ export default function DoctorGuidedEncounter({
                     <span className="text-xs font-bold opacity-80">{doctorProfile.room}</span>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs pt-1 border-t border-[#854D0E]/20">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs pt-1 border-t border-caution-line/20">
                     <div>
                       <span className="opacity-75 block text-[10px]">Evaluation:</span>
                       <span className="font-bold">Initial Review</span>
@@ -1181,7 +1181,7 @@ export default function DoctorGuidedEncounter({
                     </div>
                     <div>
                       <span className="opacity-75 block text-[10px]">Decision Support:</span>
-                      <span className="font-bold text-emerald-800">Proton AI</span>
+                      <span className="font-bold text-settled">Proton AI</span>
                     </div>
                   </div>
                 </div>
@@ -1193,7 +1193,7 @@ export default function DoctorGuidedEncounter({
                 <button
                   type="button"
                   onClick={handleNextStep}
-                  className="flex items-center gap-2.5 px-7 py-3.5 rounded-full bg-[#151719] hover:bg-[#2D3139] text-white text-sm font-extrabold shadow-md transition-all active:scale-95 cursor-pointer"
+                  className="flex items-center gap-2.5 px-7 py-3.5 rounded-full bg-solid hover:bg-solid text-white text-sm font-extrabold shadow-md transition-all active:scale-95 cursor-pointer"
                 >
                   <span>Proceed to Step 2: Ambient Scribe (Listen to Convo)</span>
                   <ArrowRight size={16} />
@@ -1209,10 +1209,10 @@ export default function DoctorGuidedEncounter({
           {currentStep === 'scribe' && (
             <div className="space-y-5 animate-in fade-in duration-200">
               
-              <div className="p-6 rounded-[28px] bg-white border border-[#E8E4DA] shadow-xs space-y-6">
+              <div className="p-6 rounded-[28px] bg-paper border border-rule-strong shadow-xs space-y-6">
                 
                 {/* Visualizer & Mic Control */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-[#F0ECE1]">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-rule">
                   <div className="flex items-center gap-4">
                     <button
                       type="button"
@@ -1222,8 +1222,8 @@ export default function DoctorGuidedEncounter({
                       }}
                       className={`w-16 h-16 rounded-[22px] flex items-center justify-center transition-all cursor-pointer shadow-md ${
                         isListening
-                          ? 'bg-rose-500 hover:bg-rose-600 text-white animate-pulse'
-                          : 'bg-[#151619] hover:bg-[#2D3139] text-white'
+                          ? 'bg-critical-wash0 hover:bg-critical text-white animate-pulse'
+                          : 'bg-solid hover:bg-solid text-white'
                       }`}
                       title={isListening ? 'Click to Pause' : 'Click to Listen via Microphone'}
                     >
@@ -1232,34 +1232,34 @@ export default function DoctorGuidedEncounter({
 
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className={`w-2.5 h-2.5 rounded-full ${isListening ? 'bg-rose-500 animate-ping' : 'bg-emerald-500'}`} />
-                        <h3 className="text-base font-extrabold text-[#151719]">
+                        <span className={`w-2.5 h-2.5 rounded-full ${isListening ? 'bg-critical-wash0 animate-ping' : 'bg-settled-wash0'}`} />
+                        <h3 className="text-base font-extrabold text-ink">
                           {isListening ? 'Live Ambient Scribe Active (Mic On)' : 'Scribe Standby (Click Mic to Listen)'}
                         </h3>
                       </div>
-                      <p className="text-xs text-[#575D65] mt-0.5 flex items-center gap-2">
+                      <p className="text-xs text-ink-2 mt-0.5 flex items-center gap-2">
                         <Clock size={12} />
                         <span>Duration: {Math.floor(recordingSeconds / 60)}:{String(recordingSeconds % 60).padStart(2, '0')}</span>
                         <span>•</span>
-                        <span className="text-emerald-700 font-bold">Real Audio / Web Speech API</span>
+                        <span className="text-settled font-bold">Real Audio / Web Speech API</span>
                       </p>
                     </div>
                   </div>
 
                   {/* Equalizer & Dialogue Injector */}
                   <div className="flex items-center gap-3">
-                    <div className="h-12 flex items-center gap-1.5 px-4 py-1.5 bg-[#FAF9F6] rounded-2xl border border-[#E8E4DA]">
+                    <div className="h-12 flex items-center gap-1.5 px-4 py-1.5 bg-canvas rounded-2xl border border-rule-strong">
                       {audioWaves.map((h, i) => (
                         <span
                           key={i}
                           className={`w-1.5 rounded-full transition-all duration-300 ${
                             isListening
                               ? i % 3 === 0
-                                ? 'bg-[#EC4899]'
+                                ? 'bg-accent'
                                 : i % 2 === 0
-                                ? 'bg-[#8B5CF6]'
-                                : 'bg-[#06B6D4]'
-                              : 'bg-[#D6D2C4]'
+                                ? 'bg-accent'
+                                : 'bg-accent'
+                              : 'bg-paper-2'
                           }`}
                           style={{ height: `${isListening ? h : 16}%` }}
                         />
@@ -1279,7 +1279,7 @@ export default function DoctorGuidedEncounter({
                         ]);
                         showToast('New clinical dialogue turn recorded.');
                       }}
-                      className="px-4 py-2.5 rounded-full bg-[#FCE7F3] hover:bg-[#FCE7F3]/70 text-[#9D174D] border border-[#FBCFE8] text-xs font-extrabold transition-colors cursor-pointer"
+                      className="px-4 py-2.5 rounded-full bg-accent-wash hover:bg-accent-wash/70 text-accent-ink border border-accent-line text-xs font-extrabold transition-colors cursor-pointer"
                     >
                       + Add Dialogue
                     </button>
@@ -1288,7 +1288,7 @@ export default function DoctorGuidedEncounter({
 
                 {/* Conversation Turns */}
                 <div className="space-y-3.5">
-                  <div className="flex items-center justify-between text-xs font-bold text-[#88909A] uppercase tracking-wider">
+                  <div className="flex items-center justify-between text-xs font-bold text-ink-3 uppercase tracking-wider">
                     <span>Clinical Dialogue Stream</span>
                     <span>{conversationDialogue.length} Turns Captured</span>
                   </div>
@@ -1301,13 +1301,13 @@ export default function DoctorGuidedEncounter({
                           key={index}
                           className={`flex items-start gap-3.5 p-4 rounded-[22px] transition-all ${
                             isDoc
-                              ? 'bg-[#FAF9F6] border border-[#E8E4DA]'
-                              : 'bg-white border border-[#E2E8F0] shadow-xs'
+                              ? 'bg-canvas border border-rule-strong'
+                              : 'bg-paper border border-rule shadow-xs'
                           }`}
                         >
                           <div
                             className={`w-9 h-9 rounded-2xl flex items-center justify-center font-bold text-xs shrink-0 ${
-                              isDoc ? 'bg-[#151619] text-white' : 'bg-[#FCE7F3] text-[#9D174D]'
+                              isDoc ? 'bg-solid text-white' : 'bg-accent-wash text-accent-ink'
                             }`}
                           >
                             {isDoc ? 'MD' : 'Pt'}
@@ -1315,12 +1315,12 @@ export default function DoctorGuidedEncounter({
 
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between text-xs mb-1">
-                              <span className="font-extrabold text-[#151719]">
+                              <span className="font-extrabold text-ink">
                                 {isDoc ? doctorProfile.name : patient.name}
                               </span>
-                              <span className="text-[10px] font-mono text-[#88909A]">{d.time}</span>
+                              <span className="text-[10px] font-mono text-ink-3">{d.time}</span>
                             </div>
-                            <p className="text-sm text-[#2D3139] leading-relaxed">
+                            <p className="text-sm text-ink leading-relaxed">
                               {d.text}
                             </p>
                           </div>
@@ -1337,7 +1337,7 @@ export default function DoctorGuidedEncounter({
                 <button
                   type="button"
                   onClick={handlePrevStep}
-                  className="flex items-center gap-2 px-5 py-3 rounded-full bg-white border border-[#E8E4DA] text-xs font-bold text-[#575D65] hover:bg-[#FAF9F6] cursor-pointer shadow-2xs"
+                  className="flex items-center gap-2 px-5 py-3 rounded-full bg-paper border border-rule-strong text-xs font-bold text-ink-2 hover:bg-canvas cursor-pointer shadow-2xs"
                 >
                   <ArrowLeft size={14} />
                   <span>Previous: Patient Vitals</span>
@@ -1346,7 +1346,7 @@ export default function DoctorGuidedEncounter({
                 <button
                   type="button"
                   onClick={handleNextStep}
-                  className="flex items-center gap-2 px-7 py-3.5 rounded-full bg-[#151719] hover:bg-[#2D3139] text-white text-sm font-extrabold shadow-md transition-all active:scale-95 cursor-pointer"
+                  className="flex items-center gap-2 px-7 py-3.5 rounded-full bg-solid hover:bg-solid text-white text-sm font-extrabold shadow-md transition-all active:scale-95 cursor-pointer"
                 >
                   <span>Proceed to Step 3: Make Clinical Notes (SOAP)</span>
                   <ArrowRight size={16} />
@@ -1364,8 +1364,8 @@ export default function DoctorGuidedEncounter({
               
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-extrabold text-[#151719] tracking-tight">Clinical SOAP Notes</h2>
-                  <p className="text-xs text-[#575D65]">Attending: {doctorProfile.name} • Tap any field to customize note.</p>
+                  <h2 className="text-xl font-extrabold text-ink tracking-tight">Clinical SOAP Notes</h2>
+                  <p className="text-xs text-ink-2">Attending: {doctorProfile.name} • Tap any field to customize note.</p>
                 </div>
                 <button
                   type="button"
@@ -1375,7 +1375,7 @@ export default function DoctorGuidedEncounter({
                     );
                     showToast('Clinical SOAP note copied to clipboard.');
                   }}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-white border border-[#E8E4DA] text-xs font-bold text-[#575D65] hover:bg-[#FAF9F6] shadow-2xs cursor-pointer"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-paper border border-rule-strong text-xs font-bold text-ink-2 hover:bg-canvas shadow-2xs cursor-pointer"
                 >
                   <Copy size={13} />
                   <span>Copy SOAP Note</span>
@@ -1386,70 +1386,70 @@ export default function DoctorGuidedEncounter({
               <div className="space-y-4">
                 
                 {/* Subjective */}
-                <div className="p-5 rounded-[24px] bg-white border border-[#E8E4DA] shadow-xs space-y-2">
+                <div className="p-5 rounded-[24px] bg-paper border border-rule-strong shadow-xs space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="w-6 h-6 rounded-lg bg-[#FCE7F3] text-[#9D174D] font-black text-xs flex items-center justify-center">S</span>
-                      <h3 className="text-sm font-bold text-[#151719]">Subjective (History & Symptoms)</h3>
+                      <span className="w-6 h-6 rounded-lg bg-accent-wash text-accent-ink font-black text-xs flex items-center justify-center">S</span>
+                      <h3 className="text-sm font-bold text-ink">Subjective (History & Symptoms)</h3>
                     </div>
-                    <span className="text-[11px] text-[#88909A]">Auto-extracted</span>
+                    <span className="text-[11px] text-ink-3">Auto-extracted</span>
                   </div>
                   <textarea
                     rows={3}
                     value={soapNote.subjective}
                     onChange={(e) => setSoapNote({ ...soapNote, subjective: e.target.value })}
-                    className="w-full text-sm text-[#151719] bg-[#FAF9F6] border border-[#E8E4DA] rounded-[18px] p-3.5 focus:outline-none focus:ring-2 focus:ring-[#9D174D] leading-relaxed resize-none"
+                    className="w-full text-sm text-ink bg-canvas border border-rule-strong rounded-[18px] p-3.5 focus:outline-none focus:ring-2 focus:ring-accent leading-relaxed resize-none"
                   />
                 </div>
 
                 {/* Objective */}
-                <div className="p-5 rounded-[24px] bg-white border border-[#E8E4DA] shadow-xs space-y-2">
+                <div className="p-5 rounded-[24px] bg-paper border border-rule-strong shadow-xs space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 font-black text-xs flex items-center justify-center">O</span>
-                      <h3 className="text-sm font-bold text-[#151719]">Objective (Vitals, Physical Exam & Labs)</h3>
+                      <span className="w-6 h-6 rounded-lg bg-accent-wash text-accent-ink font-black text-xs flex items-center justify-center">O</span>
+                      <h3 className="text-sm font-bold text-ink">Objective (Vitals, Physical Exam & Labs)</h3>
                     </div>
-                    <span className="text-[11px] text-[#88909A]">Nurse Rooming Verified</span>
+                    <span className="text-[11px] text-ink-3">Nurse Rooming Verified</span>
                   </div>
                   <textarea
                     rows={4}
                     value={soapNote.objective}
                     onChange={(e) => setSoapNote({ ...soapNote, objective: e.target.value })}
-                    className="w-full text-xs font-mono text-[#151719] bg-[#FAF9F6] border border-[#E8E4DA] rounded-[18px] p-3.5 focus:outline-none focus:ring-2 focus:ring-[#9D174D] leading-relaxed resize-none"
+                    className="w-full text-xs font-mono text-ink bg-canvas border border-rule-strong rounded-[18px] p-3.5 focus:outline-none focus:ring-2 focus:ring-accent leading-relaxed resize-none"
                   />
                 </div>
 
                 {/* Assessment */}
-                <div className="p-5 rounded-[24px] bg-white border border-[#E8E4DA] shadow-xs space-y-2">
+                <div className="p-5 rounded-[24px] bg-paper border border-rule-strong shadow-xs space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="w-6 h-6 rounded-lg bg-amber-100 text-amber-900 font-black text-xs flex items-center justify-center">A</span>
-                      <h3 className="text-sm font-bold text-[#151719]">Assessment (Diagnoses & Problems)</h3>
+                      <span className="w-6 h-6 rounded-lg bg-caution-wash text-caution font-black text-xs flex items-center justify-center">A</span>
+                      <h3 className="text-sm font-bold text-ink">Assessment (Diagnoses & Problems)</h3>
                     </div>
-                    <span className="text-[11px] text-[#88909A]">ICD-10 Mapped</span>
+                    <span className="text-[11px] text-ink-3">ICD-10 Mapped</span>
                   </div>
                   <textarea
                     rows={3}
                     value={soapNote.assessment}
                     onChange={(e) => setSoapNote({ ...soapNote, assessment: e.target.value })}
-                    className="w-full text-sm text-[#151719] bg-[#FAF9F6] border border-[#E8E4DA] rounded-[18px] p-3.5 focus:outline-none focus:ring-2 focus:ring-[#9D174D] leading-relaxed resize-none"
+                    className="w-full text-sm text-ink bg-canvas border border-rule-strong rounded-[18px] p-3.5 focus:outline-none focus:ring-2 focus:ring-accent leading-relaxed resize-none"
                   />
                 </div>
 
                 {/* Plan */}
-                <div className="p-5 rounded-[24px] bg-white border border-[#E8E4DA] shadow-xs space-y-2">
+                <div className="p-5 rounded-[24px] bg-paper border border-rule-strong shadow-xs space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-800 font-black text-xs flex items-center justify-center">P</span>
-                      <h3 className="text-sm font-bold text-[#151719]">Plan (Therapeutic & Follow-up)</h3>
+                      <span className="w-6 h-6 rounded-lg bg-settled-wash text-settled font-black text-xs flex items-center justify-center">P</span>
+                      <h3 className="text-sm font-bold text-ink">Plan (Therapeutic & Follow-up)</h3>
                     </div>
-                    <span className="text-[11px] text-emerald-700 font-bold">Ready for Decision Support</span>
+                    <span className="text-[11px] text-settled font-bold">Ready for Decision Support</span>
                   </div>
                   <textarea
                     rows={4}
                     value={soapNote.plan}
                     onChange={(e) => setSoapNote({ ...soapNote, plan: e.target.value })}
-                    className="w-full text-sm text-[#151719] bg-[#FAF9F6] border border-[#E8E4DA] rounded-[18px] p-3.5 focus:outline-none focus:ring-2 focus:ring-[#9D174D] leading-relaxed resize-none"
+                    className="w-full text-sm text-ink bg-canvas border border-rule-strong rounded-[18px] p-3.5 focus:outline-none focus:ring-2 focus:ring-accent leading-relaxed resize-none"
                   />
                 </div>
 
@@ -1460,7 +1460,7 @@ export default function DoctorGuidedEncounter({
                 <button
                   type="button"
                   onClick={handlePrevStep}
-                  className="flex items-center gap-2 px-5 py-3 rounded-full bg-white border border-[#E8E4DA] text-xs font-bold text-[#575D65] hover:bg-[#FAF9F6] cursor-pointer shadow-2xs"
+                  className="flex items-center gap-2 px-5 py-3 rounded-full bg-paper border border-rule-strong text-xs font-bold text-ink-2 hover:bg-canvas cursor-pointer shadow-2xs"
                 >
                   <ArrowLeft size={14} />
                   <span>Previous: Scribe</span>
@@ -1469,7 +1469,7 @@ export default function DoctorGuidedEncounter({
                 <button
                   type="button"
                   onClick={handleNextStep}
-                  className="flex items-center gap-2 px-7 py-3.5 rounded-full bg-[#151719] hover:bg-[#2D3139] text-white text-sm font-extrabold shadow-md transition-all active:scale-95 cursor-pointer"
+                  className="flex items-center gap-2 px-7 py-3.5 rounded-full bg-solid hover:bg-solid text-white text-sm font-extrabold shadow-md transition-all active:scale-95 cursor-pointer"
                 >
                   <span>Proceed to Step 4: Offer Solutions (AI Guidance)</span>
                   <ArrowRight size={16} />
@@ -1488,48 +1488,48 @@ export default function DoctorGuidedEncounter({
               
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-xl font-extrabold text-[#151719] tracking-tight">AI Clinical Solutions & Evidence</h2>
-                  <p className="text-xs text-[#575D65]">Real-time autonomous multi-agent clinical diagnostic intelligence for {patient.name} ({patient.mrn}).</p>
+                  <h2 className="text-xl font-extrabold text-ink tracking-tight">AI Clinical Solutions & Evidence</h2>
+                  <p className="text-xs text-ink-2">Real-time autonomous multi-agent clinical diagnostic intelligence for {patient.name} ({patient.mrn}).</p>
                 </div>
                 <button
                   type="button"
                   onClick={() => runLiveSpecialistDiagnosis()}
                   disabled={isSpecialistsLoading}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#151619] hover:bg-[#2D3139] disabled:opacity-50 text-white text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer self-start sm:self-auto shrink-0"
+                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-solid hover:bg-solid disabled:opacity-50 text-white text-xs font-bold transition-all shadow-sm active:scale-95 cursor-pointer self-start sm:self-auto shrink-0"
                 >
-                  <RefreshCw size={13} className={isSpecialistsLoading ? 'animate-spin text-[#FCE7F3]' : 'text-emerald-400'} />
+                  <RefreshCw size={13} className={isSpecialistsLoading ? 'animate-spin text-on-solid' : 'text-settled-on-solid'} />
                   <span>{isSpecialistsLoading ? 'Running Diagnostic Engine...' : 'Re-Run Live AI Diagnosis'}</span>
                 </button>
               </div>
 
               {/* ── LIVE MULTI-AGENT AI SPECIALIST DIAGNOSTIC ENGINE (BACKEND-POWERED) ── */}
-              <div className="p-6 rounded-[28px] bg-white border border-[#E8E4DA] shadow-xs space-y-5">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#F0ECE1]">
+              <div className="p-6 rounded-[28px] bg-paper border border-rule-strong shadow-xs space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-rule">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-[#151619] text-white flex items-center justify-center font-bold">
-                      <Cpu size={20} className="text-[#FCE7F3]" />
+                    <div className="w-10 h-10 rounded-2xl bg-solid text-white flex items-center justify-center font-bold">
+                      <Cpu size={20} className="text-on-solid" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="text-base font-extrabold text-[#151719]">
+                        <h3 className="text-base font-extrabold text-ink">
                           Live Multi-Agent Diagnostic Engine
                         </h3>
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-[10px] font-bold border border-emerald-200 flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        <span className="px-2 py-0.5 rounded-full bg-settled-wash text-settled text-[10px] font-bold border border-settled-line flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-settled-wash0 animate-pulse" />
                           Backend Port 3002 Active
                         </span>
                       </div>
-                      <p className="text-xs text-[#575D65] mt-0.5">
+                      <p className="text-xs text-ink-2 mt-0.5">
                         Parallel autonomous specialist agents analyzing {patient.name} ({patient.mrn}) in real-time.
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 text-[10px] font-mono text-[#88909A]">
-                    <span className="px-2.5 py-1 rounded-full bg-[#FAF9F6] border border-[#E8E4DA]">
+                  <div className="flex items-center gap-2 text-[10px] font-mono text-ink-3">
+                    <span className="px-2.5 py-1 rounded-full bg-canvas border border-rule-strong">
                       Gemini 1.5 Flash
                     </span>
-                    <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                    <span className="px-2.5 py-1 rounded-full bg-settled-wash text-settled border border-settled-line">
                       Provenance Active
                     </span>
                   </div>
@@ -1537,18 +1537,18 @@ export default function DoctorGuidedEncounter({
 
                 {/* Loading State */}
                 {isSpecialistsLoading && (
-                  <div className="p-8 rounded-[22px] bg-[#FAF9F6] border border-dashed border-[#D6D2C4] text-center space-y-3">
-                    <div className="w-10 h-10 mx-auto rounded-full bg-[#FCE7F3] text-[#9D174D] flex items-center justify-center animate-spin">
+                  <div className="p-8 rounded-[22px] bg-canvas border border-dashed border-rule-strong text-center space-y-3">
+                    <div className="w-10 h-10 mx-auto rounded-full bg-accent-wash text-accent-ink flex items-center justify-center animate-spin">
                       <RefreshCw size={18} />
                     </div>
                     <div className="space-y-1">
-                      <div className="text-sm font-extrabold text-[#151719]">
+                      <div className="text-sm font-extrabold text-ink">
                         Running Multi-Agent Diagnostic Inference...
                       </div>
-                      <div className="text-xs text-[#575D65]">
+                      <div className="text-xs text-ink-2">
                         Consulting Endocrinology, Cardiology, and Internal Medicine agents for {patient.name}
                       </div>
-                      <div className="text-[10px] font-mono text-[#88909A] pt-1">
+                      <div className="text-[10px] font-mono text-ink-3 pt-1">
                         Model: Gemini 1.5 Flash • Context: Vitals (BP {patient.vitals.bp}, HR {patient.vitals.hr}), Scribe Transcript, Allergies
                       </div>
                     </div>
@@ -1557,7 +1557,7 @@ export default function DoctorGuidedEncounter({
 
                 {/* Error State */}
                 {specialistError && !isSpecialistsLoading && (
-                  <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center justify-between">
+                  <div className="p-4 rounded-2xl bg-caution-wash border border-caution-line text-caution text-xs flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <AlertTriangle size={16} />
                       <span>Diagnostic service warning: {specialistError}. Showing clinical safety backup.</span>
@@ -1565,7 +1565,7 @@ export default function DoctorGuidedEncounter({
                     <button
                       type="button"
                       onClick={() => runLiveSpecialistDiagnosis()}
-                      className="px-3 py-1 rounded-full bg-amber-200 hover:bg-amber-300 font-bold cursor-pointer"
+                      className="px-3 py-1 rounded-full bg-caution-line hover:bg-caution-line font-bold cursor-pointer"
                     >
                       Retry
                     </button>
@@ -1575,9 +1575,9 @@ export default function DoctorGuidedEncounter({
                 {/* Specialist Assessments List */}
                 {!isSpecialistsLoading && specialistAssessments.length > 0 && (
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between text-xs font-bold text-[#88909A]">
+                    <div className="flex items-center justify-between text-xs font-bold text-ink-3">
                       <span>{specialistAssessments.length} Autonomous Specialist Evaluations</span>
-                      <span className="font-mono text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                      <span className="font-mono text-settled bg-settled-wash px-2 py-0.5 rounded-full border border-settled-line">
                         Cryptographic Provenance Verified
                       </span>
                     </div>
@@ -1592,24 +1592,24 @@ export default function DoctorGuidedEncounter({
                       return (
                         <div
                           key={item.caseId || idx}
-                          className="p-5 rounded-[24px] bg-[#FAF9F6] border border-[#E8E4DA] space-y-4 shadow-2xs hover:border-[#D6D2C4] transition-colors"
+                          className="p-5 rounded-[24px] bg-canvas border border-rule-strong space-y-4 shadow-2xs hover:border-rule-strong transition-colors"
                         >
                           {/* Card Header */}
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E8E4DA]">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-rule-strong">
                             <div className="flex items-center gap-2.5">
-                              <span className="w-8 h-8 rounded-xl bg-[#151619] text-white flex items-center justify-center font-bold text-xs">
+                              <span className="w-8 h-8 rounded-xl bg-solid text-white flex items-center justify-center font-bold text-xs">
                                 {idx + 1}
                               </span>
                               <div>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-sm font-extrabold text-[#151719]">
+                                  <span className="text-sm font-extrabold text-ink">
                                     {item.specialist || item.name || 'Specialist Agent'}
                                   </span>
-                                  <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-800 text-[10px] font-bold border border-blue-200">
+                                  <span className="px-2 py-0.5 rounded-full bg-accent-wash text-accent-ink text-[10px] font-bold border border-accent-line">
                                     {Math.round((item.confidence || 0.88) * 100)}% Confidence
                                   </span>
                                 </div>
-                                <span className="text-[10px] font-mono text-[#88909A]">
+                                <span className="text-[10px] font-mono text-ink-3">
                                   Model: {provenance.modelId || 'gemini-1.5-flash'} • Latency: {item.latencyMs || 1600}ms
                                 </span>
                               </div>
@@ -1629,7 +1629,7 @@ export default function DoctorGuidedEncounter({
                                 setSolutions(prev => [...newRecommendations, ...prev]);
                                 showToast(`Adopted ${treatments.length} recommendations from ${item.specialist} into Treatment Plan!`);
                               }}
-                              className="px-3.5 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer self-start sm:self-auto shrink-0 shadow-2xs"
+                              className="px-3.5 py-1.5 rounded-full bg-settled hover:bg-settled text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer self-start sm:self-auto shrink-0 shadow-2xs"
                             >
                               <Plus size={13} />
                               <span>Adopt into Plan</span>
@@ -1639,23 +1639,23 @@ export default function DoctorGuidedEncounter({
                           {/* Differential Diagnoses / Possible Conditions */}
                           {conditions.length > 0 && (
                             <div>
-                              <h4 className="text-[11px] font-extrabold uppercase tracking-wider text-[#88909A] mb-2">
+                              <h4 className="text-[11px] font-extrabold uppercase tracking-wider text-ink-3 mb-2">
                                 Differential Diagnoses / Possible Conditions:
                               </h4>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                                 {conditions.map((cond: any, cIdx: number) => (
                                   <div
                                     key={cIdx}
-                                    className="p-3 rounded-2xl bg-white border border-[#E8E4DA] space-y-1"
+                                    className="p-3 rounded-2xl bg-paper border border-rule-strong space-y-1"
                                   >
                                     <div className="flex items-center justify-between">
-                                      <span className="text-xs font-bold text-[#151719]">{cond.name || cond}</span>
-                                      <span className="text-[9px] uppercase font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                                      <span className="text-xs font-bold text-ink">{cond.name || cond}</span>
+                                      <span className="text-[9px] uppercase font-bold px-2 py-0.5 rounded-full bg-caution-wash text-caution border border-caution-line">
                                         {cond.status || 'Differential'}
                                       </span>
                                     </div>
                                     {cond.supportingEvidence && (
-                                      <p className="text-[11px] text-[#575D65] leading-relaxed">
+                                      <p className="text-[11px] text-ink-2 leading-relaxed">
                                         {cond.supportingEvidence}
                                       </p>
                                     )}
@@ -1667,8 +1667,8 @@ export default function DoctorGuidedEncounter({
 
                           {/* Red Flags & Safety Warnings */}
                           {redFlags.length > 0 && (
-                            <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 space-y-1">
-                              <div className="flex items-center gap-1.5 text-xs font-bold text-rose-900">
+                            <div className="p-3 rounded-2xl bg-critical-wash border border-critical-line space-y-1">
+                              <div className="flex items-center gap-1.5 text-xs font-bold text-critical">
                                 <AlertTriangle size={13} />
                                 <span>Clinical Red Flags Identified:</span>
                               </div>
@@ -1676,7 +1676,7 @@ export default function DoctorGuidedEncounter({
                                 {redFlags.map((rf: string, rfIdx: number) => (
                                   <span
                                     key={rfIdx}
-                                    className="px-2.5 py-0.5 rounded-full bg-white text-rose-800 text-[10px] font-bold border border-rose-300"
+                                    className="px-2.5 py-0.5 rounded-full bg-paper text-critical text-[10px] font-bold border border-critical-line"
                                   >
                                     ⚠ {rf}
                                   </span>
@@ -1688,14 +1688,14 @@ export default function DoctorGuidedEncounter({
                           {/* Suggested Investigations & Tests */}
                           {investigations.length > 0 && (
                             <div>
-                              <h4 className="text-[11px] font-extrabold uppercase tracking-wider text-[#88909A] mb-1.5">
+                              <h4 className="text-[11px] font-extrabold uppercase tracking-wider text-ink-3 mb-1.5">
                                 Suggested Diagnostic Investigations:
                               </h4>
                               <div className="flex flex-wrap gap-1.5">
                                 {investigations.map((inv: string, iIdx: number) => (
                                   <span
                                     key={iIdx}
-                                    className="px-3 py-1 rounded-full bg-white border border-[#D6D2C4] text-xs font-semibold text-[#151719] shadow-2xs"
+                                    className="px-3 py-1 rounded-full bg-paper border border-rule-strong text-xs font-semibold text-ink shadow-2xs"
                                   >
                                     📋 {inv}
                                   </span>
@@ -1707,13 +1707,13 @@ export default function DoctorGuidedEncounter({
                           {/* Treatment Considerations */}
                           {treatments.length > 0 && (
                             <div>
-                              <h4 className="text-[11px] font-extrabold uppercase tracking-wider text-[#88909A] mb-1.5">
+                              <h4 className="text-[11px] font-extrabold uppercase tracking-wider text-ink-3 mb-1.5">
                                 Recommended Clinical Actions:
                               </h4>
-                              <ul className="space-y-1 text-xs text-[#2D3139]">
+                              <ul className="space-y-1 text-xs text-ink">
                                 {treatments.map((tc: string, tIdx: number) => (
                                   <li key={tIdx} className="flex items-start gap-2">
-                                    <span className="text-emerald-700 font-bold">•</span>
+                                    <span className="text-settled font-bold">•</span>
                                     <span>{tc}</span>
                                   </li>
                                 ))}
@@ -1723,15 +1723,15 @@ export default function DoctorGuidedEncounter({
 
                           {/* Uncertainty & Limitations Disclosure */}
                           {item.uncertainty && (
-                            <div className="text-[10px] text-[#88909A] italic border-t border-[#E8E4DA] pt-2">
+                            <div className="text-[10px] text-ink-3 italic border-t border-rule-strong pt-2">
                               {item.uncertainty}
                             </div>
                           )}
 
                           {/* Provenance Badge */}
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-[#E8E4DA] text-[10px] font-mono text-[#88909A]">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-rule-strong text-[10px] font-mono text-ink-3">
                             <div className="flex items-center gap-2">
-                              <ShieldCheck size={12} className="text-emerald-600" />
+                              <ShieldCheck size={12} className="text-settled" />
                               <span>Provenance ID: {provenance.provenanceId || `prov-${Date.now()}`}</span>
                             </div>
                             <div className="truncate max-w-xs">
@@ -1747,8 +1747,8 @@ export default function DoctorGuidedEncounter({
 
               {/* ── CLINICAL GUIDELINE RECOMMENDATIONS (EVIDENCE-GROUNDED) ── */}
               <div>
-                <h3 className="text-base font-extrabold text-[#151719] tracking-tight">Clinical Practice Guidelines & Evidence</h3>
-                <p className="text-xs text-[#575D65]">Guideline-directed medical therapy (GDMT) grounded in verified professional standards.</p>
+                <h3 className="text-base font-extrabold text-ink tracking-tight">Clinical Practice Guidelines & Evidence</h3>
+                <p className="text-xs text-ink-2">Guideline-directed medical therapy (GDMT) grounded in verified professional standards.</p>
               </div>
 
               <div className="space-y-4">
@@ -1757,26 +1757,26 @@ export default function DoctorGuidedEncounter({
                     key={sol.id}
                     className={`p-6 rounded-[26px] border transition-all ${
                       sol.accepted
-                        ? 'bg-white border-[#E8E4DA] shadow-xs'
-                        : 'bg-[#FAF9F6] border-dashed border-[#D6D2C4] opacity-75'
+                        ? 'bg-paper border-rule-strong shadow-xs'
+                        : 'bg-canvas border-dashed border-rule-strong opacity-75'
                     }`}
                   >
                     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                       <div className="flex items-start gap-4">
-                        <div className="w-11 h-11 rounded-2xl bg-[#FCE7F3] text-[#9D174D] flex items-center justify-center shrink-0 font-bold">
+                        <div className="w-11 h-11 rounded-2xl bg-accent-wash text-accent-ink flex items-center justify-center shrink-0 font-bold">
                           <Lightbulb size={22} />
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#FAF9F6] text-[#575D65] border border-[#E8E4DA]">
+                            <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-canvas text-ink-2 border border-rule-strong">
                               Recommendation #{idx + 1}
                             </span>
-                            <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                            <span className="text-[10px] font-bold text-settled bg-settled-wash px-2.5 py-0.5 rounded-full border border-settled-line">
                               {sol.evidence}
                             </span>
                           </div>
-                          <h3 className="text-base font-extrabold text-[#151719] mt-1.5">{sol.title}</h3>
-                          <p className="text-sm text-[#575D65] mt-1 leading-relaxed">
+                          <h3 className="text-base font-extrabold text-ink mt-1.5">{sol.title}</h3>
+                          <p className="text-sm text-ink-2 mt-1 leading-relaxed">
                             {sol.summary}
                           </p>
                         </div>
@@ -1790,8 +1790,8 @@ export default function DoctorGuidedEncounter({
                         }}
                         className={`px-4 py-2 rounded-full text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer self-start shrink-0 ${
                           sol.accepted
-                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs'
-                            : 'bg-[#E8E4DA] hover:bg-[#D6D2C4] text-[#575D65]'
+                            ? 'bg-settled hover:bg-settled text-white shadow-2xs'
+                            : 'bg-paper-2 hover:bg-paper-2 text-ink-2'
                         }`}
                       >
                         {sol.accepted ? (
@@ -1813,7 +1813,7 @@ export default function DoctorGuidedEncounter({
                 <button
                   type="button"
                   onClick={handlePrevStep}
-                  className="flex items-center gap-2 px-5 py-3 rounded-full bg-white border border-[#E8E4DA] text-xs font-bold text-[#575D65] hover:bg-[#FAF9F6] cursor-pointer shadow-2xs"
+                  className="flex items-center gap-2 px-5 py-3 rounded-full bg-paper border border-rule-strong text-xs font-bold text-ink-2 hover:bg-canvas cursor-pointer shadow-2xs"
                 >
                   <ArrowLeft size={14} />
                   <span>Previous: SOAP</span>
@@ -1822,7 +1822,7 @@ export default function DoctorGuidedEncounter({
                 <button
                   type="button"
                   onClick={handleNextStep}
-                  className="flex items-center gap-2 px-7 py-3.5 rounded-full bg-[#151719] hover:bg-[#2D3139] text-white text-sm font-extrabold shadow-md transition-all active:scale-95 cursor-pointer"
+                  className="flex items-center gap-2 px-7 py-3.5 rounded-full bg-solid hover:bg-solid text-white text-sm font-extrabold shadow-md transition-all active:scale-95 cursor-pointer"
                 >
                   <span>Proceed to Step 5: Offer Medications & Prescriptions</span>
                   <ArrowRight size={16} />
@@ -1840,13 +1840,13 @@ export default function DoctorGuidedEncounter({
               
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-extrabold text-[#151719] tracking-tight">Prescriptions & Medication Safety</h2>
-                  <p className="text-xs text-[#575D65]">Authorize recommended prescriptions or prescribe new drugs. Safety gate validates allergies live.</p>
+                  <h2 className="text-xl font-extrabold text-ink tracking-tight">Prescriptions & Medication Safety</h2>
+                  <p className="text-xs text-ink-2">Authorize recommended prescriptions or prescribe new drugs. Safety gate validates allergies live.</p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowAddMedModal(true)}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#151719] text-white text-xs font-bold hover:bg-[#2D3139] shadow-2xs cursor-pointer"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-solid text-white text-xs font-bold hover:bg-solid shadow-2xs cursor-pointer"
                 >
                   <Plus size={14} />
                   <span>Add Prescription</span>
@@ -1854,16 +1854,16 @@ export default function DoctorGuidedEncounter({
               </div>
 
               {/* DETERMINISTIC ALLERGY SAFETY BANNER */}
-              <div className="p-4.5 rounded-[22px] bg-emerald-50 border border-emerald-200 flex items-center gap-3.5 shadow-2xs">
-                <ShieldCheck size={24} className="text-emerald-700 shrink-0" />
+              <div className="p-4.5 rounded-[22px] bg-settled-wash border border-settled-line flex items-center gap-3.5 shadow-2xs">
+                <ShieldCheck size={24} className="text-settled shrink-0" />
                 <div className="text-xs">
-                  <div className="font-extrabold text-emerald-900 flex items-center gap-2">
+                  <div className="font-extrabold text-settled flex items-center gap-2">
                     <span>Deterministic Safety Gate: Clear to Prescribe</span>
-                    <span className="px-2 py-0.2 rounded-full bg-emerald-200 text-emerald-900 text-[10px] font-mono">
+                    <span className="px-2 py-0.2 rounded-full bg-settled-line text-settled text-[10px] font-mono">
                       {safetyCheck.status}
                     </span>
                   </div>
-                  <p className="text-emerald-800 mt-0.5">
+                  <p className="text-settled mt-0.5">
                     Prescriptions cross-checked against documented allergies ({patient.allergies.join(', ')}). Renal function evaluated safe.
                   </p>
                 </div>
@@ -1872,32 +1872,32 @@ export default function DoctorGuidedEncounter({
               {/* Prescription Cards */}
               <div className="space-y-4">
                 {prescriptions.map((rx) => (
-                  <div key={rx.id} className="p-6 rounded-[26px] bg-white border border-[#E8E4DA] shadow-xs">
+                  <div key={rx.id} className="p-6 rounded-[26px] bg-paper border border-rule-strong shadow-xs">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div className="flex items-start gap-4">
-                        <div className="w-13 h-13 rounded-2xl bg-[#FAF9F6] border border-[#E8E4DA] flex items-center justify-center text-[#9D174D] font-bold shrink-0">
+                        <div className="w-13 h-13 rounded-2xl bg-canvas border border-rule-strong flex items-center justify-center text-accent-ink font-bold shrink-0">
                           <Pill size={24} />
                         </div>
 
                         <div>
                           <div className="flex items-center gap-2">
-                            <h3 className="text-base font-extrabold text-[#151719]">{rx.name} {rx.dosage}</h3>
+                            <h3 className="text-base font-extrabold text-ink">{rx.name} {rx.dosage}</h3>
                             {rx.isNew ? (
-                              <span className="px-2.5 py-0.5 rounded-full bg-[#FCE7F3] text-[#9D174D] text-[10px] font-extrabold">
+                              <span className="px-2.5 py-0.5 rounded-full bg-accent-wash text-accent-ink text-[10px] font-extrabold">
                                 NEW PRESCRIPTION
                               </span>
                             ) : (
-                              <span className="px-2.5 py-0.5 rounded-full bg-[#FAF9F6] text-[#575D65] border border-[#E8E4DA] text-[10px] font-bold">
+                              <span className="px-2.5 py-0.5 rounded-full bg-canvas text-ink-2 border border-rule-strong text-[10px] font-bold">
                                 CURRENT REGIMEN
                               </span>
                             )}
                           </div>
 
-                          <p className="text-xs text-[#575D65] mt-1 font-medium">
-                            Directions: <strong className="text-[#151719]">{rx.frequency}</strong> ({rx.route})
+                          <p className="text-xs text-ink-2 mt-1 font-medium">
+                            Directions: <strong className="text-ink">{rx.frequency}</strong> ({rx.route})
                           </p>
                           
-                          <p className="text-[11px] text-[#88909A] mt-0.5">
+                          <p className="text-[11px] text-ink-3 mt-0.5">
                             Quantity: {rx.quantity} • Refills: {rx.refills} • Indication: {rx.indication}
                           </p>
                         </div>
@@ -1907,7 +1907,7 @@ export default function DoctorGuidedEncounter({
                         <button
                           type="button"
                           onClick={() => showToast(`Authorized e-prescription for ${rx.name}!`)}
-                          className="px-5 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                          className="px-5 py-2.5 rounded-full bg-settled hover:bg-settled text-white text-xs font-extrabold flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
                         >
                           <Check size={14} />
                           <span>e-Prescribe</span>
@@ -1923,7 +1923,7 @@ export default function DoctorGuidedEncounter({
                 <button
                   type="button"
                   onClick={handlePrevStep}
-                  className="flex items-center gap-2 px-5 py-3 rounded-full bg-white border border-[#E8E4DA] text-xs font-bold text-[#575D65] hover:bg-[#FAF9F6] cursor-pointer shadow-2xs"
+                  className="flex items-center gap-2 px-5 py-3 rounded-full bg-paper border border-rule-strong text-xs font-bold text-ink-2 hover:bg-canvas cursor-pointer shadow-2xs"
                 >
                   <ArrowLeft size={14} />
                   <span>Previous: Solutions</span>
@@ -1932,7 +1932,7 @@ export default function DoctorGuidedEncounter({
                 <button
                   type="button"
                   onClick={handleNextStep}
-                  className="flex items-center gap-2 px-7 py-3.5 rounded-full bg-[#151719] hover:bg-[#2D3139] text-white text-sm font-extrabold shadow-md transition-all active:scale-95 cursor-pointer"
+                  className="flex items-center gap-2 px-7 py-3.5 rounded-full bg-solid hover:bg-solid text-white text-sm font-extrabold shadow-md transition-all active:scale-95 cursor-pointer"
                 >
                   <span>Proceed to Step 6: Make Patient Report & Summary</span>
                   <ArrowRight size={16} />
@@ -1950,14 +1950,14 @@ export default function DoctorGuidedEncounter({
               
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-extrabold text-[#151719] tracking-tight">Patient After-Visit Summary</h2>
-                  <p className="text-xs text-[#575D65]">Written in plain, friendly English for {patient.name} to take home.</p>
+                  <h2 className="text-xl font-extrabold text-ink tracking-tight">Patient After-Visit Summary</h2>
+                  <p className="text-xs text-ink-2">Written in plain, friendly English for {patient.name} to take home.</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => window.print()}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-white border border-[#E8E4DA] text-xs font-bold text-[#575D65] hover:bg-[#FAF9F6] shadow-2xs cursor-pointer"
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-paper border border-rule-strong text-xs font-bold text-ink-2 hover:bg-canvas shadow-2xs cursor-pointer"
                   >
                     <Printer size={13} />
                     <span>Print</span>
@@ -1965,7 +1965,7 @@ export default function DoctorGuidedEncounter({
                   <button
                     type="button"
                     onClick={() => showToast(`Sent SMS summary to ${patient.patientPhone || '(555) 102-9488'}`)}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#FCE7F3] text-[#9D174D] border border-[#FBCFE8] text-xs font-extrabold hover:bg-[#FCE7F3]/70 cursor-pointer shadow-2xs"
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-accent-wash text-accent-ink border border-accent-line text-xs font-extrabold hover:bg-accent-wash/70 cursor-pointer shadow-2xs"
                   >
                     <Send size={13} />
                     <span>Send SMS</span>
@@ -1974,41 +1974,41 @@ export default function DoctorGuidedEncounter({
               </div>
 
               {/* Printable Card */}
-              <div className="p-8 rounded-[28px] bg-white border border-[#E8E4DA] shadow-xs space-y-5">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-[#F0ECE1]">
+              <div className="p-8 rounded-[28px] bg-paper border border-rule-strong shadow-xs space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-rule">
                   <div>
-                    <span className="text-xs font-bold tracking-widest uppercase text-[#9D174D]">PROTON CLINICAL HEALTHCARE</span>
-                    <h3 className="text-2xl font-black text-[#151719] mt-0.5">{patientReport.title}</h3>
-                    <p className="text-xs text-[#575D65] mt-0.5">
+                    <span className="text-xs font-bold tracking-widest uppercase text-accent-ink">PROTON CLINICAL HEALTHCARE</span>
+                    <h3 className="text-2xl font-black text-ink mt-0.5">{patientReport.title}</h3>
+                    <p className="text-xs text-ink-2 mt-0.5">
                       Date: {patientReport.date} • Attending: {doctorProfile.name} • {doctorProfile.facility}
                     </p>
                   </div>
                   <div className="text-right">
-                    <span className="text-sm font-extrabold text-[#151719] block">{patient.name}</span>
-                    <span className="text-xs text-[#88909A] block">MRN: {patient.mrn} • Age: {patient.age}</span>
+                    <span className="text-sm font-extrabold text-ink block">{patient.name}</span>
+                    <span className="text-xs text-ink-3 block">MRN: {patient.mrn} • Age: {patient.age}</span>
                   </div>
                 </div>
 
-                <div className="p-4.5 rounded-[20px] bg-[#FAF9F6] border border-[#E8E4DA] space-y-1">
-                  <h4 className="text-xs font-extrabold text-[#151719] uppercase tracking-wider">What We Discussed Today:</h4>
-                  <p className="text-sm text-[#2D3139] leading-relaxed">
+                <div className="p-4.5 rounded-[20px] bg-canvas border border-rule-strong space-y-1">
+                  <h4 className="text-xs font-extrabold text-ink uppercase tracking-wider">What We Discussed Today:</h4>
+                  <p className="text-sm text-ink leading-relaxed">
                     {patientReport.whatsNew}
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <h4 className="text-xs font-extrabold text-[#151719] uppercase tracking-wider">Your Daily Medications:</h4>
+                  <h4 className="text-xs font-extrabold text-ink uppercase tracking-wider">Your Daily Medications:</h4>
                   {patientReport.medicationInstructions.map((item, idx) => (
-                    <div key={idx} className="flex items-start gap-2.5 p-3 rounded-[16px] bg-[#FAF9F6] border border-[#E8E4DA] text-xs font-medium text-[#151719]">
-                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0 mt-0.5" />
+                    <div key={idx} className="flex items-start gap-2.5 p-3 rounded-[16px] bg-canvas border border-rule-strong text-xs font-medium text-ink">
+                      <CheckCircle2 size={15} className="text-settled shrink-0 mt-0.5" />
                       <span>{item}</span>
                     </div>
                   ))}
                 </div>
 
-                <div className="p-4.5 rounded-[20px] bg-rose-50 border border-rose-200 text-xs text-rose-950 space-y-1">
-                  <h4 className="font-extrabold flex items-center gap-1.5 text-rose-950">
-                    <AlertTriangle size={15} className="text-rose-600" />
+                <div className="p-4.5 rounded-[20px] bg-critical-wash border border-critical-line text-xs text-critical space-y-1">
+                  <h4 className="font-extrabold flex items-center gap-1.5 text-critical">
+                    <AlertTriangle size={15} className="text-critical" />
                     <span>When to Call Clinic Immediately:</span>
                   </h4>
                   <p className="leading-relaxed">
@@ -2022,7 +2022,7 @@ export default function DoctorGuidedEncounter({
                 <button
                   type="button"
                   onClick={handlePrevStep}
-                  className="flex items-center gap-2 px-5 py-3 rounded-full bg-white border border-[#E8E4DA] text-xs font-bold text-[#575D65] hover:bg-[#FAF9F6] cursor-pointer shadow-2xs"
+                  className="flex items-center gap-2 px-5 py-3 rounded-full bg-paper border border-rule-strong text-xs font-bold text-ink-2 hover:bg-canvas cursor-pointer shadow-2xs"
                 >
                   <ArrowLeft size={14} />
                   <span>Previous: Medications</span>
@@ -2031,7 +2031,7 @@ export default function DoctorGuidedEncounter({
                 <button
                   type="button"
                   onClick={handleNextStep}
-                  className="flex items-center gap-2 px-7 py-3.5 rounded-full bg-[#151719] hover:bg-[#2D3139] text-white text-sm font-extrabold shadow-md transition-all active:scale-95 cursor-pointer"
+                  className="flex items-center gap-2 px-7 py-3.5 rounded-full bg-solid hover:bg-solid text-white text-sm font-extrabold shadow-md transition-all active:scale-95 cursor-pointer"
                 >
                   <span>Proceed to Step 7: Follow-up & Complete Encounter</span>
                   <ArrowRight size={16} />
@@ -2048,14 +2048,14 @@ export default function DoctorGuidedEncounter({
             <div className="space-y-5 animate-in fade-in duration-200">
               
               <div>
-                <h2 className="text-xl font-extrabold text-[#151719] tracking-tight">Follow-up, Orders & Sign Off</h2>
-                <p className="text-xs text-[#575D65]">Finalize follow-up appointment, review outpatient orders, and sign into EHR.</p>
+                <h2 className="text-xl font-extrabold text-ink tracking-tight">Follow-up, Orders & Sign Off</h2>
+                <p className="text-xs text-ink-2">Finalize follow-up appointment, review outpatient orders, and sign into EHR.</p>
               </div>
 
               {/* Follow-up Presets */}
-              <div className="p-6 rounded-[28px] bg-white border border-[#E8E4DA] shadow-xs space-y-4">
-                <h3 className="text-sm font-extrabold text-[#151719] flex items-center gap-2">
-                  <Calendar size={16} className="text-[#9D174D]" />
+              <div className="p-6 rounded-[28px] bg-paper border border-rule-strong shadow-xs space-y-4">
+                <h3 className="text-sm font-extrabold text-ink flex items-center gap-2">
+                  <Calendar size={16} className="text-accent-ink" />
                   <span>Select Next In-Clinic Follow-Up Interval</span>
                 </h3>
 
@@ -2075,12 +2075,12 @@ export default function DoctorGuidedEncounter({
                       }}
                       className={`p-4 rounded-[22px] border text-left transition-all cursor-pointer ${
                         followupWeeks === item.weeks
-                          ? 'bg-[#151619] text-white border-transparent shadow-md font-bold'
-                          : 'bg-[#FAF9F6] hover:bg-[#F2EFE9] text-[#151719] border-[#E8E4DA]'
+                          ? 'bg-solid text-white border-transparent shadow-md font-bold'
+                          : 'bg-canvas hover:bg-paper-2 text-ink border-rule-strong'
                       }`}
                     >
                       <span className="text-sm font-extrabold block">{item.label}</span>
-                      <span className={`text-[10px] block mt-0.5 ${followupWeeks === item.weeks ? 'text-white/70' : 'text-[#88909A]'}`}>
+                      <span className={`text-[10px] block mt-0.5 ${followupWeeks === item.weeks ? 'text-white/70' : 'text-ink-3'}`}>
                         {item.note}
                       </span>
                     </button>
@@ -2089,51 +2089,51 @@ export default function DoctorGuidedEncounter({
               </div>
 
               {/* Lab Orders */}
-              <div className="p-6 rounded-[28px] bg-white border border-[#E8E4DA] shadow-xs space-y-3">
-                <h3 className="text-sm font-extrabold text-[#151719] flex items-center gap-2">
-                  <Activity size={16} className="text-[#9D174D]" />
+              <div className="p-6 rounded-[28px] bg-paper border border-rule-strong shadow-xs space-y-3">
+                <h3 className="text-sm font-extrabold text-ink flex items-center gap-2">
+                  <Activity size={16} className="text-accent-ink" />
                   <span>Outpatient Diagnostic Laboratory Orders</span>
                 </h3>
                 <div className="space-y-2">
                   {orderedLabs.map((lab, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-3.5 rounded-[18px] bg-[#FAF9F6] border border-[#E8E4DA] text-xs font-semibold">
+                    <div key={idx} className="flex items-center justify-between p-3.5 rounded-[18px] bg-canvas border border-rule-strong text-xs font-semibold">
                       <div className="flex items-center gap-2.5">
-                        <CheckCircle2 size={16} className="text-emerald-600" />
+                        <CheckCircle2 size={16} className="text-settled" />
                         <span>{lab}</span>
                       </div>
-                      <span className="text-[10px] font-mono text-[#88909A]">LOINC Verified</span>
+                      <span className="text-[10px] font-mono text-ink-3">LOINC Verified</span>
                     </div>
                   ))}
                 </div>
               </div>
 
               {/* Grand Sign-off Card */}
-              <div className="p-8 rounded-[32px] bg-white border border-[#E8E4DA] shadow-sm text-center space-y-4">
-                <div className="w-16 h-16 rounded-full bg-[#151619] text-white flex items-center justify-center mx-auto shadow-md">
+              <div className="p-8 rounded-[32px] bg-paper border border-rule-strong shadow-sm text-center space-y-4">
+                <div className="w-16 h-16 rounded-full bg-solid text-white flex items-center justify-center mx-auto shadow-md">
                   <Award size={28} />
                 </div>
 
                 <div>
-                  <h3 className="text-xl font-black text-[#151719]">Physician Sign-Off & Attestation</h3>
-                  <p className="text-xs text-[#575D65] max-w-md mx-auto mt-1 leading-relaxed">
+                  <h3 className="text-xl font-black text-ink">Physician Sign-Off & Attestation</h3>
+                  <p className="text-xs text-ink-2 max-w-md mx-auto mt-1 leading-relaxed">
                     I, <strong>{doctorProfile.name}</strong>, attest that I personally evaluated {patient.name} today in {doctorProfile.room}, verified documentation, orders, and clinical prescriptions.
                   </p>
                 </div>
 
                 {isSigned ? (
-                  <div className="p-5 rounded-[24px] bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 max-w-md mx-auto space-y-2 shadow-2xs">
+                  <div className="p-5 rounded-[24px] bg-settled-wash border border-settled-line text-xs text-settled max-w-md mx-auto space-y-2 shadow-2xs">
                     <div className="font-extrabold flex items-center justify-center gap-2 text-sm">
-                      <CheckCircle2 size={18} className="text-emerald-600" />
+                      <CheckCircle2 size={18} className="text-settled" />
                       <span>Encounter Signed & FHIR Synced</span>
                     </div>
-                    <p className="text-[11px] text-emerald-800">
+                    <p className="text-[11px] text-settled">
                       Timestamp: {signedTimestamp} • {doctorProfile.npi} • SHA-256 Verified
                     </p>
                     <div className="pt-2 flex items-center justify-center gap-2.5">
                       <button
                         type="button"
                         onClick={() => navigate('/')}
-                        className="px-5 py-2.5 rounded-full bg-[#151719] text-white font-extrabold text-xs hover:bg-[#2D3139] cursor-pointer shadow-2xs"
+                        className="px-5 py-2.5 rounded-full bg-solid text-white font-extrabold text-xs hover:bg-solid cursor-pointer shadow-2xs"
                       >
                         Dashboard
                       </button>
@@ -2145,7 +2145,7 @@ export default function DoctorGuidedEncounter({
                           setIsSigned(false);
                           showToast('Loaded next scheduled patient: Sarah Jenkins');
                         }}
-                        className="px-5 py-2.5 rounded-full bg-white border border-[#E8E4DA] text-[#151719] font-extrabold text-xs hover:bg-[#FAF9F6] cursor-pointer shadow-2xs"
+                        className="px-5 py-2.5 rounded-full bg-paper border border-rule-strong text-ink font-extrabold text-xs hover:bg-canvas cursor-pointer shadow-2xs"
                       >
                         Next Patient →
                       </button>
@@ -2156,9 +2156,9 @@ export default function DoctorGuidedEncounter({
                     type="button"
                     onClick={() => { void handleSignEncounter(); }}
                     disabled={isSigning}
-                    className="px-8 py-4 rounded-full bg-[#151719] hover:bg-[#2D3139] text-white text-base font-black shadow-xl transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer flex items-center justify-center gap-3 mx-auto"
+                    className="px-8 py-4 rounded-full bg-solid hover:bg-solid text-white text-base font-black shadow-xl transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer flex items-center justify-center gap-3 mx-auto"
                   >
-                    <ShieldCheck size={22} className="text-emerald-400" />
+                    <ShieldCheck size={22} className="text-settled-on-solid" />
                     <span>{isSigning ? 'Signing encounter…' : 'Sign & Complete Encounter (1-Click)'}</span>
                   </button>
                 )}
@@ -2175,10 +2175,10 @@ export default function DoctorGuidedEncounter({
       {/* FLOATING PROTON AI ASSISTANT WIDGET (Signature Reference 4)      */}
       {/* ═══════════════════════════════════════════════════════════════ */}
       {showAiAssistant && (
-        <div className="fixed bottom-6 right-6 z-40 w-84 bg-[#151619] text-white rounded-[28px] p-5 shadow-2xl border border-white/10 animate-in slide-in-from-bottom-5">
-          <div className="flex items-center justify-between pb-3 border-b border-white/10">
+        <div className="fixed bottom-6 right-6 z-40 w-84 bg-solid text-white rounded-[28px] p-5 shadow-2xl border border-rule/10 animate-in slide-in-from-bottom-5">
+          <div className="flex items-center justify-between pb-3 border-b border-rule/10">
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full bg-[#FCE7F3] text-[#9D174D] flex items-center justify-center font-bold text-xs">
+              <div className="w-6 h-6 rounded-full bg-accent-wash text-accent-ink flex items-center justify-center font-bold text-xs">
                 ✨
               </div>
               <span className="text-xs font-extrabold">Proton Assistant</span>
@@ -2186,17 +2186,17 @@ export default function DoctorGuidedEncounter({
             <button
               type="button"
               onClick={() => setShowAiAssistant(false)}
-              className="w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center cursor-pointer transition-colors"
+              className="w-6 h-6 rounded-full bg-paper/10 hover:bg-paper/20 text-white flex items-center justify-center cursor-pointer transition-colors"
             >
               <X size={13} />
             </button>
           </div>
 
           <div className="py-3 space-y-2">
-            <div className="p-3 rounded-2xl bg-white/10 text-xs text-white/90 leading-relaxed">
+            <div className="p-3 rounded-2xl bg-paper/10 text-xs text-white/90 leading-relaxed">
               Hello {doctorProfile.name.split(',')[0]} 👋 I'm ready to assist with {patient.name}!
             </div>
-            <div className="p-3 rounded-2xl bg-white/10 text-xs text-white/90 leading-relaxed">
+            <div className="p-3 rounded-2xl bg-paper/10 text-xs text-white/90 leading-relaxed">
               Patient presents with <strong>"{patient.chiefComplaint}"</strong>. Allergies are guarded against: <strong>{patient.allergies.join(', ')}</strong>.
             </div>
           </div>
@@ -2207,7 +2207,7 @@ export default function DoctorGuidedEncounter({
               setCurrentStep('solutions');
               showToast('Loaded AI Guideline Recommendations');
             }}
-            className="w-full py-2.5 rounded-full bg-[#FCE7F3] hover:bg-[#FCE7F3]/90 text-[#9D174D] font-black text-xs transition-transform active:scale-95 cursor-pointer shadow-sm text-center block mt-1"
+            className="w-full py-2.5 rounded-full bg-accent-wash hover:bg-accent-wash/90 text-accent-ink font-black text-xs transition-transform active:scale-95 cursor-pointer shadow-sm text-center block mt-1"
           >
             Show recommendations
           </button>
@@ -2219,21 +2219,21 @@ export default function DoctorGuidedEncounter({
       {/* ═══════════════════════════════════════════════════════════════ */}
       {showDoctorModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="w-full max-w-md bg-white rounded-[32px] p-6 shadow-2xl border border-[#E8E4DA] space-y-5 animate-in zoom-in-95">
-            <div className="flex items-center justify-between pb-3 border-b border-[#F0ECE1]">
+          <div className="w-full max-w-md bg-paper rounded-[32px] p-6 shadow-2xl border border-rule-strong space-y-5 animate-in zoom-in-95">
+            <div className="flex items-center justify-between pb-3 border-b border-rule">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-[#FCE7F3] text-[#9D174D] flex items-center justify-center font-bold text-sm">
+                <div className="w-8 h-8 rounded-xl bg-accent-wash text-accent-ink flex items-center justify-center font-bold text-sm">
                   <User size={16} />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-[#151719]">Physician Identity & Room</h3>
-                  <span className="text-[10px] text-[#88909A]">Configure your clinical credentials</span>
+                  <h3 className="text-base font-extrabold text-ink">Physician Identity & Room</h3>
+                  <span className="text-[10px] text-ink-3">Configure your clinical credentials</span>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowDoctorModal(false)}
-                className="w-7 h-7 rounded-full bg-[#FAF9F6] hover:bg-[#F2EFE9] text-[#575D65] flex items-center justify-center cursor-pointer"
+                className="w-7 h-7 rounded-full bg-canvas hover:bg-paper-2 text-ink-2 flex items-center justify-center cursor-pointer"
               >
                 <X size={14} />
               </button>
@@ -2241,46 +2241,46 @@ export default function DoctorGuidedEncounter({
 
             <div className="space-y-3.5 text-xs">
               <div>
-                <label className="font-bold text-[#151719] block mb-1">Doctor Full Name & Degree</label>
+                <label className="font-bold text-ink block mb-1">Doctor Full Name & Degree</label>
                 <input
                   type="text"
                   value={editDocName}
                   onChange={(e) => setEditDocName(e.target.value)}
                   placeholder="e.g. Dr. Maya Patel, MD"
-                  className="w-full px-3.5 py-2.5 rounded-2xl bg-[#FAF9F6] border border-[#E8E4DA] text-sm text-[#151719] font-medium focus:outline-none focus:ring-2 focus:ring-[#9D174D]"
+                  className="w-full px-3.5 py-2.5 rounded-2xl bg-canvas border border-rule-strong text-sm text-ink font-medium focus:outline-none focus:ring-2 focus:ring-accent"
                 />
               </div>
 
               <div>
-                <label className="font-bold text-[#151719] block mb-1">Clinical Specialty</label>
+                <label className="font-bold text-ink block mb-1">Clinical Specialty</label>
                 <input
                   type="text"
                   value={editDocSpecialty}
                   onChange={(e) => setEditDocSpecialty(e.target.value)}
                   placeholder="e.g. Attending Physician • Internal Medicine"
-                  className="w-full px-3.5 py-2.5 rounded-2xl bg-[#FAF9F6] border border-[#E8E4DA] text-sm text-[#151719] font-medium focus:outline-none focus:ring-2 focus:ring-[#9D174D]"
+                  className="w-full px-3.5 py-2.5 rounded-2xl bg-canvas border border-rule-strong text-sm text-ink font-medium focus:outline-none focus:ring-2 focus:ring-accent"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-[#151719] block mb-1">Exam Room / Desk</label>
+                  <label className="font-bold text-ink block mb-1">Exam Room / Desk</label>
                   <input
                     type="text"
                     value={editDocRoom}
                     onChange={(e) => setEditDocRoom(e.target.value)}
                     placeholder="e.g. Exam Room 104"
-                    className="w-full px-3.5 py-2.5 rounded-2xl bg-[#FAF9F6] border border-[#E8E4DA] text-sm text-[#151719] font-medium focus:outline-none focus:ring-2 focus:ring-[#9D174D]"
+                    className="w-full px-3.5 py-2.5 rounded-2xl bg-canvas border border-rule-strong text-sm text-ink font-medium focus:outline-none focus:ring-2 focus:ring-accent"
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-[#151719] block mb-1">National Provider (NPI)</label>
+                  <label className="font-bold text-ink block mb-1">National Provider (NPI)</label>
                   <input
                     type="text"
                     value={editDocNpi}
                     onChange={(e) => setEditDocNpi(e.target.value)}
                     placeholder="e.g. NPI 1849201948"
-                    className="w-full px-3.5 py-2.5 rounded-2xl bg-[#FAF9F6] border border-[#E8E4DA] text-sm text-[#151719] font-medium focus:outline-none focus:ring-2 focus:ring-[#9D174D]"
+                    className="w-full px-3.5 py-2.5 rounded-2xl bg-canvas border border-rule-strong text-sm text-ink font-medium focus:outline-none focus:ring-2 focus:ring-accent"
                   />
                 </div>
               </div>
@@ -2290,14 +2290,14 @@ export default function DoctorGuidedEncounter({
               <button
                 type="button"
                 onClick={() => setShowDoctorModal(false)}
-                className="px-4 py-2 rounded-full bg-white border border-[#E8E4DA] text-xs font-bold text-[#575D65] hover:bg-[#FAF9F6] cursor-pointer"
+                className="px-4 py-2 rounded-full bg-paper border border-rule-strong text-xs font-bold text-ink-2 hover:bg-canvas cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleSaveDoctorProfile}
-                className="px-6 py-2.5 rounded-full bg-[#151719] text-white text-xs font-extrabold hover:bg-[#2D3139] cursor-pointer shadow-sm"
+                className="px-6 py-2.5 rounded-full bg-solid text-white text-xs font-extrabold hover:bg-solid cursor-pointer shadow-sm"
               >
                 Save Doctor Profile
               </button>
@@ -2311,21 +2311,21 @@ export default function DoctorGuidedEncounter({
       {/* ═══════════════════════════════════════════════════════════════ */}
       {showNewPatientModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="w-full max-w-lg bg-white rounded-[32px] p-6 shadow-2xl border border-[#E8E4DA] space-y-5 animate-in zoom-in-95">
-            <div className="flex items-center justify-between pb-3 border-b border-[#F0ECE1]">
+          <div className="w-full max-w-lg bg-paper rounded-[32px] p-6 shadow-2xl border border-rule-strong space-y-5 animate-in zoom-in-95">
+            <div className="flex items-center justify-between pb-3 border-b border-rule">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-sm">
+                <div className="w-8 h-8 rounded-xl bg-settled-wash text-settled flex items-center justify-center font-bold text-sm">
                   <Plus size={16} />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-[#151719]">Start New Patient Consultation</h3>
-                  <span className="text-[10px] text-[#88909A]">Enter patient details or choose a rapid clinical preset</span>
+                  <h3 className="text-base font-extrabold text-ink">Start New Patient Consultation</h3>
+                  <span className="text-[10px] text-ink-3">Enter patient details or choose a rapid clinical preset</span>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowNewPatientModal(false)}
-                className="w-7 h-7 rounded-full bg-[#FAF9F6] hover:bg-[#F2EFE9] text-[#575D65] flex items-center justify-center cursor-pointer"
+                className="w-7 h-7 rounded-full bg-canvas hover:bg-paper-2 text-ink-2 flex items-center justify-center cursor-pointer"
               >
                 <X size={14} />
               </button>
@@ -2333,72 +2333,72 @@ export default function DoctorGuidedEncounter({
 
             {/* Rapid Presets */}
             <div className="space-y-1.5">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#88909A]">Quick 1-Click Clinical Cases:</span>
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-ink-3">Quick 1-Click Clinical Cases:</span>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <button
                   type="button"
                   onClick={() => handleCreateNewPatient('angina')}
-                  className="p-2.5 rounded-2xl bg-[#FEF9E7] border border-[#FDE68A] text-left hover:scale-[1.02] transition-transform cursor-pointer"
+                  className="p-2.5 rounded-2xl bg-caution-wash border border-caution-line text-left hover:scale-[1.02] transition-transform cursor-pointer"
                 >
-                  <span className="text-xs font-bold text-[#854D0E] block truncate">Arthur Morgan</span>
-                  <span className="text-[9px] text-[#854D0E]/80 block truncate">Cardiology / Angina</span>
+                  <span className="text-xs font-bold text-caution block truncate">Arthur Morgan</span>
+                  <span className="text-[9px] text-caution/80 block truncate">Cardiology / Angina</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleCreateNewPatient('asthma')}
-                  className="p-2.5 rounded-2xl bg-[#FDECEF] border border-[#F8C8D4] text-left hover:scale-[1.02] transition-transform cursor-pointer"
+                  className="p-2.5 rounded-2xl bg-critical-wash border border-critical-line text-left hover:scale-[1.02] transition-transform cursor-pointer"
                 >
-                  <span className="text-xs font-bold text-[#881337] block truncate">Chloe Bennett</span>
-                  <span className="text-[9px] text-[#881337]/80 block truncate">Asthma Flare</span>
+                  <span className="text-xs font-bold text-critical block truncate">Chloe Bennett</span>
+                  <span className="text-[9px] text-critical/80 block truncate">Asthma Flare</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleCreateNewPatient('diabetes')}
-                  className="p-2.5 rounded-2xl bg-[#E2EBD8] border border-[#CDE0C1] text-left hover:scale-[1.02] transition-transform cursor-pointer"
+                  className="p-2.5 rounded-2xl bg-settled-wash border border-settled-line text-left hover:scale-[1.02] transition-transform cursor-pointer"
                 >
-                  <span className="text-xs font-bold text-[#243E1B] block truncate">Eleanor Vance</span>
-                  <span className="text-[9px] text-[#243E1B]/80 block truncate">T2D & Fatigue</span>
+                  <span className="text-xs font-bold text-settled block truncate">Eleanor Vance</span>
+                  <span className="text-[9px] text-settled/80 block truncate">T2D & Fatigue</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleCreateNewPatient('ckd')}
-                  className="p-2.5 rounded-2xl bg-[#EFF6FF] border border-[#BFDBFE] text-left hover:scale-[1.02] transition-transform cursor-pointer"
+                  className="p-2.5 rounded-2xl bg-accent-wash border border-accent-line text-left hover:scale-[1.02] transition-transform cursor-pointer"
                 >
-                  <span className="text-xs font-bold text-[#1E40AF] block truncate">David Kim</span>
-                  <span className="text-[9px] text-[#1E40AF]/80 block truncate">Nephrology / CKD</span>
+                  <span className="text-xs font-bold text-accent-ink block truncate">David Kim</span>
+                  <span className="text-[9px] text-accent-ink/80 block truncate">Nephrology / CKD</span>
                 </button>
               </div>
             </div>
 
             {/* Custom Input Form */}
-            <div className="space-y-3 pt-2 text-xs border-t border-[#F0ECE1]">
+            <div className="space-y-3 pt-2 text-xs border-t border-rule">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-[#151719] block mb-1">Patient Full Name</label>
+                  <label className="font-bold text-ink block mb-1">Patient Full Name</label>
                   <input
                     type="text"
                     value={newPtName}
                     onChange={(e) => setNewPtName(e.target.value)}
                     placeholder="e.g. Jonathan Wright"
-                    className="w-full px-3 py-2 rounded-2xl bg-[#FAF9F6] border border-[#E8E4DA] text-sm text-[#151719] font-medium focus:outline-none focus:ring-2 focus:ring-[#9D174D]"
+                    className="w-full px-3 py-2 rounded-2xl bg-canvas border border-rule-strong text-sm text-ink font-medium focus:outline-none focus:ring-2 focus:ring-accent"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="font-bold text-[#151719] block mb-1">Age</label>
+                    <label className="font-bold text-ink block mb-1">Age</label>
                     <input
                       type="number"
                       value={newPtAge}
                       onChange={(e) => setNewPtAge(Number(e.target.value))}
-                      className="w-full px-3 py-2 rounded-2xl bg-[#FAF9F6] border border-[#E8E4DA] text-sm text-[#151719] font-medium focus:outline-none focus:ring-2 focus:ring-[#9D174D]"
+                      className="w-full px-3 py-2 rounded-2xl bg-canvas border border-rule-strong text-sm text-ink font-medium focus:outline-none focus:ring-2 focus:ring-accent"
                     />
                   </div>
                   <div>
-                    <label className="font-bold text-[#151719] block mb-1">Gender</label>
+                    <label className="font-bold text-ink block mb-1">Gender</label>
                     <select
                       value={newPtGender}
                       onChange={(e) => setNewPtGender(e.target.value)}
-                      className="w-full px-2 py-2 rounded-2xl bg-[#FAF9F6] border border-[#E8E4DA] text-xs text-[#151719] font-medium focus:outline-none"
+                      className="w-full px-2 py-2 rounded-2xl bg-canvas border border-rule-strong text-xs text-ink font-medium focus:outline-none"
                     >
                       <option value="Female">Female</option>
                       <option value="Male">Male</option>
@@ -2409,46 +2409,46 @@ export default function DoctorGuidedEncounter({
               </div>
 
               <div>
-                <label className="font-bold text-[#151719] block mb-1">Chief Complaint & Symptoms</label>
+                <label className="font-bold text-ink block mb-1">Chief Complaint & Symptoms</label>
                 <input
                   type="text"
                   value={newPtComplaint}
                   onChange={(e) => setNewPtComplaint(e.target.value)}
                   placeholder="e.g. Persistent dry cough, mild dyspnea, and low-grade evening fever"
-                  className="w-full px-3.5 py-2 rounded-2xl bg-[#FAF9F6] border border-[#E8E4DA] text-sm text-[#151719] font-medium focus:outline-none focus:ring-2 focus:ring-[#9D174D]"
+                  className="w-full px-3.5 py-2 rounded-2xl bg-canvas border border-rule-strong text-sm text-ink font-medium focus:outline-none focus:ring-2 focus:ring-accent"
                 />
               </div>
 
               <div>
-                <label className="font-bold text-[#151719] block mb-1">Documented Allergies</label>
+                <label className="font-bold text-ink block mb-1">Documented Allergies</label>
                 <input
                   type="text"
                   value={newPtAllergies}
                   onChange={(e) => setNewPtAllergies(e.target.value)}
                   placeholder="e.g. Penicillin, Sulfa, or No Known Drug Allergies"
-                  className="w-full px-3.5 py-2 rounded-2xl bg-[#FAF9F6] border border-[#E8E4DA] text-sm text-[#151719] font-medium focus:outline-none focus:ring-2 focus:ring-[#9D174D]"
+                  className="w-full px-3.5 py-2 rounded-2xl bg-canvas border border-rule-strong text-sm text-ink font-medium focus:outline-none focus:ring-2 focus:ring-accent"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-[#151719] block mb-1">Blood Pressure (BP)</label>
+                  <label className="font-bold text-ink block mb-1">Blood Pressure (BP)</label>
                   <input
                     type="text"
                     value={newPtBp}
                     onChange={(e) => setNewPtBp(e.target.value)}
                     placeholder="120/80 mmHg"
-                    className="w-full px-3 py-2 rounded-2xl bg-[#FAF9F6] border border-[#E8E4DA] text-xs font-mono font-medium focus:outline-none"
+                    className="w-full px-3 py-2 rounded-2xl bg-canvas border border-rule-strong text-xs font-mono font-medium focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-[#151719] block mb-1">Heart Rate (HR)</label>
+                  <label className="font-bold text-ink block mb-1">Heart Rate (HR)</label>
                   <input
                     type="text"
                     value={newPtHr}
                     onChange={(e) => setNewPtHr(e.target.value)}
                     placeholder="72 bpm"
-                    className="w-full px-3 py-2 rounded-2xl bg-[#FAF9F6] border border-[#E8E4DA] text-xs font-mono font-medium focus:outline-none"
+                    className="w-full px-3 py-2 rounded-2xl bg-canvas border border-rule-strong text-xs font-mono font-medium focus:outline-none"
                   />
                 </div>
               </div>
@@ -2458,14 +2458,14 @@ export default function DoctorGuidedEncounter({
               <button
                 type="button"
                 onClick={() => setShowNewPatientModal(false)}
-                className="px-4 py-2 rounded-full bg-white border border-[#E8E4DA] text-xs font-bold text-[#575D65] hover:bg-[#FAF9F6] cursor-pointer"
+                className="px-4 py-2 rounded-full bg-paper border border-rule-strong text-xs font-bold text-ink-2 hover:bg-canvas cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={() => handleCreateNewPatient()}
-                className="px-6 py-2.5 rounded-full bg-[#151719] text-white text-xs font-extrabold hover:bg-[#2D3139] cursor-pointer shadow-sm"
+                className="px-6 py-2.5 rounded-full bg-solid text-white text-xs font-extrabold hover:bg-solid cursor-pointer shadow-sm"
               >
                 Launch Consultation
               </button>
@@ -2479,13 +2479,13 @@ export default function DoctorGuidedEncounter({
       {/* ═══════════════════════════════════════════════════════════════ */}
       {showAddMedModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="w-full max-w-md bg-white rounded-[32px] p-6 shadow-2xl border border-[#E8E4DA] space-y-4 animate-in zoom-in-95">
-            <div className="flex items-center justify-between pb-3 border-b border-[#F0ECE1]">
+          <div className="w-full max-w-md bg-paper rounded-[32px] p-6 shadow-2xl border border-rule-strong space-y-4 animate-in zoom-in-95">
+            <div className="flex items-center justify-between pb-3 border-b border-rule">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-[#FCE7F3] text-[#9D174D] flex items-center justify-center font-bold text-sm">
+                <div className="w-8 h-8 rounded-xl bg-accent-wash text-accent-ink flex items-center justify-center font-bold text-sm">
                   <Pill size={16} />
                 </div>
-                <h3 className="text-base font-extrabold text-[#151719]">Prescribe Medication</h3>
+                <h3 className="text-base font-extrabold text-ink">Prescribe Medication</h3>
               </div>
               <button
                 type="button"
@@ -2493,16 +2493,16 @@ export default function DoctorGuidedEncounter({
                   setShowAddMedModal(false);
                   setMedSafetyWarning(null);
                 }}
-                className="w-7 h-7 rounded-full bg-[#FAF9F6] text-[#575D65] flex items-center justify-center cursor-pointer"
+                className="w-7 h-7 rounded-full bg-canvas text-ink-2 flex items-center justify-center cursor-pointer"
               >
                 <X size={14} />
               </button>
             </div>
 
             {medSafetyWarning && (
-              <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-300 text-xs text-rose-900 font-medium space-y-1">
-                <div className="font-extrabold flex items-center gap-1.5 text-rose-950">
-                  <AlertTriangle size={15} className="text-rose-600" />
+              <div className="p-3.5 rounded-2xl bg-critical-wash border border-critical-line text-xs text-critical font-medium space-y-1">
+                <div className="font-extrabold flex items-center gap-1.5 text-critical">
+                  <AlertTriangle size={15} className="text-critical" />
                   <span>SAFETY INTERVENTION HARD-STOP</span>
                 </div>
                 <p>{medSafetyWarning}</p>
@@ -2511,7 +2511,7 @@ export default function DoctorGuidedEncounter({
 
             <div className="space-y-3 text-xs">
               <div>
-                <label className="font-bold text-[#151719] block mb-1">Medication Name</label>
+                <label className="font-bold text-ink block mb-1">Medication Name</label>
                 <input
                   type="text"
                   value={newMedName}
@@ -2520,29 +2520,29 @@ export default function DoctorGuidedEncounter({
                     setMedSafetyWarning(null);
                   }}
                   placeholder="e.g. Atorvastatin or Lisinopril"
-                  className="w-full px-3.5 py-2.5 rounded-2xl bg-[#FAF9F6] border border-[#E8E4DA] text-sm text-[#151719] font-medium focus:outline-none focus:ring-2 focus:ring-[#9D174D]"
+                  className="w-full px-3.5 py-2.5 rounded-2xl bg-canvas border border-rule-strong text-sm text-ink font-medium focus:outline-none focus:ring-2 focus:ring-accent"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-[#151719] block mb-1">Dosage</label>
+                  <label className="font-bold text-ink block mb-1">Dosage</label>
                   <input
                     type="text"
                     value={newMedDose}
                     onChange={(e) => setNewMedDose(e.target.value)}
                     placeholder="e.g. 20 mg"
-                    className="w-full px-3.5 py-2.5 rounded-2xl bg-[#FAF9F6] border border-[#E8E4DA] text-sm text-[#151719] font-medium focus:outline-none"
+                    className="w-full px-3.5 py-2.5 rounded-2xl bg-canvas border border-rule-strong text-sm text-ink font-medium focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-[#151719] block mb-1">Frequency</label>
+                  <label className="font-bold text-ink block mb-1">Frequency</label>
                   <input
                     type="text"
                     value={newMedFreq}
                     onChange={(e) => setNewMedFreq(e.target.value)}
                     placeholder="e.g. Once daily at bedtime"
-                    className="w-full px-3.5 py-2.5 rounded-2xl bg-[#FAF9F6] border border-[#E8E4DA] text-sm text-[#151719] font-medium focus:outline-none"
+                    className="w-full px-3.5 py-2.5 rounded-2xl bg-canvas border border-rule-strong text-sm text-ink font-medium focus:outline-none"
                   />
                 </div>
               </div>
@@ -2555,14 +2555,14 @@ export default function DoctorGuidedEncounter({
                   setShowAddMedModal(false);
                   setMedSafetyWarning(null);
                 }}
-                className="px-4 py-2 rounded-full bg-white border border-[#E8E4DA] text-xs font-bold text-[#575D65] hover:bg-[#FAF9F6] cursor-pointer"
+                className="px-4 py-2 rounded-full bg-paper border border-rule-strong text-xs font-bold text-ink-2 hover:bg-canvas cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handlePrescribeNewMed}
-                className="px-6 py-2.5 rounded-full bg-emerald-600 text-white text-xs font-extrabold hover:bg-emerald-700 cursor-pointer shadow-sm"
+                className="px-6 py-2.5 rounded-full bg-settled text-white text-xs font-extrabold hover:bg-settled cursor-pointer shadow-sm"
               >
                 Authorize & Add
               </button>
