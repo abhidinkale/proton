@@ -145,7 +145,7 @@ app.use(cors({
 // and a browser sees the real error instead of an opaque network failure.
 app.use(generalLimiter);
 app.use(['/api/transcribe', '/api/generate-note', '/api/chat', '/api/extract-documents'], aiLimiter);
-app.use(['/api/auth/login', '/auth/login', '/api/auth/exchange'], loginLimiter);
+app.use(['/api/auth/login', '/auth/login', '/api/auth/exchange', '/api/auth/qr-exchange'], loginLimiter);
 
 const { telemetryMiddleware } = require('./middleware/telemetry');
 const { resolveActorMiddleware } = require('./middleware/rbac');
@@ -298,6 +298,7 @@ app.get(['/health/ai', '/api/health/ai'], async (req, res) => {
 // --- AUTHENTICATION & SESSION LIFECYCLE (M6-A) ---
 const {
   authenticateCredentials,
+  createSessionToken,
   verifySessionToken,
   revokeSession,
   rotateSessionToken
@@ -321,6 +322,40 @@ app.post('/api/auth/login', (req, res) => {
   }
 
   res.json(result);
+});
+
+/**
+ * Redeems a staff QR ticket for a normal clinician session.
+ *
+ * The ticket is signed, expires in ten minutes and is single use. This is the
+ * "scan the desk QR and you're in" path for a phone; the resulting session is
+ * revocable exactly like a password login.
+ */
+app.post('/api/auth/qr-exchange', (req, res) => {
+  const { consumeStaffTicket, StaffTicketError } = require('./services/auth/staffTicket');
+  try {
+    const claims = consumeStaffTicket((req.body || {}).ticket);
+    const clinician = {
+      actorId: claims.actorId,
+      actorName: claims.actorName,
+      actorRole: claims.actorRole,
+      tenantId: claims.tenantId,
+      npi: claims.npi
+    };
+    const token = createSessionToken(clinician, 24);
+    return res.json({
+      success: true,
+      token,
+      actor: clinician,
+      expiresAt: claims.expiresAt
+    });
+  } catch (err) {
+    if (err instanceof StaffTicketError) {
+      return res.status(err.status || 400).json({ error: err.message, code: err.code });
+    }
+    console.error('[auth] qr exchange failed:', err.message);
+    return res.status(500).json({ error: 'Could not sign in with that code.', code: 'QR_EXCHANGE_FAILED' });
+  }
 });
 
 app.post('/api/auth/logout', (req, res) => {

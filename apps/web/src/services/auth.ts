@@ -253,6 +253,59 @@ class ProtonAuthenticationService implements IAuthenticationService {
   }
 
   /**
+   * Sign in by redeeming the QR shown on an already signed-in desk.
+   *
+   * The ticket is short lived and single use; the server returns a normal
+   * revocable session token, so this is a convenience over the password, not a
+   * second auth system.
+   */
+  public async loginWithQrTicket(ticket: string): Promise<ProtonDoctorUser> {
+    if (!ticket) throw new Error('This sign-in link is incomplete.');
+
+    let response: Response;
+    try {
+      response = await fetch(`${API_BASE_URL}/api/auth/qr-exchange`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticket })
+      });
+    } catch {
+      throw new Error('The Proton API is unreachable. Check the connection and try again.');
+    }
+
+    const body = await response.json().catch(() => null) as {
+      success?: boolean;
+      token?: string;
+      actor?: { actorId?: string; actorRole?: string; actorName?: string; tenantId?: string; npi?: string | null };
+      error?: string;
+    } | null;
+
+    if (!response.ok || !body?.success || typeof body.token !== 'string') {
+      throw new Error(body?.error || `That sign-in link did not work (HTTP ${response.status}).`);
+    }
+
+    setSessionToken(body.token);
+
+    const actor = body.actor || {};
+    const user: ProtonDoctorUser = {
+      id: actor.actorId || 'proton-user',
+      email: 'qr@proton.local',
+      displayName: actor.actorName || 'Clinician',
+      role: actor.actorRole === 'physician' ? 'attending_physician'
+        : actor.actorRole === 'resident' ? 'resident'
+          : 'clinical_evaluator',
+      organizationId: actor.tenantId || 'org-default',
+      practitionerReference: actor.actorId ? `Practitioner/${actor.actorId}` : undefined,
+      authMode: 'synthetic_development',
+      isSyntheticEvaluator: true,
+      npi: actor.npi || undefined
+    };
+
+    this.setSessionUser(user);
+    return user;
+  }
+
+  /**
    * Authenticate physician using the configured boundary.
    *
    * The Proton credential API is authoritative. Medplum OIDC is only used when

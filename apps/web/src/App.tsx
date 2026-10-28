@@ -4,6 +4,7 @@ import { useMedplumProfile, useMedplum } from '@medplum/react';
 
 import Login from './pages/Login';
 import Today from './pages/Today';
+import QrLogin from './pages/QrLogin';
 import ConsultRoom from './pages/ConsultRoom';
 import Dashboard from './pages/Dashboard';
 import CareLoop from './pages/CareLoop';
@@ -75,6 +76,7 @@ export default function App() {
       {/* Public: the invited clinician signs in, then claims the membership. */}
       <Route path="/clinic/join" element={<ClinicJoin />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/qr-login" element={<QrLogin />} />
       <Route path="/capture" element={<MobileCapturePage />} />
       <Route path="/launch" element={<SmartLaunch />} />
       <Route path="/" element={<ProtectedRoute><Today /></ProtectedRoute>} />

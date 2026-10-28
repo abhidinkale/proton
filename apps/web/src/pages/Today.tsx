@@ -6,6 +6,7 @@ import { scheduleService } from '../services/scheduleService';
 import { authService } from '../services/auth';
 import { localDateString } from '../lib/clinicApi';
 import PatientConnectQR from '../components/clinic/PatientConnectQR';
+import StaffQR from '../components/clinic/StaffQR';
 import type { Appointment } from '../domain/schedule/types';
 
 /**
@@ -69,6 +70,7 @@ export default function Today() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [connectOpen, setConnectOpen] = useState(false);
+  const [staffOpen, setStaffOpen] = useState(false);
 
   useEffect(() => {
     const id = window.setInterval(() => setNow(new Date()), 30_000);
@@ -269,6 +271,12 @@ export default function Today() {
             </p>
             <div className="flex items-center gap-6">
               <button
+                onClick={() => setStaffOpen(true)}
+                className="font-mono text-[10px] tracking-[0.14em] text-white/25 uppercase transition-colors hover:text-white/60"
+              >
+                staff qr
+              </button>
+              <button
                 onClick={() => setConnectOpen(true)}
                 className="font-mono text-[10px] tracking-[0.14em] text-white/25 uppercase transition-colors hover:text-white/60"
               >
@@ -286,6 +294,7 @@ export default function Today() {
       </div>
 
       <PatientConnectQR open={connectOpen} onClose={() => setConnectOpen(false)} />
+      <StaffQR open={staffOpen} onClose={() => setStaffOpen(false)} />
     </div>
   );
 }

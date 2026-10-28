@@ -356,6 +356,30 @@ router.post('/patient-ticket', handle(async (req, res) => {
 }));
 
 /* ------------------------------------------------------------------ */
+/* Staff QR sign-in                                                    */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Mints a QR that signs a phone browser in as this clinician.
+ *
+ * The QR opens /qr-login on the deployed web app; that page exchanges the
+ * ticket for a normal revocable session token. Ten minutes, single use.
+ */
+router.post('/staff-ticket', handle((req, res) => {
+  const normalized = actor(req);
+  const { createStaffTicket } = require('../services/auth/staffTicket');
+
+  const issued = createStaffTicket({ actor: { ...req.actor, tenantId: normalized.tenantId } });
+  const webBase = (process.env.PUBLIC_WEB_URL || 'http://localhost:5173').replace(/\/+$/, '');
+
+  res.json({
+    url: `${webBase}/qr-login#t=${encodeURIComponent(issued.ticket)}`,
+    expiresAt: issued.expiresAt,
+    clinic: normalized.tenantId
+  });
+}));
+
+/* ------------------------------------------------------------------ */
 /* Errors                                                              */
 /* ------------------------------------------------------------------ */
 
