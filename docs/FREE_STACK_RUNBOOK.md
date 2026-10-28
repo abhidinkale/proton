@@ -179,7 +179,7 @@ curl -s -X POST $API/api/organizations \
 
 1. Put `organization.id` into `PROTON_DEFAULT_TENANT_ID`.
 2. Restart **only the API**: `$COMPOSE up -d api`.
-3. Sign in as the clinician → `/clinic/join?token=<token>` → claim.
+3. Sign in as the clinician → `/clinic/join?invite=<token>` → claim.
 4. `/clinic/admin` → issue a patient code.
 5. Link the phone with that code (step 7).
 
@@ -191,17 +191,36 @@ late for that session.
 
 ## 7. The phone
 
-1. Build a debug APK pointed at the tunnel:
+1. Build a debug APK:
    ```bash
    cd apps/dork-android
-   ./gradlew assembleDebug -PprotonApiBaseUrl=https://api.<domain>
+   ./gradlew assembleDebug
    ```
+   The server address is entered on the phone, not baked into the build.
 2. Install, then **Profile → My clinic → Set up sync**:
    server `https://api.<domain>`, clinic code from step 6, email, send code.
 3. In synthetic mode the code is shown on screen; with email configured it
    arrives by mail.
 4. Prove it: airplane mode → book → confirm nothing reached the clinic → signal
    on → booking appears once, not twice.
+
+### 7a. Local loop, no deploy
+
+Run the API on `0.0.0.0:3002` with `PROTON_SYNTHETIC_MODE=true` and the web app
+on `:5173`. The phone needs `http://<laptop-lan-ip>:3002` and a clinic code from
+`/clinic/admin`. Both devices must be on the same Wi-Fi, and the laptop firewall
+must allow 3002.
+
+The bridge is symmetric:
+
+- a phone booking is written to Postgres, then mirrored into the clinic desk
+  under the same ids, so Today and the consult room open it without a relay;
+- signing the note writes the note and its prescriptions back to Postgres and
+  marks the synced appointment `COMPLETED`;
+- the phone's next pull carries the prescription bundle.
+
+A newly created clinic has no synthetic cohort, so its day view contains only
+what the phone actually booked.
 
 ---
 
