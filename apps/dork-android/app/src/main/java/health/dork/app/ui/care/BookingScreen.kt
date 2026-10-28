@@ -14,12 +14,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.LocationOn
@@ -33,25 +36,37 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import health.dork.app.core.data.model.AppointmentItem
 import health.dork.app.core.data.model.ConsultationType
+import health.dork.app.core.designsystem.DorkGradients
 import health.dork.app.core.designsystem.DorkShapes
 import health.dork.app.core.designsystem.DorkSpacing
 import health.dork.app.core.designsystem.DorkTheme
+import health.dork.app.core.designsystem.DorkType
 import health.dork.app.core.designsystem.components.DorkButton
 import health.dork.app.core.designsystem.components.DorkButtonVariant
 import health.dork.app.core.designsystem.components.DorkCard
 import health.dork.app.core.designsystem.components.DorkChip
 import health.dork.app.core.designsystem.components.DorkTextField
-import health.dork.app.core.designsystem.components.DorkTopBar
 import health.dork.app.core.util.addAppointmentToCalendar
 import java.time.LocalDate
 import java.time.format.TextStyle
 import java.util.Locale
 
+/**
+ * Booking — the patient's half of the loop.
+ *
+ * One decision at a time on an ember surface, then a confirmation that says
+ * exactly what happens next. The queue is local-first: confirming writes to the
+ * outbox and the clinic sees it when the phone next reaches a network, so the
+ * screen must never imply the clinic already answered.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun BookingScreen(
@@ -81,9 +96,11 @@ fun BookingScreen(
       .fillMaxSize()
       .background(MaterialTheme.colorScheme.background)
   ) {
-    DorkTopBar(
-      title = if (state.isReschedule) "Move appointment" else "Book appointment",
-      subtitle = doctor.name,
+    BookingHero(
+      doctorName = doctor.name,
+      doctorSpecialty = doctor.specialty,
+      clinicName = doctor.clinicName,
+      isReschedule = state.isReschedule,
       onBackClick = onBackClick
     )
 
@@ -91,20 +108,19 @@ fun BookingScreen(
       modifier = Modifier
         .fillMaxSize()
         .verticalScroll(rememberScrollState())
-        .padding(horizontal = DorkSpacing.screenHorizontalPadding, vertical = DorkSpacing.m)
+        .padding(horizontal = DorkSpacing.screenHorizontalPadding, vertical = DorkSpacing.l)
     ) {
       if (state.isReschedule) {
-        DorkCard(backgroundColor = DorkTheme.colors.surfaceSecondary, contentPadding = DorkSpacing.m) {
-          Text(
-            text = "Your current appointment stays saved until you confirm a new time.",
-            style = MaterialTheme.typography.bodySmall,
-            color = DorkTheme.colors.textSecondary
-          )
-        }
+        Text(
+          text = "Your current appointment stays saved until you confirm a new time.",
+          style = MaterialTheme.typography.bodySmall,
+          color = DorkTheme.colors.textSecondary
+        )
         Spacer(modifier = Modifier.height(DorkSpacing.m))
       }
 
       SectionLabel("Where")
+      Spacer(modifier = Modifier.height(DorkSpacing.xs))
       Row(horizontalArrangement = Arrangement.spacedBy(DorkSpacing.xs)) {
         DorkChip(
           label = "Clinic visit",
@@ -130,12 +146,14 @@ fun BookingScreen(
       SectionLabel("Day")
 
       if (state.openDays.isEmpty()) {
+        Spacer(modifier = Modifier.height(DorkSpacing.xs))
         Text(
           text = "${doctor.name} has no open slots in the next three weeks.",
           style = MaterialTheme.typography.bodyMedium,
           color = DorkTheme.colors.textSecondary
         )
       } else {
+        Spacer(modifier = Modifier.height(DorkSpacing.xs))
         LazyRow(horizontalArrangement = Arrangement.spacedBy(DorkSpacing.xs)) {
           items(state.openDays) { day ->
             DayChip(
@@ -150,12 +168,14 @@ fun BookingScreen(
         SectionLabel("Time")
 
         if (state.slots.isEmpty()) {
+          Spacer(modifier = Modifier.height(DorkSpacing.xs))
           Text(
             text = "No times left on this day. Pick another day.",
             style = MaterialTheme.typography.bodyMedium,
             color = DorkTheme.colors.textSecondary
           )
         } else {
+          Spacer(modifier = Modifier.height(DorkSpacing.xs))
           FlowRow(
             horizontalArrangement = Arrangement.spacedBy(DorkSpacing.xs),
             verticalArrangement = Arrangement.spacedBy(DorkSpacing.xs)
@@ -172,8 +192,8 @@ fun BookingScreen(
       }
 
       Spacer(modifier = Modifier.height(DorkSpacing.l))
-      SectionLabel("Reason for the visit")
-      Spacer(modifier = Modifier.height(DorkSpacing.xxs))
+      SectionLabel("Reason")
+      Spacer(modifier = Modifier.height(DorkSpacing.xs))
       DorkTextField(
         value = state.reason,
         onValueChange = viewModel::onReasonChange,
@@ -184,23 +204,16 @@ fun BookingScreen(
 
       Spacer(modifier = Modifier.height(DorkSpacing.l))
 
+      // One line that answers "what am I about to book?"
       DorkCard(backgroundColor = DorkTheme.colors.surfaceSecondary, contentPadding = DorkSpacing.m) {
         Column {
           Text(
-            text = "${doctor.name} · ${doctor.specialty}",
-            style = MaterialTheme.typography.titleSmall,
+            text = state.selectedSlot?.timeLabel?.let { formatDay(state.selectedDate) + " · " + it }
+              ?: "Choose a day and a time",
+            style = MaterialTheme.typography.titleMedium,
             color = DorkTheme.colors.textPrimary
           )
           Spacer(modifier = Modifier.height(2.dp))
-          Text(
-            text = buildString {
-              append(state.selectedDate?.let { formatDay(it) } ?: "Choose a day")
-              append(" · ")
-              append(state.selectedSlot?.timeLabel ?: "choose a time")
-            },
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.primary
-          )
           Text(
             text = if (state.consultationType == ConsultationType.VIDEO) {
               "Video room"
@@ -233,7 +246,7 @@ fun BookingScreen(
 
       Spacer(modifier = Modifier.height(DorkSpacing.s))
       Text(
-        text = "Saved on this device. Proton does not contact the clinic for you — use “Add to calendar” and the clinic's own booking line if you need to confirm.",
+        text = "Saved on this device. The clinic sees it when you're back online.",
         style = MaterialTheme.typography.bodySmall,
         color = DorkTheme.colors.textTertiary,
         textAlign = TextAlign.Center,
@@ -244,6 +257,80 @@ fun BookingScreen(
     }
   }
 }
+
+// ── Hero ────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun BookingHero(
+  doctorName: String,
+  doctorSpecialty: String,
+  clinicName: String,
+  isReschedule: Boolean,
+  onBackClick: () -> Unit
+) {
+  Box(
+    modifier = Modifier
+      .fillMaxWidth()
+      .clip(RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp))
+      .background(Brush.verticalGradient(DorkGradients.Ember))
+      .padding(
+        start = DorkSpacing.screenHorizontalPadding,
+        end = DorkSpacing.screenHorizontalPadding,
+        top = DorkSpacing.m,
+        bottom = DorkSpacing.xl
+      )
+  ) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        Box(
+          modifier = Modifier
+            .size(32.dp)
+            .clip(CircleShape)
+            .background(Color.White.copy(alpha = 0.16f))
+            .clickable(onClick = onBackClick),
+          contentAlignment = Alignment.Center
+        ) {
+          Icon(
+            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+            contentDescription = "Back",
+            tint = Color.White,
+            modifier = Modifier.size(17.dp)
+          )
+        }
+        Spacer(modifier = Modifier.weight(1f))
+        Text(
+          text = "proton",
+          style = DorkType.mono.copy(letterSpacing = 2.4.sp),
+          color = Color.White.copy(alpha = 0.55f)
+        )
+      }
+
+      Spacer(modifier = Modifier.height(DorkSpacing.xl))
+      Text(
+        text = if (isReschedule) "MOVE A VISIT" else "BOOK A VISIT",
+        style = DorkType.eyebrow.copy(letterSpacing = 2.2.sp),
+        color = Color.White.copy(alpha = 0.55f)
+      )
+      Spacer(modifier = Modifier.height(DorkSpacing.xs))
+      Text(
+        text = doctorName,
+        style = MaterialTheme.typography.displaySmall,
+        color = Color.White
+      )
+      Spacer(modifier = Modifier.height(4.dp))
+      Text(
+        text = "$doctorSpecialty · $clinicName",
+        style = MaterialTheme.typography.bodySmall,
+        color = Color.White.copy(alpha = 0.62f)
+      )
+    }
+  }
+}
+
+// ── Confirmation ────────────────────────────────────────────────────────────
 
 @Composable
 private fun BookingConfirmation(
@@ -257,88 +344,121 @@ private fun BookingConfirmation(
     modifier = Modifier
       .fillMaxSize()
       .background(MaterialTheme.colorScheme.background)
-      .padding(DorkSpacing.screenHorizontalPadding),
-    horizontalAlignment = Alignment.CenterHorizontally,
-    verticalArrangement = Arrangement.Center
   ) {
     Box(
       modifier = Modifier
-        .size(72.dp)
-        .clip(CircleShape)
-        .background(DorkTheme.colors.successContainer),
-      contentAlignment = Alignment.Center
+        .fillMaxWidth()
+        .clip(RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp))
+        .background(Brush.verticalGradient(DorkGradients.Ember))
+        .padding(
+          start = DorkSpacing.screenHorizontalPadding,
+          end = DorkSpacing.screenHorizontalPadding,
+          top = DorkSpacing.xxl,
+          bottom = DorkSpacing.xl
+        )
     ) {
-      Icon(
-        imageVector = Icons.Rounded.CheckCircle,
-        contentDescription = null,
-        tint = DorkTheme.colors.success,
-        modifier = Modifier.size(44.dp)
-      )
-    }
-
-    Spacer(modifier = Modifier.height(DorkSpacing.l))
-    Text(
-      text = if (isReschedule) "Appointment moved" else "Appointment saved",
-      style = MaterialTheme.typography.displayMedium,
-      color = DorkTheme.colors.textPrimary
-    )
-    Spacer(modifier = Modifier.height(DorkSpacing.xs))
-    Text(
-      text = appointment.displayDateTime,
-      style = MaterialTheme.typography.titleMedium,
-      color = MaterialTheme.colorScheme.primary
-    )
-
-    Spacer(modifier = Modifier.height(DorkSpacing.l))
-
-    DorkCard(contentPadding = DorkSpacing.l) {
       Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-          text = appointment.doctorName,
-          style = MaterialTheme.typography.headlineMedium,
-          color = DorkTheme.colors.textPrimary
-        )
-        Text(
-          text = appointment.specialty,
-          style = MaterialTheme.typography.bodyMedium,
-          color = DorkTheme.colors.textSecondary
-        )
-        Spacer(modifier = Modifier.height(DorkSpacing.s))
         Row(verticalAlignment = Alignment.CenterVertically) {
-          Icon(
-            imageVector = Icons.Rounded.CalendarMonth,
-            contentDescription = null,
-            tint = DorkTheme.colors.textTertiary,
-            modifier = Modifier.size(16.dp)
-          )
-          Spacer(modifier = Modifier.size(DorkSpacing.xxs))
+          Box(
+            modifier = Modifier
+              .size(34.dp)
+              .clip(CircleShape)
+              .background(Color.White.copy(alpha = 0.18f)),
+            contentAlignment = Alignment.Center
+          ) {
+            Icon(
+              imageVector = Icons.Rounded.CheckCircle,
+              contentDescription = null,
+              tint = Color.White,
+              modifier = Modifier.size(20.dp)
+            )
+          }
+          Spacer(modifier = Modifier.width(DorkSpacing.xs))
           Text(
-            text = appointment.clinicLocation,
-            style = MaterialTheme.typography.bodySmall,
-            color = DorkTheme.colors.textSecondary
+            text = if (isReschedule) "MOVED" else "SAVED",
+            style = DorkType.eyebrow.copy(letterSpacing = 2.2.sp),
+            color = Color.White.copy(alpha = 0.6f)
           )
         }
+
+        Spacer(modifier = Modifier.height(DorkSpacing.l))
+        Text(
+          text = if (isReschedule) "Moved." else "Booked.",
+          style = MaterialTheme.typography.displayLarge,
+          color = Color.White
+        )
+        Spacer(modifier = Modifier.height(DorkSpacing.xs))
+        Text(
+          text = appointment.displayDateTime,
+          style = DorkType.mono.copy(fontSize = 12.sp, letterSpacing = 1.2.sp),
+          color = Color.White.copy(alpha = 0.72f)
+        )
       }
     }
 
-    Spacer(modifier = Modifier.height(DorkSpacing.l))
+    Column(
+      modifier = Modifier
+        .fillMaxSize()
+        .verticalScroll(rememberScrollState())
+        .padding(horizontal = DorkSpacing.screenHorizontalPadding, vertical = DorkSpacing.l)
+    ) {
+      Text(
+        text = appointment.doctorName,
+        style = MaterialTheme.typography.headlineLarge,
+        color = DorkTheme.colors.textPrimary
+      )
+      Text(
+        text = appointment.specialty,
+        style = MaterialTheme.typography.bodyMedium,
+        color = DorkTheme.colors.textSecondary
+      )
 
-    DorkButton(text = "Start pre-visit check-in", onClick = onStartIntake)
-    Spacer(modifier = Modifier.height(DorkSpacing.xs))
-    DorkButton(
-      text = "Add to calendar",
-      onClick = onAddToCalendar,
-      variant = DorkButtonVariant.Secondary
-    )
-    Spacer(modifier = Modifier.height(DorkSpacing.xs))
-    DorkButton(text = "Done", onClick = onDone, variant = DorkButtonVariant.Ghost)
+      Spacer(modifier = Modifier.height(DorkSpacing.s))
+      Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+          imageVector = Icons.Rounded.CalendarMonth,
+          contentDescription = null,
+          tint = DorkTheme.colors.textTertiary,
+          modifier = Modifier.size(15.dp)
+        )
+        Spacer(modifier = Modifier.size(DorkSpacing.xxs))
+        Text(
+          text = appointment.clinicLocation,
+          style = MaterialTheme.typography.bodySmall,
+          color = DorkTheme.colors.textSecondary
+        )
+      }
+
+      Spacer(modifier = Modifier.height(DorkSpacing.l))
+      DorkButton(text = "Start pre-visit check-in", onClick = onStartIntake)
+      Spacer(modifier = Modifier.height(DorkSpacing.xs))
+      DorkButton(
+        text = "Add to calendar",
+        onClick = onAddToCalendar,
+        variant = DorkButtonVariant.Secondary
+      )
+      Spacer(modifier = Modifier.height(DorkSpacing.xs))
+      DorkButton(text = "Done", onClick = onDone, variant = DorkButtonVariant.Ghost)
+
+      Spacer(modifier = Modifier.height(DorkSpacing.m))
+      Text(
+        text = "The clinic confirms this visit. You'll see it change in Care.",
+        style = MaterialTheme.typography.bodySmall,
+        color = DorkTheme.colors.textTertiary,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.fillMaxWidth()
+      )
+      Spacer(modifier = Modifier.height(DorkSpacing.xl))
+    }
   }
 }
 
+// ── Pieces ──────────────────────────────────────────────────────────────────
+
 @Composable
 private fun DayChip(day: LocalDate, selected: Boolean, onClick: () -> Unit) {
-  val background = if (selected) DorkTheme.colors.textPrimary else DorkTheme.colors.card
-  val content = if (selected) androidx.compose.ui.graphics.Color.White else DorkTheme.colors.textSecondary
+  val background = if (selected) DorkTheme.colors.textPrimary else DorkTheme.colors.surfaceSecondary
+  val content = if (selected) Color.White else DorkTheme.colors.textSecondary
   Column(
     modifier = Modifier
       .clip(DorkShapes.medium)
@@ -349,7 +469,7 @@ private fun DayChip(day: LocalDate, selected: Boolean, onClick: () -> Unit) {
   ) {
     Text(
       text = day.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.US),
-      style = MaterialTheme.typography.labelSmall,
+      style = DorkType.eyebrow,
       color = content
     )
     Text(
@@ -363,11 +483,11 @@ private fun DayChip(day: LocalDate, selected: Boolean, onClick: () -> Unit) {
 @Composable
 private fun SectionLabel(text: String) {
   Text(
-    text = text,
-    style = MaterialTheme.typography.titleMedium,
-    color = DorkTheme.colors.textPrimary
+    text = text.uppercase(Locale.US),
+    style = DorkType.eyebrow,
+    color = DorkTheme.colors.textTertiary
   )
 }
 
-private fun formatDay(day: LocalDate): String =
-  day.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.US) + " " + day.dayOfMonth
+private fun formatDay(day: LocalDate?): String =
+  day?.let { it.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.US) + " " + it.dayOfMonth } ?: "Choose a day"

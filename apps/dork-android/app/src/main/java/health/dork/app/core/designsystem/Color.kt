@@ -128,6 +128,21 @@ object DorkGradients {
   /** Fresh green, the "you're doing fine" gradient. */
   val Meadow = listOf(Color(0xFFB9E76B), Color(0xFF2F8F4E))
 
+  /**
+   * The consult-room ember: apricot to ink.
+   *
+   * This is the same surface the clinician sees in the web day view, so a
+   * patient and a doctor looking at the same visit see the same colour. It is
+   * deliberately darker at the bottom than Sunrise so white copy stays legible
+   * without a scrim.
+   */
+  val Ember = listOf(
+    Color(0xFFFFA063),
+    Color(0xFFE85D12),
+    Color(0xFF6B2607),
+    Color(0xFF0B0E14)
+  )
+
   /** Deep violet, the most serious of the set. */
   val Dusk = listOf(Color(0xFF8B7BF7), Color(0xFF3D3FB0))
 
