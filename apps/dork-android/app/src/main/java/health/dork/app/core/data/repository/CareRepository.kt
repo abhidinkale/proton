@@ -5,6 +5,7 @@ import health.dork.app.core.data.model.AppointmentItem
 import health.dork.app.core.data.model.ClinicDayHours
 import health.dork.app.core.data.model.ConsultationType
 import health.dork.app.core.data.model.Doctor
+import health.dork.app.core.data.model.PatientProfile
 import health.dork.app.core.data.model.PreConsultationData
 import health.dork.app.core.data.seed.DorkSeedData
 import health.dork.app.core.data.util.DoctorAvailability
@@ -85,7 +86,12 @@ interface CareRepository {
 class DorkCareRepository(
   private val store: DorkStore = DorkStore(),
   private val now: () -> LocalDateTime = { LocalDateTime.now() },
-  private val sync: SyncEnqueuer = NoOpSyncEnqueuer
+  private val sync: SyncEnqueuer = NoOpSyncEnqueuer,
+  /**
+   * The patient's own profile, read at booking time so the clinician sees a
+   * name and a safety history. Null in tests and before onboarding finishes.
+   */
+  private val patientProvider: () -> PatientProfile? = { null }
 ) : CareRepository {
 
   private val appointmentSerializer = ListSerializer(AppointmentItem.serializer())
@@ -182,7 +188,7 @@ class DorkCareRepository(
 
     _appointments.value = (_appointments.value + appointment).sortedBy { it.dateIso }
     persistAppointments()
-    sync.enqueueBooking(appointment, now().toString())
+    sync.enqueueBooking(appointment, now().toString(), patientProvider())
     return Result.success(appointment)
   }
 

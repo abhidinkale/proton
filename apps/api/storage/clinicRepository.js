@@ -759,6 +759,113 @@ function createAppointment(actor, input = {}) {
   return appointment;
 }
 
+/**
+ * Writes a booking that originated on the patient's phone into the clinic desk.
+ *
+ * The Postgres appointment is the system of record for the sync loop; this
+ * mirror exists so the clinician's day view, the consult room and the patient
+ * profile — which read the desk store — open the same visit without a second
+ * fetch path. Ids are the server's, so the two rows stay joinable.
+ *
+ * Idempotent: the patient insert is ON CONFLICT DO NOTHING and the appointment
+ * insert is an upsert keyed by id, so a retried sync changes nothing.
+ */
+function syncExternalBooking({ tenantId, patient, appointment }) {
+  if (!tenantId || !patient?.id || !appointment?.id) {
+    const error = new Error('A synced booking needs a tenant, a patient and an appointment id.');
+    error.status = 400;
+    error.code = 'SYNC_BOOKING_INCOMPLETE';
+    throw error;
+  }
+
+  const normalized = normalizeActor({ tenantId, actorId: 'patient-app-sync', actorName: 'Patient app', role: 'system' });
+  const db = getDatabase();
+  const now = isoNow();
+
+  let existing = findPatient(tenantId, patient.id);
+  if (!existing) {
+    const record = {
+      id: patient.id,
+      name: patient.name || 'Patient',
+      age: Number.isFinite(Number(patient.age)) ? Number(patient.age) : 0,
+      gender: patient.gender || 'Other',
+      dob: patient.dob || null,
+      mrn: patient.mrn || `MRN-${String(Math.floor(100000 + Math.random() * 899999))}`,
+      time: appointment.time,
+      visitType: appointment.appointmentType || 'Consultation',
+      status: 'ready',
+      preparationState: 'Booked on the patient app',
+      scenarioKey: null,
+      patientPhone: patient.phone || null,
+      chiefComplaint: appointment.chiefComplaint || 'New consultation',
+      vitals: { bp: '—', hr: '—', spo2: '—', temp: '—', bmi: '—' },
+      allergies: (patient.allergies || []).filter(Boolean).length
+        ? patient.allergies.filter(Boolean)
+        : ['No Known Drug Allergies'],
+      conditions: patient.conditions || [],
+      medications: patient.medications || [],
+      recentLabs: [],
+      documents: [],
+      encounterId: `enc-${crypto.randomUUID()}`,
+      clinicalHistory: [],
+      availableObservations: {},
+      missingInformation: [],
+      consultationTranscript: '',
+      expectedEvidence: [],
+      knownRiskConditions: [],
+      createdAt: now,
+      updatedAt: now,
+      source: 'patient_app_sync'
+    };
+    insertPatientRow(db, record, tenantId);
+    existing = record;
+  }
+
+  const existingRow = db.prepare('SELECT created_at FROM clinic_appointments WHERE id = ?;').get(appointment.id);
+  const record = {
+    id: appointment.id,
+    patientId: patient.id,
+    patientName: existing.name,
+    patientAge: existing.age,
+    patientGender: existing.gender,
+    mrn: existing.mrn || null,
+    date: appointment.date,
+    time: appointment.time,
+    startMinutes: appointment.startMinutes,
+    durationMinutes: appointment.durationMinutes || 20,
+    appointmentType: appointment.appointmentType || 'Consultation',
+    status: appointment.status || 'SCHEDULED',
+    queueCategory: appointment.queueCategory || 'WAITING',
+    roomOrVirtual: appointment.roomOrVirtual || 'Patient app',
+    priority: appointment.priority || 'normal',
+    chiefComplaint: appointment.chiefComplaint || existing.chiefComplaint,
+    criticalAllergies: (existing.allergies || []).filter((allergy) => !/no known/i.test(allergy)),
+    assignedDoctorName: appointment.assignedDoctorName || 'Attending clinician',
+    waitTimeMinutes: 0,
+    notes: null,
+    source: 'patient_app_sync',
+    // Lets the desk find the durable encounter when the note is signed.
+    syncedEncounterId: appointment.syncedEncounterId || null,
+    syncedAppointmentId: appointment.id,
+    createdAt: existingRow?.created_at || now,
+    updatedAt: now
+  };
+
+  insertAppointmentRow(db, record, tenantId);
+
+  if (!existingRow) {
+    appendAudit(normalized, {
+      action: 'appointment.synced',
+      resourceType: 'Appointment',
+      resourceId: record.id,
+      patientId: record.patientId,
+      summary: `Patient app booking for ${record.patientName} on ${record.date} at ${record.time}.`
+    });
+  }
+
+  return record;
+}
+
 const ALLOWED_QUEUE = new Set(['WAITING', 'IN_CONSULTATION', 'READY_FOR_REVIEW', 'COMPLETED']);
 
 function updateAppointment(actor, appointmentId, patch = {}) {
@@ -1520,6 +1627,7 @@ module.exports = {
   listAppointments,
   getAppointment,
   createAppointment,
+  syncExternalBooking,
   updateAppointment,
   rescheduleAppointment,
   availability,

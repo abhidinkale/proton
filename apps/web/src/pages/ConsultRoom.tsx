@@ -130,7 +130,7 @@ export default function ConsultRoom() {
         let found = today.find((a) => a.id === appointmentId) || null;
 
         if (!found) {
-          const { appointments } = await clinicApi.listAppointments({});
+          const { appointments } = await clinicApi.listAppointments({ date: 'all' });
           const match = appointments.find((a) => a.id === appointmentId);
           if (match) {
             found = {

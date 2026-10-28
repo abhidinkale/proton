@@ -413,11 +413,12 @@ export default function PatientProfile() {
   const calculateAge = (dob?: string) => {
     if (!dob) return 0;
     const birth = new Date(dob);
+    if (Number.isNaN(birth.getTime())) return 0;
     const now = new Date();
     let a = now.getFullYear() - birth.getFullYear();
     const m = now.getMonth() - birth.getMonth();
     if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) a--;
-    return a;
+    return Math.max(0, a);
   };
 
   const toggleTimelineEvent = (eventId: string) => {
@@ -653,6 +654,7 @@ export default function PatientProfile() {
   const name = patient.name?.[0];
   const displayName = name ? `${name.given?.join(' ') || ''} ${name.family || ''}`.trim() || `Patient (${patient.id})` : `Patient (${patient.id})`;
   const age = calculateAge(patient.birthDate);
+  const ageLabel = age > 0 ? `${age}y` : null;
   const gender = patient.gender ? (patient.gender.charAt(0).toUpperCase() + patient.gender.slice(1)) : 'Unknown';
 
   const conditionNames = conditions.length > 0 
@@ -733,7 +735,7 @@ export default function PatientProfile() {
                   {displayName}
                 </h1>
                 <span className="text-xs text-ink-2 font-medium">
-                  {age}y • {gender}
+                  {ageLabel ? `${ageLabel} • ` : ''}{gender}
                 </span>
                 {criticalAllergies.map((all, idx) => (
                   <span

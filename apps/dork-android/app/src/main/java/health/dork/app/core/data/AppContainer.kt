@@ -133,7 +133,11 @@ class DefaultAppContainer(
   }
 
   override val careRepository: CareRepository by lazy {
-    DorkCareRepository(store = store, sync = syncEnqueuer)
+    DorkCareRepository(
+      store = store,
+      sync = syncEnqueuer,
+      patientProvider = { patientRepository.profile.value }
+    )
   }
 
   override val medicationRepository: MedicationRepository by lazy {

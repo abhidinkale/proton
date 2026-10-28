@@ -8,6 +8,7 @@
 
 const express = require('express');
 const clinic = require('../storage/clinicRepository');
+const { mirrorSignedNote } = require('../services/careLoop/signingMirror');
 
 const router = express.Router();
 
@@ -26,6 +27,32 @@ function handle(fn) {
 
 function actor(req) {
   return clinic.normalizeActor(req.actor);
+}
+
+/**
+ * Signs a note in the desk, then mirrors it to the durable record for the visit
+ * the patient booked. The mirror is best effort: a signature that is already
+ * written must not be reported as failed because the downstream copy failed.
+ */
+async function signAndMirror(req, res, noteId, body) {
+  const normalized = actor(req);
+  const result = clinic.signNote(normalized, noteId, body || {});
+
+  if (!result.alreadySigned && result.note?.appointmentId) {
+    try {
+      const appointment = clinic.getAppointment(normalized, result.note.appointmentId);
+      await mirrorSignedNote({
+        tenantId: normalized.tenantId,
+        note: result.note,
+        appointment,
+        actor: { actorId: normalized.id, actorName: normalized.name }
+      });
+    } catch (err) {
+      console.warn('[sign-mirror] signed note not mirrored:', err.message);
+    }
+  }
+
+  return res.json(result);
 }
 
 /* ------------------------------------------------------------------ */
@@ -174,18 +201,14 @@ router.get('/notes/:id', handle((req, res) => {
   res.json({ note });
 }));
 
-router.post('/notes/:id/sign', handle((req, res) => {
-  const result = clinic.signNote(actor(req), req.params.id, req.body || {});
-  res.json(result);
-}));
+router.post('/notes/:id/sign', handle((req, res) => signAndMirror(req, res, req.params.id, req.body || {})));
 
 router.post('/encounters/sign', handle((req, res) => {
   const body = req.body || {};
   if (!body.noteId && !body.patientId) {
     return res.status(400).json({ error: 'noteId or patientId is required.', code: 'SIGN_TARGET_REQUIRED' });
   }
-  const result = clinic.signNote(actor(req), body.noteId || null, body);
-  res.json(result);
+  return signAndMirror(req, res, body.noteId || null, body);
 }));
 
 /* ------------------------------------------------------------------ */

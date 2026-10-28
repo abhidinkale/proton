@@ -110,7 +110,18 @@ data class BookingSyncPayload(
   val clinicLocation: String,
   val reasonForVisit: String,
   val symptoms: List<String> = emptyList(),
-  val bookedAtIso: String
+  val bookedAtIso: String,
+  /**
+   * The patient's own profile snapshot, so the clinician opens a name and a
+   * safety history instead of an anonymous booking. Optional: an older build
+   * sends none of this and the server still books the visit.
+   */
+  val patientName: String? = null,
+  val dateOfBirth: String? = null,
+  val sex: String? = null,
+  val allergies: List<String> = emptyList(),
+  val conditions: List<String> = emptyList(),
+  val medications: List<String> = emptyList()
 )
 
 @Serializable

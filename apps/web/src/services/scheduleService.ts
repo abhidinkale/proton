@@ -24,6 +24,7 @@ function toDomain(appointment: ClinicAppointment): Appointment {
     appointmentType: (['Follow-up', 'Emergency', 'Annual Checkup', 'Consultation', 'Telehealth', 'Pre-Op'].includes(appointment.appointmentType)
       ? appointment.appointmentType
       : 'Follow-up') as Appointment['appointmentType'],
+    date: appointment.date,
     status: (appointment.status === 'IN_ROOM'
       ? 'IN_ROOM'
       : appointment.status === 'COMPLETED'
@@ -80,6 +81,26 @@ export const scheduleService = {
       const { appointments } = await clinicApi.listAppointments({ date });
       if (!appointments.length) return [];
       return appointments.map(toDomain);
+    } catch {
+      return fallbackSchedule();
+    }
+  },
+
+  /**
+   * Every booking in the next `days` days, today included.
+   *
+   * The phone offers more than one day, so a booking made for tomorrow is not a
+   * lost booking. The day view shows the date on those rows instead of hiding
+   * them behind a second screen.
+   */
+  async getUpcomingAppointments(days = 7): Promise<Appointment[]> {
+    const from = localDateString();
+    const to = localDateString(new Date(Date.now() + Math.max(1, days) * 86_400_000));
+    try {
+      const { appointments } = await clinicApi.listAppointments({ from, to });
+      return appointments
+        .map(toDomain)
+        .filter((appointment) => appointment.status !== 'CANCELLED');
     } catch {
       return fallbackSchedule();
     }

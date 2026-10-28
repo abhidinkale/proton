@@ -4,6 +4,7 @@ import { ArrowUpRight, Radio } from 'lucide-react';
 
 import { scheduleService } from '../services/scheduleService';
 import { authService } from '../services/auth';
+import { localDateString } from '../lib/clinicApi';
 import type { Appointment } from '../domain/schedule/types';
 
 /**
@@ -48,6 +49,19 @@ function minutesOf(time: string) {
   return hour * 60 + minute;
 }
 
+function stamp(appointment: Appointment) {
+  return `${appointment.date || localDateString()}T${String(minutesOf(appointment.time)).padStart(4, '0')}`;
+}
+
+/** "THU 29" for a future day, null when the visit is today. */
+function futureDay(date?: string) {
+  const today = localDateString();
+  if (!date || date === today) return null;
+  return new Date(`${date}T00:00:00`)
+    .toLocaleDateString([], { weekday: 'short', day: '2-digit' })
+    .toUpperCase();
+}
+
 export default function Today() {
   const navigate = useNavigate();
   const [now, setNow] = useState(new Date());
@@ -61,24 +75,39 @@ export default function Today() {
 
   useEffect(() => {
     let alive = true;
-    scheduleService
-      .getTodayAppointments()
-      .then((list) => {
-        if (alive) setAppointments(list);
-      })
-      .catch(() => {
-        if (alive) setAppointments([]);
-      })
-      .finally(() => {
-        if (alive) setLoading(false);
-      });
+
+    const load = (first: boolean) => {
+      scheduleService
+        .getUpcomingAppointments(7)
+        .then((list) => {
+          if (alive) setAppointments(list);
+        })
+        .catch(() => {
+          if (alive && first) setAppointments([]);
+        })
+        .finally(() => {
+          if (alive && first) setLoading(false);
+        });
+    };
+
+    load(true);
+    // A booking made on the phone should appear while the clinician is looking
+    // at the screen, not after a manual reload.
+    const timer = window.setInterval(() => load(false), 15_000);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') load(false);
+    };
+    document.addEventListener('visibilitychange', onVisible);
+
     return () => {
       alive = false;
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisible);
     };
   }, []);
 
   const ordered = useMemo(
-    () => [...appointments].sort((a, b) => minutesOf(a.time) - minutesOf(b.time)),
+    () => [...appointments].sort((a, b) => stamp(a).localeCompare(stamp(b))),
     [appointments]
   );
 
@@ -133,6 +162,7 @@ export default function Today() {
                       {next.patientName}
                     </span>
                     <span className="font-mono text-[11px] tracking-widest text-white/40 uppercase">
+                      {futureDay(next.date) ? `${futureDay(next.date)} · ` : ''}
                       {next.time}
                     </span>
                     <ArrowUpRight
@@ -141,10 +171,15 @@ export default function Today() {
                     />
                   </button>
                 ) : (
-                  <p className="font-display text-2xl text-studio-cream/60">Nothing scheduled.</p>
+                  <p className="font-display text-2xl text-studio-cream/60">
+                    {ordered.length > 0 ? 'All signed.' : 'Nothing scheduled.'}
+                  </p>
                 )}
                 <p className="mt-2 max-w-sm text-sm leading-relaxed text-white/40">
-                  {next?.chiefComplaint || 'Bookings from the patient app appear here, already confirmed.'}
+                  {next?.chiefComplaint ||
+                    (ordered.length > 0
+                      ? 'Every visit on the board is signed.'
+                      : 'A booking made on the phone lands here within seconds.')}
                 </p>
               </div>
 
@@ -175,16 +210,16 @@ export default function Today() {
         {/* ── The list ───────────────────────────────────────────────────── */}
         <section className="mt-10 px-2 sm:px-5">
           <div className="flex items-baseline justify-between">
-            <h2 className="font-mono text-[11px] tracking-[0.24em] text-white/40 uppercase">Today</h2>
+            <h2 className="font-mono text-[11px] tracking-[0.24em] text-white/40 uppercase">Ahead</h2>
             {loading && <span className="font-mono text-[10px] text-white/25">syncing</span>}
           </div>
 
           <div className="mt-3 divide-y divide-white/[0.06] border-y border-white/[0.06]">
             {ordered.length === 0 && !loading && (
               <div className="py-14">
-                <p className="font-display text-2xl text-white/60">The day is clear.</p>
+                <p className="font-display text-2xl text-white/60">Nothing ahead.</p>
                 <p className="mt-2 max-w-sm text-sm leading-relaxed text-white/30">
-                  When a patient books on their phone it appears here — no refresh, no portal.
+                  When a patient books on their phone it lands here within seconds — no refresh, no portal.
                 </p>
               </div>
             )}
@@ -195,7 +230,8 @@ export default function Today() {
                 onClick={() => navigate(`/consult/${encodeURIComponent(appointment.id)}`)}
                 className="group flex w-full items-center gap-5 py-5 text-left transition-colors hover:bg-white/[0.03] sm:gap-8"
               >
-                <span className="w-20 shrink-0 whitespace-nowrap font-mono text-xs text-white/40 tabular-nums">
+                <span className="w-24 shrink-0 whitespace-nowrap font-mono text-[11px] text-white/40 tabular-nums sm:w-32">
+                  {futureDay(appointment.date) ? `${futureDay(appointment.date)} · ` : ''}
                   {appointment.time}
                 </span>
 
@@ -227,7 +263,7 @@ export default function Today() {
 
           <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
             <p className="font-mono text-[10px] leading-relaxed tracking-[0.14em] text-white/20 uppercase">
-              Synthetic cohort · no patient data leaves this clinic
+              This clinic only · bookings stay on this server
             </p>
             <button
               onClick={() => navigate('/dashboard')}

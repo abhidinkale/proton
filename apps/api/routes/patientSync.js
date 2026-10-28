@@ -23,6 +23,7 @@ const { bookAppointment, BookingError } = require('../services/scheduling/durabl
 const repo = require('../storage/postgres/workflowRepository');
 const documentStore = require('../services/documents/patientDocumentStore');
 const prescriptionService = require('../services/careLoop/prescriptionService');
+const { mirrorBookingToDesk } = require('../services/careLoop/deskMirror');
 const { resolveWorkflowPersistence } = require('../services/workflow/runtime');
 const patientAccountStore = require('../services/patients/patientAccountStore');
 
@@ -105,6 +106,49 @@ function cleanText(value, maxLength) {
   if (typeof value !== 'string') return '';
   return value.trim().slice(0, maxLength);
 }
+
+/** A short list of patient-entered strings, deduplicated and bounded. */
+function cleanList(value, maxLength = 120, maxItems = 40) {
+  if (!Array.isArray(value)) return [];
+  const seen = new Set();
+  const out = [];
+  for (const entry of value) {
+    const text = cleanText(entry, maxLength);
+    if (!text || seen.has(text.toLowerCase())) continue;
+    seen.add(text.toLowerCase());
+    out.push(text);
+    if (out.length >= maxItems) break;
+  }
+  return out;
+}
+
+/**
+ * The demographic snapshot a booking may carry.
+ *
+ * It is optional by design: an older app build sends only the appointment, and
+ * the clinic then sees the account name it already had. Nothing here is trusted
+ * as clinical truth — it fills the chart the patient will review with the
+ * clinician, and the clinician can correct it.
+ */
+function bookingProfile(body) {
+  return {
+    name: cleanText(body.patientName, 120),
+    dateOfBirth: /^\d{4}-\d{2}-\d{2}$/.test(cleanText(body.dateOfBirth, 10))
+      ? cleanText(body.dateOfBirth, 10)
+      : '',
+    sex: cleanText(body.sex, 40),
+    allergies: cleanList(body.allergies),
+    conditions: cleanList(body.conditions),
+    medications: cleanList(body.medications)
+  };
+}
+
+function profileIsEmpty(profile) {
+  return !profile.name && !profile.dateOfBirth && !profile.sex &&
+    profile.allergies.length === 0 && profile.conditions.length === 0 &&
+    profile.medications.length === 0;
+}
+
 
 const PATIENT_AUTHORED_KINDS = new Set(['FOLLOW_UP_CHECK_IN', 'REFILL_REQUEST']);
 
@@ -232,6 +276,40 @@ function notFoundAppointment() {
 // Bookings
 // ---------------------------------------------------------------------------
 
+/**
+ * Writes the current Postgres state of one visit into the clinic desk.
+ *
+ * Shared by booking, cancellation and reschedule so the clinician never looks
+ * at a stale time. Failures are logged, never surfaced to the patient: the
+ * durable record is already written by the time this runs.
+ */
+async function mirrorVisit({ tenantId, patientId, appointmentId, encounterId = null, profile = null }) {
+  try {
+    const appointmentRow = await repo.getAppointment({ tenantId, appointmentId });
+    if (!appointmentRow) return null;
+
+    const patientRow = await repo.getPatient({ tenantId, patientId });
+    let linkedEncounter = encounterId;
+    if (!linkedEncounter) {
+      const encounter = await repo
+        .getEncounterByAppointment({ tenantId, appointmentId })
+        .catch(() => null);
+      linkedEncounter = encounter?.id || null;
+    }
+
+    return mirrorBookingToDesk({
+      tenantId,
+      appointment: appointmentRow,
+      patient: patientRow,
+      encounterId: linkedEncounter,
+      profile
+    });
+  } catch (err) {
+    console.warn('[desk-mirror] visit not mirrored:', err.message);
+    return null;
+  }
+}
+
 router.post('/bookings', requirePatientAuth, async (req, res) => {
   if (!requirePostgres(res)) return;
   const body = req.body || {};
@@ -305,6 +383,46 @@ router.post('/bookings', requirePatientAuth, async (req, res) => {
       };
     });
 
+    // The patient's own profile, when the app sends one. A failure here must
+    // not unbook the visit, so it is logged and the booking still returns.
+    const profile = bookingProfile(body);
+    if (!profileIsEmpty(profile)) {
+      try {
+        await repo.updatePatientProfile({
+          tenantId: req.patient.tenantId,
+          patientId: req.patient.id,
+          fullName: profile.name || null,
+          dateOfBirth: profile.dateOfBirth || null,
+          sex: profile.sex || null,
+          clinicalProfile: {
+            allergies: profile.allergies,
+            conditions: profile.conditions,
+            medications: profile.medications
+          }
+        });
+        if (profile.name) {
+          await patientAccountStore.upsertPatientAccount({
+            tenantId: req.patient.tenantId,
+            patientId: req.patient.id,
+            displayName: profile.name
+          });
+        }
+      } catch (err) {
+        console.warn('[booking-profile] could not save patient snapshot:', err.message);
+      }
+    }
+
+    // Make the same visit visible in the clinician's desk, under the same ids.
+    // Best effort: Postgres is the durable record; the desk mirror is the read
+    // path the web app uses today.
+    await mirrorVisit({
+      tenantId: req.patient.tenantId,
+      patientId: req.patient.id,
+      appointmentId: result.appointmentId,
+      encounterId: result.encounterId,
+      profile
+    });
+
     return res.status(result.idempotent ? 200 : 201).json(result);
   } catch (err) {
     return sendError(res, err);
@@ -335,6 +453,12 @@ router.post('/cancellations', requirePatientAuth, async (req, res) => {
       });
 
       return { success: true, appointmentId: updated.id, status: updated.status };
+    });
+
+    await mirrorVisit({
+      tenantId: req.patient.tenantId,
+      patientId: req.patient.id,
+      appointmentId: result.appointmentId
     });
 
     return res.status(200).json(result);
@@ -372,6 +496,12 @@ router.post('/reschedules', requirePatientAuth, async (req, res) => {
       });
 
       return { success: true, appointmentId: updated.id, scheduledFor: updated.scheduled_for };
+    });
+
+    await mirrorVisit({
+      tenantId: req.patient.tenantId,
+      patientId: req.patient.id,
+      appointmentId: result.appointmentId
     });
 
     return res.status(200).json(result);

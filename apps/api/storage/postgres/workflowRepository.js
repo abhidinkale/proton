@@ -81,6 +81,46 @@ async function getPatient({ tenantId = 'org-default', patientId, client = null, 
   return rows[0] || null;
 }
 
+/**
+ * Fills in demographics a patient volunteered in the app.
+ *
+ * Only non-null fields move, and the clinical profile is merged rather than
+ * replaced, so a booking that repeats one allergy cannot erase the rest of the
+ * record. Returns the updated row, or null when the patient is not in this
+ * tenant.
+ */
+async function updatePatientProfile({
+  tenantId = 'org-default',
+  patientId,
+  fullName = null,
+  dateOfBirth = null,
+  sex = null,
+  clinicalProfile = null,
+  contact = null
+}) {
+  const { rows } = await pool().query(
+    `UPDATE patients
+        SET full_name = COALESCE($3, full_name),
+            date_of_birth = COALESCE($4::date, date_of_birth),
+            sex = COALESCE($5, sex),
+            clinical_profile = clinical_profile || $6::jsonb,
+            contact = contact || $7::jsonb,
+            updated_at = NOW()
+      WHERE id = $1 AND tenant_id = $2
+      RETURNING *;`,
+    [
+      patientId,
+      tenantId,
+      fullName || null,
+      dateOfBirth || null,
+      sex || null,
+      JSON.stringify(clinicalProfile || {}),
+      JSON.stringify(contact || {})
+    ]
+  );
+  return rows[0] || null;
+}
+
 async function findPatientByMrn({ tenantId = 'org-default', mrn, client = null, p = null }) {
   if (!mrn) return null;
   const q = client || pool(p);
@@ -537,6 +577,57 @@ async function retractPatientDocument({ tenantId = 'org-default', patientId, doc
  * three rows sharing an encounter and a signing instant. They are written in
  * one transaction by the caller: a half-signed script is not a clinical state.
  */
+/**
+ * Records a note signed in the clinic desk against the durable encounter.
+ *
+ * The desk keeps the clinician's narrative; Postgres keeps what the phone and
+ * the audit chain can quote. The id is derived from the desk note so a retry
+ * updates the same row instead of appending a second signature.
+ */
+async function upsertSignedNote(
+  {
+    id,
+    tenantId = 'org-default',
+    encounterId,
+    authorActorId,
+    title = null,
+    content = {},
+    provenance = {},
+    signedBy,
+    signedAt = new Date()
+  },
+  { client = null, p = null } = {}
+) {
+  const q = client || pool(p);
+  const { rows } = await q.query(
+    `INSERT INTO notes
+       (id, tenant_id, encounter_id, author_actor_id, status, content, provenance,
+        signed_by, signed_at, title)
+     VALUES ($1, $2, $3, $4, 'SIGNED', $5::jsonb, $6::jsonb, $7, $8, $9)
+     ON CONFLICT (id) DO UPDATE
+        SET content = EXCLUDED.content,
+            provenance = EXCLUDED.provenance,
+            status = 'SIGNED',
+            signed_by = EXCLUDED.signed_by,
+            signed_at = EXCLUDED.signed_at,
+            title = EXCLUDED.title,
+            updated_at = NOW()
+      RETURNING *;`,
+    [
+      id,
+      tenantId,
+      encounterId,
+      authorActorId,
+      JSON.stringify(content || {}),
+      JSON.stringify(provenance || {}),
+      signedBy,
+      signedAt,
+      title
+    ]
+  );
+  return rows[0];
+}
+
 async function createPrescriptions(
   {
     tenantId = 'org-default',
@@ -654,6 +745,7 @@ module.exports = {
   withTransaction,
   createPatient,
   getPatient,
+  updatePatientProfile,
   findPatientByMrn,
   listPatients,
   createAppointment,
@@ -679,6 +771,7 @@ module.exports = {
   listTenantDocuments,
   retractPatientDocument,
   createPrescriptions,
+  upsertSignedNote,
   listSignedPrescriptionsForPatient,
   listSignedPrescriptionsForEncounter,
   getWorkflowIdempotentResponse,

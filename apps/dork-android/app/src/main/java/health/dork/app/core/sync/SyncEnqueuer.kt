@@ -2,6 +2,7 @@ package health.dork.app.core.sync
 
 import health.dork.app.core.data.model.AppointmentItem
 import health.dork.app.core.data.model.FollowUpCheckIn
+import health.dork.app.core.data.model.PatientProfile
 import health.dork.app.core.data.model.RefillRequest
 import health.dork.app.core.data.model.VisitIntake
 import kotlinx.serialization.json.Json
@@ -22,7 +23,7 @@ object SyncPayloads {
     ignoreUnknownKeys = true
   }
 
-  fun booking(appointment: AppointmentItem, bookedAtIso: String): String =
+  fun booking(appointment: AppointmentItem, bookedAtIso: String, patient: PatientProfile? = null): String =
     json.encodeToString(
       BookingSyncPayload.serializer(),
       BookingSyncPayload(
@@ -35,7 +36,13 @@ object SyncPayloads {
         clinicLocation = appointment.clinicLocation,
         reasonForVisit = appointment.reasonForVisit,
         symptoms = appointment.symptoms,
-        bookedAtIso = bookedAtIso
+        bookedAtIso = bookedAtIso,
+        patientName = patient?.fullName?.takeIf { it.isNotBlank() },
+        dateOfBirth = patient?.birthDate?.takeIf { it.isNotBlank() },
+        sex = patient?.sex?.displayName,
+        allergies = patient?.allergies.orEmpty().filter { it.isNotBlank() },
+        conditions = patient?.conditions.orEmpty().filter { it.isNotBlank() },
+        medications = patient?.currentMedications.orEmpty().filter { it.isNotBlank() }
       )
     )
 
@@ -149,8 +156,12 @@ class DefaultSyncEnqueuer(
 
 // Typed helpers keep the repository call sites readable and the JSON in one place.
 
-fun SyncEnqueuer.enqueueBooking(appointment: AppointmentItem, atIso: String) {
-  enqueue(OutboxKind.BOOKING, SyncPayloads.booking(appointment, atIso))
+fun SyncEnqueuer.enqueueBooking(
+  appointment: AppointmentItem,
+  atIso: String,
+  patient: PatientProfile? = null
+) {
+  enqueue(OutboxKind.BOOKING, SyncPayloads.booking(appointment, atIso, patient))
 }
 
 fun SyncEnqueuer.enqueueIntake(intake: VisitIntake, atIso: String) {

@@ -28,6 +28,8 @@ export interface Appointment {
   patientGender: 'female' | 'male' | 'other' | 'unknown';
   mrn: MRN;
   time: string; // e.g. "09:00"
+  /** Clinic-local ISO date (YYYY-MM-DD). Absent on the frozen preview cohort. */
+  date?: string;
   durationMinutes: number;
   appointmentType: 'Follow-up' | 'Emergency' | 'Annual Checkup' | 'Consultation' | 'Telehealth' | 'Pre-Op';
   status: AppointmentStatus;
