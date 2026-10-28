@@ -4,7 +4,10 @@ import health.dork.app.core.data.local.DorkStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.time.Instant
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
+import java.time.ZoneId
 
 /**
  * Patient-owned sync preferences, persisted in the same store as everything
@@ -86,9 +89,17 @@ class SyncSettings(
   fun hasUsableSession(): Boolean {
     val current = _session.value ?: return false
     if (current.token.isBlank()) return false
-    val expiry = runCatching { LocalDateTime.parse(current.expiresAt) }.getOrNull() ?: return false
-    return expiry.isAfter(now())
+    // The server sends ISO-8601 in UTC ("…Z"), which LocalDateTime.parse rejects
+    // outright. Parsing that as local time marked every fresh session expired.
+    val expiry = parseExpiry(current.expiresAt) ?: return false
+    return expiry.isAfter(now().atZone(ZoneId.systemDefault()).toInstant())
   }
+
+  private fun parseExpiry(value: String): Instant? =
+    runCatching { Instant.parse(value) }.getOrNull()
+      ?: runCatching { OffsetDateTime.parse(value).toInstant() }.getOrNull()
+      ?: runCatching { LocalDateTime.parse(value).atZone(ZoneId.systemDefault()).toInstant() }
+        .getOrNull()
 
   /** True only when sync is on, a URL is configured, and the session is live. */
   fun isReady(): Boolean =

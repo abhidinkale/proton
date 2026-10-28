@@ -149,6 +149,7 @@ fun SyncContent(
       title = "Clinic sync",
       subtitle = when {
         !state.enabled -> "Off by default"
+        state.sessionExpired -> "Sign in again"
         state.connected -> "Connected to your clinic"
         else -> "Not connected yet"
       },
@@ -258,9 +259,22 @@ fun SyncContent(
             backgroundColor = DorkTheme.colors.warningContainer
           ) {
             Text(
-              text = "Your clinic session expired. Sign in again with a new one-time code. Your local records are safe and nothing was deleted.",
+              text = "Your clinic session expired. Your local records are safe and nothing was deleted.",
               style = MaterialTheme.typography.bodySmall,
               color = DorkTheme.colors.warning
+            )
+            Spacer(modifier = Modifier.height(DorkSpacing.s))
+            DorkButton(
+              text = "Scan clinic QR",
+              onClick = onScanQr,
+              variant = DorkButtonVariant.Secondary,
+              enabled = !state.busy
+            )
+            DorkButton(
+              text = "Use a one-time code",
+              onClick = onEditDetails,
+              variant = DorkButtonVariant.Ghost,
+              enabled = !state.busy
             )
           }
           Spacer(modifier = Modifier.height(DorkSpacing.l))
