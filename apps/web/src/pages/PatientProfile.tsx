@@ -659,6 +659,19 @@ export default function PatientProfile() {
     ? conditions.map(c => c.code?.text || c.code?.coding?.[0]?.display || 'Condition')
     : [];
 
+  // Prescriptions signed at the clinic desk live on the note, not always in FHIR.
+  const clinicPrescriptions = clinicNotes.flatMap((note) =>
+    (Array.isArray(note.prescriptions) ? note.prescriptions : []).map((entry) => {
+      const item = (entry || {}) as Record<string, unknown>;
+      return {
+        name: String(item.name || item.medication || 'Medication'),
+        detail:
+          [item.dose, item.frequency, item.duration].filter(Boolean).join(' · ') ||
+          String(item.instructions || 'As directed')
+      };
+    })
+  );
+
   const criticalAllergies = allergies.map(a => {
     const allergenName = a.code?.text || a.code?.coding?.[0]?.display || 'Allergen';
     const isCritical = 
@@ -883,11 +896,11 @@ export default function PatientProfile() {
                   <span className="text-xs text-ink-2">{medicationRequests.length} active</span>
                 </div>
 
-                {medicationRequests.length === 0 ? (
+                {medicationRequests.length === 0 && clinicPrescriptions.length === 0 ? (
                   <div className="py-6 text-center text-xs text-ink-2">
                     No active prescriptions.
                   </div>
-                ) : (
+                ) : medicationRequests.length === 0 ? null : (
                   <div className="divide-y divide-rule">
                     {medicationRequests.map((mr, idx) => {
                       const medName = mr.medicationCodeableConcept?.text || mr.medicationCodeableConcept?.coding?.[0]?.display || 'Medication';
@@ -910,6 +923,23 @@ export default function PatientProfile() {
                         </div>
                       );
                     })}
+                  </div>
+                )}
+
+                {clinicPrescriptions.length > 0 && (
+                  <div className="pt-3 border-t border-rule space-y-2">
+                    <div className="text-[10px] font-medium uppercase tracking-wider text-ink-3">
+                      Prescribed at this clinic
+                    </div>
+                    {clinicPrescriptions.map((item, idx) => (
+                      <div key={`${item.name}-${idx}`} className="flex items-center justify-between text-xs">
+                        <div>
+                          <div className="font-semibold text-ink">{item.name}</div>
+                          <div className="text-ink-2">{item.detail}</div>
+                        </div>
+                        <Pill size={12} className="text-ink-3" />
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>

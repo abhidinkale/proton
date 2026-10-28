@@ -138,7 +138,7 @@ export default function Consultation() {
     return (
       <AmbientClinicalCockpit
         patient={selectedDeskPatient}
-        onBackToDesk={() => navigate('/')}
+        onBackToDesk={() => navigate('/dashboard')}
         onSwitchMode={(mode) => setViewMode(mode)}
       />
     );
@@ -185,8 +185,8 @@ export default function Consultation() {
         </div>
         <DoctorDeskEncounter
           patient={selectedDeskPatient}
-          onCloseMeeting={() => navigate('/')}
-          onBackToDesk={() => navigate('/')}
+          onCloseMeeting={() => navigate('/dashboard')}
+          onBackToDesk={() => navigate('/dashboard')}
         />
       </div>
     );
@@ -198,7 +198,7 @@ export default function Consultation() {
       initialPatient={clinicPatient}
       initialAction={searchParams.get('action')}
       onSwitchToPowerDesk={() => setViewMode('desk')}
-      onFinishEncounter={() => navigate('/')}
+      onFinishEncounter={() => navigate('/dashboard')}
     />
   );
 }

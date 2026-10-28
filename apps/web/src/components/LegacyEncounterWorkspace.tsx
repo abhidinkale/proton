@@ -1004,7 +1004,7 @@ export default function LegacyEncounterWorkspace({
               </div>
               <div>
                 <div className="flex items-center gap-1.5 text-[11px] text-ink-3 font-medium mb-0.5">
-                  <Link to="/" className="hover:text-brand-600 transition-colors">Command Center</Link>
+                  <Link to="/dashboard" className="hover:text-brand-600 transition-colors">Command Center</Link>
                   <span>&rarr;</span>
                   {patient ? (
                     <>

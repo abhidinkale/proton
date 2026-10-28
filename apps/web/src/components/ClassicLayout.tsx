@@ -56,7 +56,8 @@ export default function Layout({
 
   // Primary navigation: Command Center, Patients, Consultations, Documents, Operations, Settings, Review Center
   const primaryNavItems = [
-    { to: '/', icon: CalendarDays, label: 'Command Center', end: true },
+    { to: '/today', icon: CalendarDays, label: 'Today' },
+    { to: '/dashboard', icon: CalendarDays, label: 'Command Center' },
     { to: '/patients', icon: Users, label: 'Patients' },
     { to: '/consultation', icon: Activity, label: 'Consultations' },
     { to: '/document-review', icon: FileText, label: 'Documents' },
@@ -114,12 +115,11 @@ export default function Layout({
         {/* Primary Navigation */}
         <nav className="flex-1 px-3 py-2 space-y-0.5">
           {primaryNavItems.map((item) => {
-            const active = isActive(item.to, item.end);
+            const active = isActive(item.to);
             return (
               <NavLink
                 key={item.to}
                 to={item.to}
-                end={item.end}
                 className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
                   active
                     ? 'bg-paper-2 text-ink font-semibold'
@@ -174,12 +174,11 @@ export default function Layout({
 
       <nav className="proton-classic-mobile-nav" aria-label="Primary navigation">
         {primaryNavItems.map((item) => {
-          const active = isActive(item.to, item.end);
+          const active = isActive(item.to);
           return (
             <NavLink
               key={item.to}
               to={item.to}
-              end={item.end}
               className={`proton-classic-mobile-nav-link${active ? ' is-active' : ''}`}
             >
               <item.icon size={16} strokeWidth={active ? 2.1 : 1.8} />

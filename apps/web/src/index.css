@@ -76,6 +76,18 @@
   --color-proton-ai: var(--c-solid);
   --color-proton-ai-accent: var(--accent);
 
+  /* ── Studio Surface (the deep-gradient opening screen) ── */
+  --color-studio-void: #08090a;
+  --color-studio-panel: #0b0c0d;
+  --color-studio-cream: #fff6ed;
+  --color-studio-ink: #160a03;
+  --color-studio-ember: #ff8f4f;
+  --color-studio-critical: #a3394c;
+  --color-studio-critical-soft: #f2879b;
+  --color-studio-caution: #e3b465;
+  --color-studio-settled: #3f6b3b;
+  --color-studio-settled-soft: #7ed694;
+
   /* ── Border Radius (Refined Rounded-3xl Geometry) ── */
   --radius-sm: 0.25rem;
   --radius-md: 0.375rem;

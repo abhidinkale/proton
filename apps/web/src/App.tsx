@@ -3,6 +3,8 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useMedplumProfile, useMedplum } from '@medplum/react';
 
 import Login from './pages/Login';
+import Today from './pages/Today';
+import ConsultRoom from './pages/ConsultRoom';
 import Dashboard from './pages/Dashboard';
 import CareLoop from './pages/CareLoop';
 import Patients from './pages/Patients';
@@ -75,7 +77,9 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/capture" element={<MobileCapturePage />} />
       <Route path="/launch" element={<SmartLaunch />} />
-      <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/" element={<ProtectedRoute><Today /></ProtectedRoute>} />
+      <Route path="/today" element={<ProtectedRoute><Today /></ProtectedRoute>} />
+      <Route path="/consult/:appointmentId" element={<ProtectedRoute><ConsultRoom /></ProtectedRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/care-loop" element={<ProtectedRoute><CareLoop /></ProtectedRoute>} />
       <Route path="/clinic/admin" element={<ProtectedRoute><ClinicAdmin /></ProtectedRoute>} />

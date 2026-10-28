@@ -716,7 +716,7 @@ export default function DoctorGuidedEncounter({
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           <button
             type="button"
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/dashboard')}
             className="w-9 h-9 rounded-full bg-paper border border-rule-strong text-ink hover:bg-paper-2 flex items-center justify-center transition-colors shadow-2xs cursor-pointer"
             title="Return to Dashboard"
           >
@@ -2132,7 +2132,7 @@ export default function DoctorGuidedEncounter({
                     <div className="pt-2 flex items-center justify-center gap-2.5">
                       <button
                         type="button"
-                        onClick={() => navigate('/')}
+                        onClick={() => navigate('/dashboard')}
                         className="px-5 py-2.5 rounded-full bg-solid text-white font-extrabold text-xs hover:bg-solid cursor-pointer shadow-2xs"
                       >
                         Dashboard

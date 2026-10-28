@@ -134,7 +134,7 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
         shortcut: 'G C',
         icon: <LayoutDashboard size={16} className="text-brand-600" />,
         onSelect: () => {
-          navigate('/');
+          navigate('/dashboard');
           onClose();
         }
       },
