@@ -597,12 +597,25 @@ async function requestPatientOtp({ identifier, channel, tenantId, clinicCode, ip
     identifier: normalizedIdentifier
   });
 
-  const code = crypto.randomInt(0, 1000000).toString().padStart(6, '0');
+  // A simulated demo has no inbox to read the code from. When delivery is
+  // simulated (never for real email) an operator may pin one code so a phone
+  // can sign in without typing what the screen shows. Pinned codes also get a
+  // longer life, because the failure mode we care about is a demo timing out.
+  const pinnedCode = String(process.env.PATIENT_OTP_FIXED_CODE || '').trim();
+  const usePinnedCode =
+    delivery.mode === 'simulated' &&
+    process.env.NODE_ENV !== 'production' &&
+    /^\d{6}$/.test(pinnedCode);
+  const ttlSeconds = usePinnedCode ? 24 * 60 * 60 : OTP_TTL_SECONDS;
+
+  const code = usePinnedCode
+    ? pinnedCode
+    : crypto.randomInt(0, 1000000).toString().padStart(6, '0');
   const challenge = await patientAccountStore.createOtp({
     tenantId: binding.tenantId,
     identifierId: binding.id,
     code,
-    expiresAt: new Date(Date.now() + OTP_TTL_SECONDS * 1000)
+    expiresAt: new Date(Date.now() + ttlSeconds * 1000)
   });
 
   const response = {
@@ -610,7 +623,7 @@ async function requestPatientOtp({ identifier, channel, tenantId, clinicCode, ip
     challengeId: challenge.id,
     channel: resolvedChannel,
     maskedIdentifier: maskIdentifier(resolvedChannel, normalizedIdentifier),
-    expiresInSeconds: OTP_TTL_SECONDS,
+    expiresInSeconds: ttlSeconds,
     delivery: delivery.mode
   };
 
@@ -620,7 +633,7 @@ async function requestPatientOtp({ identifier, channel, tenantId, clinicCode, ip
         to: normalizedIdentifier,
         code,
         clinicName: clinic?.organization?.name || null,
-        expiresInMinutes: Math.round(OTP_TTL_SECONDS / 60),
+        expiresInMinutes: Math.round(ttlSeconds / 60),
         config: delivery
       });
     } catch (err) {
