@@ -304,6 +304,58 @@ router.patch('/education/progress', handle((req, res) => {
 }));
 
 /* ------------------------------------------------------------------ */
+/* Patient hand-off                                                    */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Mints a QR hand-off ticket for one patient contact.
+ *
+ * The QR carries the ticket, not a password: it is signed, expires in fifteen
+ * minutes and can be redeemed once. The clinician still chooses which patient
+ * contact the ticket belongs to, so scanning cannot sign a stranger in.
+ */
+router.post('/patient-ticket', handle(async (req, res) => {
+  const normalized = actor(req);
+  const body = req.body || {};
+  const identifier = String(body.identifier || '').trim();
+  if (!identifier) {
+    return res.status(400).json({ error: 'Enter the patient email or phone first.', code: 'IDENTIFIER_REQUIRED' });
+  }
+
+  const channel = body.channel === 'phone' ? 'phone' : 'email';
+  const { createHandoffTicket } = require('../services/patients/handoffTicket');
+  const { maskIdentifier } = require('../middleware/patientAuth');
+  const organizationStore = require('../services/organizations/organizationStore');
+
+  const issued = createHandoffTicket({
+    tenantId: normalized.tenantId,
+    identifier,
+    channel
+  });
+
+  // Where the phone should send the ticket. A tunnel or deployed API must set
+  // PUBLIC_API_URL, because the request host here is the doctor's machine.
+  const apiBaseUrl = (process.env.PUBLIC_API_URL || `${req.protocol}://${req.get('host')}`).replace(/\/+$/, '');
+  const deepLink =
+    `proton://connect?u=${encodeURIComponent(apiBaseUrl)}` +
+    `&t=${encodeURIComponent(issued.ticket)}`;
+
+  // Which clinic this ticket actually belongs to. A clinician signed into the
+  // wrong tenant must see it before a patient scans.
+  const organization = await organizationStore.findOrganization(normalized.tenantId);
+
+  res.json({
+    clinicName: organization?.name || null,
+    ticket: issued.ticket,
+    deepLink,
+    apiBaseUrl,
+    identifier,
+    maskedIdentifier: maskIdentifier(channel, identifier),
+    expiresAt: issued.expiresAt
+  });
+}));
+
+/* ------------------------------------------------------------------ */
 /* Errors                                                              */
 /* ------------------------------------------------------------------ */
 

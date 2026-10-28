@@ -16,6 +16,7 @@ object SyncApiContract {
   const val REQUEST_OTP_PATH = "api/patient/auth/request-otp"
   const val VERIFY_OTP_PATH = "api/patient/auth/verify-otp"
   const val REFRESH_PATH = "api/patient/auth/refresh"
+  const val HANDOFF_PATH = "api/patient/auth/handoff"
   const val PULL_PATH = "api/patient/sync/pull"
 
   /** Collection endpoints: the body carries the local id, the header carries idempotency. */

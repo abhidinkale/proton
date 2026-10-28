@@ -6,6 +6,7 @@ import health.dork.app.BuildConfig
 import health.dork.app.core.data.repository.ClinicRepository
 import health.dork.app.core.sync.AuthClient
 import health.dork.app.core.sync.OutboxEntry
+import health.dork.app.core.sync.QrHandoff
 import health.dork.app.core.sync.SyncEngine
 import health.dork.app.core.sync.SyncOutbox
 import health.dork.app.core.sync.SyncPhase
@@ -224,6 +225,70 @@ class SyncViewModel(
         confirmClinicThenRequest(policy.normalizedBaseUrl, state.clinicCode, state.identifier.trim())
       }
     }
+  }
+
+  /**
+   * One scan replaces the whole handshake: the desk QR carries the server
+   * address and a signed, single-use ticket. The phone never types a code.
+   */
+  fun onQrScanned(raw: String) {
+    val payload = QrHandoff.parse(raw)
+    if (payload == null) {
+      _uiState.value = _uiState.value.copy(
+        error = "That is not a Proton clinic code. Ask the clinic to show it again.",
+        message = null
+      )
+      return
+    }
+    if (_uiState.value.busy) return
+
+    val policy = SyncUrlPolicy.validate(payload.baseUrl, allowCleartextDevServer)
+    if (policy is SyncUrlPolicy.Result.Invalid) {
+      _uiState.value = _uiState.value.copy(error = policy.reason, message = null)
+      return
+    }
+    val baseUrl = (policy as SyncUrlPolicy.Result.Valid).normalizedBaseUrl
+
+    settings.setBaseUrl(baseUrl)
+    _uiState.value = _uiState.value.copy(
+      enabled = true,
+      baseUrl = baseUrl,
+      busy = true,
+      error = null,
+      message = "Connecting to your clinic…"
+    )
+
+    viewModelScope.launch {
+      authClient.handoff(baseUrl, payload.ticket).fold(
+        onSuccess = { session ->
+          settings.saveSession(session)
+          settings.setEnabled(true)
+          _uiState.value = _uiState.value.copy(
+            busy = false,
+            step = SyncStep.CONNECTED,
+            connected = true,
+            sessionExpired = false,
+            otpCode = "",
+            message = "Connected. Your clinic can now receive what you send."
+          )
+          scheduleSync()
+          engine.runOnce()
+        },
+        onFailure = { error ->
+          _uiState.value = _uiState.value.copy(
+            busy = false,
+            error = error.message ?: "Could not connect to the clinic. Ask for a new QR."
+          )
+        }
+      )
+    }
+  }
+
+  fun onQrPermissionDenied() {
+    _uiState.value = _uiState.value.copy(
+      error = "Camera access is off. Allow it in Settings, or type the clinic details below.",
+      message = null
+    )
   }
 
   fun resendOtp() {

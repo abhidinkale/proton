@@ -1,5 +1,11 @@
 package health.dork.app.ui.sync
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,6 +24,7 @@ import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.CloudOff
 import androidx.compose.material.icons.rounded.CloudSync
 import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.QrCodeScanner
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
@@ -43,6 +50,8 @@ import health.dork.app.core.designsystem.components.DorkTopBar
 import health.dork.app.core.sync.OutboxEntry
 import health.dork.app.core.sync.OutboxKind
 import health.dork.app.core.sync.SyncPhase
+import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanOptions
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -65,6 +74,33 @@ fun SyncScreen(
 ) {
   val state by viewModel.uiState.collectAsState()
 
+  // One scan is the whole connection: the clinic desk shows a signed, single-use
+  // ticket in the QR, so nothing is typed on the phone.
+  val scanLauncher = rememberLauncherForActivityResult(ScanContract()) { result ->
+    result.contents?.takeIf { it.isNotBlank() }?.let(viewModel::onQrScanned)
+  }
+  val startScan = {
+    scanLauncher.launch(
+      ScanOptions()
+        .setPrompt("Point at the clinic QR")
+        .setBeepEnabled(false)
+        .setOrientationLocked(false)
+    )
+  }
+  val context = LocalContext.current
+  val permissionLauncher = rememberLauncherForActivityResult(
+    ActivityResultContracts.RequestPermission()
+  ) { granted ->
+    if (granted) startScan() else viewModel.onQrPermissionDenied()
+  }
+  val requestScan = {
+    val granted = ContextCompat.checkSelfPermission(
+      context,
+      Manifest.permission.CAMERA
+    ) == PackageManager.PERMISSION_GRANTED
+    if (granted) startScan() else permissionLauncher.launch(Manifest.permission.CAMERA)
+  }
+
   SyncContent(
     state = state,
     onBackClick = onBackClick,
@@ -77,6 +113,7 @@ fun SyncScreen(
     onResendOtp = viewModel::resendOtp,
     onEditDetails = viewModel::editDetails,
     onVerifyOtp = viewModel::verifyOtp,
+    onScanQr = requestScan,
     onSyncNow = viewModel::syncNow,
     onRetry = viewModel::retry,
     onDisconnect = viewModel::disconnect,
@@ -97,6 +134,7 @@ fun SyncContent(
   onResendOtp: () -> Unit,
   onEditDetails: () -> Unit,
   onVerifyOtp: () -> Unit,
+  onScanQr: () -> Unit,
   onSyncNow: () -> Unit,
   onRetry: (String) -> Unit,
   onDisconnect: () -> Unit,
@@ -238,7 +276,8 @@ fun SyncContent(
             onConnect = onConnect,
             onResendOtp = onResendOtp,
             onEditDetails = onEditDetails,
-            onVerifyOtp = onVerifyOtp
+            onVerifyOtp = onVerifyOtp,
+            onScanQr = onScanQr
           )
 
           SyncStep.CONNECTED -> StatusCard(
@@ -283,7 +322,8 @@ private fun ConnectionCard(
   onConnect: () -> Unit,
   onResendOtp: () -> Unit,
   onEditDetails: () -> Unit,
-  onVerifyOtp: () -> Unit
+  onVerifyOtp: () -> Unit,
+  onScanQr: () -> Unit
 ) {
   DorkCard(contentPadding = DorkSpacing.l) {
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -333,6 +373,25 @@ private fun ConnectionCard(
           enabled = !state.busy
         )
       } else {
+        DorkButton(
+          text = "Scan clinic QR",
+          onClick = onScanQr,
+          variant = DorkButtonVariant.Secondary,
+          leadingIcon = {
+            Icon(
+              imageVector = Icons.Rounded.QrCodeScanner,
+              contentDescription = null,
+              modifier = Modifier.size(18.dp)
+            )
+          }
+        )
+        Spacer(modifier = Modifier.height(DorkSpacing.xs))
+        Text(
+          text = "Ask the front desk to show the connect code. That replaces the fields below.",
+          style = MaterialTheme.typography.bodySmall,
+          color = DorkTheme.colors.textTertiary
+        )
+        Spacer(modifier = Modifier.height(DorkSpacing.m))
         DorkTextField(
           value = state.clinicCode,
           onValueChange = onClinicCodeChange,

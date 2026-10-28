@@ -71,6 +71,7 @@ dependencies {
   implementation(libs.androidx.compose.material.icons.extended)
   implementation(libs.kotlinx.serialization.json)
   implementation(libs.okhttp)
+  implementation(libs.zxing.embedded)
   implementation(libs.androidx.work.runtime.ktx)
   // Tooling
   debugImplementation(libs.androidx.compose.ui.tooling)

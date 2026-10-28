@@ -5,6 +5,7 @@ import { ArrowUpRight, Radio } from 'lucide-react';
 import { scheduleService } from '../services/scheduleService';
 import { authService } from '../services/auth';
 import { localDateString } from '../lib/clinicApi';
+import PatientConnectQR from '../components/clinic/PatientConnectQR';
 import type { Appointment } from '../domain/schedule/types';
 
 /**
@@ -67,6 +68,7 @@ export default function Today() {
   const [now, setNow] = useState(new Date());
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [connectOpen, setConnectOpen] = useState(false);
 
   useEffect(() => {
     const id = window.setInterval(() => setNow(new Date()), 30_000);
@@ -265,15 +267,25 @@ export default function Today() {
             <p className="font-mono text-[10px] leading-relaxed tracking-[0.14em] text-white/20 uppercase">
               This clinic only · bookings stay on this server
             </p>
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="font-mono text-[10px] tracking-[0.14em] text-white/25 uppercase transition-colors hover:text-white/60"
-            >
-              clinic desk
-            </button>
+            <div className="flex items-center gap-6">
+              <button
+                onClick={() => setConnectOpen(true)}
+                className="font-mono text-[10px] tracking-[0.14em] text-white/25 uppercase transition-colors hover:text-white/60"
+              >
+                connect patient
+              </button>
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="font-mono text-[10px] tracking-[0.14em] text-white/25 uppercase transition-colors hover:text-white/60"
+              >
+                clinic desk
+              </button>
+            </div>
           </div>
         </section>
       </div>
+
+      <PatientConnectQR open={connectOpen} onClose={() => setConnectOpen(false)} />
     </div>
   );
 }

@@ -13,11 +13,21 @@ const {
   createDevSession,
   createPatientSessionToken,
   requirePatientAuth,
-  PatientAuthError
+  PatientAuthError,
+  maskIdentifier
 } = require('../middleware/patientAuth');
 const { resolveClinicForPatient } = require('../middleware/patientAuth');
+const patientAccountStore = require('../services/patients/patientAccountStore');
+const { consumeHandoffTicket, HandoffTicketError } = require('../services/patients/handoffTicket');
 
 const router = express.Router();
+
+function sendHandoffError(res, err) {
+  if (err instanceof HandoffTicketError) {
+    return res.status(err.status || 400).json({ error: err.message, code: err.code });
+  }
+  return sendError(res, err);
+}
 
 function sendError(res, err) {
   if (err instanceof PatientAuthError) {
@@ -144,6 +154,36 @@ router.post('/resolve-clinic', async (req, res) => {
     return res.status(200).json({ success: true, clinic });
   } catch (err) {
     return sendError(res, err);
+  }
+});
+
+/**
+ * Exchanges a QR hand-off ticket for a patient session.
+ *
+ * The ticket was minted by a clinician in this tenant and shown on screen; it
+ * is signed, short lived and single use. This is the "scan and you're in" path
+ * — no clinic code, email or one-time code is typed on the phone.
+ */
+router.post('/handoff', async (req, res) => {
+  const body = req.body || {};
+  try {
+    const claims = consumeHandoffTicket(body.ticket);
+    const binding = await patientAccountStore.upsertIdentifier({
+      tenantId: claims.tenantId,
+      channel: claims.channel,
+      identifier: claims.identifier
+    });
+    const session = await createPatientSessionToken({
+      patientId: binding.patientId,
+      tenantId: claims.tenantId
+    });
+    return res.status(200).json({
+      ...session,
+      channel: claims.channel,
+      maskedIdentifier: maskIdentifier(claims.channel, claims.identifier)
+    });
+  } catch (err) {
+    return sendHandoffError(res, err);
   }
 });
 

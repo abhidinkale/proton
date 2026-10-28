@@ -48,6 +48,13 @@ interface AuthClient {
   ): Result<PatientSession>
 
   suspend fun refresh(baseUrl: String, session: PatientSession): Result<PatientSession>
+
+  /**
+   * Redeems a QR hand-off ticket minted by the clinic's web desk. This replaces
+   * the address + clinic code + email + one-time code sequence with one scan.
+   * The ticket is signed, single use and expires in minutes.
+   */
+  suspend fun handoff(baseUrl: String, ticket: String): Result<PatientSession>
 }
 
 /** Public, non-sensitive clinic identity used to confirm the code. */
@@ -197,6 +204,39 @@ class OkHttpAuthClient(
     }
   }
 
+  override suspend fun handoff(
+    baseUrl: String,
+    ticket: String
+  ): Result<PatientSession> = withContext(Dispatchers.IO) {
+    val body = json.encodeToString(HandoffRequest(ticket = ticket.trim()))
+    val request = Request.Builder()
+      .url(SyncApiContract.url(baseUrl, SyncApiContract.HANDOFF_PATH))
+      .post(body.toRequestBody(JSON_MEDIA_TYPE))
+      .header("Accept", "application/json")
+      .build()
+
+    runCatching {
+      client.newCall(request).execute().use { response ->
+        val raw = response.body?.string().orEmpty()
+        if (response.code !in 200..299) {
+          throw IOException(
+            serverMessage(
+              raw,
+              fallback = when (response.code) {
+                409 -> "This connection code was already used. Ask the clinic for a new one."
+                410 -> "This connection code expired. Ask the clinic for a new one."
+                else -> "Could not connect to the clinic (HTTP ${response.code})."
+              }
+            )
+          )
+        }
+        val parsed = runCatching { json.decodeFromString<SessionResponse>(raw) }.getOrNull()
+          ?: throw IOException("The clinic server sent an unexpected response.")
+        parsed.toSession()
+      }
+    }
+  }
+
   override suspend fun refresh(
     baseUrl: String,
     session: PatientSession
@@ -274,6 +314,9 @@ private data class VerifyOtpRequest(
 
 @Serializable
 private data class RefreshRequest(val patientId: String, val tenantId: String)
+
+@Serializable
+private data class HandoffRequest(val ticket: String)
 
 @Serializable
 private data class ApiError(val error: String? = null, val code: String? = null)
