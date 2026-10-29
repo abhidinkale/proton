@@ -33,6 +33,7 @@ const {
   closeMatureOutcomeCohort,
   getCohortMetrics
 } = require('../services/clinical/outcomeWriter');
+const { compareEncounters } = require('../services/clinical/encounterComparison');
 const { getBoss, OUTBOX_QUEUE, isWorkflowPersistenceEnabled } = require('../services/workflow/runtime');
 const clinic = require('../storage/clinicRepository');
 const rfc3161Anchor = require('../services/workflow/rfc3161Anchor');
@@ -1118,6 +1119,74 @@ router.post('/outcomes/evaluate-mature', async (req, res, next) => {
     } finally {
       client.release();
     }
+  } catch (err) {
+    next(err);
+  }
+});
+
+/* ------------------------------------------------------------------ */
+/* Visit Comparison Engine (P1.2)                                     */
+/* ------------------------------------------------------------------ */
+
+router.get('/patients/:patientId/encounters/compare', async (req, res, next) => {
+  try {
+    const actor = actorOf(req);
+    const pool = getPostgresPool();
+    const patientId = req.params.patientId;
+    const encounterA = req.query.a;
+    const encounterB = req.query.b;
+
+    if (!encounterA || !encounterB) {
+      return res.status(400).json({
+        error: 'Both encounter IDs a and b are required for comparison (e.g. ?a=enc1&b=enc2).',
+        code: 'ENCOUNTERS_REQUIRED'
+      });
+    }
+
+    const comparison = await compareEncounters(pool, actor.tenantId, patientId, encounterA, encounterB);
+    res.json(comparison);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/encounters/:encounterId/compare-previous', async (req, res, next) => {
+  try {
+    const actor = actorOf(req);
+    const pool = getPostgresPool();
+    const encounterId = req.params.encounterId;
+
+    const { rows: currEnc } = await pool.query(
+      `SELECT patient_id, created_at FROM encounters WHERE id = $1 AND tenant_id = $2;`,
+      [encounterId, actor.tenantId]
+    );
+
+    if (currEnc.length === 0) {
+      return res.status(404).json({ error: 'Encounter not found.', code: 'NOT_FOUND' });
+    }
+
+    const { patient_id: patientId, created_at: createdAt } = currEnc[0];
+
+    const { rows: priorEnc } = await pool.query(
+      `SELECT id FROM encounters
+        WHERE tenant_id = $1 AND patient_id = $2 AND id <> $3 AND created_at < $4
+        ORDER BY created_at DESC LIMIT 1;`,
+      [actor.tenantId, patientId, encounterId, createdAt]
+    );
+
+    if (priorEnc.length === 0) {
+      return res.json({
+        priorEncounter: null,
+        message: 'No previous encounter found for this patient.'
+      });
+    }
+
+    const priorId = priorEnc[0].id;
+    const comparison = await compareEncounters(pool, actor.tenantId, patientId, priorId, encounterId);
+    res.json({
+      priorEncounter: priorId,
+      ...comparison
+    });
   } catch (err) {
     next(err);
   }

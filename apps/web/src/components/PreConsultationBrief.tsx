@@ -14,13 +14,15 @@ import {
   Database,
   BookmarkCheck,
   HelpCircle,
-  History
+  History,
+  GitCompare
 } from 'lucide-react';
 import type { 
   PatientIntelligence, 
   ClinicalEvidence, 
   FactClaimProvenance 
 } from '../types/clinicalBrain';
+import EncounterComparisonModal from './clinic/EncounterComparisonModal';
 
 interface PreConsultationBriefProps {
   intelligence: PatientIntelligence | null;
@@ -36,6 +38,7 @@ export default function PreConsultationBrief({
   onSelectEvidence
 }: PreConsultationBriefProps) {
   const [isExpanded, setIsExpanded] = useState(true);
+  const [isCompareOpen, setIsCompareOpen] = useState(false);
 
   if (!intelligence) return null;
 
@@ -140,6 +143,13 @@ export default function PreConsultationBrief({
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsCompareOpen(true)}
+            className="p-1.5 px-2.5 rounded-lg bg-paper/10 hover:bg-paper/15 text-brand-200 transition-colors text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+          >
+            <GitCompare size={14} />
+            <span className="hidden sm:inline">Compare Visits</span>
+          </button>
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             className="p-1.5 rounded-lg bg-paper/10 hover:bg-paper/15 text-brand-200 transition-colors text-xs font-semibold flex items-center gap-1 cursor-pointer"
@@ -472,6 +482,13 @@ export default function PreConsultationBrief({
 
         </div>
       )}
+
+      <EncounterComparisonModal
+        isOpen={isCompareOpen}
+        onClose={() => setIsCompareOpen(false)}
+        patientName={patientName}
+        encounterId={intelligence?.patientId}
+      />
     </div>
   );
 }

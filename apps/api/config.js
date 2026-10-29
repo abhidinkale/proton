@@ -93,16 +93,29 @@ function validateConfig(env = process.env) {
     }
   }
 
-  if (isProduction && (missing.length > 0 || weak.length > 0)) {
-    const errorDetails = [
-      missing.length > 0 ? `Missing required production secrets: ${missing.join(', ')}` : '',
-      weak.length > 0 ? `Insecure/weak configuration in production: ${weak.join(', ')}` : ''
-    ].filter(Boolean).join(' | ');
+  // P0.5: Build Boundary (synthetic vs pilot)
+  const buildVariant = env.PROTON_BUILD_VARIANT || (env.PROTON_ENV === 'pilot' ? 'pilot' : 'synthetic');
+  if (buildVariant === 'pilot') {
+    if (env.BAA_CONFIGURED !== 'true') {
+      missing.push('BAA_CONFIGURED=true (pilot build requires verified Business Associate Agreement)');
+    }
+    if (env.PROTON_SYNTHETIC_MODE === 'true' || resolveSyntheticMode(env)) {
+      weak.push('PROTON_SYNTHETIC_MODE=false (pilot build strictly prohibits synthetic mode)');
+    }
+  }
 
-    throw new ConfigurationError(
-      `FATAL: Production configuration failed closed. ${errorDetails}`,
-      [...missing, ...weak]
-    );
+  if (missing.length > 0 || weak.length > 0) {
+    if (isProduction || buildVariant === 'pilot') {
+      const errorDetails = [
+        missing.length > 0 ? `Missing required configuration: ${missing.join(', ')}` : '',
+        weak.length > 0 ? `Insecure/weak configuration: ${weak.join(', ')}` : ''
+      ].filter(Boolean).join(' | ');
+
+      throw new ConfigurationError(
+        `FATAL: Configuration failed closed. ${errorDetails}`,
+        [...missing, ...weak]
+      );
+    }
   }
 
   return {

@@ -183,6 +183,19 @@ fi
 [ -s "$RAW" ] || die "pg_dump produced an empty file; refusing to upload"
 
 # ---------------------------------------------------------------------------
+# 1b. Legacy desk store archive (P0.1b)
+# ---------------------------------------------------------------------------
+SQLITE_DB="${PROTON_DB_PATH:-$REPO_ROOT/data/proton_ops.db}"
+if [ -f "$SQLITE_DB" ]; then
+  log "Archiving legacy desk store ($SQLITE_DB) into backup bundle as LEGACY_DESK_TEMP.db ..."
+  TAR_BUNDLE="$TMP_DIR/${BASE_NAME}.tar"
+  cp "$SQLITE_DB" "$TMP_DIR/LEGACY_DESK_TEMP.db"
+  tar -C "$TMP_DIR" -cf "$TAR_BUNDLE" "$BASE_NAME" "LEGACY_DESK_TEMP.db"
+  RAW="$TAR_BUNDLE"
+  PAYLOAD="$RAW"
+fi
+
+# ---------------------------------------------------------------------------
 # 2. Encryption (age preferred, then gpg; otherwise loud warning)
 # ---------------------------------------------------------------------------
 encrypt_payload() {

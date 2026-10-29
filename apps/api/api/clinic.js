@@ -38,14 +38,21 @@ async function signAndMirror(req, res, noteId, body) {
   const normalized = actor(req);
   const result = clinic.signNote(normalized, noteId, body || {});
 
-  if (!result.alreadySigned && result.note?.appointmentId) {
+  if (!result.alreadySigned && result.note) {
     try {
-      const appointment = clinic.getAppointment(normalized, result.note.appointmentId);
+      const appointment = result.note.appointmentId
+        ? clinic.getAppointment(normalized, result.note.appointmentId)
+        : null;
       await mirrorSignedNote({
         tenantId: normalized.tenantId,
         note: result.note,
         appointment,
-        actor: { actorId: normalized.id, actorName: normalized.name }
+        actor: {
+          actorId: normalized.id,
+          actorName: normalized.name,
+          actorRole: normalized.role || 'physician',
+          npi: normalized.npi || null
+        }
       });
     } catch (err) {
       console.warn('[sign-mirror] signed note not mirrored:', err.message);
