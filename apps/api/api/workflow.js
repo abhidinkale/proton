@@ -23,6 +23,7 @@ const { verifyWorkflowAuditChain, listWorkflowAuditEvents } = require('../storag
 const { getPostgresPool } = require('../storage/postgresDb');
 const { dispatchDueOutbox } = require('../services/workflow/outboxDispatcher');
 const { assertSignSafety } = require('../services/workflow/signSafety');
+const { assertSignTerminology } = require('../services/clinical/terminologyService');
 const attestation = require('../services/workflow/attestation');
 const attestationStore = require('../services/workflow/attestationStore');
 const { validateNote } = require('../services/clinical/noteSchema');
@@ -704,18 +705,6 @@ router.post('/encounters/:encounterId/transitions', async (req, res, next) => {
     }
 
     const result = await repo.withTransaction(async (client) => {
-      // The signature is a clinical write. Check the prescriptions in the same
-      // transaction, before the state changes, so a refusal leaves no event.
-      let signSafety = null;
-      if (action === 'sign') {
-        signSafety = await assertSignSafety(client, {
-          tenantId: actor.tenantId,
-          encounterId: req.params.encounterId,
-          actor,
-          physicianDirective: optionalString(body.physicianDirective, 'physicianDirective', { max: 1000 })
-        });
-      }
-
       // If the encounter doesn't exist yet and a note is supplied, auto-seed encounter
       if (body.note) {
         const check = await client.query(
@@ -737,6 +726,23 @@ router.post('/encounters/:encounterId/transitions', async (req, res, next) => {
             [req.params.encounterId, actor.tenantId, patientId, actor.actorId]
           );
         }
+      }
+
+      // The signature is a clinical write. Check safety and terminology in the same
+      // transaction, before the state changes, so a refusal leaves no event.
+      let signSafety = null;
+      if (action === 'sign') {
+        signSafety = await assertSignSafety(client, {
+          tenantId: actor.tenantId,
+          encounterId: req.params.encounterId,
+          actor,
+          physicianDirective: optionalString(body.physicianDirective, 'physicianDirective', { max: 1000 })
+        });
+        await assertSignTerminology(client, {
+          tenantId: actor.tenantId,
+          encounterId: req.params.encounterId,
+          proposedNote: body.note
+        });
       }
 
       // Transition first so the state machine owns the error precedence:
