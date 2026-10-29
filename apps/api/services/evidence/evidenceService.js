@@ -196,6 +196,22 @@ const CLINICAL_GUIDELINES = [
     pmid: '35489998',
     doi: '10.1016/j.jacl.2022.03.003',
     url: 'https://pubmed.ncbi.nlm.nih.gov/35489998/'
+  },
+  {
+    guidelineId: 'guide-idsa-uti-cystitis-2022',
+    category: 'infectious_disease',
+    title: 'IDSA International Clinical Practice Guideline for Acute Uncomplicated Cystitis',
+    conditionCode: '68566005', // Urinary Tract Infection
+    keywords: ['uti', 'cystitis', 'dysuria', 'nitrofurantoin', 'bactrim', 'trimethoprim', 'cephalexin', 'urinary'],
+    excerpt: 'First-line antimicrobial options for acute uncomplicated cystitis include nitrofurantoin monohydrate/macrocrystals, trimethoprim-sulfamethoxazole, or fosfomycin trometamol. Cephalexin is a recognized safe alternative.',
+    recommendation: 'First-line empiric treatment recommended for acute uncomplicated cystitis. Culture warranted if refractory.',
+    authority: 'Infectious Diseases Society of America (IDSA)',
+    journal: 'Clin Infect Dis',
+    year: '2022',
+    evidenceGrade: 'Strong Recommendation, High-Quality Evidence',
+    pmid: '21292634',
+    doi: '10.1093/cid/ciq257',
+    url: 'https://pubmed.ncbi.nlm.nih.gov/21292634/'
   }
 ];
 
