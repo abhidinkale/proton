@@ -147,4 +147,261 @@ async function scheduleOutcomeCohort(client, { tenantId, encounterId }) {
   );
 }
 
-module.exports = { recordFollowUpOutcome, scheduleOutcomeCohort };
+/**
+ * 30-day final job: evaluate mature outcome cohort rows and record finalized outcome labels.
+ * Evaluates in precedence order per docs/moat/outcome-label-v1.md §7.
+ */
+async function closeMatureOutcomeCohort(client, { tenantId, asOfDate = new Date().toISOString() }) {
+  const { rows: matureCohorts } = await client.query(
+    `SELECT c.id, c.tenant_id, c.patient_id, c.encounter_id, c.condition_code,
+            c.condition_code_system, c.scheduled_at, c.window_days, c.status
+       FROM outcome_cohort c
+      WHERE c.tenant_id = $1
+        AND c.status IN ('pending', 'responded')
+        AND (c.scheduled_at + (c.window_days || ' days')::interval) <= $2::timestamptz
+      ORDER BY c.scheduled_at ASC;`,
+    [tenantId, asOfDate]
+  );
+
+  const finalized = [];
+  for (const cohort of matureCohorts) {
+    const { rows: priorOutcomes } = await client.query(
+      `SELECT id, patient_reported, label, assessed_at
+         FROM outcomes
+        WHERE tenant_id = $1
+          AND encounter_id = $2
+          AND condition_code = $3
+        ORDER BY assessed_at ASC;`,
+      [cohort.tenant_id, cohort.encounter_id, cohort.condition_code]
+    );
+
+    const responses = priorOutcomes
+      .map((r) => r.patient_reported)
+      .filter(Boolean);
+
+    const { rows: encRows } = await client.query(
+      `SELECT state FROM encounters WHERE id = $1 AND tenant_id = $2;`,
+      [cohort.encounter_id, cohort.tenant_id]
+    );
+    const isEscalated =
+      encRows[0]?.state === 'ESCALATED' ||
+      priorOutcomes.some((r) => r.label === 'worsened');
+
+    const { rows: returnVisits } = await client.query(
+      `SELECT e.id
+         FROM encounters e
+         JOIN diagnoses d ON d.encounter_id = e.id AND d.tenant_id = e.tenant_id
+        WHERE e.tenant_id = $1
+          AND e.patient_id = $2
+          AND e.id <> $3
+          AND d.code = $4
+          AND e.created_at > (SELECT created_at FROM encounters WHERE id = $3)
+          AND e.created_at <= ($5::timestamptz + ($6 || ' days')::interval)
+        LIMIT 1;`,
+      [
+        cohort.tenant_id,
+        cohort.patient_id,
+        cohort.encounter_id,
+        cohort.condition_code,
+        cohort.scheduled_at,
+        cohort.window_days
+      ]
+    );
+    const returnVisit = returnVisits.length > 0;
+
+    const { label, nonResponseReason } = labelV1({
+      responses,
+      windowComplete: true,
+      returnVisit,
+      escalated: isEscalated
+    });
+
+    const previousId = priorOutcomes[priorOutcomes.length - 1]?.id || null;
+    const outcomeId = `out-${crypto.randomUUID()}`;
+    const assessedAt = asOfDate;
+
+    const { rows: inserted } = await client.query(
+      `INSERT INTO outcomes
+         (id, tenant_id, patient_id, encounter_id, condition_code,
+          condition_code_system, assessed_at, window_days, follow_up_wave,
+          patient_reported, label, label_version, window_complete,
+          non_response_reason, source, supersedes_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 30, '30d',
+               $8, $9, 'label_v1', TRUE, $10, 'clinician', $11)
+       RETURNING id, label, non_response_reason, window_days, follow_up_wave, window_complete;`,
+      [
+        outcomeId,
+        cohort.tenant_id,
+        cohort.patient_id,
+        cohort.encounter_id,
+        cohort.condition_code,
+        cohort.condition_code_system,
+        assessedAt,
+        responses[responses.length - 1] || null,
+        label,
+        nonResponseReason,
+        previousId
+      ]
+    );
+
+    await client.query(
+      `UPDATE outcome_cohort
+          SET status = 'closed', closed_at = NOW()
+        WHERE id = $1 AND tenant_id = $2;`,
+      [cohort.id, cohort.tenant_id]
+    );
+
+    finalized.push(inserted[0]);
+  }
+
+  return finalized;
+}
+
+/**
+ * Compute the 3 numbers and the cohort denominator per docs/moat/outcome-label-v1.md §4.
+ */
+async function getCohortMetrics(client, { tenantId, conditionCode = null }) {
+  const params = [tenantId];
+  let conditionFilter = '';
+  if (conditionCode) {
+    params.push(conditionCode);
+    conditionFilter = `AND c.condition_code = $${params.length}`;
+  }
+
+  const { rows: cohortRows } = await client.query(
+    `SELECT c.id, c.patient_id, c.encounter_id, c.condition_code,
+            c.scheduled_at, c.window_days, c.status,
+            ((c.scheduled_at + (c.window_days || ' days')::interval) <= NOW()) AS is_mature
+       FROM outcome_cohort c
+      WHERE c.tenant_id = $1 ${conditionFilter}
+      ORDER BY c.scheduled_at DESC;`,
+    params
+  );
+
+  const matureCohorts = cohortRows.filter((r) => r.is_mature);
+  const pendingCohorts = cohortRows.filter((r) => !r.is_mature);
+  const M = matureCohorts.length;
+  const pendingCount = pendingCohorts.length;
+
+  if (M === 0) {
+    return {
+      cohort_definition: {
+        condition_code: conditionCode || 'ALL',
+        label_version: 'label_v1'
+      },
+      counts: {
+        mature: 0,
+        pending: pendingCount,
+        total: pendingCount,
+        resolved: 0,
+        improved: 0,
+        unchanged: 0,
+        worsened: 0,
+        documented_non_response: 0,
+        lost_to_follow_up: 0,
+        responded: 0
+      },
+      rates: {
+        positive_pct: 0,
+        documented_non_response_pct: 0,
+        lost_to_follow_up_pct: 0,
+        response_rate: 0,
+        pending_pct: pendingCount > 0 ? 100 : 0
+      },
+      bias_disclosure: [
+        'Response bias: Patients who feel better are more likely to answer. Response rate is the primary context.',
+        'Natural history: Many self-limiting conditions resolve without intervention; resolution is an outcome signal, not causal proof.',
+        'Within-network only: Outside-network return visits or emergency department visits are not captured.',
+        'Adherence is self-reported and excluded from label_v1 computation.'
+      ]
+    };
+  }
+
+  let resolvedCount = 0;
+  let improvedCount = 0;
+  let unchangedCount = 0;
+  let worsenedCount = 0;
+  let documentedNonResponseCount = 0;
+  let lostToFollowUpCount = 0;
+  let respondedCount = 0;
+
+  for (const cohort of matureCohorts) {
+    const { rows: outcomes } = await client.query(
+      `SELECT id, patient_reported, label, non_response_reason, window_complete
+         FROM outcomes
+        WHERE tenant_id = $1
+          AND encounter_id = $2
+          AND condition_code = $3
+          AND label_version = 'label_v1'
+        ORDER BY assessed_at DESC, created_at DESC
+        LIMIT 1;`,
+      [tenantId, cohort.encounter_id, cohort.condition_code]
+    );
+
+    if (outcomes.length === 0) {
+      lostToFollowUpCount++;
+    } else {
+      const latest = outcomes[0];
+      if (latest.patient_reported) respondedCount++;
+
+      if (latest.label === 'resolved') resolvedCount++;
+      else if (latest.label === 'improved') improvedCount++;
+      else if (latest.label === 'unchanged') unchangedCount++;
+      else if (latest.label === 'worsened') worsenedCount++;
+      else if (latest.label === 'unknown') {
+        if (
+          ['no_contact', 'declined', 'wrong_number', 'app_uninstalled', 'insufficient_data'].includes(
+            latest.non_response_reason
+          )
+        ) {
+          documentedNonResponseCount++;
+        }
+      }
+    }
+  }
+
+  const positivePct = Number(((resolvedCount / M) * 100).toFixed(1));
+  const documentedNonResponsePct = Number(((documentedNonResponseCount / M) * 100).toFixed(1));
+  const lostToFollowUpPct = Number(((lostToFollowUpCount / M) * 100).toFixed(1));
+  const responseRate = Number(((respondedCount / M) * 100).toFixed(1));
+  const pendingPct = Number(((pendingCount / (M + pendingCount)) * 100).toFixed(1));
+
+  return {
+    cohort_definition: {
+      condition_code: conditionCode || 'ALL',
+      label_version: 'label_v1'
+    },
+    counts: {
+      mature: M,
+      pending: pendingCount,
+      total: M + pendingCount,
+      resolved: resolvedCount,
+      improved: improvedCount,
+      unchanged: unchangedCount,
+      worsened: worsenedCount,
+      documented_non_response: documentedNonResponseCount,
+      lost_to_follow_up: lostToFollowUpCount,
+      responded: respondedCount
+    },
+    rates: {
+      positive_pct: positivePct,
+      documented_non_response_pct: documentedNonResponsePct,
+      lost_to_follow_up_pct: lostToFollowUpPct,
+      response_rate: responseRate,
+      pending_pct: pendingPct
+    },
+    bias_disclosure: [
+      'Response bias: Patients who feel better are more likely to answer. Response rate is the primary context.',
+      'Natural history: Many self-limiting conditions resolve without intervention; resolution is an outcome signal, not causal proof.',
+      'Within-network only: Outside-network return visits or emergency department visits are not captured.',
+      'Adherence is self-reported and excluded from label_v1 computation.'
+    ]
+  };
+}
+
+module.exports = {
+  recordFollowUpOutcome,
+  scheduleOutcomeCohort,
+  closeMatureOutcomeCohort,
+  getCohortMetrics
+};

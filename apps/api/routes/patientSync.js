@@ -28,6 +28,7 @@ const { resolveWorkflowPersistence } = require('../services/workflow/runtime');
 const patientAccountStore = require('../services/patients/patientAccountStore');
 const { recordFollowUpOutcome } = require('../services/clinical/outcomeWriter');
 const { transitionEncounter } = require('../services/workflow/encounterStateMachine');
+const clinic = require('../storage/clinicRepository');
 
 const router = express.Router();
 
@@ -679,6 +680,22 @@ router.post('/follow-ups', requirePatientAuth, async (req, res) => {
                 (hasSideEffects ? ', side effects reported' : '') +
                 (needsToBeSeen ? ', asks to be seen' : '')
             });
+            try {
+              clinic.createNotification(
+                { actorId: req.patient.id, actorRole: 'patient', tenantId: req.patient.tenantId },
+                {
+                  patientId: req.patient.id,
+                  type: 'clinical_escalation',
+                  severity: 'critical',
+                  title: `Clinical Escalation · Follow-up check-in (${recovery.toLowerCase()})`,
+                  body: `Patient reported condition ${recovery.toLowerCase()}.${hasSideEffects ? ' Side effects noted.' : ''}${needsToBeSeen ? ' Requests urgent contact.' : ''}`,
+                  actionPath: `/cockpit?patientId=${req.patient.id}`,
+                  sourceId: encounterId
+                }
+              );
+            } catch (notifErr) {
+              console.warn('[patientSync] Could not create clinic notification:', notifErr.message);
+            }
           }
         }
         return { message, outcomes };

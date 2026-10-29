@@ -26,8 +26,15 @@ const { assertSignSafety } = require('../services/workflow/signSafety');
 const attestation = require('../services/workflow/attestation');
 const attestationStore = require('../services/workflow/attestationStore');
 const { validateNote } = require('../services/clinical/noteSchema');
-const { scheduleOutcomeCohort } = require('../services/clinical/outcomeWriter');
+const {
+  scheduleOutcomeCohort,
+  recordFollowUpOutcome,
+  closeMatureOutcomeCohort,
+  getCohortMetrics
+} = require('../services/clinical/outcomeWriter');
 const { getBoss, OUTBOX_QUEUE, isWorkflowPersistenceEnabled } = require('../services/workflow/runtime');
+const clinic = require('../storage/clinicRepository');
+const rfc3161Anchor = require('../services/workflow/rfc3161Anchor');
 
 const router = express.Router();
 
@@ -958,6 +965,153 @@ router.get('/encounters/:encounterId/attestation', async (req, res, next) => {
       return res.status(404).json({ error: 'No attestation for this encounter.', code: 'NOT_FOUND' });
     }
     res.json(await attestationStore.verifyById(pool, actor.tenantId, rows[0].id));
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/attestations/anchor', async (req, res, next) => {
+  try {
+    const actor = actorOf(req);
+    requireRoles(actor, ['physician', 'operations_staff', 'admin']);
+    const pool = getPostgresPool();
+    const result = await rfc3161Anchor.anchorTenantChain(pool, actor.tenantId);
+    res.status(result.anchored ? 201 : 400).json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/attestations/anchor/latest', async (req, res, next) => {
+  try {
+    const actor = actorOf(req);
+    const pool = getPostgresPool();
+    const anchor = await rfc3161Anchor.getLatestAnchor(pool, actor.tenantId);
+    if (!anchor) {
+      return res.status(404).json({ error: 'No external timestamp anchor found.', code: 'NOT_FOUND' });
+    }
+    const verification = rfc3161Anchor.verifyTimeStampToken(anchor.timestamp_token, anchor.chain_hash);
+    res.json({ anchor, verification });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/* ------------------------------------------------------------------ */
+/* Outcomes & Cohort Metrics (WS0.5)                                   */
+/* ------------------------------------------------------------------ */
+
+router.get('/outcomes/cohort', async (req, res, next) => {
+  try {
+    const actor = actorOf(req);
+    const pool = getPostgresPool();
+    const metrics = await getCohortMetrics(pool, {
+      tenantId: actor.tenantId,
+      conditionCode: req.query.conditionCode || null
+    });
+    res.json(metrics);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/outcomes/checkin', async (req, res, next) => {
+  try {
+    const actor = actorOf(req);
+    const body = req.body || {};
+    const patientId = requireString(body.patientId, 'patientId');
+    const encounterId = requireString(body.encounterId, 'encounterId');
+    const recovery = requireString(body.recovery, 'recovery');
+    const wave = optionalString(body.wave, 'wave');
+    const hasSideEffects = Boolean(body.hasSideEffects);
+    const needsToBeSeen = Boolean(body.needsToBeSeen);
+    const escalated = recovery.toLowerCase() === 'worse' || needsToBeSeen;
+
+    const pool = getPostgresPool();
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN;');
+      const recorded = await recordFollowUpOutcome(client, {
+        tenantId: actor.tenantId,
+        patientId,
+        encounterId,
+        recovery,
+        wave,
+        escalated
+      });
+
+      if (escalated) {
+        const { rows: encRows } = await client.query(
+          `SELECT state FROM encounters WHERE id = $1 AND tenant_id = $2;`,
+          [encounterId, actor.tenantId]
+        );
+        const state = encRows[0]?.state;
+        if (state && state !== 'ESCALATED' && state !== 'CANCELLED' && state !== 'CLOSED') {
+          await transitionEncounter(client, {
+            tenantId: actor.tenantId,
+            encounterId,
+            action: 'escalate_checkin',
+            actor,
+            reason: `Follow-up check-in: ${recovery.toLowerCase()}` +
+              (hasSideEffects ? ', side effects reported' : '') +
+              (needsToBeSeen ? ', asks to be seen' : '')
+          });
+          try {
+            clinic.createNotification(
+              { actorId: actor.actorId, actorRole: actor.actorRole, tenantId: actor.tenantId },
+              {
+                patientId,
+                type: 'clinical_escalation',
+                severity: 'critical',
+                title: `Clinical Escalation · Follow-up check-in (${recovery.toLowerCase()})`,
+                body: `Patient reported condition ${recovery.toLowerCase()}.${hasSideEffects ? ' Side effects noted.' : ''}${needsToBeSeen ? ' Requests urgent contact.' : ''}`,
+                actionPath: `/cockpit?patientId=${patientId}`,
+                sourceId: encounterId
+              }
+            );
+          } catch (notifErr) {
+            console.warn('[workflow] Could not create clinic notification:', notifErr.message);
+          }
+        }
+      }
+
+      await client.query('COMMIT;');
+      res.json({ recorded, escalated });
+    } catch (err) {
+      await client.query('ROLLBACK;');
+      throw err;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/outcomes/evaluate-mature', async (req, res, next) => {
+  try {
+    const actor = actorOf(req);
+    requireRoles(actor, ['physician', 'operations_staff', 'admin']);
+    const asOfDate = req.body?.asOfDate ? parseDate(req.body.asOfDate, 'asOfDate') : new Date().toISOString();
+    const pool = getPostgresPool();
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN;');
+      const finalized = await closeMatureOutcomeCohort(client, {
+        tenantId: actor.tenantId,
+        asOfDate
+      });
+      await client.query('COMMIT;');
+      res.json({
+        evaluated_count: finalized.length,
+        outcomes: finalized
+      });
+    } catch (err) {
+      await client.query('ROLLBACK;');
+      throw err;
+    } finally {
+      client.release();
+    }
   } catch (err) {
     next(err);
   }

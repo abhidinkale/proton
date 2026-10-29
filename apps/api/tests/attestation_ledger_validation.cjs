@@ -165,6 +165,28 @@ async function run() {
     assert.strictEqual(chain.length, 2);
   });
 
+  const rfc3161 = require('../services/workflow/rfc3161Anchor');
+
+  await test('RFC 3161 external timestamp token binds to the root chain_hash', async () => {
+    const anchorResult = await rfc3161.anchorTenantChain(pool, tenant);
+    assert.strictEqual(anchorResult.anchored, true);
+    assert.strictEqual(anchorResult.seq, 2);
+    assert.strictEqual(anchorResult.chain_hash, second.chain_hash);
+
+    const latest = await rfc3161.getLatestAnchor(pool, tenant);
+    assert.strictEqual(latest.chain_hash, second.chain_hash);
+
+    const verification = rfc3161.verifyTimeStampToken(latest.timestamp_token, second.chain_hash);
+    assert.strictEqual(verification.valid, true);
+
+    const badVerify = rfc3161.verifyTimeStampToken(
+      latest.timestamp_token,
+      'sha256:0000000000000000000000000000000000000000000000000000000000000000'
+    );
+    assert.strictEqual(badVerify.valid, false);
+    assert.strictEqual(badVerify.reason, 'HASH_MISMATCH');
+  });
+
   await pool.query(`DELETE FROM clinical_attestations WHERE tenant_id = $1;`, [tenant]);
   await pool.query(`DELETE FROM notes WHERE tenant_id = $1;`, [tenant]);
   await pool.query(`DELETE FROM encounters WHERE tenant_id = $1;`, [tenant]);

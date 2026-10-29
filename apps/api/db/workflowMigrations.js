@@ -463,6 +463,26 @@ const WORKFLOW_MIGRATIONS = [
     version: 11,
     name: 'clinical_links_and_outcomes',
     sql: fs.readFileSync(path.join(__dirname, 'moat', 'clinical-links.sql'), 'utf8')
+  },
+  {
+    // RFC 3161 TSA external anchoring for the attestation ledger.
+    version: 12,
+    name: 'attestation_external_anchors',
+    sql: `
+      CREATE TABLE IF NOT EXISTS attestation_anchors (
+        id             TEXT PRIMARY KEY,
+        tenant_id      TEXT NOT NULL,
+        anchor_type    TEXT NOT NULL CHECK (anchor_type IN ('RFC3161_TSA', 'MERKLE_CHECKPOINT')),
+        chain_hash     TEXT NOT NULL,
+        seq            BIGINT NOT NULL,
+        timestamp_token JSONB NOT NULL,
+        tsa_identity   TEXT NOT NULL,
+        anchored_at    TIMESTAMPTZ NOT NULL,
+        created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_anchors_tenant_time
+        ON attestation_anchors(tenant_id, anchored_at DESC);
+    `
   }
 ];
 
