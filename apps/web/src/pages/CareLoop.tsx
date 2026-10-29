@@ -28,6 +28,7 @@ import {
   type LiveThread,
   type LiveThreadSummary
 } from '../lib/careLoopApi';
+import { CohortOutcomeSection } from '../components/clinic/CohortOutcomeSection';
 
 /**
  * The clinician half of the patient loop.
@@ -381,6 +382,13 @@ export default function CareLoop() {
             onFocus={focusAppointment}
           />
         )}
+
+        {/* ---------------------------------------------------------------- */}
+        {/* 30-Day Clinical Outcome Cohort (WS0.5 Moat Engine)                */}
+        {/* ---------------------------------------------------------------- */}
+        <div className="mb-6">
+          <CohortOutcomeSection />
+        </div>
 
         {/* ---------------------------------------------------------------- */}
         {/* Two columns: ledger + triage                                      */}

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, X, ShieldCheck, Loader2, Copy, CheckCircle2 } from 'lucide-react';
+import { Check, X, ShieldCheck, Loader2, Copy, CheckCircle2, Award } from 'lucide-react';
 import { apiJson } from '../lib/api';
 
 export interface AttestationData {
@@ -26,6 +26,12 @@ export default function AttestationVerificationModal({
     valid: boolean;
     errors?: string[];
   } | null>(null);
+  const [anchorInfo, setAnchorInfo] = useState<{
+    anchored: boolean;
+    tsa?: string;
+    genTime?: string;
+    policy?: string;
+  } | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
   if (!isOpen || !attestation) return null;
@@ -33,11 +39,31 @@ export default function AttestationVerificationModal({
   const handleVerify = async () => {
     setIsVerifying(true);
     setVerificationResult(null);
+    setAnchorInfo(null);
     try {
-      const res = await apiJson<{ valid: boolean; errors?: string[] }>(
-        `/api/workflow/attestations/${encodeURIComponent(attestation.id)}/verify`
-      );
-      setVerificationResult(res);
+      const [res, anchorRes] = await Promise.allSettled([
+        apiJson<{ valid: boolean; errors?: string[] }>(
+          `/api/workflow/attestations/${encodeURIComponent(attestation.id)}/verify`
+        ),
+        apiJson<{ anchor: any; verification: { valid: boolean; tsa?: string; genTime?: string; policy?: string } }>(
+          `/api/workflow/attestations/anchor/latest`
+        )
+      ]);
+
+      if (res.status === 'fulfilled') {
+        setVerificationResult(res.value);
+      } else {
+        setVerificationResult({ valid: false, errors: [(res.reason as Error).message] });
+      }
+
+      if (anchorRes.status === 'fulfilled' && anchorRes.value?.verification?.valid) {
+        setAnchorInfo({
+          anchored: true,
+          tsa: anchorRes.value.verification.tsa,
+          genTime: anchorRes.value.verification.genTime,
+          policy: anchorRes.value.verification.policy
+        });
+      }
     } catch (err) {
       setVerificationResult({ valid: false, errors: [(err as Error).message] });
     } finally {
@@ -142,6 +168,23 @@ export default function AttestationVerificationModal({
                     : verificationResult.errors?.join(', ') || 'Hash mismatch detected.'}
                 </p>
               </div>
+            </div>
+          )}
+
+          {anchorInfo && anchorInfo.anchored && (
+            <div className="rounded-2xl p-3 border border-amber-500/30 bg-amber-500/10 text-amber-300">
+              <div className="flex items-center gap-2">
+                <Award className="h-4 w-4 shrink-0 text-amber-400" />
+                <span className="text-xs font-semibold">RFC 3161 Certified External Timestamp</span>
+              </div>
+              <p className="mt-1 text-[11px] text-amber-200/80 leading-relaxed">
+                Authority: <span className="font-mono text-amber-100">{anchorInfo.tsa || 'Proton Clinical TSA'}</span>
+              </p>
+              {anchorInfo.genTime && (
+                <p className="text-[10px] text-amber-200/60 font-mono mt-0.5">
+                  Certified UTC: {new Date(anchorInfo.genTime).toUTCString()}
+                </p>
+              )}
             </div>
           )}
         </div>
