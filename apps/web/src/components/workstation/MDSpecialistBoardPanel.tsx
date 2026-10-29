@@ -26,6 +26,7 @@ export interface PreConsultSynthesisPayload {
       pastEncounterDate: string;
       documentedAllergies: string[];
       clinicalSynthesis: string;
+      matchedKeywords?: number;
     };
     aiDraftedDiagnoses: Array<{ id: string; icd10: string; name: string; confidence: number; selected: boolean }>;
     aiRecommendedRx: Array<{
@@ -294,14 +295,15 @@ export default function MDSpecialistBoardPanel({
               </div>
             </div>
 
-            {/* pgvector Longitudinal Match */}
+            {/* Reference match (deterministic keyword retrieval) */}
             <div className="bg-settled-wash/60 p-4 rounded-xl border border-settled-line">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold text-settled uppercase tracking-wider flex items-center gap-1.5">
-                  <Zap size={14} className="text-settled" /> Longitudinal Memory Match ({brief.longitudinalMemoryMatch.pastEncounterDate})
+                  <Zap size={14} className="text-settled" /> Reference Match ({brief.longitudinalMemoryMatch.pastEncounterDate})
                 </span>
                 <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-settled-line text-settled">
-                  {(brief.longitudinalMemoryMatch.similarityScore * 100).toFixed(0)}% Similarity
+                  {brief.longitudinalMemoryMatch.matchedKeywords ?? 0} keyword
+                  {(brief.longitudinalMemoryMatch.matchedKeywords ?? 0) === 1 ? '' : 's'}
                 </span>
               </div>
               <div className="mb-2">

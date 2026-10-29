@@ -15,7 +15,7 @@
 
 const { mdSpecialistRegistry, MD_SPECIALIST_TIERS } = require('./mdSpecialistRegistry');
 const { safetyService } = require('../services/safety/safetyService');
-const { pgvectorClinicalMemory } = require('../services/evidence/pgvectorClinicalMemory');
+const { clinicalKnowledgeIndex } = require('../services/evidence/clinicalKnowledgeIndex');
 const auditRepository = require('../storage/auditRepository');
 
 class MDSpecialistEngine {
@@ -28,7 +28,7 @@ class MDSpecialistEngine {
   /**
    * Pre-Consult Context Protocol Pipeline:
    * 1. Ingests patient symptoms and reported triggers.
-   * 2. Queries pgvectorClinicalMemory for semantic longitudinal match across past encounters and allergies.
+   * 2. Queries the clinical knowledge index for cited references matching the presentation.
    * 3. Convenes the 68-MD 3-Tier Board (Tier-1 Leads + Tier-2 Para-Clinical + Tier-3 Pre-Clinical).
    * 4. Produces the canonical PreConsultSynthesisPayload.
    */
@@ -46,7 +46,7 @@ class MDSpecialistEngine {
       patientReportedContext.dialogueSnippet ? [patientReportedContext.dialogueSnippet] : []
     ).join(' ').toLowerCase();
 
-    // 1. Longitudinal Memory Retrieval (pgvector simulation & historical matching)
+    // 1. Reference retrieval (deterministic keyword match, not a vector store)
     const documentedAllergies = patientProfile.allergies || ['Banana'];
     let memoryMatch = {
       matchFound: false,
@@ -71,20 +71,24 @@ class MDSpecialistEngine {
         clinicalSynthesis: "Patient experienced a similar acute allergic skin eruption 3 months ago linked to a documented Banana Allergy. Outside mixed fruit juice is the high-probability allergen trigger for today's rash and swelling, while rain exposure accounts for the concurrent acute viral URI."
       };
     } else {
-      // General pgvector query
+      // Deterministic keyword retrieval over cited references. The previous
+      // block called a hash-bucket function that does not exist, inside a
+      // try/catch, so it silently never ran.
       try {
-        const queryVector = pgvectorClinicalMemory._computeFastHashEmbedding(symptomsText);
-        const searchResults = await pgvectorClinicalMemory.semanticSearchGuidelines(queryVector, { threshold: 0.60, limit: 1 });
-        if (searchResults.length > 0) {
+        const result = await clinicalKnowledgeIndex.search(symptomsText, { limit: 1 });
+        const match = result.matches[0];
+        if (match) {
           memoryMatch = {
             matchFound: true,
-            similarityScore: searchResults[0].similarity,
-            pastEncounterDate: 'Prior Record',
+            matchedKeywords: match.matched_keywords,
+            pastEncounterDate: 'Reference',
             documentedAllergies,
-            clinicalSynthesis: `Matched clinical knowledge guideline: ${searchResults[0].title}`
+            clinicalSynthesis: `Matched reference: ${match.title} (${match.authority}, ${match.year}).`
           };
         }
-      } catch (_) {}
+      } catch (_) {
+        // Retrieval is optional; never block the consult on it.
+      }
     }
 
     // 2. Select Tier-1 Clinical Leads (1–3 Top Specialists)

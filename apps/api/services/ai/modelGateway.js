@@ -272,42 +272,24 @@ class ModelGateway {
   }
 
   /**
-   * Generates high-dimensional vector embeddings for clinical text.
-   * 
-   * @param {Object} request
-   * @param {string|Array<string>} request.text - Clinical text to embed
-   * @returns {Promise<Object>} Embedding vectors and metadata
+   * Embeddings are not implemented.
+   *
+   * This method used to return a deterministic sine-wave vector derived from a
+   * string hash and label it `proton-clinical-embed-v1`. That is not an
+   * embedding: it carries no semantic information, and two unrelated notes can
+   * collide. Returning a fake vector is worse than returning nothing, because a
+   * caller cannot tell it apart from a real one. Wire a provider (for example
+   * Google text-embedding-004 or a local model) and replace this body.
    */
   async embed(request) {
     if (!request || !request.text) {
       throw new ModelGatewayError('INVALID_REQUEST', 'Embedding request requires text.', 400);
     }
-
-    const startTime = Date.now();
-    const texts = Array.isArray(request.text) ? request.text : [request.text];
-    
-    // Deterministic 384-dimensional normalized embedding generator for local/mock
-    // In production, delegates to Google text-embedding-004 or local pgvector model
-    const embeddings = texts.map(t => {
-      let hash = 0;
-      for (let i = 0; i < t.length; i++) {
-        hash = ((hash << 5) - hash) + t.charCodeAt(i);
-        hash |= 0;
-      }
-      const vec = new Array(384).fill(0).map((_, idx) => {
-        return Math.sin(hash + idx * 0.1) * 0.05;
-      });
-      // Normalize vector
-      const norm = Math.sqrt(vec.reduce((sum, v) => sum + v * v, 0)) || 1;
-      return vec.map(v => v / norm);
-    });
-
-    return {
-      embeddings,
-      dimension: 384,
-      model: 'proton-clinical-embed-v1',
-      latencyMs: Date.now() - startTime
-    };
+    throw new ModelGatewayError(
+      'EMBEDDING_NOT_IMPLEMENTED',
+      'No embedding provider is configured. This build does not fabricate vectors.',
+      501
+    );
   }
 
   /**

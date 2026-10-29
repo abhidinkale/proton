@@ -150,6 +150,28 @@ const TRANSITIONS = Object.freeze([
     requiresReason: true
   },
   {
+    // A patient check-in can escalate a signed encounter. It can never
+    // de-escalate one: the only edge is into ESCALATED, and it is reachable by
+    // the patient role because the patient is the actor who reported it.
+    action: 'escalate_checkin',
+    from: [
+      'BOOKED',
+      'CHECKED_IN',
+      'INTAKE',
+      'READY',
+      'CAPTURING',
+      'DRAFTED',
+      'PENDING_REVIEW',
+      'SIGNED',
+      'REPORTED',
+      'FOLLOW_UP_DUE'
+    ],
+    to: 'ESCALATED',
+    roles: ['patient', 'operations_staff', 'physician', 'admin'],
+    label: 'Escalate on follow-up check-in',
+    requiresReason: true
+  },
+  {
     action: 'resume',
     from: ['ESCALATED'],
     to: 'PREVIOUS',

@@ -39,7 +39,7 @@ async function run() {
     process.exit(0);
   }
 
-  const { runPostgresMigrations, closePostgresPool } = require('../storage/postgresDb');
+  const { runPostgresMigrations, closePostgresPool, getPostgresPool } = require('../storage/postgresDb');
   await runPostgresMigrations();
 
   const app = require('../app');
@@ -246,12 +246,32 @@ async function run() {
     });
 
     await testAsync('A physician signs the encounter', async () => {
+      // Signing is content-bound: a note_v1 note must exist first. Inserting it
+      // directly is the honest fixture, because the cockpit's draft path is a
+      // separate suite; this suite proves the sign contract.
+      const { NOTE_V1 } = require('./fixtures/noteV1.cjs');
+      await getPostgresPool().query(
+        `INSERT INTO notes (id, tenant_id, encounter_id, author_actor_id, status, content)
+         VALUES ('note-api-1', 'org-default', $1, 'usr-md-lin-01', 'PENDING_REVIEW', $2::jsonb);`,
+        [encounterId, JSON.stringify(NOTE_V1)]
+      );
+
       const res = await transition('sign', { body: { attestation: true } });
-      assert.strictEqual(res.status, 200);
+      assert.strictEqual(res.status, 200, await res.clone().text());
       const body = await res.json();
       assert.strictEqual(body.nextState, 'SIGNED');
       assert.strictEqual(body.encounter.state, 'SIGNED');
       assert.strictEqual(body.event.actor_role, 'physician');
+      assert(body.attestation?.id, 'sign must return an attestation id');
+      assert.match(body.attestation.content_hash, /^sha256:[0-9a-f]{64}$/);
+    });
+
+    await testAsync('The attestation verifies over HTTP', async () => {
+      const res = await request(`/api/workflow/encounters/${encounterId}/attestation`, { headers: MD });
+      assert.strictEqual(res.status, 200);
+      const body = await res.json();
+      assert.strictEqual(body.valid, true);
+      assert.strictEqual(body.content.note.note_id, 'note-api-1');
     });
 
     await testAsync('Re-signing a signed encounter is refused (409)', async () => {

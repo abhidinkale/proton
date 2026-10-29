@@ -26,6 +26,8 @@ const prescriptionService = require('../services/careLoop/prescriptionService');
 const { mirrorBookingToDesk } = require('../services/careLoop/deskMirror');
 const { resolveWorkflowPersistence } = require('../services/workflow/runtime');
 const patientAccountStore = require('../services/patients/patientAccountStore');
+const { recordFollowUpOutcome } = require('../services/clinical/outcomeWriter');
+const { transitionEncounter } = require('../services/workflow/encounterStateMachine');
 
 const router = express.Router();
 
@@ -595,21 +597,24 @@ router.post('/follow-ups', requirePatientAuth, async (req, res) => {
 
   try {
     const result = await withIdempotency(req, async () => {
-      // The demo closed-loop service invents a patient when none is supplied, so
-      // it must never be the write path for a real check-in. The check-in is
-      // persisted as a clinic-visible message with structured metadata instead:
-      // a clinician reads the answer, and the app never receives a fabricated
-      // triage decision.
+      // Two writes, one transaction:
+      //   1. the patient's own words, so a clinician can read them;
+      //   2. an append-only `label_v1` outcome, so the loop is countable.
+      // The label is a patient-reported signal with a documented bias, not a
+      // clinical assessment, and a 48-hour answer can never be `resolved`.
       const recovery = cleanEnum(body.recovery, ['BETTER', 'SAME', 'WORSE']);
       const hasSideEffects = body.hasSideEffects === true;
       const needsToBeSeen = body.needsToBeSeen === true;
       const note = cleanText(body.note, 2000);
+      const wave = cleanText(body.wave, 8) || undefined; // derived from the encounter when omitted
+      const escalated = body.needsToBeSeen === true || hasSideEffects || recovery === 'WORSE';
 
       const appointment = await resolveOwnedAppointment({
         tenantId: req.patient.tenantId,
         patientId: req.patient.id,
         clientAppointmentId: body.appointmentId
       });
+      const encounterId = await encounterIdFor(req.patient.tenantId, appointment?.id);
 
       const summary =
         `Follow-up check-in: feeling ${recovery.toLowerCase()}` +
@@ -617,30 +622,85 @@ router.post('/follow-ups', requirePatientAuth, async (req, res) => {
         (needsToBeSeen ? ', asks to be seen' : ', does not need to be seen') +
         (note ? `. Note: ${note}` : '.');
 
-      const row = await repo.recordPatientMessage({
-        tenantId: req.patient.tenantId,
-        patientId: req.patient.id,
-        encounterId: await encounterIdFor(req.patient.tenantId, appointment?.id),
-        body: summary,
-        metadata: {
-          direction: 'INBOUND',
-          kind: 'FOLLOW_UP_CHECK_IN',
-          checkInId: cleanText(body.checkInId, 128) || null,
-          appointmentId: appointment?.id || null,
-          recovery,
-          hasSideEffects,
-          needsToBeSeen,
-          requiresTriage: needsToBeSeen || hasSideEffects || recovery === 'WORSE',
-          answeredAtIso: body.answeredAtIso || null
+      const persist = async (client) => {
+        const message = await repo.recordPatientMessage(
+          {
+            tenantId: req.patient.tenantId,
+            patientId: req.patient.id,
+            encounterId,
+            body: summary,
+            metadata: {
+              direction: 'INBOUND',
+              kind: 'FOLLOW_UP_CHECK_IN',
+              checkInId: cleanText(body.checkInId, 128) || null,
+              appointmentId: appointment?.id || null,
+              recovery,
+              wave,
+              hasSideEffects,
+              needsToBeSeen,
+              requiresTriage: escalated,
+              answeredAtIso: body.answeredAtIso || null
+            }
+          },
+          { client }
+        );
+        // No encounter means no condition cohort to label against. The message
+        // still lands; `outcomeRecorded` says so rather than implying a label.
+        const outcomes =
+          client && encounterId
+            ? await recordFollowUpOutcome(client, {
+                tenantId: req.patient.tenantId,
+                patientId: req.patient.id,
+                encounterId,
+                recovery,
+                wave,
+                escalated
+                // `assessed_at` is the server's receipt time, not the device
+                // clock. A patient phone can be wrong by hours or years.
+              })
+            : [];
+        // A worsening check-in is a clinical escalation, not just a flag in an
+        // inbox. The guard makes it idempotent: a second "worse" does not try
+        // to escalate an already-escalated encounter.
+        if (client && escalated && encounterId) {
+          const state = (
+            await client.query(`SELECT state FROM encounters WHERE id = $1 AND tenant_id = $2;`, [
+              encounterId,
+              req.patient.tenantId
+            ])
+          ).rows[0]?.state;
+          if (state && state !== 'ESCALATED' && state !== 'CANCELLED' && state !== 'CLOSED') {
+            await transitionEncounter(client, {
+              tenantId: req.patient.tenantId,
+              encounterId,
+              action: 'escalate_checkin',
+              actor: { actorId: req.patient.id, actorRole: 'patient' },
+              reason: `Follow-up check-in: ${recovery.toLowerCase()}` +
+                (hasSideEffects ? ', side effects reported' : '') +
+                (needsToBeSeen ? ', asks to be seen' : '')
+            });
+          }
         }
-      });
+        return { message, outcomes };
+      };
+
+      const { message: row, outcomes } = encounterId
+        ? await repo.withTransaction(persist)
+        : await persist(null);
 
       return {
         success: true,
         checkInId: body.checkInId || null,
         messageId: row.id,
         status: 'RECORDED',
-        requiresTriage: needsToBeSeen || hasSideEffects || recovery === 'WORSE'
+        requiresTriage: escalated,
+        outcomeRecorded: outcomes.length > 0,
+        outcomes: outcomes.map((o) => ({
+          id: o.id,
+          label: o.label,
+          window_days: o.window_days,
+          follow_up_wave: o.follow_up_wave
+        }))
       };
     });
 

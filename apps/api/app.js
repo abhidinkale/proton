@@ -9,7 +9,7 @@ const { getProvider, getProviderStatus } = require('./providers/factory');
 const { diagnosticDoctorAgent } = require('./agents/diagnosticDoctorAgent');
 const { whisperStreamingEngine } = require('./services/voice/whisperStreamingEngine');
 const { tesseractLabStudio } = require('./services/document/tesseractLabStudio');
-const { pgvectorClinicalMemory } = require('./services/evidence/pgvectorClinicalMemory');
+const { clinicalKnowledgeIndex } = require('./services/evidence/clinicalKnowledgeIndex');
 const { evidenceLoopPipeline, claimVerifier, caseCompiler } = require('./services/evidence/loop');
 
 const app = express();
@@ -3000,14 +3000,15 @@ app.post('/api/documents/lab-studio', async (req, res) => {
   }
 });
 
-// 4. pgvector High-Dimensional Clinical Memory & Semantic RAG Engine
-app.post('/api/memory/semantic-search', async (req, res) => {
+// 4. Clinical knowledge index — deterministic keyword retrieval over cited
+//    references. Not a vector store; see services/evidence/clinicalKnowledgeIndex.js.
+app.post('/api/memory/knowledge-search', async (req, res) => {
   try {
     const { query, options } = req.body;
-    const searchResult = await pgvectorClinicalMemory.searchClinicalMemory(query, options);
+    const searchResult = await clinicalKnowledgeIndex.search(query, options);
     res.json(searchResult);
   } catch (err) {
-    res.status(err.status || 500).json({ error: err.message, code: err.code || 'SEMANTIC_SEARCH_FAILED' });
+    res.status(err.status || 500).json({ error: err.message, code: err.code || 'KNOWLEDGE_SEARCH_FAILED' });
   }
 });
 

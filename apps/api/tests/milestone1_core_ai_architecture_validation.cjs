@@ -174,13 +174,14 @@ async function runMilestone1Suite() {
     assert(structRes.data && typeof structRes.data === 'object');
   });
 
-  await asyncTest('ModelGateway.embed() generates normalized deterministic 384-dim vectors', async () => {
-    const embedRes = await modelGateway.embed({
-      text: 'Cardiology guideline for hypertension management'
-    });
-    assert.strictEqual(embedRes.dimension, 384);
-    assert.strictEqual(embedRes.embeddings.length, 1);
-    assert.strictEqual(embedRes.embeddings[0].length, 384);
+  await asyncTest('ModelGateway.embed() refuses to fabricate a vector', async () => {
+    // There is no embedding provider in this build. The previous test asserted
+    // a 384-dim sine-wave hash, which is not an embedding: it encodes no
+    // semantics and cannot be distinguished from a real one by a caller.
+    await assert.rejects(
+      () => modelGateway.embed({ text: 'Cardiology guideline for hypertension management' }),
+      (err) => err.code === 'EMBEDDING_NOT_IMPLEMENTED'
+    );
   });
 
   // =========================================================================

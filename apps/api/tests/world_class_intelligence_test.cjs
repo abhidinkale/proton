@@ -5,7 +5,7 @@
  * 1. Autonomous Diagnostic Doctor Agent (AMIE-grade reasoning, Wells/CURB-65 scores, DDx, LOINC workup)
  * 2. Whisper Streaming & Diarization Engine (speaker turns, word timestamps, pharmacology steering)
  * 3. Tesseract Lab Studio (bounding boxes, layout analysis, abnormal flags, FHIR Observations)
- * 4. pgvector Clinical Memory & Semantic RAG (HNSW/cosine distance similarity, living guidelines)
+ * 4. Clinical knowledge index (deterministic keyword retrieval over cited references)
  * 5. Full REST API endpoints via Supertest/Express
  */
 
@@ -14,7 +14,7 @@ const app = require('../app');
 const { diagnosticDoctorAgent } = require('../agents/diagnosticDoctorAgent');
 const { whisperStreamingEngine } = require('../services/voice/whisperStreamingEngine');
 const { tesseractLabStudio } = require('../services/document/tesseractLabStudio');
-const { pgvectorClinicalMemory } = require('../services/evidence/pgvectorClinicalMemory');
+const { clinicalKnowledgeIndex } = require('../services/evidence/clinicalKnowledgeIndex');
 
 async function runWorldClassIntelligenceSuite() {
   console.log('\n====================================================================');
@@ -121,17 +121,18 @@ async function runWorldClassIntelligenceSuite() {
     assert.ok(result.fhirObservationBundle.entry.length >= 5, 'FHIR transaction bundle must have >= 5 entries');
   });
 
-  // TEST 5: pgvector Clinical Memory - Semantic Guideline & Trial Matching
-  await asyncTest('PGVECTOR MEMORY: Performs HNSW cosine similarity search across living guidelines & trials', async () => {
-    const result = await pgvectorClinicalMemory.searchClinicalMemory('uncontrolled type 2 diabetes with elevated hba1c and cardiorenal risk', {
-      limit: 3
-    });
+  // TEST 5: Clinical knowledge index — keyword retrieval, not vector similarity
+  await asyncTest('KNOWLEDGE INDEX: returns cited references by keyword overlap', async () => {
+    const result = await clinicalKnowledgeIndex.search(
+      'uncontrolled type 2 diabetes with elevated hba1c and cardiorenal risk',
+      { limit: 3 }
+    );
 
-    assert.ok(result.topMatches.length >= 1, 'Must return top matches');
-    assert.ok(result.topMatches[0].cosineSimilarity >= 0.70, 'Top match similarity must be >= 70%');
-    assert.strictEqual(result.topMatches[0].condition, 'Type 2 Diabetes Mellitus');
-    assert.ok(result.topMatches[0].pmid, 'Must include authoritative PubMed ID');
-    assert.ok(result.topMatches[0].evidenceGrade.includes('Level A'), 'Must include Level A evidence citation');
+    assert.strictEqual(result.method, 'deterministic_keyword_overlap');
+    assert.ok(result.matches.length >= 1, 'Must return matches');
+    assert.strictEqual(result.matches[0].condition, 'Type 2 Diabetes Mellitus');
+    assert.ok(result.matches[0].pmid, 'Must include a PubMed ID');
+    assert.ok(result.matches[0].keywords.length > 0, 'Must expose the matched keywords');
   });
 
   console.log('\n====================================================================');

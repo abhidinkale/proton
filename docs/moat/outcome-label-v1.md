@@ -1,8 +1,13 @@
 # Outcome labeler — `label_v1`
 
-**Status:** proposed rule set; the table exists in
-[`clinical-links.sql`](../../apps/api/db/moat/clinical-links.sql), the labeler is
-not implemented.
+**Status:** implemented. `label_v1` is a pure function in
+[`apps/api/services/clinical/outcomeLabeler.js`](../../apps/api/services/clinical/outcomeLabeler.js);
+the write path is [`apps/api/services/clinical/outcomeWriter.js`](../../apps/api/services/clinical/outcomeWriter.js),
+called inside the follow-up transaction. The precedence table is tested by
+`apps/api/tests/outcome_labeler_validation.cjs` (9 cases). The 30-day final job
+in §7 is **not** implemented — a 48-hour answer writes `improved`/`worsened`,
+never `resolved`; `resolved` can only come from a completed-window row, which
+currently must be written by an explicit job or an import.
 **Scope:** one condition cohort at a time. The first cohort should be a
 condition with a short, standardized natural history (pharyngitis, UTI, or low
 back pain), not "all encounters."

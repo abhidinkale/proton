@@ -67,7 +67,8 @@ class EvidenceLedgerAudit {
       });
     }
 
-    // Compute root chain hash (Merkle root equivalent)
+    // A single hash over the ordered entry signatures. This is not a Merkle
+    // tree and has no inclusion proofs; call it what it is, a ledger root hash.
     const combinedSignatures = ledgerEntries.map(e => e.entrySignature).join(':');
     const rootLedgerHash = crypto.createHash('sha256').update(`${patientId}|${timestamp}|${combinedSignatures}`).digest('hex');
 

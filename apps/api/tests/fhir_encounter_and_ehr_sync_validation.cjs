@@ -84,7 +84,13 @@ async function runValidation() {
   assert(syncResult.syncReceipt.status === 'COMMITTED_AND_SYNCHRONIZED', 'Status must be COMMITTED_AND_SYNCHRONIZED');
   assert(syncResult.syncReceipt.syncId.startsWith('EHR-SYNC-'), 'Sync ID must start with EHR-SYNC-');
   assert(syncResult.syncReceipt.ehrSystem.includes('Epic'), 'EHR system must be recorded');
-  assert(syncResult.syncReceipt.hl7ComplianceLevel.includes('US Core'), 'US Core compliance level must be present');
+  // The receipt must not claim a profile it never validated. The old assertion
+  // required the string "US Core", which the code simply printed.
+  assert.strictEqual(syncResult.syncReceipt.usCoreValidated, false, 'no US Core validator ran');
+  assert(
+    syncResult.syncReceipt.validationNote.includes('no US Core profile validation'),
+    'the receipt must say what was not validated'
+  );
   console.log(`✔ Synchronized with Epic Systems; Receipt ID: ${syncResult.syncReceipt.syncId}`);
 
   // Test 5: Cryptographic Tamper-Evident Audit Verification

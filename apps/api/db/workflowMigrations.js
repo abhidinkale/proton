@@ -20,6 +20,9 @@
  *    This is why a follow-up survives a process restart.
  */
 
+const fs = require('node:fs');
+const path = require('node:path');
+
 const WORKFLOW_MIGRATIONS = [
   {
     version: 2,
@@ -415,6 +418,51 @@ const WORKFLOW_MIGRATIONS = [
       CREATE INDEX IF NOT EXISTS idx_appointments_queue
         ON appointments(tenant_id, queue_category, scheduled_for);
     `
+  },
+  {
+    // P0.2 — the attestation ledger. The row carries the exact canonical bytes
+    // that were signed, so verification never depends on the note's current
+    // state or on which store the note lives in. `seq` is per tenant; the
+    // writer serializes with an advisory lock (see services/workflow/attestationStore.js).
+    version: 10,
+    name: 'clinical_attestations',
+    sql: `
+      CREATE TABLE IF NOT EXISTS clinical_attestations (
+        id                  TEXT PRIMARY KEY,
+        tenant_id           TEXT NOT NULL,
+        seq                 BIGINT NOT NULL CHECK (seq > 0),
+        encounter_id        TEXT NOT NULL REFERENCES encounters(id) ON DELETE CASCADE,
+        patient_id          TEXT NOT NULL,
+        note_id             TEXT NOT NULL,
+        -- The signed bytes, verbatim. TEXT, never JSONB: JSONB reorders keys
+        -- and normalizes numbers, so a dump/restore would change the hash.
+        content_canonical   TEXT NOT NULL,
+        content_hash        TEXT NOT NULL,
+        prev_hash           TEXT,
+        chain_hash          TEXT NOT NULL,
+        attested_at         TIMESTAMPTZ NOT NULL,
+        actor_id            TEXT NOT NULL,
+        actor_name          TEXT NOT NULL,
+        actor_role          TEXT NOT NULL,
+        actor_npi           TEXT,
+        decision            TEXT NOT NULL DEFAULT 'SIGNED'
+                              CHECK (decision IN ('SIGNED', 'AMENDED', 'REFUSED')),
+        kernel_version      TEXT,
+        kernel_verdict_hash TEXT,
+        created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE (tenant_id, seq)
+      );
+      CREATE INDEX IF NOT EXISTS idx_attestations_encounter
+        ON clinical_attestations(tenant_id, encounter_id, seq);
+    `
+  },
+  {
+    // P1.1/P1.5 — outcomes, the cohort denominator, and the link edges.
+    // Read from the moat artifact so the reviewed SQL and the runtime schema
+    // cannot drift apart.
+    version: 11,
+    name: 'clinical_links_and_outcomes',
+    sql: fs.readFileSync(path.join(__dirname, 'moat', 'clinical-links.sql'), 'utf8')
   }
 ];
 

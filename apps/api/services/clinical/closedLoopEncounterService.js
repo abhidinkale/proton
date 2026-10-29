@@ -13,7 +13,7 @@
 const crypto = require('crypto');
 const { mdSpecialistEngine } = require('../../agents/mdSpecialistEngine');
 const { safetyService } = require('../safety/safetyService');
-const { pgvectorClinicalMemory } = require('../evidence/pgvectorClinicalMemory');
+const { clinicalKnowledgeIndex } = require('../evidence/clinicalKnowledgeIndex');
 const auditRepository = require('../../storage/auditRepository');
 
 // Temporary in-memory OTP and encounter lock store (backed by Redis in multi-instance prod)
@@ -238,16 +238,10 @@ class ClosedLoopEncounterService {
       });
     }
 
-    // 3. Commit Semantic Embedding to pgvector Clinical Memory
-    try {
-      await pgvectorClinicalMemory.insertLongitudinalEncounter({
-        encounterId,
-        patientId,
-        diagnoses: approvedDiagnoses.map(d => d.name || d.title),
-        medications: approvedMedications.map(m => m.medicationName || m.name),
-        summary: physicianDirective
-      });
-    } catch (_) {}
+    // 3. (removed) A "semantic embedding" write used to live here. It called a
+    //    method that did not exist, inside try/catch, so it was a no-op that
+    //    read like a vector commit. Longitudinal retrieval is not implemented;
+    //    the real source of truth is the encounter tables.
 
     // 4. Generate Smart Pill Reminders Schedule (Phase 5)
     const smartPillReminders = approvedMedications.map(m => ({

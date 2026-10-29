@@ -5,7 +5,7 @@
  * 1. POST /api/clinical/diagnose
  * 2. POST /api/voice/transcribe-stream
  * 3. POST /api/documents/lab-studio
- * 4. POST /api/memory/semantic-search
+ * 4. POST /api/memory/knowledge-search
  */
 
 const assert = require('assert');
@@ -88,16 +88,16 @@ async function runEndpointsSuite() {
     assert.ok(labRes.body.interactiveViewerModel.interactiveBoundingBoxes.length >= 5);
     console.log('✓ [PASS] POST /api/documents/lab-studio returned 200 OK');
 
-    // 4. POST /api/memory/semantic-search
-    console.log('Testing POST /api/memory/semantic-search...');
-    const memRes = await makeRequest(server, 'POST', '/api/memory/semantic-search', {
+    // 4. POST /api/memory/knowledge-search
+    console.log('Testing POST /api/memory/knowledge-search...');
+    const memRes = await makeRequest(server, 'POST', '/api/memory/knowledge-search', {
       query: 'heart failure with reduced ejection fraction SGLT2 inhibitor trial',
       options: { limit: 2 }
     });
     assert.strictEqual(memRes.status, 200);
-    assert.strictEqual(memRes.body.engine, 'PgvectorClinicalMemory');
-    assert.ok(memRes.body.topMatches.length > 0);
-    console.log('✓ [PASS] POST /api/memory/semantic-search returned 200 OK');
+    assert.strictEqual(memRes.body.method, 'deterministic_keyword_overlap');
+    assert.ok(memRes.body.matches.length > 0);
+    console.log('✓ [PASS] POST /api/memory/knowledge-search returned 200 OK');
 
     console.log('\n====================================================================');
     console.log('   ALL 4 WORLD-CLASS API ENDPOINTS VERIFIED (100% SUCCESS)');

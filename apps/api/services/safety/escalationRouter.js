@@ -21,6 +21,7 @@
  */
 
 const crypto = require('crypto');
+const attestation = require('../workflow/attestation');
 const auditRepository = require('../../storage/auditRepository');
 
 class EscalationRouter {
@@ -194,7 +195,6 @@ class EscalationRouter {
     patientName,
     provisionalDiagnosis,
     prescriptions = [],
-    merkleRoot,
     traceableClaims = [],
     counterfactualArguments = []
   }) {
@@ -217,8 +217,15 @@ class EscalationRouter {
       autonomousActionSummary: 'History, triage, and supportive care executed autonomously. High-risk Rx staged for attending NPI/DEA signature.',
       supportiveCareAutonomouslyIssued: supportiveMeds,
       prescriptionOrdersRequiringAttestation: diagnosisDependentMeds,
-      merkleVerifiedReasoningTree: {
-        merkleRoot: merkleRoot || crypto.createHash('sha256').update(encounterId + timestamp).digest('hex'),
+      // P0.2 honesty: this is a content hash over the claims, not a Merkle tree.
+      // The previous field was named `merkleRoot` and fell back to
+      // sha256(encounterId + timestamp), which is not bound to any content and
+      // is not a tree. Renamed so no reader can mistake the structure for one
+      // that exists. A real Merkle log is a P2 transparency-log concern.
+      reasoningTree: {
+        algorithm: 'sha256',
+        scope: 'canonical_json({encounterId, claims})',
+        hash: attestation.hashOf({ encounterId, claims: traceableClaims }),
         verifiedClaimsCount: traceableClaims.length,
         claims: traceableClaims
       },

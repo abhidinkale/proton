@@ -1,5 +1,6 @@
 package health.dork.app.core.sync
 
+import health.dork.app.BuildConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -62,7 +63,14 @@ class SyncCoordinator(
     settings.enabled.value && settings.baseUrl.value.isNotBlank()
 
   private companion object {
-    /** Frequent enough to feel live, cheap enough for a phone on cellular. */
-    const val POLL_INTERVAL_MS = 15_000L
+    /**
+     * Frequent enough to feel live, cheap enough for a phone on cellular.
+     *
+     * Debug builds poll every 2 seconds so the demo's "patient writes, clinic
+     * sees it" beat lands. Release builds keep 15 seconds. This is a build-type
+     * difference, not a hidden switch: a release APK cannot poll at 2s, and the
+     * demo slide says so.
+     */
+    val POLL_INTERVAL_MS = if (BuildConfig.DEBUG) 2_000L else 15_000L
   }
 }

@@ -166,7 +166,7 @@ export default function EncounterEhrSyncModal({
             <div className="text-[11px] text-ink-3 grid grid-cols-2 gap-2 bg-solid/60 p-2.5 rounded-lg border border-settled/50">
               <div>Transaction ID: <span className="font-mono text-settled-on-solid">{syncReceipt.transactionId}</span></div>
               <div>Resources Committed: <span className="font-semibold text-white">{syncReceipt.totalResources} Resources</span></div>
-              <div>Standard: <span className="text-ink-3">{syncReceipt.hl7ComplianceLevel}</span></div>
+              <div>US Core validated: <span className="text-ink-3">{syncReceipt.usCoreValidated ? 'yes' : 'no'}</span></div>
               <div>FHIR Version: <span className="font-mono text-ink-3">{syncReceipt.fhirVersion}</span></div>
             </div>
           </div>

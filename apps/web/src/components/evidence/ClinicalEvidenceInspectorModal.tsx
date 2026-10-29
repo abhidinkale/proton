@@ -245,7 +245,7 @@ export default function ClinicalEvidenceInspectorModal({
                   )}
                 </div>
 
-                {/* Step 3: Cryptographic Merkle Provenance Hash */}
+                {/* Step 3: content hashes over the audited claims */}
                 <div className="pt-2 border-t border-rule-strong flex items-center justify-between text-[11px] text-ink-2 font-mono">
                   <div className="flex items-center gap-1.5">
                     <Hash className="w-3.5 h-3.5 text-settled-on-solid0" />
@@ -253,7 +253,7 @@ export default function ClinicalEvidenceInspectorModal({
                   </div>
                   {rootLedgerHash && (
                     <div>
-                      <span>Root Hash: {rootLedgerHash.substring(0, 16)}...</span>
+                      <span>Ledger Root Hash: {rootLedgerHash.substring(0, 16)}...</span>
                     </div>
                   )}
                 </div>

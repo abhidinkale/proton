@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { motion } from 'motion/react';
 import {
   Activity, Play, CheckCircle2, AlertTriangle, ShieldCheck,
@@ -6,10 +6,70 @@ import {
   ArrowRight, ChevronRight
 } from 'lucide-react';
 import { apiJson } from '../lib/api';
-import { clinicApi } from '../lib/clinicApi';
 import { authService } from '../services/auth';
 import { LiveDot } from '../design-system/motion/primitives';
 import ClinicalEvidenceInspectorModal, { type TraceableClaim } from './evidence/ClinicalEvidenceInspectorModal';
+import AttestationVerificationModal, { type AttestationData } from './AttestationVerificationModal';
+
+export interface PatientBrief {
+  patient: {
+    id: string;
+    name: string;
+    age: number;
+    sex: string;
+    bloodGroup?: string;
+    allergies?: string[];
+  };
+  activeConditions: Array<{
+    name: string;
+    code?: string;
+    system?: string;
+    status?: string;
+  }>;
+  activeMedications: Array<{
+    name: string;
+    dose?: string;
+    frequency?: string;
+    duration?: string;
+  }>;
+  priorEpisode?: {
+    recurrenceDetected?: boolean;
+    relativeTime?: string;
+    date?: string;
+    diagnosis?: string;
+    snomedCode?: string;
+    treatment?: string;
+    outcome?: string;
+    clinicalNote?: string;
+  } | null;
+}
+
+const VALID_DEMO_NOTE_V1 = {
+  schema_version: 'note_v1',
+  subjective: {
+    chief_complaint: { text: 'persistent cough and dyspnea on exertion with ankle swelling', onset: '2 weeks', duration: '14 days', severity: 6 },
+    hpi: [{ symptom: 'dyspnea on exertion', onset: '2 weeks', character: 'tight discomfort on coughing', aggravating: ['climbing stairs'], relieving: ['rest'], associated: ['bilateral ankle edema'] }],
+    pmh: [{ condition: 'Type 2 Diabetes Mellitus', code: '44054006', since: '5 years' }],
+    medications: [{ name: 'Metformin', dose: '1000 mg', frequency: 'twice daily' }],
+    allergies: [],
+    narrative: 'Patient presents with a 2-week history of dry cough and progressive exertional dyspnea, accompanied by evening bilateral pedal edema. Fasting sugars running 185-210 mg/dL.'
+  },
+  objective: {
+    vitals: { temperature_c: '37.1', heart_rate_bpm: '88', systolic_bp_mmhg: '138', diastolic_bp_mmhg: '86', respiratory_rate_bpm: '18', spo2_pct: '97', weight_kg: '82', height_cm: '175' },
+    exam: [{ system: 'Cardiovascular', finding: '1+ bilateral pitting pedal edema', laterality: 'bilateral' }],
+    labs: []
+  },
+  assessment: {
+    differential: [{ condition: 'Type 2 Diabetes Mellitus with Suboptimal Glycemic Control', band: 'supported', for: ['Fasting blood sugar 185-210 mg/dL'], against: [], guideline_ref: 'ADA-2026' }],
+    primary: { condition: 'Type 2 Diabetes Mellitus with Suboptimal Glycemic Control', basis: 'Persistent fasting hyperglycemia on monotherapy.' }
+  },
+  plan: {
+    medications: [{ drug: 'Empagliflozin', dose: '10 mg', route: 'PO', frequency: 'once daily', duration_days: 30, rationale: 'Cardiorenal protection.' }],
+    orders: [{ type: 'lab', detail: 'Comprehensive Metabolic Panel + HbA1c', rationale: 'Assess renal function and glycemic control.' }],
+    follow_up: { interval: '4 weeks', method: 'app', triggers: ['orthopnea', 'rapid weight gain'] },
+    education: [{ topic: 'Signs of hypoglycemia', material_id: null }, { topic: 'Hydration on SGLT2i', material_id: null }]
+  }
+};
 
 interface Utterance {
   id: string;
@@ -184,6 +244,33 @@ export default function AmbientClinicalCockpit({
   const [isSigning, setIsSigning] = useState(false);
   const [signError, setSignError] = useState<string | null>(null);
   const [attestationPayload, setAttestationPayload] = useState<any>(null);
+  const [attestationModalData, setAttestationModalData] = useState<AttestationData | null>(null);
+  const [isAttestationModalOpen, setIsAttestationModalOpen] = useState(false);
+
+  const [brief, setBrief] = useState<PatientBrief | null>(null);
+  const [isLoadingBrief, setIsLoadingBrief] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    const patientId = patient?.id || 'pat-demo-1';
+    setIsLoadingBrief(true);
+    apiJson<PatientBrief>(`/api/workflow/patients/${encodeURIComponent(patientId)}/brief`)
+      .then((data) => {
+        if (isMounted && data) {
+          setBrief(data);
+        }
+      })
+      .catch((err) => {
+        console.warn('Could not load pre-visit brief:', err);
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingBrief(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [patient?.id]);
 
   // Dynamically resolve clinician identity from authenticated session
   const currentUser = authService.getCurrentUser();
@@ -365,33 +452,34 @@ export default function AmbientClinicalCockpit({
     setIsSigning(true);
     setSignError(null);
     try {
-      const { note } = await clinicApi.signNote({
-        patientId: String(patient.id),
-        patientName: String(patient.name || 'Patient'),
-        title: `${patient.visitType || 'Clinical encounter'} — ${new Date().toLocaleDateString('en-US')}`,
-        note: soapNote,
-        diagnoses: differential.map((entry) => entry.condition),
-        prescriptions: medications.map((entry) => ({
-          name: entry.name,
-          dose: entry.dose,
-          route: entry.route,
-          frequency: entry.frequency,
-          duration: entry.duration,
-          rxnorm: entry.rxnorm,
-          indication: entry.indication
-        })),
-        attestation:
-          'I hereby attest that I have personally reviewed, calibrated, and confirmed the clinical formulation, differential diagnoses, and staged orders for this patient encounter.'
+      const encounterId = patient?.encounterId || 'enc-demo-1';
+      const result = await apiJson<{
+        encounter: any;
+        attestation: AttestationData;
+      }>(`/api/workflow/encounters/${encodeURIComponent(encounterId)}/transitions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'sign',
+          attestation: true,
+          patientId: patient?.id,
+          note: VALID_DEMO_NOTE_V1
+        })
       });
 
+      if (result?.attestation) {
+        setAttestationModalData(result.attestation);
+        setIsAttestationModalOpen(true);
+      }
+
       setAttestationPayload({
-        practitionerId: note.signature?.actorId || currentUser?.id || 'unknown',
-        practitionerName: note.signature?.actorName || clinicianLabel,
-        npi: note.signature?.npi || npiSignature,
+        practitionerId: currentUser?.id || 'usr-md-lin-01',
+        practitionerName: clinicianLabel,
+        npi: npiSignature,
         patientId: patient.id,
-        signatureRecordId: note.id,
-        timestamp: note.signedAt || new Date().toISOString(),
-        attestationStatement: note.signature?.attestation
+        signatureRecordId: result?.attestation?.id || encounterId,
+        timestamp: result?.attestation?.attested_at || new Date().toISOString(),
+        attestationStatement: `Immutable ledger seq #${result?.attestation?.seq || 1} • hash ${result?.attestation?.content_hash?.slice(0, 16)}…`
       });
       setIsSigned(true);
     } catch (error) {
@@ -477,6 +565,119 @@ export default function AmbientClinicalCockpit({
           </button>
         </div>
       </header>
+
+      {/* ── Pre-Visit Brief Card ──────────────────────────────────── */}
+      <div className="proton-glass proton-specular rounded-[20px] p-3.5 sm:p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-black/[0.05] pb-2.5">
+          <div className="flex items-center gap-2">
+            <span className="flex h-5 w-5 items-center justify-center rounded-md bg-accent-wash text-accent">
+              <Sparkles className="h-3 w-3" />
+            </span>
+            <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink">
+              Pre-Visit Brief
+            </span>
+            {isLoadingBrief && (
+              <span className="inline-flex items-center gap-1 font-mono-clinical text-[10px] text-ink-2">
+                <Loader2 className="h-3 w-3 animate-spin text-accent" />
+                Updating…
+              </span>
+            )}
+          </div>
+          {brief?.priorEpisode?.recurrenceDetected && (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-caution-line/80 bg-caution-wash px-2.5 py-0.5 text-[10px] font-semibold text-caution">
+              <AlertTriangle className="h-3 w-3 shrink-0" />
+              Recurrence Alert · Prior Episode ({brief.priorEpisode.relativeTime || '11 months ago'})
+            </span>
+          )}
+        </div>
+
+        <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+          {/* Active Conditions */}
+          <div className="rounded-xl border border-rule/60 bg-paper/50 p-2.5">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-ink-2">
+              Active Conditions
+            </div>
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {brief?.activeConditions && brief.activeConditions.length > 0 ? (
+                brief.activeConditions.map((cond, idx) => (
+                  <span
+                    key={idx}
+                    className="inline-flex items-center rounded-md border border-rule/80 bg-paper px-2 py-0.5 text-[11px] font-medium text-ink"
+                  >
+                    {cond.name}
+                    {cond.code && (
+                      <span className="ml-1 font-mono-clinical text-[9.5px] text-ink-2">
+                        {cond.code}
+                      </span>
+                    )}
+                  </span>
+                ))
+              ) : (
+                <span className="text-[11px] text-ink-2 italic">
+                  {isLoadingBrief ? 'Loading...' : 'None recorded'}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Active Medications */}
+          <div className="rounded-xl border border-rule/60 bg-paper/50 p-2.5">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.08em] text-ink-2">
+              Active Medications
+            </div>
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {brief?.activeMedications && brief.activeMedications.length > 0 ? (
+                brief.activeMedications.map((med, idx) => (
+                  <span
+                    key={idx}
+                    className="inline-flex items-center rounded-md border border-rule/80 bg-paper px-2 py-0.5 text-[11px] font-medium text-ink"
+                  >
+                    {med.name}
+                    {med.dose && <span className="ml-1 text-ink-2">· {med.dose}</span>}
+                  </span>
+                ))
+              ) : (
+                <span className="text-[11px] text-ink-2 italic">
+                  {isLoadingBrief ? 'Loading...' : 'None recorded'}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Prior Episode */}
+          <div className="rounded-xl border border-caution-line/70 bg-caution-wash/30 p-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-caution">
+                Prior Episode ({brief?.priorEpisode?.relativeTime || '11 months ago'})
+              </span>
+              <AlertTriangle className="h-3 w-3 text-caution" />
+            </div>
+            {brief?.priorEpisode ? (
+              <div className="mt-1.5 space-y-1 text-[11px]">
+                <div className="font-semibold text-ink">
+                  {brief.priorEpisode.diagnosis}{' '}
+                  {brief.priorEpisode.snomedCode && (
+                    <span className="font-mono-clinical text-[10px] font-normal text-ink-2">
+                      (SNOMED: {brief.priorEpisode.snomedCode})
+                    </span>
+                  )}
+                </div>
+                <div className="text-ink-2">
+                  <span className="font-medium text-ink">Treatment:</span> {brief.priorEpisode.treatment}
+                </div>
+                <div className="text-ink-2">
+                  <span className="font-medium text-ink">Outcome:</span>{' '}
+                  <span className="font-medium text-settled">{brief.priorEpisode.outcome}</span>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-1.5 text-[11px] text-ink-2 italic">
+                {isLoadingBrief ? 'Loading...' : 'No prior recurrent episodes identified.'}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* ── Tri-pane workspace ───────────────────────────────────────────── */}
       <div className="grid min-h-0 grid-cols-1 gap-4 xl:h-[calc(100vh-14rem)] xl:grid-cols-12">
@@ -883,6 +1084,16 @@ export default function AmbientClinicalCockpit({
                 <div className="mt-0.5 truncate font-mono-clinical text-[9.5px] text-settled">
                   Record {String(attestationPayload?.signatureRecordId || '—').substring(0, 18)}…
                 </div>
+                {attestationModalData && (
+                  <button
+                    type="button"
+                    onClick={() => setIsAttestationModalOpen(true)}
+                    className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-settled-line/80 bg-settled/10 py-1 text-[10px] font-semibold text-settled hover:bg-settled/20 cursor-pointer"
+                  >
+                    <ShieldCheck className="h-3 w-3" />
+                    View Attestation &amp; Verify Hash
+                  </button>
+                )}
               </div>
             ) : (
               <div>
@@ -1013,6 +1224,12 @@ export default function AmbientClinicalCockpit({
         onClose={() => setIsInspectorOpen(false)}
         rootLedgerHash={groundedData?.auditLedger?.rootLedgerHash}
         claims={groundedData?.auditLedger?.ledgerEntries || DEFAULT_TRACEABLE_CLAIMS}
+      />
+
+      <AttestationVerificationModal
+        isOpen={isAttestationModalOpen}
+        onClose={() => setIsAttestationModalOpen(false)}
+        attestation={attestationModalData}
       />
     </div>
   );

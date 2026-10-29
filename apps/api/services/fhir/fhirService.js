@@ -459,7 +459,10 @@ class FhirService {
       resourcesCommitted: (txResult.entry || []).map(e => e.response?.location || e.resource?.resourceType || 'Resource'),
       totalResources: txResult.total || (bundle.entry ? bundle.entry.length : 0),
       fhirVersion: '4.0.1 (R4)',
-      hl7ComplianceLevel: 'US Core Implementation Guide v3.1.1'
+      // No US Core validator has run against this bundle. Claiming a profile
+      // conformance level here was a claim the code could not support.
+      usCoreValidated: false,
+      validationNote: 'Resources are shaped for R4; no US Core profile validation was performed.'
     };
 
     return {

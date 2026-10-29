@@ -59,7 +59,10 @@ const MAX_RATE_LIMIT_KEYS = 50000;
 
 const SEEDED_PATIENTS = Object.freeze({
   'pat-synthetic-a': { tenantId: 'org-default', displayName: 'Synthetic Patient A' },
-  'pat-synthetic-b': { tenantId: 'org-default', displayName: 'Synthetic Patient B' }
+  'pat-synthetic-b': { tenantId: 'org-default', displayName: 'Synthetic Patient B' },
+  // Demo persona. Present only in synthetic mode; the dev-session route is
+  // hard-disabled when NODE_ENV/proton env is production.
+  'pat-demo-1': { tenantId: 'org-default', displayName: 'Priya Sharma (demo)' }
 });
 
 class PatientAuthError extends Error {
