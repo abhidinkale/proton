@@ -423,46 +423,59 @@ async function mirrorSignedNote({ tenantId = 'org-default', note, appointment, p
       insertedPrescriptions.push(...curRxs);
     }
 
-    // 6. Record Cryptographic Content-Bound Attestation (P0.2)
-    const { schema_version, ...content } = noteV1;
-    const attestationRow = await attestationStore.append(client, {
-      tenantId,
-      encounterId,
-      patientId,
-      note: { note_id: savedNote.id, schema_version, content },
-      diagnoses: insertedDiagnoses.map((d) => ({
-        diagnosis_id: d.id,
-        code_system: d.code_system,
-        code: d.code,
-        display: d.display,
-        certainty: d.certainty,
-        is_primary: d.is_primary
-      })),
-      prescriptions: insertedPrescriptions.map((p) => ({
-        prescription_id: p.id,
-        medication_name: p.medication_name,
-        rxnorm_code: p.rxnorm_code,
-        dose: p.dose,
-        route: p.route,
-        frequency: p.frequency,
-        duration_days: p.duration_days
-      })),
-      actor: {
-        actor_id: actor?.actorId || 'unknown',
-        actor_name: actor?.actorName || 'Physician',
-        role: 'physician',
-        npi: actor?.npi || null
-      },
-      kernel: note.signature?.safetyVerdict
-        ? {
-            version:
-              note.signature.safetyVerdict.kernelVersion ||
-              note.signature.safetyVerdict.version ||
-              'kernel_v2',
-            verdict_hash: attestation.hashOf(note.signature.safetyVerdict)
-          }
-        : null
-    });
+    // 6. Record Cryptographic Content-Bound Attestation (P0.2) - Idempotent per encounter
+    const { rows: existingAttestation } = await client.query(
+      `SELECT id, content_hash, chain_hash, seq
+         FROM clinical_attestations
+        WHERE encounter_id = $1 AND tenant_id = $2
+        ORDER BY seq DESC LIMIT 1;`,
+      [encounterId, tenantId]
+    );
+
+    let attestationRow;
+    if (existingAttestation.length > 0) {
+      attestationRow = existingAttestation[0];
+    } else {
+      const { schema_version, ...content } = noteV1;
+      attestationRow = await attestationStore.append(client, {
+        tenantId,
+        encounterId,
+        patientId,
+        note: { note_id: savedNote.id, schema_version, content },
+        diagnoses: insertedDiagnoses.map((d) => ({
+          diagnosis_id: d.id,
+          code_system: d.code_system,
+          code: d.code,
+          display: d.display,
+          certainty: d.certainty,
+          is_primary: d.is_primary
+        })),
+        prescriptions: insertedPrescriptions.map((p) => ({
+          prescription_id: p.id,
+          medication_name: p.medication_name,
+          rxnorm_code: p.rxnorm_code,
+          dose: p.dose,
+          route: p.route,
+          frequency: p.frequency,
+          duration_days: p.duration_days
+        })),
+        actor: {
+          actor_id: actor?.actorId || 'unknown',
+          actor_name: actor?.actorName || 'Physician',
+          role: 'physician',
+          npi: actor?.npi || null
+        },
+        kernel: note.signature?.safetyVerdict
+          ? {
+              version:
+                note.signature.safetyVerdict.kernelVersion ||
+                note.signature.safetyVerdict.version ||
+                'kernel_v2',
+              verdict_hash: attestation.hashOf(note.signature.safetyVerdict)
+            }
+          : null
+      });
+    }
 
     // 7. Update Note provenance with attestation hashes
     await client.query(

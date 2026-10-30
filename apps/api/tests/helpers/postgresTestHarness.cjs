@@ -6,6 +6,8 @@
  * "never silently skip in CI" policy via REQUIRE_POSTGRES.
  */
 
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 const { Client } = require('pg');
 
 function swapDatabase(url, database) {

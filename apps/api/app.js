@@ -1771,15 +1771,18 @@ app.get('/api/clinical/discharge/:patientId', async (req, res) => {
         const pool = getPostgresPool();
         if (pool) {
           const { rows } = await pool.query(
-            'SELECT id, name, date_of_birth, gender FROM patients WHERE id = $1 AND tenant_id = $2;',
+            'SELECT id, full_name, mrn, date_of_birth, sex FROM patients WHERE id = $1 AND tenant_id = $2;',
             [patientId, tenantId]
           );
           if (rows[0]) {
+            const rawDob = rows[0].date_of_birth;
+            const dob = rawDob instanceof Date ? rawDob.toISOString().split('T')[0] : (rawDob || null);
             patientRecord = {
               id: rows[0].id,
-              name: rows[0].name,
-              dob: rows[0].date_of_birth || null,
-              mrn: null
+              name: rows[0].full_name,
+              dob,
+              mrn: rows[0].mrn || null,
+              sex: rows[0].sex || null
             };
           }
         }

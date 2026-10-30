@@ -492,7 +492,9 @@ const WORKFLOW_MIGRATIONS = [
       DO $$
       BEGIN
         IF EXISTS (
-          SELECT 1 FROM pg_constraint WHERE conname = 'attestation_anchors_anchor_type_check'
+          SELECT 1 FROM pg_constraint
+          WHERE conname = 'attestation_anchors_anchor_type_check'
+            AND conrelid = 'attestation_anchors'::regclass
         ) THEN
           ALTER TABLE attestation_anchors DROP CONSTRAINT attestation_anchors_anchor_type_check;
         END IF;

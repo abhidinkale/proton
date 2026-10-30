@@ -399,6 +399,26 @@ async function runValidation() {
     assert.strictEqual(retryBody.mirrorStatus, 'failed', 'Re-attempted mirror and reported current mirror status');
     console.log('✓ Endpoint POST /api/clinic/notes/:id/sign re-attempts mirror for alreadySigned notes missing a mirror');
 
+    // 6. Test GET /api/clinical/discharge/:patientId for a Postgres-only patient
+    const dischargeRes = await fetch(`${baseUrl}/api/clinical/discharge/${patientId}`, {
+      headers: { Authorization: `Bearer ${physicianToken}` }
+    });
+    assert.strictEqual(dischargeRes.status, 200, 'Must resolve discharge summary for Postgres-only patient');
+    const dischargeBody = await dischargeRes.json();
+    assert.ok(dischargeBody.summaryId.startsWith('AVS-'), 'Generated valid AVS ID');
+    assert.ok(dischargeBody.readingLevel.includes('6th Grade'), 'AVS follows 6th-grade reading level');
+    assert.strictEqual(dischargeBody.patient?.id, patientId, 'Returns summary for matching patientId');
+    console.log('✓ Endpoint GET /api/clinical/discharge/:patientId resolves Postgres-only patient and generates AVS');
+
+    // 7. Test GET /api/clinical/discharge/:patientId 404 on nonexistent patient
+    const nonExistentRes = await fetch(`${baseUrl}/api/clinical/discharge/non-existent-pat-404`, {
+      headers: { Authorization: `Bearer ${physicianToken}` }
+    });
+    assert.strictEqual(nonExistentRes.status, 404, 'Must return 404 for unknown patient');
+    const nonExistentBody = await nonExistentRes.json();
+    assert.strictEqual(nonExistentBody.error, 'PATIENT_NOT_FOUND');
+    console.log('✓ Endpoint GET /api/clinical/discharge/:patientId returns 404 PATIENT_NOT_FOUND for nonexistent patient');
+
     await new Promise((resolve) => server.close(resolve));
   }
   } finally {

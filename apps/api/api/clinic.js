@@ -38,7 +38,9 @@ async function signAndMirror(req, res, noteId, body) {
   const normalized = actor(req);
   const result = clinic.signNote(normalized, noteId, body || {});
 
-  const isAlreadyMirrored = result.note?.mirrorStatus === 'mirrored' || Boolean(result.note?.mirroredAt);
+  const isAlreadyMirrored =
+    result.note?.mirrorStatus === 'mirrored' ||
+    (Boolean(result.note?.mirroredAt) && result.note?.mirrorStatus !== 'failed');
 
   if (result.note && (!result.alreadySigned || !isAlreadyMirrored)) {
     try {
@@ -62,20 +64,30 @@ async function signAndMirror(req, res, noteId, body) {
       result.mirrorStatus = 'mirrored';
       result.attestationId = mirrorRes?.attestation?.id || null;
       result.syncedEncounterId = mirrorRes?.encounter?.id || null;
-      clinic.markNoteMirrored(normalized, result.note.id, {
-        attestationId: result.attestationId,
-        syncedEncounterId: result.syncedEncounterId
-      });
     } catch (err) {
       console.warn('[sign-mirror] signed note not mirrored:', err.message);
       result.mirrorStatus = 'failed';
       result.mirrorError = err.message;
+      try {
+        clinic.markNoteMirrorFailed(normalized, result.note.id, err.message);
+      } catch (_) {}
       if (req.headers['x-strict-mirror'] === 'true' || body?.strictMirror === true) {
         return res.status(502).json({
           error: `Sign committed in desk but failed to mirror to durable workflow: ${err.message}`,
           code: 'MIRROR_FAILED',
           result
         });
+      }
+    }
+
+    if (result.mirrorStatus === 'mirrored') {
+      try {
+        clinic.markNoteMirrored(normalized, result.note.id, {
+          attestationId: result.attestationId,
+          syncedEncounterId: result.syncedEncounterId
+        });
+      } catch (markErr) {
+        console.warn('[sign-mirror] failed to mark note mirrored locally:', markErr.message);
       }
     }
   } else if (result.alreadySigned && isAlreadyMirrored) {

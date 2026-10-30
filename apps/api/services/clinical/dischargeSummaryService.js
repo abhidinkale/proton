@@ -90,6 +90,7 @@ class DischargeSummaryService {
       summaryId,
       encounterDate,
       patient: {
+        id: patient.id || null,
         name: patient.name,
         dob: patient.dob || null,
         mrn: patient.mrn || null

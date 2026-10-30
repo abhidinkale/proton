@@ -1002,6 +1002,12 @@ function availability(actor, input = {}) {
 
 function deserializeNote(row) {
   const data = parseJson(row.data_json, {});
+  const signedAt = row.signed_at || data.signedAt || null;
+  const isSigned = row.status === 'SIGNED' || data.status === 'SIGNED';
+  const isFailed = data.mirrorStatus === 'failed';
+  const mirroredAt = isFailed ? null : (data.mirroredAt || (isSigned && signedAt ? signedAt : null));
+  const mirrorStatus = isFailed ? 'failed' : (data.mirrorStatus || (isSigned && mirroredAt ? 'mirrored' : null));
+
   return {
     ...data,
     id: row.id,
@@ -1010,7 +1016,9 @@ function deserializeNote(row) {
     status: row.status,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
-    signedAt: row.signed_at
+    signedAt,
+    mirroredAt,
+    mirrorStatus: mirrorStatus || undefined
   };
 }
 
@@ -1221,6 +1229,36 @@ function markNoteMirrored(actor, noteId, mirrorInfo = {}) {
     UPDATE clinic_notes SET data_json = ? WHERE id = ? AND tenant_id = ?;
   `).run(JSON.stringify(updated), note.id, normalized.tenantId);
   return updated;
+}
+
+function markNoteMirrorFailed(actor, noteId, errorMsg) {
+  const normalized = normalizeActor(actor);
+  const db = getDatabase();
+  const note = getNote(normalized, noteId);
+  if (!note) return null;
+  const updated = {
+    ...note,
+    mirroredAt: null,
+    mirrorStatus: 'failed',
+    mirrorError: errorMsg
+  };
+  db.prepare(`
+    UPDATE clinic_notes SET data_json = ? WHERE id = ? AND tenant_id = ?;
+  `).run(JSON.stringify(updated), note.id, normalized.tenantId);
+  return updated;
+}
+
+function backfillHistoricalMirroredNotes(tenantId = DEFAULT_TENANT) {
+  const db = getDatabase();
+  const rows = db.prepare(`SELECT id, data_json, signed_at FROM clinic_notes WHERE status = 'SIGNED';`).all();
+  for (const row of rows) {
+    const data = parseJson(row.data_json, null);
+    if (data && !data.mirroredAt && (row.signed_at || data.signedAt)) {
+      data.mirroredAt = row.signed_at || data.signedAt;
+      data.mirrorStatus = 'mirrored';
+      db.prepare(`UPDATE clinic_notes SET data_json = ? WHERE id = ?;`).run(JSON.stringify(data), row.id);
+    }
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -1655,6 +1693,8 @@ module.exports = {
   saveDraft,
   signNote,
   markNoteMirrored,
+  markNoteMirrorFailed,
+  backfillHistoricalMirroredNotes,
   listNotifications,
   markNotification,
   markAllNotificationsRead,

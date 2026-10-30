@@ -32,6 +32,8 @@
 const { spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+const { resolveTargets, canReachPostgres } = require('./helpers/postgresTestHarness.cjs');
 
 const TESTS_DIR = __dirname;
 
@@ -68,41 +70,16 @@ const filterArg = process.argv.find((arg) => arg.startsWith('--filter='));
 const filter = filterArg ? filterArg.split('=')[1] : null;
 
 function probePostgres() {
-  const { Client } = require('pg');
-  const connectionString =
-    process.env.PROTON_TEST_ADMIN_URL || process.env.DATABASE_URL || 'postgres://localhost:5432/postgres';
-
-  return new Promise((resolve) => {
-    const client = new Client({ connectionString, connectionTimeoutMillis: 2000 });
-    const done = (ok) => client.end().catch(() => {}).then(() => resolve(ok));
-    client
-      .connect()
-      .then(() => client.query('SELECT 1'))
-      .then(() => done(true))
-      .catch(() => done(false));
-  });
+  const targets = resolveTargets('postgres');
+  return canReachPostgres(targets.adminUrl);
 }
 
 async function cleanupAllTestDatabases() {
   if (process.env.KEEP_TEST_DB === '1') return;
   const { Client } = require('pg');
-  const base = process.env.DATABASE_URL;
-  let adminUrl = process.env.PROTON_TEST_ADMIN_URL;
-  if (!adminUrl) {
-    if (base) {
-      try {
-        const parsed = new URL(base);
-        parsed.pathname = '/postgres';
-        adminUrl = parsed.toString();
-      } catch (_) {
-        adminUrl = 'postgres://localhost:5432/postgres';
-      }
-    } else {
-      adminUrl = 'postgres://localhost:5432/postgres';
-    }
-  }
+  const targets = resolveTargets('postgres');
 
-  const client = new Client({ connectionString: adminUrl, connectionTimeoutMillis: 3000 });
+  const client = new Client({ connectionString: targets.adminUrl, connectionTimeoutMillis: 3000 });
   try {
     await client.connect();
     const res = await client.query(`
