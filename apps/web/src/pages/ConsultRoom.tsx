@@ -113,6 +113,7 @@ export default function ConsultRoom() {
   const [signing, setSigning] = useState(false);
   const [signError, setSignError] = useState<string | null>(null);
   const [signed, setSigned] = useState<ClinicNote | null>(null);
+  const [mirrorWarning, setMirrorWarning] = useState<string | null>(null);
 
   const [evidence, setEvidence] = useState<EvidenceItem[] | null>(null);
   const [evidenceLoading, setEvidenceLoading] = useState(false);
@@ -438,6 +439,11 @@ export default function ConsultRoom() {
           'I reviewed the transcript, the generated draft, the medication safety checks, and I sign this note as the attending clinician.'
       });
       setSigned(result.note);
+      if (result.mirrorStatus === 'failed') {
+        setMirrorWarning(result.mirrorError || 'Durable mirror pending');
+      } else {
+        setMirrorWarning(null);
+      }
       setPhase('signed');
       void clinicApi.updateAppointment(appointment.id, { status: 'COMPLETED' }).catch(() => undefined);
     } catch {
@@ -798,6 +804,11 @@ export default function ConsultRoom() {
                     The case is in {appointment.patientName.split(' ')[0]}'s history, and the
                     prescription is on the profile.
                   </p>
+                  {mirrorWarning && (
+                    <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
+                      <strong>Mirror sync warning:</strong> Note signed in clinic desk, but mirroring to durable workflow failed ({mirrorWarning}).
+                    </div>
+                  )}
                   {signed?.id && (
                     <p className="mt-2 font-mono text-[9px] tracking-[0.16em] text-white/25 uppercase">
                       case {signed.id.slice(0, 8)}

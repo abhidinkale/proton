@@ -38,7 +38,9 @@ async function signAndMirror(req, res, noteId, body) {
   const normalized = actor(req);
   const result = clinic.signNote(normalized, noteId, body || {});
 
-  if (!result.alreadySigned && result.note) {
+  const isAlreadyMirrored = result.note?.mirrorStatus === 'mirrored' || Boolean(result.note?.mirroredAt);
+
+  if (result.note && (!result.alreadySigned || !isAlreadyMirrored)) {
     try {
       const appointment = result.note.appointmentId
         ? clinic.getAppointment(normalized, result.note.appointmentId)
@@ -60,6 +62,10 @@ async function signAndMirror(req, res, noteId, body) {
       result.mirrorStatus = 'mirrored';
       result.attestationId = mirrorRes?.attestation?.id || null;
       result.syncedEncounterId = mirrorRes?.encounter?.id || null;
+      clinic.markNoteMirrored(normalized, result.note.id, {
+        attestationId: result.attestationId,
+        syncedEncounterId: result.syncedEncounterId
+      });
     } catch (err) {
       console.warn('[sign-mirror] signed note not mirrored:', err.message);
       result.mirrorStatus = 'failed';
@@ -72,8 +78,10 @@ async function signAndMirror(req, res, noteId, body) {
         });
       }
     }
-  } else if (result.alreadySigned) {
+  } else if (result.alreadySigned && isAlreadyMirrored) {
     result.mirrorStatus = 'already_signed';
+    result.attestationId = result.note?.attestationId || null;
+    result.syncedEncounterId = result.note?.syncedEncounterId || null;
   }
 
   return res.json(result);

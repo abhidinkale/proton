@@ -23,7 +23,7 @@ Proton is an AI-native clinical operating system and ambient copilot designed fo
 6. **Post-Consultation Memory Gating:** Proposals to update permanent medical memory (e.g., new conditions, resolved problems) require explicit doctor approval before committing to FHIR.
 7. **Document Ingestion with Provenance:** Extracts clinical facts from uploaded medical records with fact-level approve/reject controls and source citations.
 8. **Doctor Command Center & Longitudinal Timeline:** Clinic attention queues, practice metric cards, and filterable timeline navigation.
-9. **Closed-Loop Patient Care:** an Android patient app syncs with the durable backend (Postgres durable workflow store, mirrored into the clinic desk) — booking, intake, refills, follow-ups, and clinic messages that survive airplane mode, land exactly once, and appear in the clinician's attention queue. See [`docs/DEMO.md`](docs/DEMO.md).
+9. **Closed-Loop Patient Care:** an Android patient app syncs with the durable backend (clinic desk writes mirror into the durable Postgres store; the patient app syncs directly to Postgres) — booking, intake, refills, follow-ups, and clinic messages that survive airplane mode, land exactly once, and appear in the clinician's attention queue. See [`docs/DEMO.md`](docs/DEMO.md).
 
 ---
 

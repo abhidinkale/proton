@@ -83,6 +83,48 @@ function probePostgres() {
   });
 }
 
+async function cleanupAllTestDatabases() {
+  if (process.env.KEEP_TEST_DB === '1') return;
+  const { Client } = require('pg');
+  const base = process.env.DATABASE_URL;
+  let adminUrl = process.env.PROTON_TEST_ADMIN_URL;
+  if (!adminUrl) {
+    if (base) {
+      try {
+        const parsed = new URL(base);
+        parsed.pathname = '/postgres';
+        adminUrl = parsed.toString();
+      } catch (_) {
+        adminUrl = 'postgres://localhost:5432/postgres';
+      }
+    } else {
+      adminUrl = 'postgres://localhost:5432/postgres';
+    }
+  }
+
+  const client = new Client({ connectionString: adminUrl, connectionTimeoutMillis: 3000 });
+  try {
+    await client.connect();
+    const res = await client.query(`
+      SELECT datname FROM pg_database
+      WHERE datname LIKE 'proton_%_test' OR datname LIKE 'proton_test_%';
+    `);
+    for (const row of res.rows) {
+      const dbName = row.datname;
+      try {
+        await client.query(`
+          SELECT pg_terminate_backend(pid) FROM pg_stat_activity
+          WHERE datname = $1 AND pid <> pg_backend_pid();
+        `, [dbName]);
+        await client.query(`DROP DATABASE IF EXISTS "${dbName}";`);
+      } catch (_) {}
+    }
+  } catch (_) {
+  } finally {
+    await client.end().catch(() => {});
+  }
+}
+
 function discoverSuites() {
   return fs
     .readdirSync(TESTS_DIR)
@@ -123,61 +165,67 @@ async function main() {
 
   const results = [];
 
-  for (const suite of suites) {
-    if (REQUIRES_POSTGRES.has(suite) && !postgresUp) {
-      results.push({ suite, outcome: 'skipped', duration: 0 });
-      console.log(`\n⏭  ${suite} — SKIPPED (Postgres unavailable)`);
-      continue;
+  try {
+    for (const suite of suites) {
+      if (REQUIRES_POSTGRES.has(suite) && !postgresUp) {
+        results.push({ suite, outcome: 'skipped', duration: 0 });
+        console.log(`\n⏭  ${suite} — SKIPPED (Postgres unavailable)`);
+        continue;
+      }
+
+      const startedAt = Date.now();
+      process.stdout.write(`\n▶ ${suite}\n`);
+
+      const run = spawnSync(process.execPath, [path.join(TESTS_DIR, suite)], {
+        cwd: path.join(TESTS_DIR, '..'),
+        env: {
+          ...process.env,
+          NODE_ENV: 'test',
+          REQUIRE_POSTGRES: REQUIRE_POSTGRES ? '1' : '0',
+          // This suite is defined as hermetic: no network, no provider keys. A
+          // developer .env with a live GEMINI/DEEPSEEK key would otherwise make
+          // these tests call a real model, so a 3s provider timeout becomes a
+          // red build. Demo mode is the mode this gate was written against.
+          // Live-provider coverage lives in the *_live_smoke suites.
+          PROTON_AI_MODE: 'demo',
+          // Same reasoning for patient sign-in codes: a developer who has already
+          // configured a real provider must not make the gate send email, and the
+          // OTP suites rely on the simulated `devCode` to complete a login.
+          // otp_email_delivery_validation.cjs sets this per case against a local
+          // stub server.
+          OTP_DELIVERY: 'simulated'
+        },
+        encoding: 'utf8',
+        timeout: 180_000
+      });
+
+      const output = `${run.stdout || ''}${run.stderr || ''}`;
+      const duration = Date.now() - startedAt;
+      const passed = run.status === 0 && !run.signal;
+      const selfSkipped = /⚠️\s+SKIP/.test(output) && passed;
+
+      results.push({
+        suite,
+        outcome: selfSkipped ? 'skipped' : passed ? 'passed' : 'failed',
+        status: run.status,
+        signal: run.signal,
+        duration
+      });
+
+      // Surface the last lines so a failure is actionable in CI logs.
+      const tail = output.trim().split('\n').slice(-12).join('\n');
+      console.log(tail);
+
+      if (selfSkipped) {
+        console.log(`⏭  SKIP ${suite} (${duration}ms)`);
+      } else {
+        console.log(`${passed ? '✅ PASS' : '❌ FAIL'} ${suite} (${duration}ms)`);
+        if (!passed) console.log(`   exit=${run.status} signal=${run.signal}`);
+      }
     }
-
-    const startedAt = Date.now();
-    process.stdout.write(`\n▶ ${suite}\n`);
-
-    const run = spawnSync(process.execPath, [path.join(TESTS_DIR, suite)], {
-      cwd: path.join(TESTS_DIR, '..'),
-      env: {
-        ...process.env,
-        NODE_ENV: 'test',
-        REQUIRE_POSTGRES: REQUIRE_POSTGRES ? '1' : '0',
-        // This suite is defined as hermetic: no network, no provider keys. A
-        // developer .env with a live GEMINI/DEEPSEEK key would otherwise make
-        // these tests call a real model, so a 3s provider timeout becomes a
-        // red build. Demo mode is the mode this gate was written against.
-        // Live-provider coverage lives in the *_live_smoke suites.
-        PROTON_AI_MODE: 'demo',
-        // Same reasoning for patient sign-in codes: a developer who has already
-        // configured a real provider must not make the gate send email, and the
-        // OTP suites rely on the simulated `devCode` to complete a login.
-        // otp_email_delivery_validation.cjs sets this per case against a local
-        // stub server.
-        OTP_DELIVERY: 'simulated'
-      },
-      encoding: 'utf8',
-      timeout: 180_000
-    });
-
-    const output = `${run.stdout || ''}${run.stderr || ''}`;
-    const duration = Date.now() - startedAt;
-    const passed = run.status === 0 && !run.signal;
-    const selfSkipped = /⚠️\s+SKIP/.test(output) && passed;
-
-    results.push({
-      suite,
-      outcome: selfSkipped ? 'skipped' : passed ? 'passed' : 'failed',
-      status: run.status,
-      signal: run.signal,
-      duration
-    });
-
-    // Surface the last lines so a failure is actionable in CI logs.
-    const tail = output.trim().split('\n').slice(-12).join('\n');
-    console.log(tail);
-
-    if (selfSkipped) {
-      console.log(`⏭  SKIP ${suite} (${duration}ms)`);
-    } else {
-      console.log(`${passed ? '✅ PASS' : '❌ FAIL'} ${suite} (${duration}ms)`);
-      if (!passed) console.log(`   exit=${run.status} signal=${run.signal}`);
+  } finally {
+    if (postgresUp) {
+      await cleanupAllTestDatabases();
     }
   }
 

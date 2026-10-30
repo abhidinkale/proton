@@ -37,6 +37,7 @@ async function runValidation() {
   const encounterId1 = `enc-test-visit1-${Date.now()}`;
   const encounterId2 = `enc-test-visit2-${Date.now()}`;
 
+  try {
   // ---------------------------------------------------------------------------
   // SUITE 1: P0.5 Pilot Build Boundary Gate
   // ---------------------------------------------------------------------------
@@ -357,22 +358,66 @@ async function runValidation() {
     assert.strictEqual(badSignBody.result.mirrorStatus, 'failed');
     console.log('✓ Endpoint POST /api/clinic/notes/:id/sign fails closed with 502 MIRROR_FAILED when mirror cannot resolve demographics');
 
+    // 4. Test non-strict mirror failure (standard UI path)
+    const nonStrictDraft = clinic.saveDraft({ tenantId, id: 'doc-001', name: 'Dr. Johnson', role: 'physician' }, {
+      patientId: 'unverified-patient-nonexistent-88',
+      title: 'Non-Strict Unverified Patient Test',
+      note: { subjective: 'Test', objective: 'Test', assessment: 'Test', plan: 'Test' }
+    });
+
+    const nonStrictSignRes = await fetch(`${baseUrl}/api/clinic/notes/${nonStrictDraft.id}/sign`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${physicianToken}`
+      },
+      body: JSON.stringify({
+        signature: {
+          attestation: 'Physician signed.',
+          safetyVerdict: { cleared: true, kernelVersion: 'kernel_v2' }
+        }
+      })
+    });
+    assert.strictEqual(nonStrictSignRes.status, 200, 'Non-strict mirror must return 200 on note signing');
+    const nonStrictSignBody = await nonStrictSignRes.json();
+    assert.strictEqual(nonStrictSignBody.note.status, 'SIGNED', 'Note is signed in desk');
+    assert.strictEqual(nonStrictSignBody.mirrorStatus, 'failed', 'Must report mirrorStatus=failed');
+    assert.ok(nonStrictSignBody.mirrorError, 'Must report mirrorError');
+    console.log('✓ Endpoint POST /api/clinic/notes/:id/sign returns 200 with mirrorStatus="failed" in non-strict mode');
+
+    // 5. Test recovery/re-mirror reconciliation on an already-signed note that failed mirroring
+    const retryRes = await fetch(`${baseUrl}/api/clinic/notes/${nonStrictDraft.id}/sign`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${physicianToken}`
+      },
+      body: JSON.stringify({})
+    });
+    const retryBody = await retryRes.json();
+    assert.strictEqual(retryBody.alreadySigned, true, 'Reports alreadySigned');
+    assert.strictEqual(retryBody.mirrorStatus, 'failed', 'Re-attempted mirror and reported current mirror status');
+    console.log('✓ Endpoint POST /api/clinic/notes/:id/sign re-attempts mirror for alreadySigned notes missing a mirror');
+
     await new Promise((resolve) => server.close(resolve));
   }
+  } finally {
+    // Clean up test tenant
+    if (pool) {
+      await pool.query(`DELETE FROM outcomes WHERE tenant_id = $1;`, [tenantId]).catch(() => {});
+      await pool.query(`DELETE FROM outcome_cohort WHERE tenant_id = $1;`, [tenantId]).catch(() => {});
+      await pool.query(`DELETE FROM clinical_attestations WHERE tenant_id = $1;`, [tenantId]).catch(() => {});
+      await pool.query(`DELETE FROM notes WHERE tenant_id = $1;`, [tenantId]).catch(() => {});
+      await pool.query(`DELETE FROM prescriptions WHERE tenant_id = $1;`, [tenantId]).catch(() => {});
+      await pool.query(`DELETE FROM diagnoses WHERE tenant_id = $1;`, [tenantId]).catch(() => {});
+      await pool.query(`DELETE FROM encounter_events WHERE tenant_id = $1;`, [tenantId]).catch(() => {});
+      await pool.query(`DELETE FROM encounters WHERE tenant_id = $1;`, [tenantId]).catch(() => {});
+      await pool.query(`DELETE FROM patients WHERE tenant_id = $1;`, [tenantId]).catch(() => {});
+    }
 
-  // Clean up test tenant
-  await pool.query(`DELETE FROM outcomes WHERE tenant_id = $1;`, [tenantId]);
-  await pool.query(`DELETE FROM outcome_cohort WHERE tenant_id = $1;`, [tenantId]);
-  await pool.query(`DELETE FROM clinical_attestations WHERE tenant_id = $1;`, [tenantId]);
-  await pool.query(`DELETE FROM notes WHERE tenant_id = $1;`, [tenantId]);
-  await pool.query(`DELETE FROM prescriptions WHERE tenant_id = $1;`, [tenantId]);
-  await pool.query(`DELETE FROM diagnoses WHERE tenant_id = $1;`, [tenantId]);
-  await pool.query(`DELETE FROM encounter_events WHERE tenant_id = $1;`, [tenantId]);
-  await pool.query(`DELETE FROM encounters WHERE tenant_id = $1;`, [tenantId]);
-  await pool.query(`DELETE FROM patients WHERE tenant_id = $1;`, [tenantId]);
-
-  await closePostgresPool();
-  await teardownSuite(target);
+    await closePostgresPool().catch(() => {});
+    await teardownSuite(target).catch(() => {});
+  }
 
   console.log('\n============================================================');
   console.log('   ALL SINGLE WRITE PATH & COMPARISON TESTS PASSED (100%)    ');

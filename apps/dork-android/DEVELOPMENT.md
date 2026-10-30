@@ -40,10 +40,10 @@ In `FhirConfig.kt`:
 ```kotlin
 val config = FhirConfig(
   environment = Environment.DEVELOPMENT, // DEVELOPMENT | STAGING | PRODUCTION
-  persistenceMode = FhirPersistenceMode.SYNTHETIC_STORE, // SYNTHETIC_STORE | MEDPLUM_LIVE
-  baseUrl = "http://10.0.2.2:8103/fhir/R4" // Local Medplum or staging URL
+  persistenceMode = FhirPersistenceMode.SYNTHETIC_STORE, // SYNTHETIC_STORE (default) | MEDPLUM_LIVE (experimental)
+  baseUrl = "http://10.0.2.2:8103/fhir/R4" // Local Medplum dev loopback URL
 )
 ```
 
-- When using the Android Emulator, `10.0.2.2` maps to the host machine's `localhost` (e.g. Medplum running on port 8103).
-- When using a physical device, supply your local network IP (e.g. `http://192.168.1.X:8103/fhir/R4`).
+- **SYNTHETIC_STORE (Default)**: In-memory deterministic storage using seeded profiles for offline development and testing.
+- **MEDPLUM_LIVE (Experimental)**: Optional development bridge. Maps to `localhost:8103` on the host machine when using the Android Emulator (`10.0.2.2`). **Security Note**: Dev tokens (`dork-patient-token-dev`) and cleartext HTTP are restricted to local evaluation; production deployments require TLS endpoints with authenticated token management.

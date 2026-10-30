@@ -1,11 +1,11 @@
-# Dork FHIR R4 & Medplum Integration Mapping
+# Dork FHIR R4 & Schema Mapping
 
 ## 1. Core Principle
 
-Dork uses **HL7 FHIR Release 4 (R4)** as its canonical healthcare data standard.
-- Raw FHIR JSON is NEVER exposed directly to Composables.
-- Data flows from FHIR resources into strongly-typed Kotlin domain models (`health.dork.app.core.data.model`).
-- Compatibility is maintained with Medplum server and the existing Proton Node backend (`apps/api/adapters/fhirAdapter.js`).
+Dork uses **HL7 FHIR Release 4 (R4)** as its canonical healthcare interoperability standard.
+- While the mobile client communicates by default with the Proton backend via authenticated REST endpoints and an offline-first synthetic store (`SYNTHETIC_STORE`), domain models adhere to FHIR R4 data specifications.
+- Raw FHIR JSON is NEVER exposed directly to Composables; data flows from FHIR resource schemas into strongly-typed Kotlin domain models (`health.dork.app.core.data.model`).
+- Compatibility is maintained with Medplum server schemas and the existing Proton Node backend (`apps/api/adapters/fhirAdapter.js`).
 
 ---
 

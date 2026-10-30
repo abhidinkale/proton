@@ -1747,13 +1747,14 @@ app.post('/api/clinical/discharge/generate', (req, res) => {
   }
 });
 
-app.get('/api/clinical/discharge/:patientId', (req, res) => {
+app.get('/api/clinical/discharge/:patientId', async (req, res) => {
   try {
     const patientId = req.params.patientId;
+    const tenantId = req.actor?.tenantId || 'org-default';
     let patientRecord = null;
     try {
       const clinic = require('./storage/clinicRepository');
-      const cp = clinic.getPatient({ tenantId: req.actor?.tenantId || 'org-default' }, patientId);
+      const cp = clinic.getPatient({ tenantId }, patientId);
       if (cp?.patient) {
         patientRecord = {
           id: cp.patient.id,
@@ -1763,6 +1764,27 @@ app.get('/api/clinical/discharge/:patientId', (req, res) => {
         };
       }
     } catch (_) {}
+
+    if (!patientRecord) {
+      try {
+        const { getPostgresPool } = require('./storage/postgresDb');
+        const pool = getPostgresPool();
+        if (pool) {
+          const { rows } = await pool.query(
+            'SELECT id, name, date_of_birth, gender FROM patients WHERE id = $1 AND tenant_id = $2;',
+            [patientId, tenantId]
+          );
+          if (rows[0]) {
+            patientRecord = {
+              id: rows[0].id,
+              name: rows[0].name,
+              dob: rows[0].date_of_birth || null,
+              mrn: null
+            };
+          }
+        }
+      } catch (_) {}
+    }
 
     if (!patientRecord) {
       return res.status(404).json({ error: 'PATIENT_NOT_FOUND', message: `Patient "${patientId}" not found.` });

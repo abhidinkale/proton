@@ -53,7 +53,7 @@ function createTimeStampToken(chainHash, seq, genTimeIso = new Date().toISOStrin
     timeStampToken: {
       ...tokenBody,
       tokenHash: `sha256:${tokenHash}`,
-      signatureAlgorithm: 'sha256'
+      hashAlgorithm: 'sha256'
     }
   };
 }
@@ -160,7 +160,7 @@ function verifyTimeStampToken(token, expectedChainHash) {
   }
 
   // Re-verify canonical token hash
-  const { tokenHash, signatureAlgorithm, ...body } = tst;
+  const { tokenHash, hashAlgorithm, signatureAlgorithm, ...body } = tst;
   const canonicalBytes = JSON.stringify(body, Object.keys(body).sort());
   const computedHash = `sha256:${crypto.createHash('sha256').update(canonicalBytes).digest('hex')}`;
 

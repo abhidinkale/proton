@@ -1204,6 +1204,25 @@ function signNote(actor, noteId, input = {}) {
   return { note: signed, alreadySigned: false };
 }
 
+function markNoteMirrored(actor, noteId, mirrorInfo = {}) {
+  const normalized = normalizeActor(actor);
+  const db = getDatabase();
+  const note = getNote(normalized, noteId);
+  if (!note) return null;
+  const now = isoNow();
+  const updated = {
+    ...note,
+    mirroredAt: mirrorInfo.mirroredAt || now,
+    mirrorStatus: 'mirrored',
+    attestationId: mirrorInfo.attestationId || note.attestationId || null,
+    syncedEncounterId: mirrorInfo.syncedEncounterId || note.syncedEncounterId || null
+  };
+  db.prepare(`
+    UPDATE clinic_notes SET data_json = ? WHERE id = ? AND tenant_id = ?;
+  `).run(JSON.stringify(updated), note.id, normalized.tenantId);
+  return updated;
+}
+
 /* ------------------------------------------------------------------ */
 /* Notifications                                                       */
 /* ------------------------------------------------------------------ */
@@ -1635,6 +1654,7 @@ module.exports = {
   getNote,
   saveDraft,
   signNote,
+  markNoteMirrored,
   listNotifications,
   markNotification,
   markAllNotificationsRead,

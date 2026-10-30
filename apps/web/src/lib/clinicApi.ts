@@ -434,7 +434,14 @@ export const clinicApi = {
     prescriptions?: unknown[];
     attestation?: string;
   }) =>
-    call<{ note: ClinicNote; alreadySigned: boolean }>('/encounters/sign', {
+    call<{
+      note: ClinicNote;
+      alreadySigned: boolean;
+      mirrorStatus?: 'mirrored' | 'failed' | 'already_signed';
+      mirrorError?: string;
+      attestationId?: string | null;
+      syncedEncounterId?: string | null;
+    }>('/encounters/sign', {
       method: 'POST',
       headers: jsonHeaders(),
       body: JSON.stringify(input)

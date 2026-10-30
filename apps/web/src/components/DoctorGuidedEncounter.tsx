@@ -647,7 +647,7 @@ export default function DoctorGuidedEncounter({
     if (isSigning) return;
     setIsSigning(true);
     try {
-      const { note } = await clinicApi.signNote({
+      const { note, mirrorStatus, mirrorError } = await clinicApi.signNote({
         patientId: patient.id,
         patientName: patient.name,
         title: `${patient.visitType || 'Clinical encounter'} — ${new Date().toLocaleDateString('en-US')}`,
@@ -672,7 +672,11 @@ export default function DoctorGuidedEncounter({
       setSignedTimestamp(
         new Date(note.signedAt || Date.now()).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
       );
-      showToast(`Encounter signed by ${note.signature?.actorName || doctorProfile.name} and written to the clinical record.`);
+      if (mirrorStatus === 'failed') {
+        showToast(`Warning: Note signed locally, but mirroring to durable workflow failed (${mirrorError || 'Postgres sync pending'}).`);
+      } else {
+        showToast(`Encounter signed by ${note.signature?.actorName || doctorProfile.name} and written to the clinical record.`);
+      }
       if (onFinishEncounter) {
         setTimeout(onFinishEncounter, 1600);
       }

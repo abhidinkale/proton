@@ -483,6 +483,24 @@ const WORKFLOW_MIGRATIONS = [
       CREATE INDEX IF NOT EXISTS idx_anchors_tenant_time
         ON attestation_anchors(tenant_id, anchored_at DESC);
     `
+  },
+  {
+    // Migration 13: Relabel RFC 3161 anchor type constraint for existing databases
+    version: 13,
+    name: 'attestation_anchors_relabel_check_constraint',
+    sql: `
+      DO $$
+      BEGIN
+        IF EXISTS (
+          SELECT 1 FROM pg_constraint WHERE conname = 'attestation_anchors_anchor_type_check'
+        ) THEN
+          ALTER TABLE attestation_anchors DROP CONSTRAINT attestation_anchors_anchor_type_check;
+        END IF;
+        ALTER TABLE attestation_anchors
+          ADD CONSTRAINT attestation_anchors_anchor_type_check
+          CHECK (anchor_type IN ('RFC3161_TSA', 'RFC3161_CHAIN_ANCHOR', 'MERKLE_CHECKPOINT'));
+      END $$;
+    `
   }
 ];
 

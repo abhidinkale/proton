@@ -1,7 +1,7 @@
 # Validation Status
 
 **This file is the single source of truth for what Proton's automated checks actually prove.**
-Last updated: 2026-10-27.
+Last updated: 2026-10-30.
 
 ## What CI runs on every push / PR
 
