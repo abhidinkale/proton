@@ -81,7 +81,7 @@ export default function AttestationVerificationModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-[#0c1015] p-6 text-white shadow-2xl">
+      <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-canvas p-6 text-white shadow-2xl">
         <div className="flex items-center justify-between border-b border-white/10 pb-4">
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400">
@@ -175,14 +175,14 @@ export default function AttestationVerificationModal({
             <div className="rounded-2xl p-3 border border-amber-500/30 bg-amber-500/10 text-amber-300">
               <div className="flex items-center gap-2">
                 <Award className="h-4 w-4 shrink-0 text-amber-400" />
-                <span className="text-xs font-semibold">RFC 3161 Certified External Timestamp</span>
+                <span className="text-xs font-semibold">RFC 3161 Cryptographic Chain Anchor</span>
               </div>
               <p className="mt-1 text-[11px] text-amber-200/80 leading-relaxed">
-                Authority: <span className="font-mono text-amber-100">{anchorInfo.tsa || 'Proton Clinical TSA'}</span>
+                Authority: <span className="font-mono text-amber-100">{anchorInfo.tsa || 'Proton Clinical Attestation Authority (Internal Chain Anchor)'}</span>
               </p>
               {anchorInfo.genTime && (
                 <p className="text-[10px] text-amber-200/60 font-mono mt-0.5">
-                  Certified UTC: {new Date(anchorInfo.genTime).toUTCString()}
+                  Anchored UTC: {new Date(anchorInfo.genTime).toUTCString()}
                 </p>
               )}
             </div>

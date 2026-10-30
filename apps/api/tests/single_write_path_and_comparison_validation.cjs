@@ -11,7 +11,7 @@
  */
 
 const assert = require('assert');
-const { getPostgresPool } = require('../storage/postgresDb');
+const { prepareSuite } = require('./helpers/postgresTestHarness.cjs');
 const { mirrorSignedNote, ensureNoteV1 } = require('../services/careLoop/signingMirror');
 const { diffNoteV1, computeVitalDiff, compareEncounters } = require('../services/clinical/encounterComparison');
 const { validateConfig, ConfigurationError } = require('../config');
@@ -22,7 +22,16 @@ async function runValidation() {
   console.log('   P0.1, P1.2 & P0.5 SINGLE WRITE PATH & COMPARISON SUITE   ');
   console.log('============================================================\n');
 
+  const target = await prepareSuite({
+    suiteFile: 'single_write_path_and_comparison_validation.cjs',
+    testDbName: process.env.PROTON_TEST_DB || 'proton_ops_single_write_test'
+  });
+  if (!target) return;
+
+  const { runPostgresMigrations, getPostgresPool, closePostgresPool } = require('../storage/postgresDb');
+  await runPostgresMigrations();
   const pool = getPostgresPool();
+
   const tenantId = `tenant-test-${Date.now()}`;
   const patientId = `pat-test-${Date.now()}`;
   const encounterId1 = `enc-test-visit1-${Date.now()}`;
@@ -88,6 +97,28 @@ async function runValidation() {
   // ---------------------------------------------------------------------------
   console.log('\n--- SUITE 2: P0.1 Single Clinical Write Path ---');
   {
+    // Test that mirroring refuses to fabricate fake demographics
+    let refused = false;
+    try {
+      await mirrorSignedNote({
+        tenantId,
+        note: { id: 'unverified-note', patientId: 'nonexistent-pat-000' },
+        actor: { actorId: 'doc-001', actorName: 'Dr. Johnson', actorRole: 'physician' }
+      });
+    } catch (err) {
+      refused = true;
+      assert(err.message.includes('lacks verified clinical demographics'));
+    }
+    assert.strictEqual(refused, true, 'Mirror must refuse to fabricate patient demographics');
+    console.log('✓ mirrorSignedNote refuses to fabricate fake demographics');
+
+    // Register patient with verified clinical demographics
+    await pool.query(
+      `INSERT INTO patients (id, tenant_id, mrn, full_name, date_of_birth, sex, contact)
+       VALUES ($1, $2, $3, $4, '1815-12-10', 'female', '{}'::jsonb);`,
+      [patientId, tenantId, `MRN-ADA-${Date.now()}`.slice(-12), 'Ada Lovelace']
+    );
+
     const deskNote1 = {
       id: `desk-note-${Date.now()}-1`,
       patientId,
@@ -254,6 +285,8 @@ async function runValidation() {
   await pool.query(`DELETE FROM encounter_events WHERE tenant_id = $1;`, [tenantId]);
   await pool.query(`DELETE FROM encounters WHERE tenant_id = $1;`, [tenantId]);
   await pool.query(`DELETE FROM patients WHERE tenant_id = $1;`, [tenantId]);
+
+  await closePostgresPool();
 
   console.log('\n============================================================');
   console.log('   ALL SINGLE WRITE PATH & COMPARISON TESTS PASSED (100%)    ');

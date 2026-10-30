@@ -43,10 +43,13 @@ async function signAndMirror(req, res, noteId, body) {
       const appointment = result.note.appointmentId
         ? clinic.getAppointment(normalized, result.note.appointmentId)
         : null;
+      const patientId = result.note.patientId || appointment?.patientId;
+      const patientRecord = patientId ? clinic.getPatient(normalized, patientId) : null;
       await mirrorSignedNote({
         tenantId: normalized.tenantId,
         note: result.note,
         appointment,
+        patient: patientRecord?.patient || null,
         actor: {
           actorId: normalized.id,
           actorName: normalized.name,

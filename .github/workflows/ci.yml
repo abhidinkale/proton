@@ -2,7 +2,7 @@ name: Proton CI & Clinical Safety Gate
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, 'build/*' ]
   pull_request:
     branches: [ main ]
 
@@ -73,6 +73,9 @@ jobs:
       - name: API Client Guard
         working-directory: ./apps/web
         run: npm run check:api-client
+
+      - name: Claims & Regulatory Boundary Guard
+        run: node scripts/check-claims.js
 
       - name: Deterministic API, Workflow Durability & Clinical Safety Suites
         working-directory: ./apps/api

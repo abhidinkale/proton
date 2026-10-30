@@ -85,7 +85,7 @@ export default function StaffQR({ open, onClose }: Props) {
       onClick={onClose}
     >
       <div
-        className="w-full max-w-sm rounded-3xl border border-white/10 bg-[#0b0b0c] p-6 text-white shadow-2xl"
+        className="w-full max-w-sm rounded-3xl border border-white/10 bg-canvas p-6 text-white shadow-2xl"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-start justify-between">

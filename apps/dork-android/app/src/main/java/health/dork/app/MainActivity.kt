@@ -26,11 +26,15 @@ import androidx.lifecycle.LifecycleOwner
 import health.dork.app.core.data.DefaultAppContainer
 import health.dork.app.core.data.DorkApp
 import health.dork.app.core.designsystem.DorkTheme
+import health.dork.app.core.security.SecurityManager
 import health.dork.app.ui.navigation.DorkAppNavigation
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
+
+    // Enforce FLAG_SECURE on patient PHI screens
+    SecurityManager.enableScreenSecurity(this)
 
     val container = DefaultAppContainer(applicationContext)
     DorkApp.initialize(container)

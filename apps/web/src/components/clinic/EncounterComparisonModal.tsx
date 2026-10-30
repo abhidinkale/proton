@@ -13,6 +13,7 @@ import {
   Clock,
   Sparkles
 } from 'lucide-react';
+import { apiFetch } from '../../lib/api';
 
 export interface VitalDiff {
   metric: string;
@@ -111,7 +112,7 @@ export default function EncounterComparisonModal({
     if (isOpen && url) {
       setLoading(true);
       setError(null);
-      fetch(url, {
+      apiFetch(url, {
         headers: { 'Content-Type': 'application/json' }
       })
         .then(async (res) => {
@@ -130,7 +131,7 @@ export default function EncounterComparisonModal({
           setLoading(false);
         });
     }
-  }, [isOpen, encounterId, initialData]);
+  }, [isOpen, encounterId, patientId, initialData]);
 
   if (!isOpen) return null;
 

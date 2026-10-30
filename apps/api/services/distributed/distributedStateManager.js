@@ -1,15 +1,15 @@
 /**
- * Proton Healthcare Operations OS — Distributed State Manager
+ * Proton Healthcare Operations OS — State Coordinator (Single-Process Prototype)
  * 
- * Provides an enterprise distributed state abstraction for:
- * - Multi-instance SSE stream event routing via Pub/Sub.
- * - Distributed session token revocation blacklist (persists across restarts).
- * - Distributed Nurse Rooming drafts and active patient queues.
- * - Distributed Acute Triage alerts and escalation channels.
- * - Distributed idempotency cache with TTL.
+ * Provides an in-memory coordinator for:
+ * - SSE stream event routing via EventEmitter.
+ * - In-process session token revocation blacklist.
+ * - Nurse Rooming drafts and active patient queues.
+ * - Acute Triage alerts and escalation channels.
+ * - Idempotency cache with TTL.
  * 
- * Supports live Redis 7.x (Cluster / Sentinel) when REDIS_URL is configured,
- * with a high-fidelity durable local fallback when running in standalone mode.
+ * NOTE: Currently operates in-memory. Distributed Redis client integration
+ * is scheduled for multi-instance cluster deployment.
  */
 
 const EventEmitter = require('events');
@@ -18,9 +18,9 @@ const crypto = require('crypto');
 class DistributedStateManager {
   constructor(options = {}) {
     this.redisUrl = options.redisUrl || process.env.REDIS_URL || null;
-    this.mode = this.redisUrl ? 'redis' : 'in-process-cluster';
+    this.mode = 'in-process-coordinator';
     
-    // Internal durable state store (used in standalone/fallback mode)
+    // Internal state store
     this._kvStore = new Map();         // key -> { value, expiresAt }
     this._sets = new Map();            // key -> Set of strings
     this._queues = new Map();          // key -> Array of items

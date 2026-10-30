@@ -165,9 +165,10 @@ function ensureNoteV1(note, medications = [], diagnoses = []) {
  * @param {string} input.tenantId
  * @param {object} input.note        the signed desk note
  * @param {object} [input.appointment] the desk appointment
+ * @param {object} [input.patient]     verified patient demographics
  * @param {object} input.actor       { actorId, actorName, actorRole, npi }
  */
-async function mirrorSignedNote({ tenantId = 'org-default', note, appointment, actor }) {
+async function mirrorSignedNote({ tenantId = 'org-default', note, appointment, patient, actor }) {
   if (!note) return { skipped: 'no_note' };
 
   const encounterId =
@@ -177,9 +178,13 @@ async function mirrorSignedNote({ tenantId = 'org-default', note, appointment, a
   const patientId =
     note.patientId ||
     appointment?.patientId ||
-    `pat-desk-${note.appointmentId || note.id}`;
+    (patient?.id ? patient.id : null);
 
-  const patientName = note.patientName || appointment?.patientName || 'Clinical Patient';
+  if (!patientId) {
+    throw new Error('[signingMirror] Cannot mirror signed note: patientId is required.');
+  }
+
+  const patientName = note.patientName || appointment?.patientName || patient?.name || patient?.fullName || 'Clinical Patient';
   const medications = medicationsOf(note);
   const diagnosesList = extractDiagnosisList(note);
   const signedAt = note.signedAt ? new Date(note.signedAt) : new Date();
@@ -187,18 +192,56 @@ async function mirrorSignedNote({ tenantId = 'org-default', note, appointment, a
   const noteV1 = ensureNoteV1(note, medications, diagnosesList);
 
   const result = await repo.withTransaction(async (client) => {
-    // 1. Ensure Patient exists
-    await client.query(
-      `INSERT INTO patients (id, tenant_id, mrn, full_name, date_of_birth, sex, contact)
-       VALUES ($1, $2, $3, $4, '1980-01-01', 'unknown', '{}'::jsonb)
-       ON CONFLICT (id) DO UPDATE SET full_name = EXCLUDED.full_name;`,
-      [
-        patientId,
-        tenantId,
-        `MRN-${String(patientId).replace(/[^a-zA-Z0-9]/g, '').slice(-8)}`,
-        patientName
-      ]
+    // 1. Ensure Patient exists with verified demographics — never fabricate fake DOB or sex
+    const { rows: existingPt } = await client.query(
+      `SELECT id, mrn, full_name, date_of_birth, sex FROM patients WHERE id = $1 AND tenant_id = $2;`,
+      [patientId, tenantId]
     );
+
+    let resolvedDob = patient?.dob || patient?.dateOfBirth || patient?.date_of_birth || null;
+    let resolvedSex = patient?.sex || patient?.gender || null;
+    let resolvedMrn = patient?.mrn || note?.patientMrn || null;
+
+    if (existingPt.length === 0) {
+      if ((!resolvedDob || !resolvedSex || !resolvedMrn) && patientId) {
+        try {
+          const clinic = require('../../storage/clinicRepository');
+          const clinicPt = clinic.getPatient({ tenantId }, patientId);
+          if (clinicPt?.patient) {
+            resolvedDob = resolvedDob || clinicPt.patient.dob || clinicPt.patient.dateOfBirth;
+            resolvedSex = resolvedSex || clinicPt.patient.sex || clinicPt.patient.gender;
+            resolvedMrn = resolvedMrn || clinicPt.patient.mrn;
+          }
+        } catch (_) {}
+      }
+
+      if (!resolvedDob || !resolvedSex) {
+        throw new Error(
+          `[signingMirror] Cannot mirror signed note: patient "${patientId}" lacks verified clinical demographics (date_of_birth and sex are required). Refusing to fabricate synthetic demographics.`
+        );
+      }
+
+      const safeMrn = resolvedMrn || `MRN-${String(patientId).replace(/[^a-zA-Z0-9]/g, '').slice(-8).toUpperCase()}`;
+
+      await client.query(
+        `INSERT INTO patients (id, tenant_id, mrn, full_name, date_of_birth, sex, contact)
+         VALUES ($1, $2, $3, $4, $5, $6, '{}'::jsonb);`,
+        [
+          patientId,
+          tenantId,
+          safeMrn,
+          patientName,
+          resolvedDob,
+          resolvedSex
+        ]
+      );
+    } else {
+      // Patient already exists in Postgres; update name if changed
+      await client.query(
+        `UPDATE patients SET full_name = COALESCE($1, full_name) WHERE id = $2 AND tenant_id = $3;`,
+        [patientName, patientId, tenantId]
+      );
+    }
 
     // 2. Ensure Encounter exists in SIGNED state
     let validAppointmentId = null;

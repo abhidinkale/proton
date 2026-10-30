@@ -41,11 +41,18 @@ function resolveSyntheticMode(env = process.env) {
 }
 
 /**
+ * Returns true if the environment is a production or private-beta deployment.
+ */
+function isProductionEnv(env = process.env) {
+  return env.NODE_ENV === 'production' || env.PROTON_ENV === 'production' || env.PROTON_ENV === 'private-beta';
+}
+
+/**
  * Validates platform configuration.
  * INVARIANT: In production, missing or trivial secrets strictly fail closed.
  */
 function validateConfig(env = process.env) {
-  const isProduction = env.NODE_ENV === 'production';
+  const isProduction = isProductionEnv(env);
   const missing = [];
   const weak = [];
 
@@ -166,6 +173,7 @@ module.exports = {
   validateConfig,
   sanitizeConfigForLogging,
   resolveSyntheticMode,
+  isProductionEnv,
   ConfigurationError,
   DEFAULT_DEV_SECRETS
 };

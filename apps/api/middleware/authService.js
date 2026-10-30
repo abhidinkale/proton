@@ -16,12 +16,12 @@
 
 const crypto = require('crypto');
 const { distributedStateManager } = require('../services/distributed/distributedStateManager');
-const { resolveSyntheticMode } = require('../config');
+const { resolveSyntheticMode, isProductionEnv } = require('../config');
 
 function getAuthSecret() {
   const configured = process.env.PROTON_AUTH_SECRET;
   if (!configured) {
-    if (process.env.NODE_ENV === 'production') {
+    if (isProductionEnv(process.env)) {
       // Fail closed: never sign clinical session tokens with a known default in production.
       throw new Error('FATAL: PROTON_AUTH_SECRET must be set in production. Refusing to sign session tokens.');
     }

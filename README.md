@@ -56,7 +56,7 @@ Proton is an AI-native clinical operating system and ambient copilot designed fo
 
 - **Frontend (`apps/web`):** React 19, TypeScript, Vite, Tailwind CSS, `@medplum/react`, Lucide Icons.
 - **Backend API (`apps/api`):** Node.js 20+, Express, Multer, Provider Gateway.
-- **Patient App (`apps/dork-android`):** Kotlin, Jetpack Compose, Room-backed durable outbox with per-row idempotency keys, exact-alarm reminders. Syncs over `/api/patient/sync/*`; identity comes from an OTP-issued patient session, never from the request body.
+- **Patient App (`apps/dork-android`):** Kotlin, Jetpack Compose, durable outbox (DorkStore) with per-row idempotency keys, exact-alarm reminders. Syncs over `/api/patient/sync/*`; identity comes from an OTP-issued patient session, never from the request body.
 - **FHIR / Auth:** Medplum OAuth2 PKCE authentication and atomic FHIR R4 batch transactions (`medplum.executeBatch`).
 
 ---
