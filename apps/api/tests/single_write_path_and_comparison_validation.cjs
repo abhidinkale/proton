@@ -11,7 +11,7 @@
  */
 
 const assert = require('assert');
-const { prepareSuite } = require('./helpers/postgresTestHarness.cjs');
+const { prepareSuite, teardownSuite } = require('./helpers/postgresTestHarness.cjs');
 const { mirrorSignedNote, ensureNoteV1 } = require('../services/careLoop/signingMirror');
 const { diffNoteV1, computeVitalDiff, compareEncounters } = require('../services/clinical/encounterComparison');
 const { validateConfig, ConfigurationError } = require('../config');
@@ -275,6 +275,91 @@ async function runValidation() {
     console.log('✓ Prior treatment efficacy verified: "TREATMENT WORKED" (Resolved at 30 days)');
   }
 
+  // ---------------------------------------------------------------------------
+  // SUITE 4: Endpoint-Level Sign & Mirror Boundary (POST /api/clinic/notes/:id/sign)
+  // ---------------------------------------------------------------------------
+  console.log('\n--- SUITE 4: Endpoint-Level Sign & Mirror Boundary ---');
+  {
+    const clinic = require('../storage/clinicRepository');
+    const app = require('../app');
+    const { createSessionToken } = require('../middleware/authService');
+    const server = app.listen(0);
+    await new Promise((resolve) => server.once('listening', resolve));
+    const baseUrl = `http://127.0.0.1:${server.address().port}`;
+
+    const physicianToken = createSessionToken({
+      actorId: 'doc-001',
+      name: 'Dr. Katherine Johnson, MD',
+      role: 'physician',
+      tenantId,
+      npi: '1234567890'
+    });
+
+    // 1. Create a draft note in clinic for patient who exists in Postgres
+    const draft = clinic.saveDraft({ tenantId, id: 'doc-001', name: 'Dr. Johnson', role: 'physician' }, {
+      patientId,
+      title: 'Endpoint Mirror Test',
+      note: {
+        subjective: 'Follow-up exam.',
+        objective: 'Vitals stable.',
+        assessment: 'Resolved pharyngitis',
+        plan: 'Discharge with instructions.'
+      }
+    });
+
+    // 2. Call sign endpoint with strictMirror: true
+    const signRes = await fetch(`${baseUrl}/api/clinic/notes/${draft.id}/sign`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${physicianToken}`,
+        'x-strict-mirror': 'true'
+      },
+      body: JSON.stringify({
+        signature: {
+          attestation: 'Physician signed and attested.',
+          safetyVerdict: { cleared: true, kernelVersion: 'kernel_v2' }
+        },
+        strictMirror: true
+      })
+    });
+    assert.strictEqual(signRes.status, 200, 'Sign endpoint must succeed');
+    const signBody = await signRes.json();
+    assert.strictEqual(signBody.mirrorStatus, 'mirrored', 'Must report mirrorStatus=mirrored');
+    assert.ok(signBody.attestationId, 'Must return attestationId');
+    console.log('✓ Endpoint POST /api/clinic/notes/:id/sign returns mirrorStatus="mirrored"');
+
+    // 3. Test strict mirror failure on a draft note with nonexistent patient demographics
+    const badDraft = clinic.saveDraft({ tenantId, id: 'doc-001', name: 'Dr. Johnson', role: 'physician' }, {
+      patientId: 'unverified-patient-nonexistent-99',
+      title: 'Unverified Patient Test',
+      note: { subjective: 'Test', objective: 'Test', assessment: 'Test', plan: 'Test' }
+    });
+
+    const badSignRes = await fetch(`${baseUrl}/api/clinic/notes/${badDraft.id}/sign`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${physicianToken}`,
+        'x-strict-mirror': 'true'
+      },
+      body: JSON.stringify({
+        signature: {
+          attestation: 'Physician signed.',
+          safetyVerdict: { cleared: true, kernelVersion: 'kernel_v2' }
+        },
+        strictMirror: true
+      })
+    });
+    assert.strictEqual(badSignRes.status, 502, 'Strict mirror must return 502 on mirror failure');
+    const badSignBody = await badSignRes.json();
+    assert.strictEqual(badSignBody.code, 'MIRROR_FAILED');
+    assert.strictEqual(badSignBody.result.mirrorStatus, 'failed');
+    console.log('✓ Endpoint POST /api/clinic/notes/:id/sign fails closed with 502 MIRROR_FAILED when mirror cannot resolve demographics');
+
+    await new Promise((resolve) => server.close(resolve));
+  }
+
   // Clean up test tenant
   await pool.query(`DELETE FROM outcomes WHERE tenant_id = $1;`, [tenantId]);
   await pool.query(`DELETE FROM outcome_cohort WHERE tenant_id = $1;`, [tenantId]);
@@ -287,6 +372,7 @@ async function runValidation() {
   await pool.query(`DELETE FROM patients WHERE tenant_id = $1;`, [tenantId]);
 
   await closePostgresPool();
+  await teardownSuite(target);
 
   console.log('\n============================================================');
   console.log('   ALL SINGLE WRITE PATH & COMPARISON TESTS PASSED (100%)    ');

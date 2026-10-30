@@ -81,7 +81,7 @@ export default function AttestationVerificationModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-canvas p-6 text-white shadow-2xl">
+      <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-solid p-6 text-on-solid shadow-2xl">
         <div className="flex items-center justify-between border-b border-white/10 pb-4">
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400">

@@ -472,7 +472,7 @@ const WORKFLOW_MIGRATIONS = [
       CREATE TABLE IF NOT EXISTS attestation_anchors (
         id             TEXT PRIMARY KEY,
         tenant_id      TEXT NOT NULL,
-        anchor_type    TEXT NOT NULL CHECK (anchor_type IN ('RFC3161_TSA', 'MERKLE_CHECKPOINT')),
+        anchor_type    TEXT NOT NULL CHECK (anchor_type IN ('RFC3161_TSA', 'RFC3161_CHAIN_ANCHOR', 'MERKLE_CHECKPOINT')),
         chain_hash     TEXT NOT NULL,
         seq            BIGINT NOT NULL,
         timestamp_token JSONB NOT NULL,

@@ -394,13 +394,10 @@ router.get('/patients/:patientId/brief', async (req, res, next) => {
 
     let patient = patRes.rows[0];
     if (!patient) {
-      patient = {
-        id: patientId,
-        full_name: patientId === 'pat-demo-1' ? 'Priya Sharma' : 'Arthur Pendelton',
-        date_of_birth: patientId === 'pat-demo-1' ? '1992-04-11' : '1968-05-14',
-        sex: patientId === 'pat-demo-1' ? 'female' : 'male',
-        clinical_profile: {}
-      };
+      return res.status(404).json({
+        error: `Patient "${patientId}" not found for tenant.`,
+        code: 'PATIENT_NOT_FOUND'
+      });
     }
 
     let age = null;
@@ -713,13 +710,17 @@ router.post('/encounters/:encounterId/transitions', async (req, res, next) => {
           [req.params.encounterId, actor.tenantId]
         );
         if (check.rows.length === 0) {
-          const patientId = body.patientId || 'pat-demo-1';
-          await client.query(
-            `INSERT INTO patients (id, tenant_id, full_name, date_of_birth, sex)
-             VALUES ($1, $2, 'Demo Patient', '1990-01-01', 'unknown')
-             ON CONFLICT (id) DO NOTHING;`,
+          const patientId = body.patientId;
+          if (!patientId) {
+            throw new Error('Encounter does not exist and body.patientId is required to initialize encounter.');
+          }
+          const ptCheck = await client.query(
+            `SELECT id FROM patients WHERE id = $1 AND tenant_id = $2;`,
             [patientId, actor.tenantId]
           );
+          if (ptCheck.rows.length === 0) {
+            throw new Error(`Encounter cannot be initialized: patient "${patientId}" does not exist in tenant.`);
+          }
           await client.query(
             `INSERT INTO encounters (id, tenant_id, patient_id, clinician_id, state, version, created_at, updated_at)
              VALUES ($1, $2, $3, $4, 'PENDING_REVIEW', 1, NOW(), NOW())

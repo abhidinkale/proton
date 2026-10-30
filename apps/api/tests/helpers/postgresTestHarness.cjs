@@ -84,4 +84,25 @@ async function prepareSuite({ suiteFile, testDbName }) {
   return targets;
 }
 
-module.exports = { resolveTargets, canReachPostgres, recreateTestDatabase, prepareSuite };
+/**
+ * Drops the test scratch database after suite completion unless KEEP_TEST_DB=1.
+ */
+async function teardownSuite(targets) {
+  if (process.env.KEEP_TEST_DB === '1' || !targets) return;
+  try {
+    const admin = new Client({ connectionString: targets.adminUrl });
+    await admin.connect();
+    try {
+      await admin.query(
+        `SELECT pg_terminate_backend(pid) FROM pg_stat_activity
+          WHERE datname = $1 AND pid <> pg_backend_pid();`,
+        [targets.testDbName]
+      );
+      await admin.query(`DROP DATABASE IF EXISTS "${targets.testDbName}";`);
+    } finally {
+      await admin.end();
+    }
+  } catch (_) {}
+}
+
+module.exports = { resolveTargets, canReachPostgres, recreateTestDatabase, prepareSuite, teardownSuite };

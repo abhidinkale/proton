@@ -149,11 +149,11 @@ app.use(['/api/auth/login', '/auth/login', '/api/auth/exchange', '/api/auth/qr-e
 
 const { telemetryMiddleware } = require('./middleware/telemetry');
 const { resolveActorMiddleware } = require('./middleware/rbac');
-const { validateConfig, resolveSyntheticMode } = require('./config');
+const { validateConfig, resolveSyntheticMode, isProductionEnv } = require('./config');
 const { resolveWorkflowPersistence } = require('./services/workflow/runtime');
 
-// In production, ensure configuration fails closed if required secrets are missing
-if (process.env.NODE_ENV === 'production') {
+// In production or private-beta, ensure configuration fails closed if required secrets are missing
+if (isProductionEnv()) {
   try {
     validateConfig();
   } catch (err) {
@@ -1719,8 +1719,11 @@ app.get('/api/clinical/rooming/:patientId', (req, res) => {
 app.post('/api/clinical/discharge/generate', (req, res) => {
   try {
     const { patient, note, prescriptions, provider } = req.body || {};
+    if (!patient || !patient.name) {
+      return res.status(400).json({ error: 'PATIENT_REQUIRED', message: 'Patient object with name is required to generate After-Visit Summary.' });
+    }
     const avs = dischargeSummaryService.generateAfterCareSummary({
-      patient: patient || {},
+      patient,
       note: note || {},
       prescriptions: Array.isArray(prescriptions) ? prescriptions : [],
       provider: provider || (req.actor ? { name: req.actor.actorName, clinic: 'Proton Health Network' } : undefined)
@@ -1746,8 +1749,27 @@ app.post('/api/clinical/discharge/generate', (req, res) => {
 
 app.get('/api/clinical/discharge/:patientId', (req, res) => {
   try {
+    const patientId = req.params.patientId;
+    let patientRecord = null;
+    try {
+      const clinic = require('./storage/clinicRepository');
+      const cp = clinic.getPatient({ tenantId: req.actor?.tenantId || 'org-default' }, patientId);
+      if (cp?.patient) {
+        patientRecord = {
+          id: cp.patient.id,
+          name: cp.patient.name,
+          dob: cp.patient.dob || cp.patient.dateOfBirth || null,
+          mrn: cp.patient.mrn || null
+        };
+      }
+    } catch (_) {}
+
+    if (!patientRecord) {
+      return res.status(404).json({ error: 'PATIENT_NOT_FOUND', message: `Patient "${patientId}" not found.` });
+    }
+
     const avs = dischargeSummaryService.generateAfterCareSummary({
-      patient: { id: req.params.patientId, name: 'Eleanor Vance', mrn: 'MRN-847291' }
+      patient: patientRecord
     });
     res.json(avs);
   } catch (err) {

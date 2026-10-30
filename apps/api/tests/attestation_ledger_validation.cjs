@@ -167,7 +167,7 @@ async function run() {
 
   const rfc3161 = require('../services/workflow/rfc3161Anchor');
 
-  await test('RFC 3161 external timestamp token binds to the root chain_hash', async () => {
+  await test('RFC 3161 cryptographic chain anchor token binds to the root chain_hash', async () => {
     const anchorResult = await rfc3161.anchorTenantChain(pool, tenant);
     assert.strictEqual(anchorResult.anchored, true);
     assert.strictEqual(anchorResult.seq, 2);

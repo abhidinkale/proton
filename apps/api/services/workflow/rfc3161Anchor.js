@@ -1,9 +1,12 @@
 /**
- * RFC 3161 Time-Stamp Authority (TSA) Anchor Service (WS0).
+ * RFC 3161-Compatible TimeStampToken Cryptographic Anchor Service (WS0).
  *
- * Implements external timestamp anchoring over the tenant attestation ledger
- * chain root. Provides verifiable cryptographic proofs that the ledger sequence
- * existed at or prior to a certified external time, without requiring a public blockchain.
+ * Implements cryptographic chain anchoring over the tenant attestation ledger
+ * chain root. Produces canonical RFC 3161-structured TimeStampTokens bound to
+ * the ledger sequence to establish cryptographic chain integrity.
+ *
+ * NOTE: Operates as an internal chain anchor authority. External commercial
+ * TSA provider integration (e.g. DigiCert/GlobalSign) is staged for production release.
  */
 
 const crypto = require('node:crypto');
@@ -13,7 +16,7 @@ const SHA256_OID = '2.16.840.1.101.3.4.2.1';
 const TSA_AUTHORITY_DN = 'CN=Proton Clinical Timestamp Authority, O=Proton Health Inc, C=US';
 
 /**
- * Generate a certified RFC 3161 TimeStampToken representation for a chain root hash.
+ * Generate a canonical RFC 3161 TimeStampToken representation for a chain root hash.
  *
  * @param {string} chainHash - The root chain_hash (e.g. 'sha256:...')
  * @param {number} seq - The sequence number of the ledger root
@@ -46,11 +49,11 @@ function createTimeStampToken(chainHash, seq, genTimeIso = new Date().toISOStrin
 
   return {
     status: 0, // PKIStatus: granted
-    statusString: ['Granted: cryptographic timestamp proof bound to ledger root.'],
+    statusString: ['Granted: internal cryptographic timestamp proof bound to ledger root.'],
     timeStampToken: {
       ...tokenBody,
       tokenHash: `sha256:${tokenHash}`,
-      signatureAlgorithm: 'sha256WithRSAEncryption'
+      signatureAlgorithm: 'sha256'
     }
   };
 }
@@ -89,7 +92,7 @@ async function anchorTenantChain(db, tenantId) {
   await db.query(
     `INSERT INTO attestation_anchors
        (id, tenant_id, anchor_type, chain_hash, seq, timestamp_token, tsa_identity, anchored_at)
-     VALUES ($1, $2, 'RFC3161_TSA', $3, $4, $5::jsonb, $6, $7);`,
+     VALUES ($1, $2, 'RFC3161_CHAIN_ANCHOR', $3, $4, $5::jsonb, $6, $7);`,
     [
       anchorId,
       tenantId,
@@ -113,7 +116,7 @@ async function anchorTenantChain(db, tenantId) {
 }
 
 /**
- * Get the latest external timestamp anchor for a tenant.
+ * Get the latest cryptographic timestamp anchor for a tenant.
  */
 async function getLatestAnchor(db, tenantId) {
   const { rows } = await db.query(

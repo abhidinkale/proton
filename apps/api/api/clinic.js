@@ -45,7 +45,7 @@ async function signAndMirror(req, res, noteId, body) {
         : null;
       const patientId = result.note.patientId || appointment?.patientId;
       const patientRecord = patientId ? clinic.getPatient(normalized, patientId) : null;
-      await mirrorSignedNote({
+      const mirrorRes = await mirrorSignedNote({
         tenantId: normalized.tenantId,
         note: result.note,
         appointment,
@@ -57,9 +57,23 @@ async function signAndMirror(req, res, noteId, body) {
           npi: normalized.npi || null
         }
       });
+      result.mirrorStatus = 'mirrored';
+      result.attestationId = mirrorRes?.attestation?.id || null;
+      result.syncedEncounterId = mirrorRes?.encounter?.id || null;
     } catch (err) {
       console.warn('[sign-mirror] signed note not mirrored:', err.message);
+      result.mirrorStatus = 'failed';
+      result.mirrorError = err.message;
+      if (req.headers['x-strict-mirror'] === 'true' || body?.strictMirror === true) {
+        return res.status(502).json({
+          error: `Sign committed in desk but failed to mirror to durable workflow: ${err.message}`,
+          code: 'MIRROR_FAILED',
+          result
+        });
+      }
     }
+  } else if (result.alreadySigned) {
+    result.mirrorStatus = 'already_signed';
   }
 
   return res.json(result);

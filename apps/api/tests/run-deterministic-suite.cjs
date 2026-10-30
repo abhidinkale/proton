@@ -100,6 +100,14 @@ async function main() {
     process.exit(1);
   }
 
+  // Verify that every declared Postgres suite actually exists on disk so typos cannot silently evade gating
+  for (const requiredSuite of REQUIRES_POSTGRES) {
+    if (!fs.existsSync(path.join(TESTS_DIR, requiredSuite))) {
+      console.error(`\n❌ CONFIGURATION ERROR: REQUIRES_POSTGRES lists "${requiredSuite}", but file does not exist in tests/!`);
+      process.exit(1);
+    }
+  }
+
   const needsPostgres = suites.some((s) => REQUIRES_POSTGRES.has(s));
   const postgresUp = needsPostgres ? await probePostgres() : true;
 

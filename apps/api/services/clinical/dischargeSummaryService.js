@@ -82,13 +82,17 @@ class DischargeSummaryService {
       { goal: 'Sodium (Salt)', target: 'Less than 2,000 mg per day', tip: 'Avoid processed deli meats and canned soups with high sodium.' }
     ];
 
+    if (!patient || !patient.name) {
+      throw new Error('generateAfterCareSummary requires verified patient information: patient.name is required.');
+    }
+
     const avsPayload = {
       summaryId,
       encounterDate,
       patient: {
-        name: patient.name || 'Eleanor Vance',
-        dob: patient.dob || '1956-04-12',
-        mrn: patient.mrn || 'MRN-847291'
+        name: patient.name,
+        dob: patient.dob || null,
+        mrn: patient.mrn || null
       },
       provider,
       readingLevel: '6th Grade (Health Literacy Compliant)',

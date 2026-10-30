@@ -265,13 +265,17 @@ class AcuteTriageService {
    * Enqueues a newly acquired imaging study and triggers deterministic triage evaluation.
    */
   submitStudy({
-    patientId = 'patient-new',
-    patientName = 'Anonymous Patient',
-    dob = '1970-01-01',
-    mrn = 'MRN-000000',
+    patientId,
+    patientName = 'Unregistered Patient',
+    dob = null,
+    mrn = null,
     modality = 'CT',
     findingsText = ''
-  }) {
+  } = {}) {
+    if (!patientId) {
+      throw new Error('patientId is required to submit an imaging study.');
+    }
+
     const evaluation = this.evaluateTriage({
       patientId,
       modality,
