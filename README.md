@@ -186,6 +186,7 @@ Detailed step-by-step deployment and clinician invitation procedures are documen
 ## Project Documentation Directory
 
 - [`docs/VALIDATION.md`](docs/VALIDATION.md) — **Single source of truth for test coverage.**
+- [`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md) — **Known issues register: trigger conditions and deferred remediation.**
 - [`docs/PILOT_CUT.md`](docs/PILOT_CUT.md) — **The active plan: deploy, prove on devices, then build.** Start here.
 - [`docs/PILOT_90_DAY_PLAN.md`](docs/PILOT_90_DAY_PLAN.md) — **90-day pilot plan: $0 infrastructure, 1000 patients, 50 hospital design partners.**
 - [`docs/trust/`](docs/trust/) — Hospital-facing trust pack: security questionnaire, subprocessor list, DPA template, BAA stance, privacy policy, incident runbook.
