@@ -10,8 +10,13 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,8 +27,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -32,38 +39,39 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.CheckCircle
-import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import health.dork.app.core.data.model.BiologicalSex
 import health.dork.app.core.data.model.BloodGroup
-import health.dork.app.core.designsystem.DorkGradients
-import health.dork.app.core.designsystem.DorkShapes
 import health.dork.app.core.designsystem.DorkSpacing
 import health.dork.app.core.designsystem.DorkTheme
-import health.dork.app.core.designsystem.components.DorkButton
-import health.dork.app.core.designsystem.components.DorkButtonVariant
-import health.dork.app.core.designsystem.components.DorkCard
-import health.dork.app.core.designsystem.components.DorkChip
 import health.dork.app.core.designsystem.components.DorkTextField
-import health.dork.app.core.designsystem.components.DorkTopBar
+import health.dork.app.ui.auth.DorkPillCrossLogo
+import health.dork.app.ui.welcome.WelcomeScreen
 import java.time.LocalDate
 import java.util.Calendar
 import java.util.Locale
@@ -72,76 +80,136 @@ import java.util.Locale
 @Composable
 fun OnboardingScreen(
   viewModel: OnboardingViewModel,
+  onSignInClick: () -> Unit = {},
+  onDemoClick: () -> Unit = {},
+  darkTheme: Boolean = isSystemInDarkTheme(),
   modifier: Modifier = Modifier
 ) {
   val uiState by viewModel.uiState.collectAsState()
   val scrollState = rememberScrollState()
 
-  Column(
-    modifier = modifier
-      .fillMaxSize()
-      .background(MaterialTheme.colorScheme.background)
-  ) {
-    OnboardingHero(
-      step = uiState.currentStep,
-      total = TOTAL_STEPS,
-      onBack = if (uiState.currentStep > 1 && uiState.currentStep < 13) viewModel::previousStep else null
+  if (uiState.currentStep == 1) {
+    WelcomeScreen(
+      onGetStarted = viewModel::nextStep,
+      onSignInClick = onSignInClick,
+      onDemoClick = onDemoClick,
+      darkTheme = darkTheme,
+      modifier = modifier
     )
+    return
+  }
 
-    Column(
-      modifier = Modifier
+  val textPrimary = if (darkTheme) Color.White else Color(0xFF10151E)
+  val textSecondary = if (darkTheme) Color.White.copy(alpha = 0.65f) else Color(0xFF4C586B)
+  val primaryBtnBg = if (darkTheme) Color.White else Color(0xFF10151E)
+  val primaryBtnText = if (darkTheme) Color(0xFF111315) else Color.White
+
+  DorkTheme(darkTheme = darkTheme) {
+    Box(
+      modifier = modifier
         .fillMaxSize()
-        .verticalScroll(scrollState)
-        .padding(horizontal = DorkSpacing.screenHorizontalPadding, vertical = DorkSpacing.l),
-      verticalArrangement = Arrangement.SpaceBetween
+        .background(if (darkTheme) Color(0xFF080A0E) else Color.White)
     ) {
-      Box(modifier = Modifier.weight(1f)) {
-        AnimatedContent(
-          targetState = uiState.currentStep,
-          transitionSpec = {
-            // A short horizontal slide in the direction of travel. It reads as
-            // "next page" rather than "new screen", which is what a wizard is.
-            (slideInHorizontally(animationSpec = tween(260)) { it / 8 } + fadeIn(tween(220))) togetherWith
-              (slideOutHorizontally(animationSpec = tween(200)) { -it / 10 } + fadeOut(tween(160)))
-          },
-          label = "onboarding_step"
-        ) { step ->
-          when (step) {
-            1 -> StepWelcome()
-            2 -> StepAccount(uiState, viewModel)
-            3 -> StepName(uiState, viewModel)
-            4 -> StepDateOfBirth(uiState, viewModel)
-            5 -> StepSex(uiState, viewModel)
-            6 -> StepHeight(uiState, viewModel)
-            7 -> StepWeight(uiState, viewModel)
-            8 -> StepBloodGroup(uiState, viewModel)
-            9 -> StepConditions(uiState, viewModel)
-            10 -> StepAllergies(uiState, viewModel)
-            11 -> StepMedications(uiState, viewModel)
-            12 -> StepEmergencyContact(uiState, viewModel)
-            13 -> StepComplete(uiState)
-            else -> StepWelcome()
+      // Adaptive Background
+      AdaptiveOnboardingBackground(darkTheme = darkTheme, modifier = Modifier.fillMaxSize())
+
+      Column(
+        modifier = Modifier
+          .fillMaxSize()
+          .statusBarsPadding()
+          .navigationBarsPadding()
+      ) {
+        // Silent Tone Top Bar
+        SilentOnboardingHero(
+          step = uiState.currentStep,
+          total = TOTAL_STEPS,
+          darkTheme = darkTheme,
+          onBack = if (uiState.currentStep > 1 && uiState.currentStep < 13) viewModel::previousStep else null
+        )
+
+        Column(
+          modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState)
+            .padding(horizontal = 24.dp, vertical = 20.dp),
+          verticalArrangement = Arrangement.SpaceBetween
+        ) {
+          Box(modifier = Modifier.weight(1f)) {
+            AnimatedContent(
+              targetState = uiState.currentStep,
+              transitionSpec = {
+                (slideInHorizontally(animationSpec = tween(240)) { it / 6 } + fadeIn(tween(200))) togetherWith
+                  (slideOutHorizontally(animationSpec = tween(180)) { -it / 8 } + fadeOut(tween(140)))
+              },
+              label = "silent_onboarding_step"
+            ) { step ->
+              when (step) {
+                2 -> StepAccount(uiState, viewModel, darkTheme)
+                3 -> StepName(uiState, viewModel, darkTheme)
+                4 -> StepDateOfBirth(uiState, viewModel, darkTheme)
+                5 -> StepSex(uiState, viewModel, darkTheme)
+                6 -> StepHeight(uiState, viewModel, darkTheme)
+                7 -> StepWeight(uiState, viewModel, darkTheme)
+                8 -> StepBloodGroup(uiState, viewModel, darkTheme)
+                9 -> StepConditions(uiState, viewModel, darkTheme)
+                10 -> StepAllergies(uiState, viewModel, darkTheme)
+                11 -> StepMedications(uiState, viewModel, darkTheme)
+                12 -> StepEmergencyContact(uiState, viewModel, darkTheme)
+                13 -> StepComplete(uiState, darkTheme)
+                else -> StepAccount(uiState, viewModel, darkTheme)
+              }
+            }
+          }
+
+          Spacer(modifier = Modifier.height(24.dp))
+
+          if (uiState.errorMessage != null) {
+            Text(
+              text = uiState.errorMessage.orEmpty(),
+              style = MaterialTheme.typography.bodySmall,
+              color = Color(0xFFD32F2F),
+              modifier = Modifier.padding(bottom = 12.dp, start = 4.dp)
+            )
+          }
+
+          // Primary Action Button
+          Button(
+            onClick = viewModel::nextStep,
+            enabled = !uiState.isSubmitting,
+            shape = RoundedCornerShape(percent = 50),
+            colors = ButtonDefaults.buttonColors(
+              containerColor = primaryBtnBg,
+              contentColor = primaryBtnText,
+              disabledContainerColor = primaryBtnBg.copy(alpha = 0.35f),
+              disabledContentColor = primaryBtnText.copy(alpha = 0.5f)
+            ),
+            modifier = Modifier
+              .fillMaxWidth()
+              .height(54.dp)
+              .shadow(
+                elevation = 8.dp,
+                shape = RoundedCornerShape(percent = 50),
+                spotColor = if (darkTheme) Color(0xFFF4511E) else Color(0x33000000)
+              )
+          ) {
+            if (uiState.isSubmitting) {
+              CircularProgressIndicator(
+                modifier = Modifier.size(20.dp),
+                color = primaryBtnText,
+                strokeWidth = 2.dp
+              )
+            } else {
+              Text(
+                text = if (uiState.currentStep == 13) "Complete & enter Dork" else "Continue",
+                style = MaterialTheme.typography.titleMedium.copy(
+                  fontWeight = FontWeight.Bold,
+                  letterSpacing = 0.2.sp
+                )
+              )
+            }
           }
         }
       }
-
-      Spacer(modifier = Modifier.height(DorkSpacing.l))
-
-      if (uiState.errorMessage != null) {
-        Text(
-          text = uiState.errorMessage.orEmpty(),
-          style = MaterialTheme.typography.bodySmall,
-          color = DorkTheme.colors.critical,
-          modifier = Modifier.padding(bottom = DorkSpacing.s, start = 4.dp)
-        )
-      }
-
-      DorkButton(
-        text = if (uiState.currentStep == 13) "Complete & enter Dork" else "Continue",
-        onClick = viewModel::nextStep,
-        loading = uiState.isSubmitting,
-        enabled = !uiState.isSubmitting
-      )
     }
   }
 }
@@ -149,38 +217,79 @@ fun OnboardingScreen(
 private const val TOTAL_STEPS = 13
 
 /**
- * The band at the top of every step.
- *
- * Onboarding is the one place in this product where colour is decoration rather
- * than signal. A medical intake that looks like a tax form is an intake people
- * abandon, and the person filling this in is doing it in a waiting room, at
- * night, on a bad connection, about something they are worried about.
- *
- * The gradient is deterministic per step, so backing up and returning does not
- * reshuffle the visuals and make the patient think they lost their place.
+ * Adaptive Background:
+ * - Dark Theme: deep slate with top-left warm ember glow.
+ * - Light Theme: soft serene sky-blue to white gradient.
  */
 @Composable
-private fun OnboardingHero(step: Int, total: Int, onBack: (() -> Unit)?) {
-  val palette = DorkGradients.heroFor(step)
-  val start by animateColorAsState(palette[0], tween(600), label = "hero-start")
-  val end by animateColorAsState(palette[1], tween(600), label = "hero-end")
+private fun AdaptiveOnboardingBackground(darkTheme: Boolean, modifier: Modifier = Modifier) {
+  Canvas(modifier = modifier) {
+    val width = size.width
+    val height = size.height
+
+    if (darkTheme) {
+      val topGlow = Brush.radialGradient(
+        colorStops = arrayOf(
+          0.00f to Color(0xFFFF9E58).copy(alpha = 0.40f),
+          0.20f to Color(0xFFE65100).copy(alpha = 0.28f),
+          0.45f to Color(0xFF8B2500).copy(alpha = 0.14f),
+          0.70f to Color(0xFF3E1205).copy(alpha = 0.06f),
+          1.00f to Color.Transparent
+        ),
+        center = Offset(width * 0.08f, height * 0.06f),
+        radius = height * 0.52f
+      )
+      drawRect(brush = topGlow)
+
+      val bottomGlow = Brush.radialGradient(
+        colorStops = arrayOf(
+          0.0f to Color(0xFFB71C1C).copy(alpha = 0.10f),
+          0.6f to Color(0xFF3E0E08).copy(alpha = 0.04f),
+          1.0f to Color.Transparent
+        ),
+        center = Offset(width * 0.90f, height * 0.95f),
+        radius = height * 0.50f
+      )
+      drawRect(brush = bottomGlow)
+    } else {
+      val skyGradient = Brush.verticalGradient(
+        colorStops = arrayOf(
+          0.00f to Color(0xFF8DBBED),
+          0.15f to Color(0xFF99C8F6),
+          0.35f to Color(0xFFAED8FF),
+          0.55f to Color(0xFFC3E0FE),
+          0.75f to Color(0xFFE6EFFF),
+          0.90f to Color(0xFFFCFDFF),
+          1.00f to Color.White
+        )
+      )
+      drawRect(brush = skyGradient)
+    }
+  }
+}
+
+/**
+ * Silent Tone Top Bar for question steps.
+ */
+@Composable
+private fun SilentOnboardingHero(
+  step: Int,
+  total: Int,
+  darkTheme: Boolean,
+  onBack: (() -> Unit)?
+) {
   val progress by animateFloatAsState(
     targetValue = (step / total.toFloat()).coerceIn(0f, 1f),
-    animationSpec = tween(450),
-    label = "hero-progress"
+    animationSpec = tween(400),
+    label = "silent-progress"
   )
 
-  val kicker = when (step) {
-    1 -> "Welcome"
-    in 2..3 -> "Your details"
-    in 4..8 -> "About you"
-    in 9..11 -> "Your health"
-    12 -> "Safety"
-    else -> "Ready"
-  }
+  val textPrimary = if (darkTheme) Color.White else Color(0xFF10151E)
+  val textSecondary = if (darkTheme) Color.White.copy(alpha = 0.65f) else Color(0xFF4C586B)
+  val trackColor = if (darkTheme) Color.White.copy(alpha = 0.12f) else Color(0xFFCCE0F5)
+  val progressColor = if (darkTheme) Color.White else Color(0xFF10151E)
 
   val title = when (step) {
-    1 -> "Hello."
     in 2..3 -> "Let's set you up."
     in 4..8 -> "A little about you."
     in 9..11 -> "In your own words."
@@ -188,182 +297,163 @@ private fun OnboardingHero(step: Int, total: Int, onBack: (() -> Unit)?) {
     else -> "You're all set."
   }
 
-  Box(
+  Column(
     modifier = Modifier
       .fillMaxWidth()
-      .clip(RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp))
-      .background(Brush.linearGradient(listOf(start, end)))
-      .padding(start = DorkSpacing.screenHorizontalPadding, end = DorkSpacing.screenHorizontalPadding, top = DorkSpacing.m, bottom = DorkSpacing.l)
+      .padding(start = 24.dp, end = 24.dp, top = 12.dp, bottom = 8.dp)
   ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-      Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-      ) {
-        if (onBack != null) {
-          Box(
-            modifier = Modifier
-              .size(30.dp)
-              .clip(CircleShape)
-              .background(Color.White.copy(alpha = 0.18f))
-              .clickable(onClick = onBack),
-            contentAlignment = Alignment.Center
-          ) {
-            Icon(
-              imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-              contentDescription = "Back",
-              tint = Color.White,
-              modifier = Modifier.size(16.dp)
-            )
-          }
-          Spacer(modifier = Modifier.width(DorkSpacing.s))
-        }
-
-        Text(
-          text = kicker.uppercase(Locale.US),
-          style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.4.sp),
-          color = Color.White.copy(alpha = 0.85f),
-          modifier = Modifier.weight(1f)
-        )
-
-        Text(
-          text = "$step / $total",
-          style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.8.sp),
-          color = Color.White.copy(alpha = 0.85f)
-        )
-      }
-
-      Spacer(modifier = Modifier.height(DorkSpacing.m))
-
-      AnimatedContent(
-        targetState = title,
-        transitionSpec = { fadeIn(tween(220)) togetherWith fadeOut(tween(120)) },
-        label = "hero-title"
-      ) { line ->
-        Text(
-          text = line,
-          style = MaterialTheme.typography.displaySmall,
-          color = Color.White
-        )
-      }
-
-      Spacer(modifier = Modifier.height(DorkSpacing.m))
-
-      Box(
-        modifier = Modifier
-          .fillMaxWidth()
-          .height(4.dp)
-          .clip(CircleShape)
-          .background(Color.White.copy(alpha = 0.25f))
-      ) {
+    Row(
+      modifier = Modifier.fillMaxWidth(),
+      verticalAlignment = Alignment.CenterVertically
+    ) {
+      if (onBack != null) {
         Box(
           modifier = Modifier
-            .fillMaxWidth(progress)
-            .height(4.dp)
+            .size(36.dp)
             .clip(CircleShape)
-            .background(Color.White)
-        )
+            .background(if (darkTheme) Color.White.copy(alpha = 0.10f) else Color.White.copy(alpha = 0.85f))
+            .border(1.dp, if (darkTheme) Color.White.copy(alpha = 0.16f) else Color(0xFFCCE0F5), CircleShape)
+            .clickable(onClick = onBack),
+          contentAlignment = Alignment.Center
+        ) {
+          Icon(
+            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+            contentDescription = "Back",
+            tint = textPrimary,
+            modifier = Modifier.size(18.dp)
+          )
+        }
+        Spacer(modifier = Modifier.width(12.dp))
       }
-    }
-  }
-}
 
-@Composable
-private fun StepWelcome() {
-  Column(
-    modifier = Modifier.fillMaxWidth(),
-    horizontalAlignment = Alignment.CenterHorizontally
-  ) {
-    Spacer(modifier = Modifier.height(DorkSpacing.l))
+      DorkPillCrossLogo(tint = textPrimary)
+
+      Spacer(modifier = Modifier.weight(1f))
+
+      Text(
+        text = "$step / $total",
+        style = MaterialTheme.typography.labelSmall.copy(
+          fontFamily = FontFamily.Monospace,
+          letterSpacing = 1.sp,
+          fontSize = 11.sp
+        ),
+        color = textSecondary
+      )
+    }
+
+    Spacer(modifier = Modifier.height(14.dp))
+
+    AnimatedContent(
+      targetState = title,
+      transitionSpec = { fadeIn(tween(200)) togetherWith fadeOut(tween(100)) },
+      label = "hero-title"
+    ) { line ->
+      Text(
+        text = line,
+        style = MaterialTheme.typography.headlineMedium.copy(
+          fontFamily = FontFamily.SansSerif,
+          fontWeight = FontWeight.SemiBold,
+          fontSize = 24.sp,
+          letterSpacing = (-0.4).sp
+        ),
+        color = textPrimary
+      )
+    }
+
+    Spacer(modifier = Modifier.height(14.dp))
+
+    // Hairline Progress Indicator
     Box(
       modifier = Modifier
-        .size(78.dp)
+        .fillMaxWidth()
+        .height(3.dp)
         .clip(CircleShape)
-        .background(Brush.linearGradient(DorkGradients.Bloom)),
-      contentAlignment = Alignment.Center
+        .background(trackColor)
     ) {
-      Icon(
-        imageVector = Icons.Rounded.Favorite,
-        contentDescription = null,
-        tint = Color.White,
-        modifier = Modifier.size(36.dp)
+      Box(
+        modifier = Modifier
+          .fillMaxWidth(progress)
+          .height(3.dp)
+          .clip(CircleShape)
+          .background(progressColor)
       )
-    }
-    Spacer(modifier = Modifier.height(DorkSpacing.l))
-    Text(
-      text = "Welcome to Dork",
-      style = MaterialTheme.typography.displayMedium,
-      color = DorkTheme.colors.textPrimary
-    )
-    Spacer(modifier = Modifier.height(DorkSpacing.xs))
-    Text(
-      text = "“Your health, organized.”",
-      style = MaterialTheme.typography.titleMedium,
-      color = DorkTheme.colors.textSecondary
-    )
-    Spacer(modifier = Modifier.height(DorkSpacing.l))
-    Text(
-      text = "About two minutes. Everything after this is yours to change — nothing here is locked in.",
-      style = MaterialTheme.typography.bodyLarge,
-      color = DorkTheme.colors.textSecondary
-    )
-
-    Spacer(modifier = Modifier.height(DorkSpacing.l))
-
-    Column(
-      modifier = Modifier.fillMaxWidth(),
-      verticalArrangement = Arrangement.spacedBy(DorkSpacing.s)
-    ) {
-      WelcomePoint("Conditions and allergies", "Including ones you type yourself", DorkGradients.Bloom)
-      WelcomePoint("Medicines and reminders", "Any time of day, with a sound you choose", DorkGradients.Tide)
-      WelcomePoint("Who to call", "One contact, for the worst day", DorkGradients.Meadow)
     }
   }
 }
 
+/**
+ * Adaptive Capsule Chip.
+ */
 @Composable
-private fun WelcomePoint(title: String, detail: String, gradient: List<Color>) {
-  Row(
-    modifier = Modifier
-      .fillMaxWidth()
-      .clip(RoundedCornerShape(16.dp))
-      .background(DorkTheme.colors.card)
-      .padding(horizontal = DorkSpacing.m, vertical = DorkSpacing.s),
-    verticalAlignment = Alignment.CenterVertically
+private fun SilentChip(
+  label: String,
+  selected: Boolean,
+  darkTheme: Boolean,
+  onClick: () -> Unit,
+  modifier: Modifier = Modifier
+) {
+  val bg = if (selected) {
+    if (darkTheme) Color.White else Color(0xFF10151E)
+  } else {
+    if (darkTheme) Color.White.copy(alpha = 0.07f) else Color.White.copy(alpha = 0.85f)
+  }
+
+  val border = if (selected) {
+    null
+  } else {
+    BorderStroke(1.dp, if (darkTheme) Color.White.copy(alpha = 0.18f) else Color(0xFFCCE0F5))
+  }
+
+  val textColor = if (selected) {
+    if (darkTheme) Color(0xFF111315) else Color.White
+  } else {
+    if (darkTheme) Color.White.copy(alpha = 0.82f) else Color(0xFF1A2332)
+  }
+
+  Surface(
+    modifier = modifier.clickable(
+      interactionSource = remember { MutableInteractionSource() },
+      indication = null,
+      onClick = onClick
+    ),
+    shape = RoundedCornerShape(percent = 50),
+    color = bg,
+    border = border
   ) {
-    Box(
-      modifier = Modifier
-        .size(8.dp)
-        .clip(CircleShape)
-        .background(Brush.linearGradient(gradient))
-    )
-    Spacer(modifier = Modifier.width(DorkSpacing.s))
-    Column {
+    Row(
+      modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+      verticalAlignment = Alignment.CenterVertically
+    ) {
       Text(
-        text = title,
-        style = MaterialTheme.typography.titleSmall,
-        color = DorkTheme.colors.textPrimary
-      )
-      Text(
-        text = detail,
-        style = MaterialTheme.typography.bodySmall,
-        color = DorkTheme.colors.textTertiary
+        text = label,
+        style = MaterialTheme.typography.labelMedium.copy(
+          fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+          fontSize = 13.5.sp
+        ),
+        color = textColor
       )
     }
   }
 }
 
 @Composable
-private fun StepAccount(uiState: OnboardingUiState, viewModel: OnboardingViewModel) {
+private fun StepAccount(uiState: OnboardingUiState, viewModel: OnboardingViewModel, darkTheme: Boolean) {
+  val textPrimary = if (darkTheme) Color.White else Color(0xFF10151E)
+  val textSecondary = if (darkTheme) Color.White.copy(alpha = 0.65f) else Color(0xFF4C586B)
+
   Column(modifier = Modifier.fillMaxWidth()) {
-    Text(text = "Create your account", style = MaterialTheme.typography.headlineLarge, color = DorkTheme.colors.textPrimary)
-    Spacer(modifier = Modifier.height(DorkSpacing.xs))
     Text(
-      text = "Your account is verified on this device. Your password is stretched with PBKDF2 and never stored in plain text.",
-      style = MaterialTheme.typography.bodyMedium,
-      color = DorkTheme.colors.textSecondary
+      text = "Create your account",
+      style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.SemiBold),
+      color = textPrimary
     )
-    Spacer(modifier = Modifier.height(DorkSpacing.xl))
+    Spacer(modifier = Modifier.height(6.dp))
+    Text(
+      text = "Your account is verified on this device. Your password is encrypted with PBKDF2 and never stored in plain text.",
+      style = MaterialTheme.typography.bodyMedium,
+      color = textSecondary
+    )
+    Spacer(modifier = Modifier.height(28.dp))
     DorkTextField(
       value = uiState.email,
       onValueChange = viewModel::onEmailChange,
@@ -371,7 +461,7 @@ private fun StepAccount(uiState: OnboardingUiState, viewModel: OnboardingViewMod
       placeholder = "you@example.com",
       keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
     )
-    Spacer(modifier = Modifier.height(DorkSpacing.m))
+    Spacer(modifier = Modifier.height(16.dp))
     DorkTextField(
       value = uiState.password,
       onValueChange = viewModel::onPasswordChange,
@@ -381,7 +471,7 @@ private fun StepAccount(uiState: OnboardingUiState, viewModel: OnboardingViewMod
       helperText = "Use at least 8 characters. You will need this to sign in again.",
       keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
     )
-    Spacer(modifier = Modifier.height(DorkSpacing.m))
+    Spacer(modifier = Modifier.height(16.dp))
     DorkTextField(
       value = uiState.confirmPassword,
       onValueChange = viewModel::onConfirmPasswordChange,
@@ -394,23 +484,41 @@ private fun StepAccount(uiState: OnboardingUiState, viewModel: OnboardingViewMod
 }
 
 @Composable
-private fun StepName(uiState: OnboardingUiState, viewModel: OnboardingViewModel) {
+private fun StepName(uiState: OnboardingUiState, viewModel: OnboardingViewModel, darkTheme: Boolean) {
+  val textPrimary = if (darkTheme) Color.White else Color(0xFF10151E)
+  val textSecondary = if (darkTheme) Color.White.copy(alpha = 0.65f) else Color(0xFF4C586B)
+
   Column(modifier = Modifier.fillMaxWidth()) {
-    Text(text = "What is your full legal name?", style = MaterialTheme.typography.headlineLarge, color = DorkTheme.colors.textPrimary)
-    Spacer(modifier = Modifier.height(DorkSpacing.xs))
-    Text(text = "Used for matching prescriptions and official clinical records.", style = MaterialTheme.typography.bodyMedium, color = DorkTheme.colors.textSecondary)
-    Spacer(modifier = Modifier.height(DorkSpacing.xl))
-    DorkTextField(value = uiState.fullName, onValueChange = viewModel::onNameChange, label = "Full name", placeholder = "e.g. Alex Morgan")
+    Text(
+      text = "What is your full legal name?",
+      style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.SemiBold),
+      color = textPrimary
+    )
+    Spacer(modifier = Modifier.height(6.dp))
+    Text(
+      text = "Used for matching prescriptions and official clinical records.",
+      style = MaterialTheme.typography.bodyMedium,
+      color = textSecondary
+    )
+    Spacer(modifier = Modifier.height(28.dp))
+    DorkTextField(
+      value = uiState.fullName,
+      onValueChange = viewModel::onNameChange,
+      label = "Full name",
+      placeholder = "e.g. Alex Morgan"
+    )
   }
 }
 
 @Composable
-private fun StepDateOfBirth(uiState: OnboardingUiState, viewModel: OnboardingViewModel) {
+private fun StepDateOfBirth(uiState: OnboardingUiState, viewModel: OnboardingViewModel, darkTheme: Boolean) {
   val context = LocalContext.current
+  val textPrimary = if (darkTheme) Color.White else Color(0xFF10151E)
+  val textSecondary = if (darkTheme) Color.White.copy(alpha = 0.65f) else Color(0xFF4C586B)
+  val cardBg = if (darkTheme) Color.White.copy(alpha = 0.06f) else Color.White.copy(alpha = 0.90f)
+  val cardBorder = if (darkTheme) Color.White.copy(alpha = 0.14f) else Color(0xFFCCE0F5)
 
   fun openPicker() {
-    // Open on the date already chosen, or a plausible adult default. Nobody
-    // enjoys scrolling from today back forty years.
     val current = uiState.birthDateIso
       .takeIf { it.length == 10 }
       ?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
@@ -426,8 +534,6 @@ private fun StepDateOfBirth(uiState: OnboardingUiState, viewModel: OnboardingVie
       current.dayOfMonth
     )
 
-    // A birthday cannot be in the future, and a claim older than 120 years is
-    // a typo the calendar should refuse rather than store.
     runCatching { dialog.datePicker.maxDate = System.currentTimeMillis() }
     runCatching {
       val oldest = Calendar.getInstance().apply { add(Calendar.YEAR, -120) }.timeInMillis
@@ -440,26 +546,38 @@ private fun StepDateOfBirth(uiState: OnboardingUiState, viewModel: OnboardingVie
   Column(modifier = Modifier.fillMaxWidth()) {
     Text(
       text = "When were you born?",
-      style = MaterialTheme.typography.headlineLarge,
-      color = DorkTheme.colors.textPrimary
+      style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.SemiBold),
+      color = textPrimary
     )
-    Spacer(modifier = Modifier.height(DorkSpacing.xs))
+    Spacer(modifier = Modifier.height(6.dp))
     Text(
       text = "Pick it from the calendar. Age is calculated from this, never typed.",
       style = MaterialTheme.typography.bodyMedium,
-      color = DorkTheme.colors.textSecondary
+      color = textSecondary
     )
-    Spacer(modifier = Modifier.height(DorkSpacing.xl))
+    Spacer(modifier = Modifier.height(28.dp))
 
-    DorkCard(onClick = { openPicker() }, contentPadding = DorkSpacing.l) {
+    Box(
+      modifier = Modifier
+        .fillMaxWidth()
+        .clip(RoundedCornerShape(20.dp))
+        .background(cardBg)
+        .border(1.dp, cardBorder, RoundedCornerShape(20.dp))
+        .clickable(onClick = { openPicker() })
+        .padding(20.dp)
+    ) {
       Column(modifier = Modifier.fillMaxWidth()) {
         Text(
           text = "DATE OF BIRTH",
-          style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.4.sp),
-          color = DorkTheme.colors.textTertiary
+          style = MaterialTheme.typography.labelSmall.copy(
+            fontFamily = FontFamily.Monospace,
+            letterSpacing = 1.4.sp,
+            fontSize = 11.sp
+          ),
+          color = textSecondary
         )
 
-        Spacer(modifier = Modifier.height(DorkSpacing.xs))
+        Spacer(modifier = Modifier.height(8.dp))
 
         Row(verticalAlignment = Alignment.Bottom) {
           AnimatedContent(
@@ -470,23 +588,30 @@ private fun StepDateOfBirth(uiState: OnboardingUiState, viewModel: OnboardingVie
             val unset = formatted == "Not set"
             Text(
               text = if (unset) "Choose a date" else formatted,
-              style = MaterialTheme.typography.displaySmall,
-              color = if (unset) DorkTheme.colors.textTertiary else DorkTheme.colors.textPrimary
+              style = MaterialTheme.typography.displaySmall.copy(fontSize = 28.sp),
+              color = if (unset) textSecondary else textPrimary
             )
           }
 
           if (uiState.calculatedAge > 0) {
-            Spacer(modifier = Modifier.width(DorkSpacing.s))
-            Text(
-              text = "${uiState.calculatedAge} yrs",
-              style = MaterialTheme.typography.titleMedium,
-              color = MaterialTheme.colorScheme.primary,
-              modifier = Modifier.padding(bottom = 6.dp)
-            )
+            Spacer(modifier = Modifier.width(10.dp))
+            Surface(
+              shape = RoundedCornerShape(percent = 50),
+              color = Color(0xFFF4511E).copy(alpha = 0.20f),
+              border = BorderStroke(1.dp, Color(0xFFF4511E).copy(alpha = 0.40f)),
+              modifier = Modifier.padding(bottom = 4.dp)
+            ) {
+              Text(
+                text = "${uiState.calculatedAge} yrs",
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                color = if (darkTheme) Color(0xFFFFA063) else Color(0xFFD84315),
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+              )
+            }
           }
         }
 
-        Spacer(modifier = Modifier.height(DorkSpacing.xs))
+        Spacer(modifier = Modifier.height(8.dp))
 
         Text(
           text = if (uiState.birthDateIso.isBlank()) {
@@ -495,7 +620,7 @@ private fun StepDateOfBirth(uiState: OnboardingUiState, viewModel: OnboardingVie
             "Tap to change"
           },
           style = MaterialTheme.typography.bodySmall,
-          color = DorkTheme.colors.textSecondary
+          color = textSecondary
         )
       }
     }
@@ -504,19 +629,32 @@ private fun StepDateOfBirth(uiState: OnboardingUiState, viewModel: OnboardingVie
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun StepSex(uiState: OnboardingUiState, viewModel: OnboardingViewModel) {
-  Column(modifier = Modifier.fillMaxWidth()) {
-    Text(text = "Biological sex assigned at birth", style = MaterialTheme.typography.headlineLarge, color = DorkTheme.colors.textPrimary)
-    Spacer(modifier = Modifier.height(DorkSpacing.xs))
-    Text(text = "Used to establish clinical reference ranges for diagnostic tests.", style = MaterialTheme.typography.bodyMedium, color = DorkTheme.colors.textSecondary)
-    Spacer(modifier = Modifier.height(DorkSpacing.xl))
+private fun StepSex(uiState: OnboardingUiState, viewModel: OnboardingViewModel, darkTheme: Boolean) {
+  val textPrimary = if (darkTheme) Color.White else Color(0xFF10151E)
+  val textSecondary = if (darkTheme) Color.White.copy(alpha = 0.65f) else Color(0xFF4C586B)
 
-    Column(verticalArrangement = Arrangement.spacedBy(DorkSpacing.s)) {
+  Column(modifier = Modifier.fillMaxWidth()) {
+    Text(
+      text = "Biological sex assigned at birth",
+      style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.SemiBold),
+      color = textPrimary
+    )
+    Spacer(modifier = Modifier.height(6.dp))
+    Text(
+      text = "Used to establish clinical reference ranges for diagnostic tests.",
+      style = MaterialTheme.typography.bodyMedium,
+      color = textSecondary
+    )
+    Spacer(modifier = Modifier.height(28.dp))
+
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
       BiologicalSex.entries.forEach { sex ->
-        DorkChip(
+        SilentChip(
           label = sex.displayName,
           selected = uiState.sex == sex,
-          onClick = { viewModel.onSexChange(sex) }
+          darkTheme = darkTheme,
+          onClick = { viewModel.onSexChange(sex) },
+          modifier = Modifier.fillMaxWidth()
         )
       }
     }
@@ -524,12 +662,23 @@ private fun StepSex(uiState: OnboardingUiState, viewModel: OnboardingViewModel) 
 }
 
 @Composable
-private fun StepHeight(uiState: OnboardingUiState, viewModel: OnboardingViewModel) {
+private fun StepHeight(uiState: OnboardingUiState, viewModel: OnboardingViewModel, darkTheme: Boolean) {
+  val textPrimary = if (darkTheme) Color.White else Color(0xFF10151E)
+  val textSecondary = if (darkTheme) Color.White.copy(alpha = 0.65f) else Color(0xFF4C586B)
+
   Column(modifier = Modifier.fillMaxWidth()) {
-    Text(text = "What is your height?", style = MaterialTheme.typography.headlineLarge, color = DorkTheme.colors.textPrimary)
-    Spacer(modifier = Modifier.height(DorkSpacing.xs))
-    Text(text = "Used alongside weight to track body metrics and medication dosages.", style = MaterialTheme.typography.bodyMedium, color = DorkTheme.colors.textSecondary)
-    Spacer(modifier = Modifier.height(DorkSpacing.xl))
+    Text(
+      text = "What is your height?",
+      style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.SemiBold),
+      color = textPrimary
+    )
+    Spacer(modifier = Modifier.height(6.dp))
+    Text(
+      text = "Used alongside weight to track body metrics and medication dosages.",
+      style = MaterialTheme.typography.bodyMedium,
+      color = textSecondary
+    )
+    Spacer(modifier = Modifier.height(28.dp))
     DorkTextField(
       value = if (uiState.heightCm > 0.0) uiState.heightCm.toString() else "",
       onValueChange = { it.toDoubleOrNull()?.let(viewModel::onHeightChange) },
@@ -541,16 +690,30 @@ private fun StepHeight(uiState: OnboardingUiState, viewModel: OnboardingViewMode
 }
 
 @Composable
-private fun StepWeight(uiState: OnboardingUiState, viewModel: OnboardingViewModel) {
+private fun StepWeight(uiState: OnboardingUiState, viewModel: OnboardingViewModel, darkTheme: Boolean) {
+  val textPrimary = if (darkTheme) Color.White else Color(0xFF10151E)
+  val textSecondary = if (darkTheme) Color.White.copy(alpha = 0.65f) else Color(0xFF4C586B)
+
   Column(modifier = Modifier.fillMaxWidth()) {
-    Text(text = "What is your current weight?", style = MaterialTheme.typography.headlineLarge, color = DorkTheme.colors.textPrimary)
-    Spacer(modifier = Modifier.height(DorkSpacing.xs))
     Text(
-      text = "Calculated BMI: ${uiState.bmi ?: "--"} kg/m²",
-      style = MaterialTheme.typography.bodyMedium,
-      color = MaterialTheme.colorScheme.primary
+      text = "What is your current weight?",
+      style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.SemiBold),
+      color = textPrimary
     )
-    Spacer(modifier = Modifier.height(DorkSpacing.xl))
+    Spacer(modifier = Modifier.height(6.dp))
+    Row(verticalAlignment = Alignment.CenterVertically) {
+      Text(
+        text = "Calculated BMI: ",
+        style = MaterialTheme.typography.bodyMedium,
+        color = textSecondary
+      )
+      Text(
+        text = "${uiState.bmi ?: "--"} kg/m\u00b2",
+        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+        color = if (darkTheme) Color(0xFFFFA063) else Color(0xFFD84315)
+      )
+    }
+    Spacer(modifier = Modifier.height(28.dp))
     DorkTextField(
       value = if (uiState.weightKg > 0.0) uiState.weightKg.toString() else "",
       onValueChange = { it.toDoubleOrNull()?.let(viewModel::onWeightChange) },
@@ -563,21 +726,33 @@ private fun StepWeight(uiState: OnboardingUiState, viewModel: OnboardingViewMode
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun StepBloodGroup(uiState: OnboardingUiState, viewModel: OnboardingViewModel) {
+private fun StepBloodGroup(uiState: OnboardingUiState, viewModel: OnboardingViewModel, darkTheme: Boolean) {
+  val textPrimary = if (darkTheme) Color.White else Color(0xFF10151E)
+  val textSecondary = if (darkTheme) Color.White.copy(alpha = 0.65f) else Color(0xFF4C586B)
+
   Column(modifier = Modifier.fillMaxWidth()) {
-    Text(text = "Blood group", style = MaterialTheme.typography.headlineLarge, color = DorkTheme.colors.textPrimary)
-    Spacer(modifier = Modifier.height(DorkSpacing.xs))
-    Text(text = "Essential for emergency medical services and transfusions.", style = MaterialTheme.typography.bodyMedium, color = DorkTheme.colors.textSecondary)
-    Spacer(modifier = Modifier.height(DorkSpacing.xl))
+    Text(
+      text = "Blood group",
+      style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.SemiBold),
+      color = textPrimary
+    )
+    Spacer(modifier = Modifier.height(6.dp))
+    Text(
+      text = "Essential for emergency medical services and transfusions.",
+      style = MaterialTheme.typography.bodyMedium,
+      color = textSecondary
+    )
+    Spacer(modifier = Modifier.height(28.dp))
 
     FlowRow(
-      horizontalArrangement = Arrangement.spacedBy(DorkSpacing.s),
-      verticalArrangement = Arrangement.spacedBy(DorkSpacing.s)
+      horizontalArrangement = Arrangement.spacedBy(10.dp),
+      verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
       BloodGroup.entries.forEach { bg ->
-        DorkChip(
+        SilentChip(
           label = bg.display,
           selected = uiState.bloodGroup == bg,
+          darkTheme = darkTheme,
           onClick = { viewModel.onBloodGroupChange(bg) }
         )
       }
@@ -587,74 +762,68 @@ private fun StepBloodGroup(uiState: OnboardingUiState, viewModel: OnboardingView
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun StepConditions(uiState: OnboardingUiState, viewModel: OnboardingViewModel) {
+private fun StepConditions(uiState: OnboardingUiState, viewModel: OnboardingViewModel, darkTheme: Boolean) {
+  val textPrimary = if (darkTheme) Color.White else Color(0xFF10151E)
+  val textSecondary = if (darkTheme) Color.White.copy(alpha = 0.65f) else Color(0xFF4C586B)
   val options = listOf("None", "Diabetes", "Hypertension", "Asthma", "Heart condition", "Thyroid condition", "Migraine", "Other")
-  // Anything selected that is not one of the presets was typed by the patient.
   val custom = uiState.selectedConditions.filterNot { it in options }.sorted()
 
   Column(modifier = Modifier.fillMaxWidth()) {
-    Text(text = "Medical conditions", style = MaterialTheme.typography.headlineLarge, color = DorkTheme.colors.textPrimary)
-    Spacer(modifier = Modifier.height(DorkSpacing.xs))
     Text(
-      text = "Select what applies, or add your own. Use the name your doctor uses.",
-      style = MaterialTheme.typography.bodyMedium,
-      color = DorkTheme.colors.textSecondary
+      text = "Medical conditions",
+      style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.SemiBold),
+      color = textPrimary
     )
-    Spacer(modifier = Modifier.height(DorkSpacing.xl))
+    Spacer(modifier = Modifier.height(6.dp))
+    Text(
+      text = "Select what applies, or add your own.",
+      style = MaterialTheme.typography.bodyMedium,
+      color = textSecondary
+    )
+    Spacer(modifier = Modifier.height(28.dp))
 
     FlowRow(
-      horizontalArrangement = Arrangement.spacedBy(DorkSpacing.s),
-      verticalArrangement = Arrangement.spacedBy(DorkSpacing.s)
+      horizontalArrangement = Arrangement.spacedBy(10.dp),
+      verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
       options.forEach { condition ->
-        DorkChip(
+        SilentChip(
           label = condition,
           selected = uiState.selectedConditions.contains(condition),
+          darkTheme = darkTheme,
           onClick = { viewModel.toggleCondition(condition) }
         )
       }
       custom.forEach { condition ->
-        DorkChip(
+        SilentChip(
           label = condition,
           selected = true,
+          darkTheme = darkTheme,
           onClick = { viewModel.toggleCondition(condition) }
         )
       }
     }
 
-    Spacer(modifier = Modifier.height(DorkSpacing.l))
+    Spacer(modifier = Modifier.height(20.dp))
 
     Row(verticalAlignment = Alignment.CenterVertically) {
       DorkTextField(
         value = uiState.customConditionInput,
         onValueChange = viewModel::onCustomConditionChange,
-        placeholder = "Add your own condition…",
+        placeholder = "Add your own condition\u2026",
         modifier = Modifier.weight(1f)
       )
-      Spacer(modifier = Modifier.width(DorkSpacing.s))
-      DorkButton(
-        text = "Add",
+      Spacer(modifier = Modifier.width(10.dp))
+      Button(
         onClick = viewModel::addCustomCondition,
-        variant = DorkButtonVariant.Secondary,
-        fullWidth = false,
-        enabled = uiState.customConditionInput.isNotBlank()
-      )
-    }
-
-    AnimatedContent(
-      targetState = custom.size,
-      transitionSpec = { fadeIn(tween(200)) togetherWith fadeOut(tween(120)) },
-      label = "custom-conditions"
-    ) { count ->
-      if (count > 0) {
-        Text(
-          text = "$count added by you · tap a chip to remove it",
-          style = MaterialTheme.typography.bodySmall,
-          color = DorkTheme.colors.textTertiary,
-          modifier = Modifier.padding(top = DorkSpacing.s)
+        enabled = uiState.customConditionInput.isNotBlank(),
+        shape = RoundedCornerShape(12.dp),
+        colors = ButtonDefaults.buttonColors(
+          containerColor = if (darkTheme) Color.White.copy(alpha = 0.15f) else Color(0xFF10151E),
+          contentColor = Color.White
         )
-      } else {
-        Spacer(modifier = Modifier.height(0.dp))
+      ) {
+        Text("Add")
       }
     }
   }
@@ -662,28 +831,40 @@ private fun StepConditions(uiState: OnboardingUiState, viewModel: OnboardingView
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun StepAllergies(uiState: OnboardingUiState, viewModel: OnboardingViewModel) {
+private fun StepAllergies(uiState: OnboardingUiState, viewModel: OnboardingViewModel, darkTheme: Boolean) {
+  val textPrimary = if (darkTheme) Color.White else Color(0xFF10151E)
+  val textSecondary = if (darkTheme) Color.White.copy(alpha = 0.65f) else Color(0xFF4C586B)
   val commonAllergies = listOf("Penicillin", "Sulfa drugs", "Aspirin", "Peanuts", "Shellfish", "Latex", "Pollen / Seasonal")
+
   Column(modifier = Modifier.fillMaxWidth()) {
-    Text(text = "Allergies", style = MaterialTheme.typography.headlineLarge, color = DorkTheme.colors.textPrimary)
-    Spacer(modifier = Modifier.height(DorkSpacing.xs))
-    Text(text = "Select known allergies or type custom ones below.", style = MaterialTheme.typography.bodyMedium, color = DorkTheme.colors.textSecondary)
-    Spacer(modifier = Modifier.height(DorkSpacing.xl))
+    Text(
+      text = "Allergies",
+      style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.SemiBold),
+      color = textPrimary
+    )
+    Spacer(modifier = Modifier.height(6.dp))
+    Text(
+      text = "Select known allergies or type custom ones below.",
+      style = MaterialTheme.typography.bodyMedium,
+      color = textSecondary
+    )
+    Spacer(modifier = Modifier.height(28.dp))
 
     FlowRow(
-      horizontalArrangement = Arrangement.spacedBy(DorkSpacing.s),
-      verticalArrangement = Arrangement.spacedBy(DorkSpacing.s)
+      horizontalArrangement = Arrangement.spacedBy(10.dp),
+      verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
       commonAllergies.forEach { allergy ->
-        DorkChip(
+        SilentChip(
           label = allergy,
           selected = uiState.selectedAllergies.contains(allergy),
+          darkTheme = darkTheme,
           onClick = { viewModel.toggleAllergy(allergy) }
         )
       }
     }
 
-    Spacer(modifier = Modifier.height(DorkSpacing.l))
+    Spacer(modifier = Modifier.height(20.dp))
 
     Row(verticalAlignment = Alignment.CenterVertically) {
       DorkTextField(
@@ -692,24 +873,40 @@ private fun StepAllergies(uiState: OnboardingUiState, viewModel: OnboardingViewM
         placeholder = "Add other allergy...",
         modifier = Modifier.weight(1f)
       )
-      Spacer(modifier = Modifier.width(DorkSpacing.s))
-      DorkButton(
-        text = "Add",
+      Spacer(modifier = Modifier.width(10.dp))
+      Button(
         onClick = viewModel::addCustomAllergy,
-        variant = DorkButtonVariant.Secondary,
-        fullWidth = false
-      )
+        enabled = uiState.customAllergyInput.isNotBlank(),
+        shape = RoundedCornerShape(12.dp),
+        colors = ButtonDefaults.buttonColors(
+          containerColor = if (darkTheme) Color.White.copy(alpha = 0.15f) else Color(0xFF10151E),
+          contentColor = Color.White
+        )
+      ) {
+        Text("Add")
+      }
     }
   }
 }
 
 @Composable
-private fun StepMedications(uiState: OnboardingUiState, viewModel: OnboardingViewModel) {
+private fun StepMedications(uiState: OnboardingUiState, viewModel: OnboardingViewModel, darkTheme: Boolean) {
+  val textPrimary = if (darkTheme) Color.White else Color(0xFF10151E)
+  val textSecondary = if (darkTheme) Color.White.copy(alpha = 0.65f) else Color(0xFF4C586B)
+
   Column(modifier = Modifier.fillMaxWidth()) {
-    Text(text = "Current medications", style = MaterialTheme.typography.headlineLarge, color = DorkTheme.colors.textPrimary)
-    Spacer(modifier = Modifier.height(DorkSpacing.xs))
-    Text(text = "List prescription or over-the-counter medications you take regularly.", style = MaterialTheme.typography.bodyMedium, color = DorkTheme.colors.textSecondary)
-    Spacer(modifier = Modifier.height(DorkSpacing.xl))
+    Text(
+      text = "Current medications",
+      style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.SemiBold),
+      color = textPrimary
+    )
+    Spacer(modifier = Modifier.height(6.dp))
+    Text(
+      text = "List prescription or over-the-counter medications you take regularly.",
+      style = MaterialTheme.typography.bodyMedium,
+      color = textSecondary
+    )
+    Spacer(modifier = Modifier.height(28.dp))
 
     DorkTextField(
       value = uiState.currentMedications,
@@ -723,78 +920,107 @@ private fun StepMedications(uiState: OnboardingUiState, viewModel: OnboardingVie
 }
 
 @Composable
-private fun StepEmergencyContact(uiState: OnboardingUiState, viewModel: OnboardingViewModel) {
+private fun StepEmergencyContact(uiState: OnboardingUiState, viewModel: OnboardingViewModel, darkTheme: Boolean) {
+  val textPrimary = if (darkTheme) Color.White else Color(0xFF10151E)
+  val textSecondary = if (darkTheme) Color.White.copy(alpha = 0.65f) else Color(0xFF4C586B)
+
   Column(modifier = Modifier.fillMaxWidth()) {
-    Text(text = "Emergency contact", style = MaterialTheme.typography.headlineLarge, color = DorkTheme.colors.textPrimary)
-    Spacer(modifier = Modifier.height(DorkSpacing.xs))
-    Text(text = "Will be shown on your Emergency Medical ID.", style = MaterialTheme.typography.bodyMedium, color = DorkTheme.colors.textSecondary)
-    Spacer(modifier = Modifier.height(DorkSpacing.xl))
+    Text(
+      text = "Emergency contact",
+      style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.SemiBold),
+      color = textPrimary
+    )
+    Spacer(modifier = Modifier.height(6.dp))
+    Text(
+      text = "Will be shown on your Emergency Medical ID.",
+      style = MaterialTheme.typography.bodyMedium,
+      color = textSecondary
+    )
+    Spacer(modifier = Modifier.height(28.dp))
 
     DorkTextField(
       value = uiState.emergencyContactName,
       onValueChange = { viewModel.onEmergencyContactChange(it, uiState.emergencyContactRelation, uiState.emergencyContactPhone) },
-      label = "Contact name"
+      label = "Contact name",
+      placeholder = "e.g. Jordan Morgan"
     )
-    Spacer(modifier = Modifier.height(DorkSpacing.m))
+    Spacer(modifier = Modifier.height(16.dp))
     DorkTextField(
       value = uiState.emergencyContactRelation,
       onValueChange = { viewModel.onEmergencyContactChange(uiState.emergencyContactName, it, uiState.emergencyContactPhone) },
-      label = "Relationship"
+      label = "Relationship",
+      placeholder = "e.g. Spouse / Sibling"
     )
-    Spacer(modifier = Modifier.height(DorkSpacing.m))
+    Spacer(modifier = Modifier.height(16.dp))
     DorkTextField(
       value = uiState.emergencyContactPhone,
       onValueChange = { viewModel.onEmergencyContactChange(uiState.emergencyContactName, uiState.emergencyContactRelation, it) },
       label = "Phone number",
+      placeholder = "+1 (555) 000-0000",
       keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
     )
   }
 }
 
 @Composable
-private fun StepComplete(uiState: OnboardingUiState) {
+private fun StepComplete(uiState: OnboardingUiState, darkTheme: Boolean) {
+  val textPrimary = if (darkTheme) Color.White else Color(0xFF10151E)
+  val textSecondary = if (darkTheme) Color.White.copy(alpha = 0.65f) else Color(0xFF4C586B)
+  val cardBg = if (darkTheme) Color.White.copy(alpha = 0.06f) else Color.White.copy(alpha = 0.90f)
+  val cardBorder = if (darkTheme) Color.White.copy(alpha = 0.14f) else Color(0xFFCCE0F5)
+
   Column(
     modifier = Modifier.fillMaxWidth(),
     horizontalAlignment = Alignment.CenterHorizontally
   ) {
-    Spacer(modifier = Modifier.height(DorkSpacing.xxl))
+    Spacer(modifier = Modifier.height(32.dp))
     Box(
       modifier = Modifier
-        .size(72.dp)
+        .size(80.dp)
         .clip(CircleShape)
-        .background(DorkTheme.colors.successContainer),
+        .background(Color(0xFF2E7D32).copy(alpha = 0.22f))
+        .border(1.dp, Color(0xFF81C784).copy(alpha = 0.40f), CircleShape),
       contentAlignment = Alignment.Center
     ) {
       Icon(
         imageVector = Icons.Rounded.CheckCircle,
         contentDescription = null,
-        tint = DorkTheme.colors.success,
-        modifier = Modifier.size(44.dp)
+        tint = Color(0xFF2E7D32),
+        modifier = Modifier.size(46.dp)
       )
     }
-    Spacer(modifier = Modifier.height(DorkSpacing.l))
+    Spacer(modifier = Modifier.height(20.dp))
     Text(
       text = "Profile complete",
-      style = MaterialTheme.typography.displayMedium,
-      color = DorkTheme.colors.textPrimary
+      style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
+      color = textPrimary
     )
-    Spacer(modifier = Modifier.height(DorkSpacing.xs))
+    Spacer(modifier = Modifier.height(6.dp))
     Text(
-      text = "“You can add more information anytime.”",
-      style = MaterialTheme.typography.titleMedium,
-      color = DorkTheme.colors.textSecondary
+      text = "You can update any detail later in your settings.",
+      style = MaterialTheme.typography.bodyMedium,
+      color = textSecondary
     )
-    Spacer(modifier = Modifier.height(DorkSpacing.l))
-    DorkCard(contentPadding = DorkSpacing.m) {
-      Column {
-        Text(text = uiState.fullName, style = MaterialTheme.typography.titleMedium, color = DorkTheme.colors.textPrimary)
-        Text(text = uiState.email, style = MaterialTheme.typography.bodySmall, color = DorkTheme.colors.textSecondary)
-        Text(text = "DOB: ${uiState.formattedBirthDate} · Blood: ${uiState.bloodGroup.display}", style = MaterialTheme.typography.bodySmall, color = DorkTheme.colors.textSecondary)
+    Spacer(modifier = Modifier.height(28.dp))
+
+    // Adaptive Summary Card
+    Box(
+      modifier = Modifier
+        .fillMaxWidth()
+        .clip(RoundedCornerShape(20.dp))
+        .background(cardBg)
+        .border(1.dp, cardBorder, RoundedCornerShape(20.dp))
+        .padding(20.dp)
+    ) {
+      Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(text = uiState.fullName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = textPrimary)
+        Text(text = uiState.email, style = MaterialTheme.typography.bodySmall, color = textSecondary)
+        Text(text = "DOB: ${uiState.formattedBirthDate} \u00b7 Blood: ${uiState.bloodGroup.display}", style = MaterialTheme.typography.bodySmall, color = textSecondary)
         Text(
-          text = "Height: ${if (uiState.heightCm > 0) "${uiState.heightCm} cm" else "not set"} · " +
+          text = "Height: ${if (uiState.heightCm > 0) "${uiState.heightCm} cm" else "not set"} \u00b7 " +
             "Weight: ${if (uiState.weightKg > 0) "${uiState.weightKg} kg" else "not set"}",
           style = MaterialTheme.typography.bodySmall,
-          color = DorkTheme.colors.textSecondary
+          color = textSecondary
         )
       }
     }

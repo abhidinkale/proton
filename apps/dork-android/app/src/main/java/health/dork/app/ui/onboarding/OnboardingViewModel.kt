@@ -48,10 +48,11 @@ data class OnboardingUiState(
 
 class OnboardingViewModel(
   private val authRepository: AuthRepository,
-  private val patientRepository: PatientRepository
+  private val patientRepository: PatientRepository,
+  initialStep: Int = 1
 ) : ViewModel() {
 
-  private val _uiState = MutableStateFlow(OnboardingUiState())
+  private val _uiState = MutableStateFlow(OnboardingUiState(currentStep = initialStep))
   val uiState: StateFlow<OnboardingUiState> = _uiState.asStateFlow()
 
   fun onNameChange(name: String) {

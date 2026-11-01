@@ -3,8 +3,19 @@ package health.dork.app.ui.navigation
 import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -58,11 +69,14 @@ import health.dork.app.ui.profile.HealthProfileDetailScreen
 import health.dork.app.ui.profile.MedicalIdScreen
 import health.dork.app.ui.profile.ProfileScreen
 import health.dork.app.ui.profile.ProfileViewModel
+import health.dork.app.ui.cases.CasesScreen
+import health.dork.app.ui.cases.CasesViewModel
 import health.dork.app.ui.records.DocumentUploadScreen
 import health.dork.app.ui.records.PrescriptionDetailScreen
 import health.dork.app.ui.records.RecordDetailScreen
 import health.dork.app.ui.records.RecordsScreen
 import health.dork.app.ui.records.RecordsViewModel
+import health.dork.app.ui.welcome.WelcomeScreen
 
 sealed interface SubScreen {
   data class DoctorDetail(val doctor: Doctor) : SubScreen
@@ -155,6 +169,7 @@ fun DorkAppNavigation(container: AppContainer) {
     )
   }
   val recordsViewModel = remember { RecordsViewModel(container.recordRepository, container.medicationRepository) }
+  val casesViewModel = remember { CasesViewModel(container.caseRepository) }
   val medicationsViewModel = remember { MedicationsViewModel(container.medicationRepository) }
   val chatViewModel = remember { ChatViewModel(container.chatRepository) }
   val aiViewModel = remember { DorkAiViewModel(container.aiRepository) }
@@ -168,18 +183,49 @@ fun DorkAppNavigation(container: AppContainer) {
   }
 
   val authState by authViewModel.authState.collectAsState()
+  var showSignInScreen by remember { mutableStateOf(false) }
   val clinicLink by container.clinicRepository.link.collectAsState()
   val context = LocalContext.current
 
   when (val state = authState) {
     is AuthState.Unauthenticated -> {
-      AuthScreen(viewModel = authViewModel)
+      if (showSignInScreen) {
+        AuthScreen(
+          viewModel = authViewModel,
+          onBackToWelcome = { showSignInScreen = false }
+        )
+      } else {
+        WelcomeScreen(
+          onGetStarted = {
+            authViewModel.startSignUp(initialStep = 2)
+          },
+          onSignInClick = {
+            showSignInScreen = true
+          },
+          onDemoClick = {
+            authViewModel.signInDemo()
+          }
+        )
+      }
     }
     is AuthState.Onboarding -> {
-      val onboardingViewModel = remember {
-        OnboardingViewModel(container.authRepository, container.patientRepository)
+      val onboardingViewModel = remember(state.step) {
+        OnboardingViewModel(
+          authRepository = container.authRepository,
+          patientRepository = container.patientRepository,
+          initialStep = state.step
+        )
       }
-      OnboardingScreen(viewModel = onboardingViewModel)
+      OnboardingScreen(
+        viewModel = onboardingViewModel,
+        onSignInClick = {
+          container.signOut()
+          showSignInScreen = true
+        },
+        onDemoClick = {
+          authViewModel.signInDemo()
+        }
+      )
     }
     is AuthState.Authenticated, is AuthState.Splash -> {
       AuthenticatedMainShell(
@@ -191,6 +237,7 @@ fun DorkAppNavigation(container: AppContainer) {
         clinicViewModel = clinicViewModel,
         syncViewModel = syncViewModel,
         recordsViewModel = recordsViewModel,
+        casesViewModel = casesViewModel,
         medicationsViewModel = medicationsViewModel,
         chatViewModel = chatViewModel,
         aiViewModel = aiViewModel,
@@ -217,6 +264,7 @@ private fun AuthenticatedMainShell(
   clinicViewModel: ClinicViewModel,
   syncViewModel: health.dork.app.ui.sync.SyncViewModel,
   recordsViewModel: RecordsViewModel,
+  casesViewModel: CasesViewModel,
   medicationsViewModel: MedicationsViewModel,
   chatViewModel: ChatViewModel,
   aiViewModel: DorkAiViewModel,
@@ -258,7 +306,53 @@ private fun AuthenticatedMainShell(
     ) {
       AnimatedContent(
         targetState = activeSubScreen,
-        transitionSpec = { fadeIn() togetherWith fadeOut() },
+        transitionSpec = {
+          if (targetState != null) {
+            (slideInVertically(
+              animationSpec = spring(
+                dampingRatio = Spring.DampingRatioLowBouncy,
+                stiffness = Spring.StiffnessMediumLow
+              )
+            ) { height -> height / 8 } +
+             scaleIn(
+               initialScale = 0.95f,
+               animationSpec = spring(
+                 dampingRatio = Spring.DampingRatioNoBouncy,
+                 stiffness = Spring.StiffnessMediumLow
+               )
+             ) +
+             fadeIn(animationSpec = tween(260, easing = FastOutSlowInEasing))
+            ) togetherWith (
+             scaleOut(
+               targetScale = 0.97f,
+               animationSpec = tween(180, easing = FastOutLinearInEasing)
+             ) +
+             fadeOut(animationSpec = tween(180, easing = FastOutLinearInEasing))
+            )
+          } else {
+            (scaleIn(
+              initialScale = 0.97f,
+              animationSpec = spring(
+                dampingRatio = Spring.DampingRatioNoBouncy,
+                stiffness = Spring.StiffnessMediumLow
+              )
+            ) +
+             fadeIn(animationSpec = tween(220, easing = FastOutSlowInEasing))
+            ) togetherWith (
+             slideOutVertically(
+               animationSpec = spring(
+                 dampingRatio = Spring.DampingRatioNoBouncy,
+                 stiffness = Spring.StiffnessMediumLow
+               )
+             ) { height -> height / 8 } +
+             scaleOut(
+               targetScale = 0.95f,
+               animationSpec = tween(180, easing = FastOutLinearInEasing)
+             ) +
+             fadeOut(animationSpec = tween(180, easing = FastOutLinearInEasing))
+            )
+          }
+        },
         label = "subscreen_transition"
       ) { subScreen ->
         if (subScreen != null) {
@@ -387,70 +481,112 @@ private fun AuthenticatedMainShell(
             )
           }
         } else {
-          when (currentTab) {
-            DorkNavDestination.Home -> HomeScreen(
-              viewModel = homeViewModel,
-              onNavigateToCare = { currentTab = DorkNavDestination.Care },
-              onNavigateToRecords = { currentTab = DorkNavDestination.Records },
-              onNavigateToAi = { currentTab = DorkNavDestination.Ai },
-              onNavigateToMedications = { activeSubScreen = SubScreen.MedicationsView },
-              onAppointmentClick = { appointmentId ->
-                activeSubScreen = SubScreen.Intake(appointmentId)
-              },
-              onProfileClick = { currentTab = DorkNavDestination.Profile },
-              onNextAction = { action ->
-                when (action.kind) {
-                  NextActionKind.COMPLETE_INTAKE,
-                  NextActionKind.SHARE_INTAKE -> action.appointmentId?.let {
-                    activeSubScreen = SubScreen.Intake(it)
-                  }
-
-                  NextActionKind.FOLLOW_UP,
-                  NextActionKind.SHARE_FOLLOW_UP -> action.appointmentId?.let {
-                    activeSubScreen = SubScreen.FollowUp(it)
-                  }
-
-                  NextActionKind.REQUEST_REFILL,
-                  NextActionKind.SHARE_REFILL -> action.medicationId?.let {
-                    activeSubScreen = SubScreen.Refill(it)
-                  }
-
-                  NextActionKind.BOOK_VISIT -> currentTab = DorkNavDestination.Care
-
-                  else -> currentTab = DorkNavDestination.Care
-                }
+          AnimatedContent(
+            targetState = currentTab,
+            transitionSpec = {
+              val forward = targetState.ordinal > initialState.ordinal
+              if (forward) {
+                (slideInHorizontally(
+                  animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioNoBouncy,
+                    stiffness = Spring.StiffnessMediumLow
+                  )
+                ) { width -> width / 4 } +
+                 fadeIn(animationSpec = tween(220, easing = FastOutSlowInEasing))
+                ) togetherWith (
+                 slideOutHorizontally(
+                   animationSpec = spring(
+                     dampingRatio = Spring.DampingRatioNoBouncy,
+                     stiffness = Spring.StiffnessMediumLow
+                   )
+                 ) { width -> -width / 4 } +
+                 fadeOut(animationSpec = tween(180, easing = FastOutLinearInEasing))
+                )
+              } else {
+                (slideInHorizontally(
+                  animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioNoBouncy,
+                    stiffness = Spring.StiffnessMediumLow
+                  )
+                ) { width -> -width / 4 } +
+                 fadeIn(animationSpec = tween(220, easing = FastOutSlowInEasing))
+                ) togetherWith (
+                 slideOutHorizontally(
+                   animationSpec = spring(
+                     dampingRatio = Spring.DampingRatioNoBouncy,
+                     stiffness = Spring.StiffnessMediumLow
+                   )
+                 ) { width -> width / 4 } +
+                 fadeOut(animationSpec = tween(180, easing = FastOutLinearInEasing))
+                )
               }
-            )
+            },
+            label = "tab_crossfade"
+          ) { tab ->
+            when (tab) {
+              DorkNavDestination.Home -> HomeScreen(
+                viewModel = homeViewModel,
+                onNavigateToCare = { currentTab = DorkNavDestination.Care },
+                onNavigateToRecords = { currentTab = DorkNavDestination.Cases },
+                onNavigateToAi = { currentTab = DorkNavDestination.Ai },
+                onNavigateToMedications = { activeSubScreen = SubScreen.MedicationsView },
+                onAppointmentClick = { appointmentId ->
+                  activeSubScreen = SubScreen.Intake(appointmentId)
+                },
+                onProfileClick = { currentTab = DorkNavDestination.Profile },
+                onNavigateToChat = { activeSubScreen = SubScreen.DoctorChat },
+                onNextAction = { action ->
+                  when (action.kind) {
+                    NextActionKind.COMPLETE_INTAKE,
+                    NextActionKind.SHARE_INTAKE -> action.appointmentId?.let {
+                      activeSubScreen = SubScreen.Intake(it)
+                    }
 
-            DorkNavDestination.Care -> CareScreen(
-              viewModel = careViewModel,
-              onDoctorClick = { doctor -> activeSubScreen = SubScreen.DoctorDetail(doctor) },
-              onBookClick = { doctor -> activeSubScreen = SubScreen.Book(doctor) },
-              onMessagesClick = { activeSubScreen = SubScreen.ClinicInbox },
-              unreadClinicMessages = unreadClinicMessages,
-              latestClinicMessage = inboxMessages.firstOrNull(),
-              onReschedule = { id -> activeSubScreen = SubScreen.Reschedule(id) },
-              onFollowUp = { id -> activeSubScreen = SubScreen.FollowUp(id) }
-            )
+                    NextActionKind.FOLLOW_UP,
+                    NextActionKind.SHARE_FOLLOW_UP -> action.appointmentId?.let {
+                      activeSubScreen = SubScreen.FollowUp(it)
+                    }
 
-            DorkNavDestination.Records -> RecordsScreen(
-              viewModel = recordsViewModel,
-              onRecordClick = { record -> activeSubScreen = SubScreen.RecordDetail(record) },
-              onUploadClick = { activeSubScreen = SubScreen.DocumentUpload }
-            )
+                    NextActionKind.REQUEST_REFILL,
+                    NextActionKind.SHARE_REFILL -> action.medicationId?.let {
+                      activeSubScreen = SubScreen.Refill(it)
+                    }
 
-            DorkNavDestination.Ai -> DorkAiScreen(viewModel = aiViewModel)
+                    NextActionKind.BOOK_VISIT -> currentTab = DorkNavDestination.Care
 
-            DorkNavDestination.Profile -> ProfileScreen(
-              viewModel = profileViewModel,
-              onNavigateToHealthProfile = { activeSubScreen = SubScreen.HealthProfileDetail },
-              onNavigateToMedicalId = { activeSubScreen = SubScreen.MedicalId },
-              onNavigateToMedications = { activeSubScreen = SubScreen.MedicationsView },
-              onNavigateToDocuments = { currentTab = DorkNavDestination.Records },
-              onNavigateToClinic = { activeSubScreen = SubScreen.Clinic },
-              onLogout = { },
-              onEraseAllData = onEraseAllData
-            )
+                    else -> currentTab = DorkNavDestination.Care
+                  }
+                }
+              )
+
+              DorkNavDestination.Care -> CareScreen(
+                viewModel = careViewModel,
+                onDoctorClick = { doctor -> activeSubScreen = SubScreen.DoctorDetail(doctor) },
+                onBookClick = { doctor -> activeSubScreen = SubScreen.Book(doctor) },
+                onMessagesClick = { activeSubScreen = SubScreen.ClinicInbox },
+                unreadClinicMessages = unreadClinicMessages,
+                latestClinicMessage = inboxMessages.firstOrNull(),
+                onReschedule = { id -> activeSubScreen = SubScreen.Reschedule(id) },
+                onFollowUp = { id -> activeSubScreen = SubScreen.FollowUp(id) }
+              )
+
+              DorkNavDestination.Cases -> CasesScreen(
+                viewModel = casesViewModel
+              )
+
+              DorkNavDestination.Ai -> DorkAiScreen(viewModel = aiViewModel)
+
+              DorkNavDestination.Profile -> ProfileScreen(
+                viewModel = profileViewModel,
+                onNavigateToHealthProfile = { activeSubScreen = SubScreen.HealthProfileDetail },
+                onNavigateToMedicalId = { activeSubScreen = SubScreen.MedicalId },
+                onNavigateToMedications = { activeSubScreen = SubScreen.MedicationsView },
+                onNavigateToDocuments = { currentTab = DorkNavDestination.Cases },
+                onNavigateToClinic = { activeSubScreen = SubScreen.Clinic },
+                onLogout = { },
+                onEraseAllData = onEraseAllData
+              )
+            }
           }
         }
       }

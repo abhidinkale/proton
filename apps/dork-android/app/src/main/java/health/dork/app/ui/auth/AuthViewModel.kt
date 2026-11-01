@@ -65,9 +65,9 @@ class AuthViewModel(
     }
   }
 
-  fun startSignUp() {
+  fun startSignUp(initialStep: Int = 2) {
     viewModelScope.launch {
-      authRepository.startSignUp()
+      authRepository.startSignUp(initialStep)
     }
   }
 }
