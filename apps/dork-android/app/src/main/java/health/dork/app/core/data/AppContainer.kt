@@ -57,6 +57,7 @@ interface AppContainer {
   val careRepository: CareRepository
   val medicationRepository: MedicationRepository
   val recordRepository: RecordRepository
+  val caseRepository: health.dork.app.core.data.repository.CaseRepository
   val chatRepository: ChatRepository
   val clinicInboxRepository: ClinicInboxRepository
   val aiRepository: DorkAiRepository
@@ -148,6 +149,10 @@ class DefaultAppContainer(
     // The uploader reads the session and the patient's own sync switch at call
     // time, so a document is only ever sent while sync is enabled.
     DorkRecordRepository(store, documentUploader = OkHttpDocumentUploader(syncSettings))
+  }
+
+  override val caseRepository: health.dork.app.core.data.repository.CaseRepository by lazy {
+    health.dork.app.core.data.repository.DorkCaseRepository(store)
   }
 
   override val chatRepository: ChatRepository by lazy {
