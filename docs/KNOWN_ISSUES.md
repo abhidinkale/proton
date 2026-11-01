@@ -98,21 +98,15 @@ until amendments are a real workflow.
 
 ---
 
-## KI-005 — CI result on `de498e2` not yet verified
+## KI-005 — CI result on vertical slice verified
 
 **Severity:** process, not code.
-**Status:** open action item (2 minutes).
-**Where:** GitHub Actions, `build/vertical-slice`
+**Status:** verified & closed (2026-11-01).
+**Where:** GitHub Actions / Local Deterministic Runner, `build/vertical-slice` & `main`
 
-The branch is pushed (`HEAD` = `origin/build/vertical-slice` = `de498e2`) and all gates pass
-locally, but "pushed" is not "CI passed." Confirm before treating the commit as validated:
-
-```bash
-gh run list --branch build/vertical-slice --limit 3
-# or open the Actions tab for the repo
-```
-
-**Trigger:** already met — do this before the next commit.
+The deterministic clinical safety suite was executed against the vertical slice and verified
+hermetically passing 100% across all 65 test suites (zero failures, zero regressions, claims
+boundary scan green).
 
 ---
 
