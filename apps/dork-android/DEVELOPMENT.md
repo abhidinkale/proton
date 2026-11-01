@@ -34,7 +34,15 @@ sdk.dir=/Users/<username>/Library/Android/sdk
 
 ---
 
-## 3. Switching Environments
+## 3. Architecture & Key Modules
+
+- **Cases Feature (`ui/cases/`, `core/data/repository/CaseRepository.kt`)**: Implements episode-of-care timelines, linking lab results, medical documents, and consultations into discrete case state machines.
+- **KeepAlive Service (`core/service/DorkKeepAliveService.kt`)**: Binds a foreground health/sync service with notification channels to maintain continuous socket connection and background sync queues.
+- **DorkStore v2 (`core/data/local/DorkStore.kt`)**: Durable key-value storage engine caching patient profile, local appointments, medication adherence logs, and pending outbox sync payloads.
+
+---
+
+## 4. Switching Environments
 
 In `FhirConfig.kt`:
 ```kotlin
