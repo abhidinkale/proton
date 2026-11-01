@@ -69,15 +69,15 @@ class DorkRecordRepository(
   private val documentSerializer = ListSerializer(HealthDocument.serializer())
 
   private val _timelineRecords = MutableStateFlow(
-    store.read(KEY_RECORDS, recordSerializer) ?: DorkSeedData.healthRecords
+    store.read(KEY_RECORDS, recordSerializer) ?: emptyList()
   )
   override val timelineRecords: StateFlow<List<HealthRecordItem>> = _timelineRecords.asStateFlow()
 
-  private val _labResults = MutableStateFlow(DorkSeedData.labResults)
+  private val _labResults = MutableStateFlow<List<LabTestItem>>(emptyList())
   override val labResults: StateFlow<List<LabTestItem>> = _labResults.asStateFlow()
 
   private val _documents = MutableStateFlow(
-    store.read(KEY_DOCUMENTS, documentSerializer) ?: DorkSeedData.documents
+    store.read(KEY_DOCUMENTS, documentSerializer) ?: emptyList()
   )
   override val documents: StateFlow<List<HealthDocument>> = _documents.asStateFlow()
 

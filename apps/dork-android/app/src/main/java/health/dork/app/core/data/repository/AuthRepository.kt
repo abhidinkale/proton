@@ -31,7 +31,7 @@ interface AuthRepository {
 
   suspend fun signIn(email: String, password: String): Result<Unit>
   suspend fun signInDemo()
-  suspend fun startSignUp()
+  suspend fun startSignUp(initialStep: Int = 2)
   suspend fun completeOnboarding(profile: PatientProfile, password: String): Result<Unit>
   suspend fun logout()
 }
@@ -109,8 +109,8 @@ class DorkAuthRepository(
     _authState.value = AuthState.Authenticated(DorkSeedData.samplePatient.id, isDemoMode = true)
   }
 
-  override suspend fun startSignUp() {
-    _authState.value = AuthState.Onboarding(step = 1)
+  override suspend fun startSignUp(initialStep: Int) {
+    _authState.value = AuthState.Onboarding(step = initialStep)
   }
 
   override suspend fun completeOnboarding(profile: PatientProfile, password: String): Result<Unit> {

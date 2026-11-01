@@ -43,31 +43,31 @@ object DorkSeedData {
 
   private val today: LocalDate = LocalDate.now()
 
-  // Patient Profile (Alex Morgan, 12 May 1998)
+  // Patient Profile (Arc)
   val samplePatient = PatientProfile(
-    id = "patient-synthetic-alex-morgan",
-    fullName = "Alex Morgan",
-    email = "alex.morgan@synthetic.dork.health",
-    phone = "+1 (555) 234-8901",
-    birthDate = "1998-05-12",
-    sex = BiologicalSex.FEMALE,
+    id = "pat-arc",
+    fullName = "Arc",
+    email = "arc@example.com",
+    phone = "",
+    birthDate = "2000-01-01",
+    sex = BiologicalSex.MALE,
     bloodGroup = BloodGroup.O_POS,
-    heightCm = 172.0,
-    weightKg = 68.5,
-    conditions = listOf("Mild Seasonal Asthma", "Occasional Migraine"),
-    allergies = listOf("Penicillin (Moderate rash)", "Peanuts (Mild)"),
-    currentMedications = listOf("Amoxicillin 500mg", "Fluticasone Inhaler 110mcg", "Vitamin D3 2000IU"),
-    surgeries = listOf("Appendectomy (2018)"),
-    familyHistory = listOf("Maternal grandmother: Type 2 Diabetes", "Paternal uncle: Hypertension"),
-    lifestyleSmoking = "Never smoked",
-    lifestyleAlcohol = "Occasional / Social",
-    lifestyleActivity = "Cardio & running 3x weekly",
+    heightCm = 175.0,
+    weightKg = 70.0,
+    conditions = emptyList(),
+    allergies = emptyList(),
+    currentMedications = emptyList(),
+    surgeries = emptyList(),
+    familyHistory = emptyList(),
+    lifestyleSmoking = "Never",
+    lifestyleAlcohol = "None",
+    lifestyleActivity = "Active",
     emergencyContact = EmergencyContact(
-      name = "Jordan Morgan",
-      relationship = "Spouse",
-      phoneNumber = "+1 (555) 889-1204"
+      name = "",
+      relationship = "",
+      phoneNumber = ""
     ),
-    medicalAlerts = listOf("Allergic to Penicillin", "Asthma Inhaler in bag")
+    medicalAlerts = emptyList()
   )
 
   // 3 Realistic Doctors
@@ -138,6 +138,29 @@ object DorkSeedData {
         ClinicDayHours("THURSDAY", 11 * 60, 18 * 60, 30),
         ClinicDayHours("FRIDAY", 11 * 60, 18 * 60, 30),
         ClinicDayHours("SATURDAY", 10 * 60, 14 * 60, 30)
+      )
+    ),
+    Doctor(
+      id = "usr-md-ray-01",
+      name = "Dr. Ray",
+      specialty = "Family Medicine & Acute Care",
+      qualifications = "MD, Clinical AI Fellow",
+      experienceYears = 10,
+      languages = listOf("English"),
+      clinicName = "Beacon Hill Family Health",
+      clinicAddress = "142 Cambridge St, Boston MA",
+      distanceKm = "0.5 km",
+      rating = 5.0,
+      reviewCount = 98,
+      consultationTypes = listOf(ConsultationType.IN_PERSON, ConsultationType.VIDEO),
+      availableSlots = listOf("Today · 5:00 PM", "Tomorrow · 11:00 AM", "Tomorrow · 3:30 PM"),
+      aboutBio = "Physician at Beacon Hill Family Health specializing in comprehensive family health and acute ambulatory diagnostics.",
+      weeklyHours = listOf(
+        ClinicDayHours("MONDAY", 9 * 60, 18 * 60, 30),
+        ClinicDayHours("TUESDAY", 9 * 60, 18 * 60, 30),
+        ClinicDayHours("WEDNESDAY", 9 * 60, 18 * 60, 30),
+        ClinicDayHours("THURSDAY", 9 * 60, 18 * 60, 30),
+        ClinicDayHours("FRIDAY", 9 * 60, 18 * 60, 30)
       )
     )
   )

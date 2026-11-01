@@ -53,6 +53,6 @@ class DorkStore(context: Context? = null) {
   }
 
   private companion object {
-    const val PREFS_NAME = "dork_patient_store_v1"
+    const val PREFS_NAME = "dork_patient_store_v2"
   }
 }

@@ -51,7 +51,8 @@ data class PatientProfile(
   val lifestyleAlcohol: String = "Occasional / None",
   val lifestyleActivity: String = "Moderate active",
   val emergencyContact: EmergencyContact? = null,
-  val medicalAlerts: List<String> = emptyList()
+  val medicalAlerts: List<String> = emptyList(),
+  val profileAvatarUri: String? = null
 ) {
   val calculatedAge: Int
     get() = DateCalculators.calculateAgeFromString(birthDate) ?: 0
