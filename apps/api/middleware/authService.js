@@ -282,6 +282,15 @@ const AUTHENTICATED_ACCOUNTS = [
     npi: '1092837461'
   },
   {
+    email: 'dr.ray@proton.health',
+    passwordHash: crypto.createHash('sha256').update('valid_password_2026!').digest('hex'),
+    actorId: 'usr-md-ray-01',
+    actorRole: 'physician',
+    actorName: 'Dr. Ray, MD',
+    tenantId: 'org-default',
+    npi: '1827364519'
+  },
+  {
     email: 'marcus.ops@proton.health',
     passwordHash: crypto.createHash('sha256').update('valid_password_2026!').digest('hex'),
     actorId: 'usr-ops-marcus-01',

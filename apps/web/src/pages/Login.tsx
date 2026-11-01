@@ -325,9 +325,9 @@ export default function Login() {
                   </button>
 
                   <p className="rounded-xl border border-black/[0.06] bg-paper/55 px-3 py-2 text-[10.5px] leading-relaxed text-ink-2">
-                    Evaluation accounts: <span className="font-mono-clinical text-ink">dr.lin@proton.health</span>,{' '}
-                    <span className="font-mono-clinical text-ink">dr.morgan@proton.health</span>,{' '}
-                    <span className="font-mono-clinical text-ink">marcus.ops@proton.health</span> · password{' '}
+                    Evaluation accounts: <span className="font-mono-clinical text-ink">dr.ray@proton.health</span>,{' '}
+                    <span className="font-mono-clinical text-ink">dr.lin@proton.health</span>,{' '}
+                    <span className="font-mono-clinical text-ink">dr.morgan@proton.health</span> · password{' '}
                     <span className="font-mono-clinical text-ink">valid_password_2026!</span>
                   </p>
                 </form>

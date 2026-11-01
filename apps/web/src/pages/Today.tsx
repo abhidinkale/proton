@@ -283,6 +283,12 @@ export default function Today() {
                 connect patient
               </button>
               <button
+                onClick={() => navigate('/care-loop')}
+                className="font-mono text-[10px] tracking-[0.14em] text-white/25 uppercase transition-colors hover:text-white/60"
+              >
+                care loop
+              </button>
+              <button
                 onClick={() => navigate('/dashboard')}
                 className="font-mono text-[10px] tracking-[0.14em] text-white/25 uppercase transition-colors hover:text-white/60"
               >
