@@ -1,0 +1,23 @@
+{
+  "name": "proton-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Controlled Physician Validation Release for Proton Clinical AI Copilot",
+  "scripts": {
+    "verify": "./scripts/verify-vertical-slice.sh",
+    "test:api": "npm --prefix apps/api test",
+    "build:web": "npm --prefix apps/web run build",
+    "dev:web": "npm --prefix apps/web run dev",
+    "dev:api": "npm --prefix apps/api dev",
+    "check:claims": "node scripts/check-claims.js"
+  },
+  "keywords": [
+    "clinical-ai",
+    "healthcare",
+    "fhir",
+    "ambient-intelligence",
+    "proton"
+  ],
+  "author": "abhijeetdinkale-arch",
+  "license": "UNLICENSED"
+}
