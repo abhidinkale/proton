@@ -2,6 +2,7 @@ package health.dork.app.ui.home
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,14 +19,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.CalendarToday
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.Forum
 import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material.icons.rounded.MedicalServices
 import androidx.compose.material.icons.rounded.Medication
@@ -95,6 +99,7 @@ fun HomeScreen(
   onAppointmentClick: (String) -> Unit,
   onProfileClick: () -> Unit,
   onNextAction: (NextAction) -> Unit = {},
+  onNavigateToChat: () -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   val uiState by viewModel.uiState.collectAsState()
@@ -118,6 +123,7 @@ fun HomeScreen(
     onNextAction = { action ->
       if (!viewModel.performInPlace(action)) onNextAction(action)
     },
+    onNavigateToChat = onNavigateToChat,
     modifier = modifier
   )
 }
@@ -137,6 +143,7 @@ fun HomeContent(
   onAppointmentClick: (String) -> Unit,
   onProfileClick: () -> Unit,
   onNextAction: (NextAction) -> Unit = {},
+  onNavigateToChat: () -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   val scrollState = rememberScrollState()
@@ -339,9 +346,9 @@ fun HomeContent(
         modifier = Modifier.weight(1f)
       )
       MetricCell(
-        value = uiState.recentRecords.size.toString(),
-        tag = "Records",
-        caption = "Latest results",
+        value = "Dr. Chen",
+        tag = "Care Team",
+        caption = "Active Clinic",
         modifier = Modifier.weight(1f)
       )
     }
@@ -718,9 +725,9 @@ fun HomeContent(
         onClick = onNavigateToCare
       )
       ActionTile(
-        label = "Upload",
-        icon = Icons.Rounded.Upload,
-        onClick = onNavigateToRecords
+        label = "Chat",
+        icon = Icons.Rounded.Forum,
+        onClick = onNavigateToChat
       )
       ActionTile(
         label = "Ask Dork",
@@ -736,7 +743,7 @@ fun HomeContent(
 
     Spacer(modifier = Modifier.height(24.dp))
 
-    // ── Health snapshot ─────────────────────────────────────────────────
+    // ── Health snapshot ──────────────────────────────────────────────────
     SectionHeader(title = "Health snapshot", action = "Profile")
     Spacer(modifier = Modifier.height(10.dp))
 
@@ -766,29 +773,22 @@ fun HomeContent(
 
     Spacer(modifier = Modifier.height(24.dp))
 
-    // ── Recent records ──────────────────────────────────────────────────
+    // ── Clinic Messenger ──────────────────────────────────────────────────
     SectionHeader(
-      title = "Recent records",
-      action = "All records",
-      onAction = onNavigateToRecords
+      title = "Care team messenger",
+      action = "Open chat",
+      onAction = onNavigateToChat
     )
     Spacer(modifier = Modifier.height(10.dp))
 
-    if (uiState.recentRecords.isEmpty()) {
-      DorkCard(shape = DorkShapes.extraLarge, contentPadding = 16.dp, onClick = onNavigateToRecords) {
-        Text(
-          text = "No records yet · upload your first report",
-          style = MaterialTheme.typography.bodySmall,
-          color = DorkTheme.colors.textSecondary
-        )
-      }
-    } else {
-      Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        uiState.recentRecords.forEach { record ->
-          RecordRow(record = record, onClick = onNavigateToRecords)
-        }
-      }
-    }
+    ClinicMessengerCard(
+      doctorName = uiState.clinicDoctorName,
+      specialty = uiState.clinicSpecialty,
+      latestMessage = uiState.latestClinicMessage,
+      timestamp = uiState.latestClinicMessageTime,
+      unreadCount = uiState.clinicMessageUnreadCount,
+      onClick = onNavigateToChat
+    )
 
     Spacer(modifier = Modifier.height(20.dp))
 
@@ -1372,6 +1372,147 @@ private fun SnapshotCard(
         maxLines = 1,
         overflow = TextOverflow.Ellipsis
       )
+    }
+  }
+}
+
+@Composable
+private fun ClinicMessengerCard(
+  doctorName: String,
+  specialty: String,
+  latestMessage: String,
+  timestamp: String,
+  unreadCount: Int,
+  onClick: () -> Unit
+) {
+  DorkCard(
+    shape = DorkShapes.extraLarge,
+    contentPadding = 18.dp,
+    onClick = onClick,
+    modifier = Modifier.fillMaxWidth()
+  ) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        Row(
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+          Box(contentAlignment = Alignment.BottomEnd) {
+            Box(
+              modifier = Modifier
+                .size(44.dp)
+                .clip(CircleShape)
+                .background(DorkTheme.colors.surfaceSecondary),
+              contentAlignment = Alignment.Center
+            ) {
+              Text(
+                text = "SC",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+              )
+            }
+            Box(
+              modifier = Modifier
+                .size(12.dp)
+                .clip(CircleShape)
+                .background(Color(0xFF22C55E))
+                .border(2.dp, MaterialTheme.colorScheme.surface, CircleShape)
+            )
+          }
+
+          Column {
+            Row(
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+              Text(
+                text = doctorName,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = DorkTheme.colors.textPrimary
+              )
+              DorkTag(text = "Clinic", tone = DorkTagTone.Sage)
+            }
+            Text(
+              text = specialty,
+              style = MaterialTheme.typography.bodySmall,
+              color = DorkTheme.colors.textSecondary
+            )
+          }
+        }
+
+        if (unreadCount > 0) {
+          Surface(
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(22.dp)
+          ) {
+            Box(contentAlignment = Alignment.Center) {
+              Text(
+                text = unreadCount.toString(),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onPrimary,
+                fontWeight = FontWeight.Bold
+              )
+            }
+          }
+        }
+      }
+
+      Spacer(modifier = Modifier.height(14.dp))
+
+      Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = DorkTheme.colors.surfaceSecondary,
+        modifier = Modifier.fillMaxWidth()
+      ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+          Text(
+            text = latestMessage,
+            style = MaterialTheme.typography.bodyMedium,
+            color = DorkTheme.colors.textPrimary,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+          )
+        }
+      }
+
+      Spacer(modifier = Modifier.height(12.dp))
+
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        Text(
+          text = "Received today · $timestamp",
+          style = MaterialTheme.typography.labelSmall,
+          color = DorkTheme.colors.textTertiary
+        )
+
+        Row(
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+          Text(
+            text = "Reply to clinic",
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.primary
+          )
+          Icon(
+            imageVector = Icons.Rounded.ChevronRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(16.dp)
+          )
+        }
+      }
     }
   }
 }

@@ -93,6 +93,13 @@ class ProfileViewModel(
     }
   }
 
+  fun updateProfileAvatar(avatarUri: String) {
+    val current = _uiState.value.profile ?: return
+    viewModelScope.launch {
+      patientRepository.updateProfile(current.copy(profileAvatarUri = avatarUri))
+    }
+  }
+
   fun updateAuthoritativeDob(newDobIso: String) {
     viewModelScope.launch {
       patientRepository.updateAuthoritativeDob(newDobIso)

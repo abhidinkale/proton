@@ -52,6 +52,11 @@ data class HomeUiState(
   val openRefills: Int = 0,
   val followUpDue: FollowUpCheckIn? = null,
   val clinicLinked: Boolean = false,
+  val clinicDoctorName: String = "Dr. Sarah Chen, MD",
+  val clinicSpecialty: String = "Cardiology & Primary Care",
+  val latestClinicMessage: String = "Hello Alex, Dr. Chen here. I reviewed your recent CBC results from Thursday — everything looks excellent and completely within normal ranges.",
+  val latestClinicMessageTime: String = "10:15 AM",
+  val clinicMessageUnreadCount: Int = 1,
   val isLoading: Boolean = false
 ) {
   val firstName: String

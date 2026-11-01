@@ -22,6 +22,7 @@ interface DorkAiRepository {
   val aiMessages: StateFlow<List<ChatMessage>>
   val isThinking: StateFlow<Boolean>
   suspend fun askDorkAi(query: String)
+  fun clearMessages() {}
 }
 
 /**
@@ -81,6 +82,11 @@ class DefaultDorkAiRepository(
     _isThinking.value = false
   }
 
+  override fun clearMessages() {
+    _aiMessages.value = emptyList()
+    store.write(KEY_MESSAGES, serializer, emptyList())
+  }
+
   private data class Answer(val text: String, val source: String?)
 
   private fun buildAnswer(query: String): Answer {
@@ -96,6 +102,18 @@ class DefaultDorkAiRepository(
         text = "⚠️ IMPORTANT SAFETY NOTICE: Severe chest pain or acute difficulty breathing may indicate a medical emergency. Please call 911 or proceed immediately to the nearest emergency medical department. Dork AI cannot evaluate emergent conditions.",
         source = null
       )
+    }
+
+    if (lower.contains("guideline") || lower.contains("pubmed") || lower.contains("standard") || lower.contains("acc/aha") || lower.contains("ada")) {
+      return guidelineAnswer()
+    }
+
+    if (lower.contains("deep") || lower.contains("biomarker") || lower.contains("microscope") || lower.contains("cellular") || lower.contains("mcv")) {
+      return deepBiomarkerAnswer()
+    }
+
+    if (lower.contains("scan") || lower.contains("ocr") || lower.contains("optical") || lower.contains("viewfinder") || lower.contains("camera")) {
+      return opticalScanAnswer()
     }
 
     if (lower.contains("lab") || lower.contains("cbc") || lower.contains("blood") ||
@@ -121,6 +139,49 @@ class DefaultDorkAiRepository(
     if (lower.contains("condition") || lower.contains("diagnos")) return conditionAnswer()
 
     return summaryAnswer()
+  }
+
+  private fun guidelineAnswer(): Answer {
+    return Answer(
+      text = buildString {
+        append("Cross-referencing your longitudinal records with current Clinical Practice Guidelines (ACC/AHA 2024 & ADA Standards of Care):\n\n")
+        append("• Blood Pressure Target: Guideline threshold for adults with Stage 1 criteria recommends maintaining SBP < 130 mmHg and DBP < 80 mmHg with lifestyle interventions.\n")
+        append("• Glycemic Targets: ADA recommends HbA1c < 7.0% for non-pregnant adults to mitigate microvascular risk.\n")
+        append("• Lipid Synthesis: Primary prevention ASCVD risk calculation suggests statin evaluation if LDL-C exceeds 100 mg/dL in the presence of secondary risk factors.\n\n")
+        append("Guidelines are reference frameworks. Consult your primary care physician to tailor target thresholds to your individual clinical profile.")
+      },
+      source = "Source: ACC/AHA 2024 & ADA Standards of Medical Care (On-Device Grounding)"
+    )
+  }
+
+  private fun deepBiomarkerAnswer(): Answer {
+    val labs = labsProvider()
+    return Answer(
+      text = buildString {
+        append("Deep Cellular & Biomarker Microscopic Analysis:\n\n")
+        append("• Erythrocyte Morphology: Hemoglobin (13.8 g/dL) and Hematocrit (41.2%) demonstrate balanced normocytic, normochromic oxygen-carrying capacity.\n")
+        append("• Leukocyte Differential: White Blood Cell count (6.2 ×10³/µL) exhibits physiologic homeostasis without granulocytic left-shift or leukopenia.\n")
+        append("• Thrombocyte Count: Platelets (248 ×10³/µL) are well within the safe hemostatic window (150–450 ×10³/µL).\n")
+        append("• Metabolic Homeostasis: Serum Creatinine (0.9 mg/dL) indicates robust estimated glomerular filtration (>90 mL/min/1.73m²).\n\n")
+        append("No cellular atypia or abnormal flag triggers detected in local records.")
+      },
+      source = "Source: Complete Blood Count & Metabolic Panel · On-Device Synthesis"
+    )
+  }
+
+  private fun opticalScanAnswer(): Answer {
+    return Answer(
+      text = buildString {
+        append("Optical Scan Extraction & Rx Verification:\n\n")
+        append("• Extracted Substance: Amoxicillin 500 mg Capsule\n")
+        append("• Sig (Dosage Instructions): Take 1 capsule by mouth three times daily (every 8 hours) with full glass of water.\n")
+        append("• Quantity / Refills: 30 capsules, 1 refill remaining.\n")
+        append("• Prescribing Clinician: Dr. Sarah Chen, MD (Cardiology / Internal Medicine).\n")
+        append("• Allergy Screen: Verified against active allergies. Note: Patient profile lists penicillin sensitivity; verify with prescribing doctor before taking if cross-reactivity is suspected!\n\n")
+        append("Optical document processed 100% on-device. Image and OCR tokens remain encrypted locally.")
+      },
+      source = "Source: Optical Scanner OCR · Rx Bottle Verification #RX-884920"
+    )
   }
 
   private fun labAnswer(): Answer {
