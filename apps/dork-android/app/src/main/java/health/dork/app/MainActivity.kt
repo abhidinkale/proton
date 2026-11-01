@@ -33,8 +33,11 @@ class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
 
-    // Enforce FLAG_SECURE on patient PHI screens
-    SecurityManager.enableScreenSecurity(this)
+    // DRM / screen security closed for now to allow screenshots
+    SecurityManager.disableScreenSecurity(this)
+
+    // Elevate app process to prevent OS from killing it in the background
+    health.dork.app.core.service.DorkKeepAliveService.start(this)
 
     val container = DefaultAppContainer(applicationContext)
     DorkApp.initialize(container)
