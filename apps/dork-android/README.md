@@ -12,6 +12,8 @@ Dork is the native Android patient-facing application designed for the Proton he
 - **Authoritative Date of Birth & Dynamic Age**: Strict adherence to ISO-8601 `YYYY-MM-DD` demographic representation with dynamic leap-year and timezone safe age calculation.
 - **Context-Aware Home**: Immediate answers to *"What do I need to know about my health right now?"* featuring appointment status, upcoming medication doses, vitals snapshot, and recent records.
 - **Doctor Discovery & Care Booking**: Find healthcare providers by specialty, clinic location, and real availability. Seamless booking flow with interactive slot picker and confirmation state.
+- **Interactive Cases Architecture**: Longitudinal episode-of-care tracker structuring clinical encounters into discrete Cases with active status timelines, clinical action checkpoints, and outbox sync.
+- **Background KeepAlive Reliability**: Foreground service interlock (`DorkKeepAliveService`) keeping background sync alive across aggressive OEM battery throttling.
 - **Pre-Consultation Clinical Preparation**: Structured patient intake flow capturing chief complaints, duration, severity (1–10 scale), and symptom checklists.
 - **Longitudinal Health Journey**: Chronological timeline uniting doctor consultations, lab reports (CBC, metabolic panels), prescriptions, and diagnostic imaging.
 - **Medications & Non-Judgmental Adherence**: Active prescriptions, scheduled daily dose time slots with "Mark Taken", "Skip", and non-punitive adherence tracking.
