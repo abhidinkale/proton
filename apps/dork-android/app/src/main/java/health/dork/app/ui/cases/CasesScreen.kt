@@ -92,19 +92,20 @@ fun CasesScreen(
   var showNewCaseSheet by remember { mutableStateOf(false) }
 
   DorkTheme(darkTheme = darkTheme) {
-    // Theme-adaptive color tokens matching the rest of the Dork app
-    val textPrimary = DorkTheme.colors.textPrimary
-    val textSecondary = DorkTheme.colors.textSecondary
-    val textTertiary = DorkTheme.colors.textTertiary
-    val searchBg = DorkTheme.colors.card
-    val searchBorder = DorkTheme.colors.surfaceBorder
-    val addBtnBg = DorkTheme.colors.textPrimary
-    val addBtnTint = DorkTheme.colors.canvas
+    // Unified light background with contrasting dark file cards
+    val textPrimary = Color(0xFF0F172A)
+    val textSecondary = Color(0xFF64748B)
+    val textTertiary = Color(0xFF94A3B8)
+    val screenBg = Color(0xFFF7F7F8)
+    val searchBg = Color.White
+    val searchBorder = Color(0xFFE2E8F0)
+    val addBtnBg = Color(0xFF0F172A)
+    val addBtnTint = Color.White
 
     Box(
       modifier = modifier
         .fillMaxSize()
-        .background(DorkTheme.colors.canvas)
+        .background(screenBg)
     ) {
 
       Column(
@@ -208,9 +209,9 @@ fun CasesScreen(
         ) {
           items(viewModel.filters) { filter ->
             val selected = filter == uiState.selectedFilter
-            val chipBg = if (selected) DorkTheme.colors.textPrimary else DorkTheme.colors.card
-            val chipBorder = if (selected) null else BorderStroke(1.dp, DorkTheme.colors.surfaceBorder)
-            val chipText = if (selected) DorkTheme.colors.canvas else DorkTheme.colors.textSecondary
+            val chipBg = if (selected) Color(0xFF0F172A) else Color.White
+            val chipBorder = if (selected) null else BorderStroke(1.dp, Color(0xFFE2E8F0))
+            val chipText = if (selected) Color.White else Color(0xFF475569)
 
             Surface(
               shape = RoundedCornerShape(percent = 50),
@@ -233,7 +234,7 @@ fun CasesScreen(
         // ── Chronological Case Folder Timeline Feed ───────────────────
         LazyColumn(
           modifier = Modifier.fillMaxSize(),
-          contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 96.dp),
+          contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 108.dp),
           verticalArrangement = Arrangement.spacedBy(22.dp)
         ) {
           if (uiState.cases.isEmpty()) {
@@ -370,28 +371,25 @@ fun CaseFolderCard(
   onClick: () -> Unit,
   modifier: Modifier = Modifier
 ) {
-  // Theme palette for card using Dork design tokens
-  val cardBg = DorkTheme.colors.card
-  val cardBorder = DorkTheme.colors.surfaceBorder
-  val spotColor = DorkTheme.colors.cardShadow
+  // Black / dark obsidian file cards on the unified white screen
+  val cardBg = Color(0xFF0F1117)
+  val cardBorder = Color(0x24000000)
+  val spotColor = Color.Black.copy(alpha = 0.28f)
 
-  val pocketBg = if (darkTheme) Color(0xFF1B212C) else DorkTheme.colors.surfaceSecondary
-  val pocketBorder = DorkTheme.colors.surfaceBorderSubtle
+  val pocketBg = Color(0xFF161A22)
+  val pocketBorder = Color(0x33FFFFFF)
 
-  val titleColor = DorkTheme.colors.textPrimary
-  val subtitleColor = DorkTheme.colors.textSecondary
-  val summaryColor = DorkTheme.colors.textPrimary.copy(alpha = 0.85f)
+  val titleColor = Color.White
+  val subtitleColor = Color.White.copy(alpha = 0.70f)
+  val summaryColor = Color.White.copy(alpha = 0.85f)
 
-  val icdBg = if (darkTheme) Color.White.copy(alpha = 0.08f) else DorkTheme.colors.sky
-  val icdBorder = if (darkTheme) Color.White.copy(alpha = 0.18f) else DorkTheme.colors.surfaceBorder
-  val icdText = if (darkTheme) Color.White.copy(alpha = 0.85f) else DorkTheme.colors.skyInk
+  val vitalsBg = Color.White.copy(alpha = 0.12f)
+  val vitalsBorder = Color.White.copy(alpha = 0.22f)
+  val vitalsText = Color.White.copy(alpha = 0.90f)
 
-  val vitalsBg = if (darkTheme) Color.White.copy(alpha = 0.08f) else DorkTheme.colors.card
-  val vitalsText = DorkTheme.colors.textSecondary
-
-  val dayColor = DorkTheme.colors.textPrimary
-  val monthColor = DorkTheme.colors.textSecondary
-  val metaCountColor = DorkTheme.colors.textPrimary
+  val dayColor = Color.White
+  val monthColor = Color.White.copy(alpha = 0.65f)
+  val metaCountColor = Color.White
 
   // Outer squircle container
   Surface(
@@ -560,29 +558,12 @@ fun CaseFolderCard(
               horizontalArrangement = Arrangement.spacedBy(6.dp),
               verticalAlignment = Alignment.CenterVertically
             ) {
-              // ICD code pill
-              Surface(
-                shape = RoundedCornerShape(percent = 50),
-                color = icdBg,
-                border = BorderStroke(1.dp, icdBorder)
-              ) {
-                Text(
-                  text = clinicalCase.icdCode,
-                  style = MaterialTheme.typography.labelSmall.copy(
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.SemiBold
-                  ),
-                  color = icdText,
-                  modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                )
-              }
-
-              // Vitals quick tag
+              // Vitals quick tag (ICD-10 code removed per design)
               clinicalCase.vitals?.bloodPressure?.let { bp ->
                 Surface(
                   shape = RoundedCornerShape(percent = 50),
-                  color = vitalsBg
+                  color = vitalsBg,
+                  border = BorderStroke(1.dp, vitalsBorder)
                 ) {
                   Text(
                     text = "BP $bp",
