@@ -105,63 +105,52 @@ fun DorkAiScreen(
     }
   }
 
-  // Deep oceanic slate background matching reference image 1000199550.jpg
-  val baseBackground = if (isDark) Color(0xFF0F1A22) else Color(0xFFF3F6F8)
+  // Deep space indigo background matching clean_1.jpg
+  val baseBackground = Color(0xFF070810)
 
   Box(
     modifier = modifier
       .fillMaxSize()
       .background(baseBackground)
   ) {
-    // 1. Atmospheric Oceanic Ripple Background
-    MoodyOceanicBackground(
-      isDark = isDark,
-      modifier = Modifier.fillMaxSize()
-    )
+    // 1. Atmospheric Ambient Purple Glow at center top
+    Canvas(modifier = Modifier.fillMaxSize()) {
+      drawCircle(
+        brush = Brush.radialGradient(
+          colors = listOf(Color(0x334F46E5), Color(0x181E1B4B), Color.Transparent),
+          center = Offset(size.width * 0.5f, size.height * 0.28f),
+          radius = size.width * 0.75f
+        ),
+        radius = size.width * 0.75f,
+        center = Offset(size.width * 0.5f, size.height * 0.28f)
+      )
+    }
 
     // 2. Main Content Column
     Column(
       modifier = Modifier
         .fillMaxSize()
         .padding(
-          top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 8.dp,
-          bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 10.dp
+          top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 10.dp,
+          bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 6.dp
         )
     ) {
-      // Discreet Top Header (Title + Clear button if conversation has begun)
-      Row(
+      // Centered Elegant "Chat" Header (matching clean_1.jpg)
+      Box(
         modifier = Modifier
           .fillMaxWidth()
-          .padding(horizontal = 24.dp, vertical = 6.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+          .padding(horizontal = 24.dp, vertical = 8.dp)
       ) {
-        Row(
-          verticalAlignment = Alignment.CenterVertically,
-          horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-          Box(
-            modifier = Modifier
-              .size(28.dp)
-              .clip(CircleShape)
-              .background(if (isDark) Color(0x33FFFFFF) else Color(0xDDFFFFFF)),
-            contentAlignment = Alignment.Center
-          ) {
-            Icon(
-              imageVector = Icons.Rounded.AutoAwesome,
-              contentDescription = null,
-              tint = if (isDark) Color.White else Color(0xFF0F172A),
-              modifier = Modifier.size(15.dp)
-            )
-          }
-
-          Text(
-            text = "Dork AI",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = if (isDark) Color.White else Color(0xFF0F172A)
-          )
-        }
+        Text(
+          text = "Chat",
+          style = MaterialTheme.typography.titleLarge.copy(
+            fontSize = 19.sp,
+            fontWeight = FontWeight.Medium,
+            letterSpacing = (-0.2).sp
+          ),
+          color = Color.White,
+          modifier = Modifier.align(Alignment.Center)
+        )
 
         if (hasMessages) {
           IconButton(
@@ -169,21 +158,22 @@ fun DorkAiScreen(
             modifier = Modifier
               .size(32.dp)
               .clip(CircleShape)
-              .background(if (isDark) Color(0x33FFFFFF) else Color(0xDDFFFFFF))
+              .background(Color(0x22FFFFFF))
+              .align(Alignment.CenterEnd)
           ) {
             Icon(
               imageVector = Icons.Rounded.Refresh,
               contentDescription = "New Consultation",
-              tint = if (isDark) Color.White else Color(0xFF1E293B),
+              tint = Color.White.copy(alpha = 0.85f),
               modifier = Modifier.size(16.dp)
             )
           }
         }
       }
 
-      Spacer(modifier = Modifier.height(6.dp))
+      Spacer(modifier = Modifier.height(10.dp))
 
-      // 3. Conversation Stream (or empty space keeping UI clean & airy)
+      // 3. Conversation Stream OR Ambient Dotted Graphic
       if (hasMessages) {
         LazyColumn(
           state = listState,
@@ -300,7 +290,14 @@ fun DorkAiScreen(
           }
         }
       } else {
-        Spacer(modifier = Modifier.weight(1f))
+        Box(
+          modifier = Modifier
+            .weight(1f)
+            .fillMaxWidth(),
+          contentAlignment = Alignment.Center
+        ) {
+          DottedOrbGraphic()
+        }
       }
 
       // 4. Active Mode or Attachment Badge (if selected)
@@ -313,8 +310,8 @@ fun DorkAiScreen(
         Row(
           modifier = Modifier
             .clip(RoundedCornerShape(16.dp))
-            .background(if (isDark) Color(0x661A2B36) else Color(0xF0FFFFFF))
-            .border(1.dp, if (isDark) Color(0x4038BDF8) else Color(0x30CBD5E1), RoundedCornerShape(16.dp))
+            .background(Color(0x661A2B36))
+            .border(1.dp, Color(0x4038BDF8), RoundedCornerShape(16.dp))
             .padding(horizontal = 12.dp, vertical = 6.dp),
           verticalAlignment = Alignment.CenterVertically,
           horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -323,12 +320,12 @@ fun DorkAiScreen(
             text = uiState.activeAttachment ?: uiState.selectedMode.badgeText,
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.SemiBold,
-            color = if (isDark) Color(0xFFE0F2FE) else Color(0xFF0369A1)
+            color = Color(0xFFE0F2FE)
           )
           Icon(
             imageVector = Icons.Rounded.Close,
             contentDescription = "Clear",
-            tint = if (isDark) Color(0xAAFFFFFF) else Color(0xFF64748B),
+            tint = Color(0xAAFFFFFF),
             modifier = Modifier
               .size(14.dp)
               .clickable {
@@ -342,7 +339,7 @@ fun DorkAiScreen(
         }
       }
 
-      // 5. The Exact Frosted Liquid Glass Card from 1000199550.jpg
+      // 5. The Exact Frosted Liquid Glass Card from clean_1.jpg
       FrostedLiquidGlassInputCard(
         inputQuery = uiState.inputQuery,
         onInputChange = viewModel::onInputChange,
@@ -352,10 +349,10 @@ fun DorkAiScreen(
         onOpenAttach = { viewModel.toggleAttachSheet(true) },
         onOpenScan = { viewModel.toggleScanDialog(true) },
         isThinking = uiState.isThinking,
-        isDark = isDark,
+        isDark = true,
         modifier = Modifier
           .fillMaxWidth()
-          .padding(horizontal = 20.dp)
+          .padding(start = 18.dp, end = 18.dp, bottom = 96.dp)
       )
     }
 
@@ -456,6 +453,75 @@ fun DorkAiScreen(
  *   3) Microscope
  *   4) Viewfinder with plus sign in top right corner
  */
+/**
+ * Dotted Constellation Orb Graphic.
+ * Renders the futuristic particle orb displayed in the center idle state from clean_1.jpg.
+ */
+@Composable
+fun DottedOrbGraphic(modifier: Modifier = Modifier) {
+  val infiniteTransition = rememberInfiniteTransition(label = "orb_pulse")
+  val pulseAlpha by infiniteTransition.animateFloat(
+    initialValue = 0.60f,
+    targetValue = 0.95f,
+    animationSpec = infiniteRepeatable(
+      animation = tween(2200, easing = FastOutSlowInEasing),
+      repeatMode = RepeatMode.Reverse
+    ),
+    label = "orb_alpha"
+  )
+
+  Canvas(modifier = modifier.size(240.dp, 300.dp)) {
+    val cx = size.width / 2f
+    val cy = size.height * 0.40f
+    val maxRadius = size.width * 0.36f
+
+    // 1. Dotted spherical globe
+    val steps = 22
+    val spacing = 9.dp.toPx()
+
+    for (r in -steps / 2..steps / 2) {
+      for (c in -steps / 2..steps / 2) {
+        val dx = c * spacing
+        val dy = r * spacing
+        val dist = kotlin.math.sqrt(dx * dx + dy * dy)
+        
+        if (dist <= maxRadius) {
+          val normalized = 1f - (dist / maxRadius)
+          val dotAlpha = (normalized * normalized * pulseAlpha).coerceIn(0.08f, 0.95f)
+          val dotRadius = 1.15.dp.toPx() * (0.6f + normalized * 0.7f)
+          drawCircle(
+            color = Color.White.copy(alpha = dotAlpha),
+            radius = dotRadius,
+            center = Offset(cx + dx, cy + dy)
+          )
+        }
+      }
+    }
+
+    // 2. Dotted keyhole / hourglass neck below the globe
+    val neckRows = 7
+    val neckCols = 6
+    val neckCy = cy + maxRadius + 22.dp.toPx()
+    for (r in 0..neckRows) {
+      for (c in -neckCols / 2..neckCols / 2) {
+        val dx = c * (spacing * 0.72f)
+        val dy = r * (spacing * 0.85f)
+        val factor = 1f - (kotlin.math.abs(c).toFloat() / (neckCols / 2f))
+        val dotAlpha = (factor * 0.45f * pulseAlpha).coerceIn(0.05f, 0.75f)
+        drawCircle(
+          color = Color.White.copy(alpha = dotAlpha),
+          radius = 1.05.dp.toPx(),
+          center = Offset(cx + dx, neckCy + dy)
+        )
+      }
+    }
+  }
+}
+
+/**
+ * Frosted Liquid Glass Input Card.
+ * Directly matches the layout, placeholder, actions and glowing send button from clean_1.jpg.
+ */
 @Composable
 fun FrostedLiquidGlassInputCard(
   inputQuery: String,
@@ -469,159 +535,106 @@ fun FrostedLiquidGlassInputCard(
   isDark: Boolean,
   modifier: Modifier = Modifier
 ) {
-  val cardBackground = if (isDark) {
-    Color(0x73233845) // Translucent deep liquid glass
-  } else {
-    Color(0xCCFFFFFF) // Crystalline frosted pearl glass
-  }
+  val cardBackground = Color(0xF0101322)
 
-  // Specular top highlight border
-  val specularBorder = if (isDark) {
-    Brush.verticalGradient(
-      listOf(
-        Color(0x99FFFFFF),
-        Color(0x30FFFFFF),
-        Color(0x1038BDF8)
-      )
+  // Prismatic neon specular edge glow
+  val specularBorder = Brush.linearGradient(
+    listOf(
+      Color(0xFF8B5CF6).copy(alpha = 0.85f),
+      Color(0xFF6366F1).copy(alpha = 0.65f),
+      Color(0xFF3B82F6).copy(alpha = 0.50f),
+      Color.White.copy(alpha = 0.15f)
     )
-  } else {
-    Brush.verticalGradient(
-      listOf(
-        Color(0xDDFFFFFF),
-        Color(0x50CBD5E1),
-        Color(0x20E2E8F0)
-      )
-    )
-  }
+  )
 
   Surface(
-    shape = RoundedCornerShape(34.dp),
+    shape = RoundedCornerShape(28.dp),
     color = cardBackground,
     border = BorderStroke(1.2.dp, specularBorder),
-    shadowElevation = if (isDark) 16.dp else 10.dp,
+    shadowElevation = 18.dp,
     modifier = modifier
       .shadow(
-        elevation = 24.dp,
-        shape = RoundedCornerShape(34.dp),
-        ambientColor = if (isDark) Color(0x66000000) else Color(0x20000000),
-        spotColor = if (isDark) Color(0x73000000) else Color(0x200284C7)
+        elevation = 26.dp,
+        shape = RoundedCornerShape(28.dp),
+        ambientColor = Color.Black.copy(alpha = 0.50f),
+        spotColor = Color(0xFF6366F1).copy(alpha = 0.35f)
       )
   ) {
-    Box {
-      // Subtle prismatic / chromatic dispersion sheen along top curved edge (matching 1000199550.jpg)
-      Box(
-        modifier = Modifier
-          .fillMaxWidth()
-          .height(28.dp)
-          .clip(RoundedCornerShape(topStart = 34.dp, topEnd = 34.dp))
-          .background(
-            Brush.horizontalGradient(
-              listOf(
-                Color.White.copy(alpha = if (isDark) 0.15f else 0.40f),
-                Color(0x3338BDF8),
-                Color(0x33F472B6),
-                Color(0x33FBBF24),
-                Color.White.copy(alpha = if (isDark) 0.15f else 0.40f)
-              )
-            )
-          )
-      )
-
-      Column(
-        modifier = Modifier
-          .fillMaxWidth()
-          .padding(horizontal = 24.dp, vertical = 20.dp)
-      ) {
-        // Row 1: "Ask me anything..." text field
-        Row(
-          modifier = Modifier.fillMaxWidth(),
-          verticalAlignment = Alignment.CenterVertically
-        ) {
-          BasicTextField(
-            value = inputQuery,
-            onValueChange = onInputChange,
-            textStyle = TextStyle(
-              color = if (isDark) Color.White else Color(0xFF0F172A),
-              fontSize = 18.sp,
-              fontWeight = FontWeight.Normal,
-              letterSpacing = (-0.2).sp
-            ),
-            cursorBrush = SolidColor(if (isDark) Color(0xFF38BDF8) else Color(0xFF0284C7)),
-            decorationBox = { innerTextField ->
-              Box(
-                modifier = Modifier.weight(1f),
-                contentAlignment = Alignment.CenterStart
-              ) {
-                if (inputQuery.isEmpty()) {
-                  Text(
-                    text = "Ask me anything...",
-                    style = TextStyle(
-                      color = if (isDark) Color.White.copy(alpha = 0.88f) else Color(0xFF475569),
-                      fontSize = 18.sp,
-                      fontWeight = FontWeight.Normal,
-                      letterSpacing = (-0.2).sp
-                    )
-                  )
-                }
-                innerTextField()
-              }
-            },
-            modifier = Modifier.weight(1f)
-          )
-
-          if (inputQuery.isNotBlank()) {
-            IconButton(
-              onClick = onSend,
-              enabled = !isThinking,
-              modifier = Modifier
-                .size(34.dp)
-                .clip(CircleShape)
-                .background(if (isDark) Color(0xFF38BDF8) else Color(0xFF0F172A))
-            ) {
-              Icon(
-                imageVector = Icons.AutoMirrored.Rounded.Send,
-                contentDescription = "Send",
-                tint = Color.White,
-                modifier = Modifier.size(16.dp)
+    Column(
+      modifier = Modifier
+        .fillMaxWidth()
+        .padding(horizontal = 20.dp, vertical = 18.dp)
+    ) {
+      // Row 1: "Ask me anything about your health" text field
+      BasicTextField(
+        value = inputQuery,
+        onValueChange = onInputChange,
+        textStyle = TextStyle(
+          color = Color.White,
+          fontSize = 17.sp,
+          fontWeight = FontWeight.Normal,
+          letterSpacing = (-0.2).sp
+        ),
+        cursorBrush = SolidColor(Color(0xFF8B5CF6)),
+        decorationBox = { innerTextField ->
+          Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.CenterStart
+          ) {
+            if (inputQuery.isEmpty()) {
+              Text(
+                text = "Ask me anything about your health",
+                style = TextStyle(
+                  color = Color.White.copy(alpha = 0.70f),
+                  fontSize = 17.sp,
+                  fontWeight = FontWeight.Normal,
+                  letterSpacing = (-0.2).sp
+                )
               )
             }
+            innerTextField()
           }
-        }
+        },
+        modifier = Modifier.fillMaxWidth()
+      )
 
-        Spacer(modifier = Modifier.height(24.dp))
+      Spacer(modifier = Modifier.height(20.dp))
 
-        // Row 2: The 4 Iconic Glass Actions from 1000199550.jpg
+      // Row 2: 4 Icons on Left, Purple Circular Send Button on Right
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        // Action Icons
         Row(
-          modifier = Modifier.fillMaxWidth(),
-          horizontalArrangement = Arrangement.SpaceBetween,
+          horizontalArrangement = Arrangement.spacedBy(10.dp),
           verticalAlignment = Alignment.CenterVertically
         ) {
-          // Icon 1: [+] Rounded Square with Plus
+          // Icon 1: [+] Attach
           Box(
             modifier = Modifier
-              .size(42.dp)
-              .clip(RoundedCornerShape(12.dp))
+              .size(36.dp)
+              .clip(RoundedCornerShape(10.dp))
               .clickable(onClick = onOpenAttach),
             contentAlignment = Alignment.Center
           ) {
-            SquarePlusGlyph(isDark = isDark)
+            SquarePlusGlyph(isDark = true)
           }
 
           // Icon 2: Globe with pointer arrow (Guidelines Mode)
           Box(
             modifier = Modifier
-              .size(42.dp)
-              .clip(RoundedCornerShape(12.dp))
+              .size(36.dp)
+              .clip(RoundedCornerShape(10.dp))
               .background(
-                if (selectedMode == DorkAiMode.GUIDELINES) {
-                  if (isDark) Color(0x4038BDF8) else Color(0x300284C7)
-                } else Color.Transparent
+                if (selectedMode == DorkAiMode.GUIDELINES) Color(0x338B5CF6) else Color.Transparent
               )
               .clickable { onSelectMode(DorkAiMode.GUIDELINES) },
             contentAlignment = Alignment.Center
           ) {
             GlobeCursorGlyph(
-              isDark = isDark,
+              isDark = true,
               isSelected = selectedMode == DorkAiMode.GUIDELINES
             )
           }
@@ -629,18 +642,16 @@ fun FrostedLiquidGlassInputCard(
           // Icon 3: Microscope (Deep Biomarker Mode)
           Box(
             modifier = Modifier
-              .size(42.dp)
-              .clip(RoundedCornerShape(12.dp))
+              .size(36.dp)
+              .clip(RoundedCornerShape(10.dp))
               .background(
-                if (selectedMode == DorkAiMode.DEEP_LAB) {
-                  if (isDark) Color(0x4038BDF8) else Color(0x300284C7)
-                } else Color.Transparent
+                if (selectedMode == DorkAiMode.DEEP_LAB) Color(0x338B5CF6) else Color.Transparent
               )
               .clickable { onSelectMode(DorkAiMode.DEEP_LAB) },
             contentAlignment = Alignment.Center
           ) {
             MicroscopeGlyph(
-              isDark = isDark,
+              isDark = true,
               isSelected = selectedMode == DorkAiMode.DEEP_LAB
             )
           }
@@ -648,24 +659,88 @@ fun FrostedLiquidGlassInputCard(
           // Icon 4: Viewfinder with Plus Sign in Top-Right Corner
           Box(
             modifier = Modifier
-              .size(42.dp)
-              .clip(RoundedCornerShape(12.dp))
+              .size(36.dp)
+              .clip(RoundedCornerShape(10.dp))
               .background(
-                if (selectedMode == DorkAiMode.OPTICAL_SCAN) {
-                  if (isDark) Color(0x4038BDF8) else Color(0x300284C7)
-                } else Color.Transparent
+                if (selectedMode == DorkAiMode.OPTICAL_SCAN) Color(0x338B5CF6) else Color.Transparent
               )
               .clickable(onClick = onOpenScan),
             contentAlignment = Alignment.Center
           ) {
             ViewfinderPlusGlyph(
-              isDark = isDark,
+              isDark = true,
               isSelected = selectedMode == DorkAiMode.OPTICAL_SCAN
             )
           }
         }
+
+        // Circular Purple Send Button with ↑ arrow (matching clean_1.jpg)
+        Box(
+          modifier = Modifier
+            .size(38.dp)
+            .clip(CircleShape)
+            .background(
+              Brush.linearGradient(
+                listOf(Color(0xFF8B5CF6), Color(0xFF6366F1))
+              )
+            )
+            .clickable(
+              enabled = !isThinking && inputQuery.isNotBlank(),
+              onClick = onSend
+            ),
+          contentAlignment = Alignment.Center
+        ) {
+          if (isThinking) {
+            CircularProgressIndicator(
+              modifier = Modifier.size(16.dp),
+              color = Color.White,
+              strokeWidth = 2.dp
+            )
+          } else {
+            UpwardArrowIcon(modifier = Modifier.size(18.dp))
+          }
+        }
       }
     }
+  }
+}
+
+/**
+ * Pixel-perfect upward arrow glyph matching clean_1.jpg send button.
+ */
+@Composable
+fun UpwardArrowIcon(modifier: Modifier = Modifier) {
+  Canvas(modifier = modifier) {
+    val sw = 2.2.dp.toPx()
+    val midX = size.width / 2f
+    val topY = size.height * 0.22f
+    val botY = size.height * 0.78f
+    val wing = size.width * 0.26f
+
+    // Vertical line
+    drawLine(
+      color = Color.White,
+      start = Offset(midX, botY),
+      end = Offset(midX, topY),
+      strokeWidth = sw,
+      cap = StrokeCap.Round
+    )
+    // Left arrow wing
+    drawLine(
+      color = Color.White,
+      start = Offset(midX - wing, topY + wing),
+      end = Offset(midX, topY),
+      strokeWidth = sw,
+      cap = StrokeCap.Round
+    )
+    // Right arrow wing
+    drawLine(
+      color = Color.White,
+      start = Offset(midX + wing, topY + wing),
+      end = Offset(midX, topY),
+      strokeWidth = sw,
+      cap = StrokeCap.Round
+    )
   }
 }
 
