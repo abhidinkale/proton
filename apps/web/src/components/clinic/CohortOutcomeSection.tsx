@@ -1,13 +1,9 @@
 import { useState, useEffect } from 'react';
 import {
-  TrendingUp,
-  AlertCircle,
-  HelpCircle,
   Info,
   ChevronDown,
   ChevronUp,
   RefreshCw,
-  CheckCircle2,
   Loader2
 } from 'lucide-react';
 import { apiJson } from '../../lib/api';
@@ -83,29 +79,24 @@ export function CohortOutcomeSection() {
   };
 
   return (
-    <section className="proton-glass proton-specular rounded-2xl p-4 sm:p-5 text-ink space-y-4">
+    <section className="border-t border-b border-white/10 py-6 text-white space-y-6">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black/[0.06] pb-3">
-        <div className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600">
-            <TrendingUp className="h-4 w-4" />
+      <div className="flex flex-wrap items-end justify-between gap-4 border-b border-white/10 pb-4">
+        <div>
+          <span className="font-sans text-[10.5px] uppercase tracking-[0.2em] text-zinc-500">
+            Cohort Verification · Spine Deterministic
           </span>
-          <div>
-            <h2 className="text-[13px] font-semibold tracking-[-0.01em]">
-              30-Day Clinical Outcome Cohort
-            </h2>
-            <p className="text-[10px] text-ink-2 font-mono-clinical">
-              Spine verification · <span className="font-semibold text-emerald-600">label_v1</span> deterministic
-            </p>
-          </div>
+          <h2 className="mt-1 font-editorial text-2xl font-light tracking-tight text-white">
+            30-Day Clinical Outcomes
+          </h2>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2.5 font-sans text-xs">
           {/* Condition selector */}
           <select
             value={selectedCondition}
             onChange={(e) => setSelectedCondition(e.target.value)}
-            className="rounded-lg border border-rule/80 bg-paper/70 px-2.5 py-1 text-[11px] font-medium text-ink focus:outline-none focus:ring-1 focus:ring-accent"
+            className="border border-white/10 bg-[#0d0e12] px-3 py-1.5 text-xs text-white outline-none focus:border-amber-400"
           >
             <option value="ALL">All Conditions</option>
             <option value="43878008">Strep Pharyngitis (43878008)</option>
@@ -118,131 +109,137 @@ export function CohortOutcomeSection() {
             onClick={() => void fetchMetrics(selectedCondition)}
             disabled={loading}
             title="Refresh metrics"
-            className="flex items-center justify-center rounded-lg border border-rule/80 bg-paper p-1.5 text-ink-2 hover:bg-paper/90 hover:text-ink disabled:opacity-50 cursor-pointer"
+            className="flex h-8 w-8 items-center justify-center border border-white/10 bg-white/[0.02] text-zinc-400 hover:text-white disabled:opacity-50 transition-colors cursor-pointer"
           >
             {loading ? (
-              <Loader2 className="h-3 w-3 animate-spin text-accent" />
+              <Loader2 className="h-3 w-3 animate-spin text-amber-400" />
             ) : (
               <RefreshCw className="h-3 w-3" />
             )}
           </button>
 
-          {/* Evaluation Trigger Button */}
+          {/* Evaluation Trigger Button (Amber Accent) */}
           <button
             type="button"
             onClick={handleRunEvaluation}
             disabled={evaluating}
-            className="flex items-center gap-1.5 rounded-lg border border-rule/80 bg-paper px-2.5 py-1 text-[11px] font-semibold text-ink-2 transition-all hover:bg-paper/90 hover:text-ink disabled:opacity-50 cursor-pointer"
+            className="flex h-8 items-center gap-1.5 bg-amber-500 hover:bg-amber-400 px-3 font-sans text-xs font-semibold uppercase tracking-wider text-black transition-all disabled:opacity-50 cursor-pointer shadow-[0_0_12px_rgba(245,158,11,0.2)]"
           >
-            <RefreshCw className={`h-3 w-3 ${evaluating ? 'animate-spin text-accent' : ''}`} />
-            {evaluating ? 'Evaluating…' : 'Run 30d Job'}
+            <RefreshCw className={`h-3 w-3 ${evaluating ? 'animate-spin' : ''}`} />
+            <span>{evaluating ? 'Evaluating…' : 'Run 30d evaluation'}</span>
           </button>
         </div>
       </div>
 
       {evalMessage && (
-        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-[11px] text-emerald-700 font-medium">
+        <div className="border-l-2 border-emerald-400 bg-emerald-400/10 px-4 py-2 font-mono text-xs text-emerald-300">
           {evalMessage}
         </div>
       )}
 
-      {/* The 3 Moat Numbers */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      {/* The 3 Moat Numbers (Clean Typographic Row, No Cards) */}
+      <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
         {/* Number 1: Resolved Rate */}
-        <div className="rounded-xl border border-rule/70 bg-paper/60 p-3">
-          <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.08em] text-ink-2">
-            <span>30d Resolved</span>
-            <CheckCircle2 className="h-3.5 w-3.5 text-settled" />
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+            <span className="font-sans text-[11px] uppercase tracking-[0.18em] text-zinc-400">
+              30d Resolved Rate
+            </span>
           </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="font-mono-clinical text-2xl font-bold tracking-tight text-ink">
+          <div className="flex items-baseline gap-2 pt-1">
+            <span className="font-editorial text-4xl font-light tracking-tight text-white">
               {metrics ? `${metrics.rates.positive_pct}%` : '—'}
             </span>
-            <span className="text-[10px] text-ink-2 font-mono-clinical">
+            <span className="font-mono text-xs text-zinc-500 tabular-nums">
               ({metrics?.counts.resolved ?? 0}/{metrics?.counts.mature ?? 0})
             </span>
           </div>
-          <p className="mt-1 text-[10px] text-ink-3">
+          <p className="font-sans text-xs text-zinc-500">
             Mature encounters resolved with 0 same-condition returns
           </p>
         </div>
 
         {/* Number 2: Documented Non-Response */}
-        <div className="rounded-xl border border-rule/70 bg-paper/60 p-3">
-          <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.08em] text-ink-2">
-            <span>Non-Response</span>
-            <HelpCircle className="h-3.5 w-3.5 text-amber-500" />
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-400/90 shadow-[0_0_6px_rgba(251,191,36,0.7)]" />
+            <span className="font-sans text-[11px] uppercase tracking-[0.18em] text-zinc-400">
+              Documented Non-Response
+            </span>
           </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="font-mono-clinical text-2xl font-bold tracking-tight text-amber-600">
+          <div className="flex items-baseline gap-2 pt-1">
+            <span className="font-editorial text-4xl font-light tracking-tight text-zinc-200">
               {metrics ? `${metrics.rates.documented_non_response_pct}%` : '—'}
             </span>
-            <span className="text-[10px] text-ink-2 font-mono-clinical">
+            <span className="font-mono text-xs text-zinc-500 tabular-nums">
               ({metrics?.counts.documented_non_response ?? 0}/{metrics?.counts.mature ?? 0})
             </span>
           </div>
-          <p className="mt-1 text-[10px] text-ink-3">
-            Documented reasons (declined, wrong number, no contact)
+          <p className="font-sans text-xs text-zinc-500">
+            Documented non-response (declined, wrong number, unreachable)
           </p>
         </div>
 
         {/* Number 3: Lost to Follow-up */}
-        <div className="rounded-xl border border-rule/70 bg-paper/60 p-3">
-          <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.08em] text-ink-2">
-            <span>Lost to Follow-up</span>
-            <AlertCircle className="h-3.5 w-3.5 text-critical" />
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-rose-400/90 shadow-[0_0_6px_rgba(244,63,94,0.7)]" />
+            <span className="font-sans text-[11px] uppercase tracking-[0.18em] text-zinc-400">
+              Lost to Follow-up
+            </span>
           </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="font-mono-clinical text-2xl font-bold tracking-tight text-critical">
+          <div className="flex items-baseline gap-2 pt-1">
+            <span className="font-editorial text-4xl font-light tracking-tight text-zinc-200">
               {metrics ? `${metrics.rates.lost_to_follow_up_pct}%` : '—'}
             </span>
-            <span className="text-[10px] text-ink-2 font-mono-clinical">
+            <span className="font-mono text-xs text-zinc-500 tabular-nums">
               ({metrics?.counts.lost_to_follow_up ?? 0}/{metrics?.counts.mature ?? 0})
             </span>
           </div>
-          <p className="mt-1 text-[10px] text-ink-3">
+          <p className="font-sans text-xs text-zinc-500">
             Operational gaps where no outcome was filed
           </p>
         </div>
       </div>
 
-      {/* Cohort Health Strip */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-black/[0.05] bg-paper/40 px-3.5 py-2.5 text-[11px]">
-        <div className="flex items-center gap-4">
+      {/* Cohort Health Strip (Minimalist Row) */}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-4 font-sans text-xs text-zinc-400">
+        <div className="flex flex-wrap items-center gap-6">
           <div>
-            <span className="text-ink-2">Denominator M: </span>
-            <strong className="font-mono-clinical text-ink">{metrics?.counts.mature ?? 0} mature</strong>
+            <span className="text-zinc-500">Denominator: </span>
+            <span className="font-mono text-white tabular-nums">{metrics?.counts.mature ?? 0} mature</span>
           </div>
           <div>
-            <span className="text-ink-2">Response Rate: </span>
-            <strong className="font-mono-clinical text-emerald-600">
+            <span className="text-zinc-500">Response Rate: </span>
+            <span className="font-mono text-white tabular-nums">
               {metrics ? `${metrics.rates.response_rate}%` : '—'}
-            </strong>
+            </span>
           </div>
           <div>
-            <span className="text-ink-2">Immature / Pending: </span>
-            <strong className="font-mono-clinical text-ink-2">{metrics?.counts.pending ?? 0}</strong>
+            <span className="text-zinc-500">Pending Immature: </span>
+            <span className="font-mono text-zinc-400 tabular-nums">{metrics?.counts.pending ?? 0}</span>
           </div>
         </div>
 
         <button
           type="button"
           onClick={() => setShowDisclosure(!showDisclosure)}
-          className="flex items-center gap-1 font-medium text-[10.5px] text-ink-2 hover:text-ink cursor-pointer"
+          className="flex items-center gap-1.5 font-sans text-xs text-zinc-500 hover:text-white transition-colors cursor-pointer"
         >
-          <Info className="h-3 w-3 text-accent" />
-          Bias Disclosures
-          {showDisclosure ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          <Info size={13} className="text-zinc-400" />
+          <span>Statutory caveats</span>
+          {showDisclosure ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
         </button>
       </div>
 
       {/* Bias Disclosures Drawer */}
       {showDisclosure && (
-        <div className="rounded-xl border border-accent-line/60 bg-accent-wash/30 p-3 space-y-1.5 text-[10.5px] text-ink-2 leading-relaxed">
-          <p className="font-semibold text-accent-ink uppercase tracking-wider text-[9.5px]">
+        <div className="border-l border-white/20 pl-4 py-1 text-xs text-zinc-400 space-y-1">
+          <p className="font-sans text-[10px] uppercase tracking-wider text-zinc-500">
             Statutory Bias &amp; Scope Caveats (Section 8)
           </p>
-          <ul className="list-disc pl-4 space-y-1">
+          <ul className="list-disc pl-4 space-y-1 font-sans text-xs text-zinc-400">
             {metrics?.bias_disclosure.map((disclosure, idx) => (
               <li key={idx}>{disclosure}</li>
             ))}
