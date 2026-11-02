@@ -13,12 +13,9 @@ Dork is the native Android patient-facing application designed for the Proton he
 - **Context-Aware Home**: Immediate answers to *"What do I need to know about my health right now?"* featuring appointment status, upcoming medication doses, vitals snapshot, and recent records.
 - **Doctor Discovery & Care Booking**: Find healthcare providers by specialty, clinic location, and real availability. Seamless booking flow with interactive slot picker and confirmation state.
 - **Interactive Cases Architecture**: Longitudinal episode-of-care tracker structuring clinical encounters into discrete Cases with active status timelines, clinical action checkpoints, and outbox sync.
+- **3D Floating Glassmorphic Dock**: Elevated floating navigation pill with frosted specular borders, dynamic spring physics, and true edge-to-edge content overlay.
+- **Dork AI Health Assistant with Ambient Particle Matrix**: *"Your health information, explained."* Features clinical citations to patient records, ambient particle matrix visualization, and liquid glass prompt input.
 - **Background KeepAlive Reliability**: Foreground service interlock (`DorkKeepAliveService`) keeping background sync alive across aggressive OEM battery throttling.
-- **Pre-Consultation Clinical Preparation**: Structured patient intake flow capturing chief complaints, duration, severity (1–10 scale), and symptom checklists.
-- **Longitudinal Health Journey**: Chronological timeline uniting doctor consultations, lab reports (CBC, metabolic panels), prescriptions, and diagnostic imaging.
-- **Medications & Non-Judgmental Adherence**: Active prescriptions, scheduled daily dose time slots with "Mark Taken", "Skip", and non-punitive adherence tracking.
-- **Doctor-Patient Messaging**: Practitioner communication channel with care context, attachments, and delivery confirmations over authenticated TLS.
-- **Dork AI Health Assistant**: *"Your health information, explained."* Features clinical citations to patient records and strict safety guardrails that instantly flag urgent symptoms and require physician oversight.
 - **Emergency Medical ID**: First-responder emergency profile with blood group (O+), severe allergies (Penicillin), active medications, and one-tap emergency contact dialing.
 - **Offline-First Architecture**: Persistent DorkStore local cache for offline / demo mode and durable outbox REST sync coordinator for live Proton API servers.
 
