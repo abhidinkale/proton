@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   AlertTriangle,
   Check,
@@ -14,12 +14,10 @@ import { authService } from '../services/auth';
 import { ApiError } from '../lib/api';
 import {
   careLoopApi,
-  documentCategoryLabel,
   formatAgo,
   formatBytes,
   formatClock,
   formatDayLabel,
-  type AttentionSeverity,
   type LiveAppointment,
   type LiveAttentionItem,
   type LiveDocument,
@@ -33,43 +31,21 @@ import { CohortOutcomeSection } from '../components/clinic/CohortOutcomeSection'
 /**
  * The clinician half of the patient loop.
  *
- * Everything rendered here came from the same Postgres rows the phone writes:
- * a booking made in airplane mode appears after the phone reconnects, and a
- * reply typed here is on the phone at its next pull (~15s, or immediately when
- * the app is reopened). There is no seeded workspace in this view.
- *
- * Visual language: a clinical day sheet, not a dashboard. Warm paper, ink,
- * hairline rules, editorial serif for names, mono for anything measured. The
- * only saturated colour is clinical signal (critical, warning, confirmed).
+ * Swiss Command Center aesthetic:
+ * - Charcoal/Black background
+ * - White primary text, muted gray secondary text
+ * - ONE warm amber accent for primary actions
+ * - 1px hairline row separators (border-b border-white/10)
+ * - No cards or floating boxes
+ * - Serif for patient names and main headers
+ * - Monospace for MRNs, times, and clinical scores
+ * - Sans-serif for UI labels
+ * - Subtle glowing dots for statuses (no colored box badges)
+ * - Generous py-6 vertical spacing
  */
 
 const POLL_MS = 3000;
 
-const SEVERITY_STYLE: Record<
-  AttentionSeverity,
-  { bar: string; tint: string; ink: string; label: string }
-> = {
-  critical: {
-    bar: 'bg-critical',
-    tint: 'bg-critical-wash',
-    ink: 'text-critical',
-    label: 'Critical'
-  },
-  warning: {
-    bar: 'bg-caution',
-    tint: 'bg-caution-wash',
-    ink: 'text-caution',
-    label: 'Warning'
-  },
-  info: {
-    bar: 'bg-paper-2',
-    tint: 'bg-transparent',
-    ink: 'text-ink-2',
-    label: 'Routine'
-  }
-};
-
-/** "Dr. Sarah Lin, MD" -> "Lin". Falls back to the whole name. */
 function surnameOf(displayName: string): string {
   const cleaned = displayName
     .replace(/^Dr\.?\s+/i, '')
@@ -108,13 +84,10 @@ export default function CareLoop() {
       const data = await careLoopApi.prescriptions(patientId);
       setPatientPrescriptions(data.prescriptions);
     } catch {
-      // A prescription list that failed to load is not worth an error banner
-      // over a working conversation; the panel simply shows none.
+      // Offline fallback
     }
   }, []);
 
-  // Prescriptions change only when someone signs one, so they are fetched on
-  // open and after a signature rather than on every 3-second poll.
   useEffect(() => {
     if (!activePatientId) {
       setPatientPrescriptions([]);
@@ -136,8 +109,6 @@ export default function CareLoop() {
     }
   }, []);
 
-  // A self-scheduling poll instead of setInterval: a slow request can never
-  // stack up behind the next tick.
   useEffect(() => {
     mounted.current = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -155,57 +126,46 @@ export default function CareLoop() {
       stopped = true;
       mounted.current = false;
       if (timer) clearTimeout(timer);
-      if (focusTimer.current) clearTimeout(focusTimer.current);
     };
   }, [loadOverview]);
 
-  // The open conversation is kept live too, so a patient's check-in and a
-  // colleague's reply both show up without closing the panel.
   useEffect(() => {
     if (!activePatientId) {
       setThread(null);
       setPatientDocuments([]);
       return;
     }
-
-    let stopped = false;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-
-    const tick = async () => {
-      try {
-        // Documents travel with the thread: a patient can attach a report while
-        // the clinician has the sheet open, and it should appear without a
-        // close-and-reopen.
-        const [data, files] = await Promise.all([
-          careLoopApi.thread(activePatientId),
-          careLoopApi.documents(activePatientId).catch(() => ({ documents: [] as LiveDocument[] }))
-        ]);
-        if (!stopped) {
-          setThread(data);
-          setPatientDocuments(files.documents);
-        }
-      } catch {
-        // A thread that vanished is not worth an error banner over the panel;
-        // the overview poll still reports connectivity.
-      }
-      if (!stopped) timer = setTimeout(tick, POLL_MS);
-    };
-
-    tick();
-
+    let alive = true;
+    void careLoopApi
+      .thread(activePatientId)
+      .then((data) => {
+        if (alive) setThread(data);
+      })
+      .catch(() => {
+        if (alive) setThread(null);
+      });
+    void careLoopApi
+      .documents(activePatientId)
+      .then((data) => {
+        if (alive) setPatientDocuments(data.documents);
+      })
+      .catch(() => {
+        if (alive) setPatientDocuments([]);
+      });
     return () => {
-      stopped = true;
-      if (timer) clearTimeout(timer);
+      alive = false;
     };
   }, [activePatientId]);
 
-  const runAction = async (key: string, action: () => Promise<unknown>) => {
+  const runAction = async <T,>(key: string, action: () => Promise<T>): Promise<T | null> => {
     setBusyKey(key);
     try {
-      await action();
+      const result = await action();
       await loadOverview();
+      return result;
     } catch (err) {
       setError(err);
+      return null;
     } finally {
       setBusyKey(null);
     }
@@ -214,33 +174,21 @@ export default function CareLoop() {
   const sendReply = async () => {
     if (!activePatientId || !draft.trim()) return;
     const body = draft.trim();
-    setBusyKey('reply');
-    try {
-      await careLoopApi.reply(activePatientId, body);
+    const result = await runAction('reply', () => careLoopApi.reply(activePatientId, body));
+    if (result) {
       setDraft('');
-      const data = await careLoopApi.thread(activePatientId);
-      setThread(data);
-      await loadOverview();
-    } catch (err) {
-      setError(err);
-    } finally {
-      setBusyKey(null);
+      const updated = await careLoopApi.thread(activePatientId).catch(() => null);
+      if (updated) setThread(updated);
     }
   };
 
   const markHandled = async (patientId: string) => {
-    setBusyKey(`resolve-${patientId}`);
-    try {
-      await careLoopApi.resolve({ patientId });
-      await loadOverview();
-      if (activePatientId === patientId) {
-        const data = await careLoopApi.thread(patientId).catch(() => null);
-        setThread(data);
-      }
-    } catch (err) {
-      setError(err);
-    } finally {
-      setBusyKey(null);
+    const result = await runAction(`resolve-${patientId}`, () =>
+      careLoopApi.resolve({ patientId })
+    );
+    if (result && activePatientId === patientId) {
+      const updated = await careLoopApi.thread(patientId).catch(() => null);
+      if (updated) setThread(updated);
     }
   };
 
@@ -279,53 +227,51 @@ export default function CareLoop() {
 
   return (
     <Layout>
-      <div className="pb-4 pt-1">
-        {/* ---------------------------------------------------------------- */}
-        {/* Masthead                                                          */}
-        {/* ---------------------------------------------------------------- */}
-        <header className="mb-6 border-b border-rule-strong pb-5">
-          <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
+      <div className="pb-24 pt-2">
+        {/* ── Swiss Masthead ────────────────────────────────────────────── */}
+        <header className="border-b border-white/10 pb-7">
+          <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
             <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2 font-mono text-[9px] uppercase tracking-[0.18em] text-ink-3">
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-60 motion-reduce:hidden" />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-accent" />
+              <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-500">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
                 </span>
-                <span className="text-settled">Live</span>
-                <span className="text-ink-3">/</span>
-                <span>Care Loop</span>
-                <span className="text-ink-3">/</span>
-                <span>{overview?.persistence ?? 'postgres'}</span>
+                <span className="text-emerald-400 font-semibold">Live Loop</span>
+                <span className="text-zinc-600">/</span>
+                <span>{overview?.persistence ?? 'Postgres Synchronized'}</span>
               </div>
 
-              <h1 className="mt-3 font-editorial text-[38px] leading-[1.02] tracking-[-0.01em] text-ink sm:text-[50px]">
+              <h1 className="mt-2 font-editorial text-4xl sm:text-5xl font-light tracking-tight text-white">
                 {greetingFor(now)}, Dr. {clinicianSurname}.
               </h1>
 
-              <p className="mt-2 max-w-xl text-[12.5px] leading-relaxed text-ink-2">
+              <p className="mt-2 max-w-2xl font-sans text-xs leading-relaxed text-zinc-400">
                 {summary}
               </p>
             </div>
 
             <div className="flex flex-col items-start gap-2 sm:items-end">
-              <p className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-ink-3">
+              <p className="font-mono text-xs uppercase tracking-wider text-zinc-500">
                 {now.toLocaleDateString([], {
-                  weekday: 'long',
+                  weekday: 'short',
                   day: 'numeric',
-                  month: 'long'
+                  month: 'short'
                 })}
               </p>
               <div className="flex items-center gap-3">
-                <span className="font-mono text-[9.5px] tabular-nums text-ink-3">
-                  {overview ? `updated ${formatClock(overview.generatedAt)}` : 'connecting…'}
+                <span className="font-mono text-[11px] tabular-nums text-zinc-500">
+                  {overview ? `synced ${formatClock(overview.generatedAt)}` : 'connecting…'}
                 </span>
-                <DeskAction
+                <button
+                  type="button"
                   onClick={() => runAction('refresh', loadOverview)}
-                  busy={busyKey === 'refresh'}
+                  disabled={busyKey === 'refresh'}
+                  className="flex h-8 items-center gap-1.5 border border-white/10 bg-white/[0.02] px-3 font-mono text-xs text-zinc-400 hover:text-white transition-colors cursor-pointer"
                 >
-                  <RefreshCw className={`h-3 w-3 ${busyKey === 'refresh' ? 'animate-spin' : ''}`} />
-                  Refresh
-                </DeskAction>
+                  <RefreshCw className={`h-3 w-3 ${busyKey === 'refresh' ? 'animate-spin text-amber-400' : ''}`} />
+                  <span>Sync</span>
+                </button>
               </div>
             </div>
           </div>
@@ -334,45 +280,86 @@ export default function CareLoop() {
         {unavailable && <SetupNotice />}
 
         {error !== null && !unavailable && (
-          <div className="mb-5 flex items-start gap-3 border-l-2 border-critical-line bg-critical-wash px-4 py-3">
-            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-critical" />
+          <div className="my-6 flex items-start gap-3 border-l-2 border-rose-500 bg-rose-500/10 px-4 py-3">
+            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-rose-400" />
             <div>
-              <p className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-critical">
+              <p className="font-mono text-xs uppercase tracking-wider text-rose-400">
                 Clinic link interrupted
               </p>
-              <p className="mt-1 text-[11.5px] leading-relaxed text-ink-2">
-                {error instanceof Error
-                  ? error.message
-                  : 'Could not reach the clinic database.'}{' '}
-                The view keeps the last known state and retries every 3 seconds.
+              <p className="mt-1 font-sans text-xs leading-relaxed text-rose-200">
+                {error instanceof Error ? error.message : 'Could not reach the clinic database.'} Re-attempting connection every 3 seconds.
               </p>
             </div>
           </div>
         )}
 
-        {/* ---------------------------------------------------------------- */}
-        {/* Vitals strip                                                      */}
-        {/* ---------------------------------------------------------------- */}
+        {/* ── Care Loop Metrics: Clean Typographic Row (No Cards) ─────────── */}
         {metrics && (
           <section
-            aria-label="Today at a glance"
-            className="mb-6 grid grid-cols-2 gap-px overflow-hidden rounded-[14px] border border-rule-strong bg-paper-2 sm:grid-cols-4"
+            aria-label="Care loop vitals"
+            className="my-8 border-y border-white/10 py-8"
           >
-            <Vital label="On the schedule" value={metrics.scheduled} note="next 24h" />
-            <Vital label="Awaiting confirmation" value={metrics.unconfirmed} note="reception" />
-            <Vital
-              label="Needs attention"
-              value={metrics.needsAttention}
-              note="triage"
-              tone={metrics.needsAttention > 0 ? 'critical' : 'ink'}
-            />
-            <Vital label="Patients today" value={metrics.patients} note="distinct" />
+            <div className="grid grid-cols-2 gap-8 lg:grid-cols-4">
+              {/* Metric 1 */}
+              <div className="space-y-1">
+                <div className="font-editorial text-4xl sm:text-5xl font-light tracking-tight text-white">
+                  {String(metrics.scheduled).padStart(2, '0')}
+                </div>
+                <p className="font-sans text-[11px] uppercase tracking-[0.2em] text-zinc-400">
+                  On the schedule
+                </p>
+                <p className="font-mono text-[10px] text-zinc-500 tracking-wider">
+                  next 24 hours
+                </p>
+              </div>
+
+              {/* Metric 2 */}
+              <div className="space-y-1">
+                <div className="font-editorial text-4xl sm:text-5xl font-light tracking-tight text-white">
+                  {String(metrics.unconfirmed).padStart(2, '0')}
+                </div>
+                <p className="font-sans text-[11px] uppercase tracking-[0.2em] text-zinc-400">
+                  Awaiting confirmation
+                </p>
+                <p className="font-mono text-[10px] text-zinc-500 tracking-wider">
+                  reception desk
+                </p>
+              </div>
+
+              {/* Metric 3 */}
+              <div className="space-y-1">
+                <div
+                  className={`font-editorial text-4xl sm:text-5xl font-light tracking-tight ${
+                    metrics.needsAttention > 0 ? 'text-amber-400' : 'text-white'
+                  }`}
+                >
+                  {String(metrics.needsAttention).padStart(2, '0')}
+                </div>
+                <p className="font-sans text-[11px] uppercase tracking-[0.2em] text-zinc-400">
+                  Needs attention
+                </p>
+                <p className="font-mono text-[10px] text-zinc-500 tracking-wider">
+                  triage queue
+                </p>
+              </div>
+
+              {/* Metric 4 */}
+              <div className="space-y-1">
+                <div className="font-editorial text-4xl sm:text-5xl font-light tracking-tight text-white">
+                  {String(metrics.patients).padStart(2, '0')}
+                </div>
+                <p className="font-sans text-[11px] uppercase tracking-[0.2em] text-zinc-400">
+                  Patients today
+                </p>
+                <p className="font-mono text-[10px] text-zinc-500 tracking-wider">
+                  distinct panel
+                </p>
+              </div>
+            </div>
           </section>
         )}
 
-        {/* ---------------------------------------------------------------- */}
-        {/* The day                                                           */}
-        {/* ---------------------------------------------------------------- */}
+        {/* ── Day Timeline (Clean Minimalist Swiss Timeline) ─────────────── */}
         {overview && (
           <DayBoard
             appointments={appointments}
@@ -383,39 +370,33 @@ export default function CareLoop() {
           />
         )}
 
-        {/* ---------------------------------------------------------------- */}
-        {/* 30-Day Clinical Outcome Cohort (WS0.5 Moat Engine)                */}
-        {/* ---------------------------------------------------------------- */}
-        <div className="mb-6">
+        {/* ── 30-Day Clinical Outcome Cohort ───────────────────────────────── */}
+        <div className="my-8">
           <CohortOutcomeSection />
         </div>
 
-        {/* ---------------------------------------------------------------- */}
-        {/* Two columns: ledger + triage                                      */}
-        {/* ---------------------------------------------------------------- */}
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.8fr)]">
+        {/* ── Two Columns: Schedule & Triage (No Cards, Pure Hairline Rows) ── */}
+        <div className="grid gap-12 lg:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.85fr)]">
+          {/* Column 1: Appointments List */}
           <section aria-label="Today's schedule">
-            <SectionLabel
-              title="Today & next 24 hours"
+            <SectionHeader
+              title="Today & Next 24 Hours"
               meta={`${appointments.length} scheduled`}
             />
 
             {!overview && !error && <BoardSkeleton rows={2} />}
 
             {overview && appointments.length === 0 && (
-              <Paper>
-                <p className="font-editorial text-[20px] leading-tight text-ink">
-                  Nothing on the board.
+              <div className="py-12 border-b border-white/10">
+                <p className="font-editorial text-2xl text-white">Nothing on the board.</p>
+                <p className="mt-1 font-sans text-xs text-zinc-500">
+                  Bookings made on the patient phone sync automatically to this feed.
                 </p>
-                <p className="mt-1 text-[11.5px] leading-relaxed text-ink-2">
-                  A booking made on a patient's phone appears here as soon as that phone reaches
-                  the server — no refresh needed.
-                </p>
-              </Paper>
+              </div>
             )}
 
             {appointments.length > 0 && (
-              <div className="overflow-hidden rounded-[14px] border border-rule-strong bg-canvas">
+              <div className="divide-y divide-white/10 border-b border-white/10">
                 {appointments.map((appointment) => (
                   <AppointmentLine
                     key={appointment.id}
@@ -456,30 +437,29 @@ export default function CareLoop() {
             )}
           </section>
 
-          <aside className="space-y-6">
+          {/* Column 2: Triage & Recent Messages */}
+          <aside className="space-y-12">
+            {/* Needs Attention Queue */}
             <section aria-label="Needs attention">
-              <SectionLabel
-                title="Needs attention"
+              <SectionHeader
+                title="Needs Attention"
                 meta={`${overview?.attention.length ?? 0} open`}
-                tone={waiting > 0 ? 'critical' : 'ink'}
+                highlight={waiting > 0}
               />
 
               {!overview && !error && <BoardSkeleton rows={2} />}
 
               {overview && overview.attention.length === 0 && (
-                <Paper>
-                  <p className="font-editorial text-[20px] leading-tight text-ink">
-                    Triage is clear.
+                <div className="py-10 border-b border-white/10">
+                  <p className="font-editorial text-xl text-white">Triage is clear.</p>
+                  <p className="mt-1 font-sans text-xs text-zinc-500">
+                    Follow-up check-ins and refill requests appear immediately when submitted.
                   </p>
-                  <p className="mt-1 text-[11.5px] leading-relaxed text-ink-2">
-                    A follow-up check-in or refill request lands here the moment a patient
-                    submits it.
-                  </p>
-                </Paper>
+                </div>
               )}
 
               {overview && overview.attention.length > 0 && (
-                <div className="overflow-hidden rounded-[14px] border border-rule-strong bg-canvas">
+                <div className="divide-y divide-white/10 border-b border-white/10">
                   {overview.attention.map((item, index) => (
                     <TriageEntry
                       key={item.id}
@@ -495,20 +475,23 @@ export default function CareLoop() {
               )}
             </section>
 
+            {/* Recent Messages */}
             <section aria-label="Recent patient messages">
-              <SectionLabel title="Recent messages" meta={`${threads.length}`} />
+              <SectionHeader
+                title="Recent Messages"
+                meta={`${threads.length}`}
+              />
 
               {overview && threads.length === 0 && (
-                <Paper>
-                  <p className="text-[11.5px] leading-relaxed text-ink-2">
-                    No patient messages yet. A reply you send here appears in the app's
-                    “From your clinic” inbox within 15 seconds.
+                <div className="py-8 border-b border-white/10">
+                  <p className="font-sans text-xs text-zinc-500">
+                    No active conversations yet. Replies sent here land in the patient app inbox.
                   </p>
-                </Paper>
+                </div>
               )}
 
               {threads.length > 0 && (
-                <div className="overflow-hidden rounded-[14px] border border-rule-strong bg-canvas">
+                <div className="divide-y divide-white/10 border-b border-white/10">
                   {threads.map((entry) => (
                     <ThreadLine
                       key={entry.patientId}
@@ -523,9 +506,9 @@ export default function CareLoop() {
           </aside>
         </div>
 
-        <footer className="mt-8 flex flex-wrap items-center justify-between gap-2 border-t border-rule-strong pt-3 font-mono text-[8.5px] uppercase tracking-[0.16em] text-ink-3">
-          <span>One database · patient app ⇄ clinic</span>
-          <span>Poll 3s · every write attributed</span>
+        <footer className="mt-12 flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-4 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+          <span>Unified Clinic Database · Live Synchronized</span>
+          <span>Poll Interval: 3s · Attributed Writes</span>
         </footer>
       </div>
 
@@ -553,72 +536,29 @@ export default function CareLoop() {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Pieces
-// ---------------------------------------------------------------------------
-
-function Vital({
-  label,
-  value,
-  note,
-  tone = 'ink'
-}: {
-  label: string;
-  value: number;
-  note: string;
-  tone?: 'ink' | 'critical';
-}) {
-  return (
-    <div className="bg-canvas px-5 py-4">
-      <p className="font-mono text-[8.5px] uppercase tracking-[0.16em] text-ink-3">
-        {label}
-      </p>
-      <div className="mt-2 flex items-baseline gap-2">
-        <span
-          className={`font-mono text-[27px] leading-none tracking-[-0.05em] ${
-            tone === 'critical' && value > 0 ? 'text-critical' : 'text-ink'
-          }`}
-        >
-          {value}
-        </span>
-        <span className="font-mono text-[8.5px] uppercase tracking-[0.12em] text-ink-3">
-          {note}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function SectionLabel({
+function SectionHeader({
   title,
   meta,
-  tone = 'ink'
+  highlight = false
 }: {
   title: string;
-  meta: string;
-  tone?: 'ink' | 'critical';
+  meta?: string;
+  highlight?: boolean;
 }) {
   return (
-    <div className="mb-2 flex items-baseline justify-between gap-3">
-      <h2 className="font-mono text-[9.5px] uppercase tracking-[0.18em] text-ink-2">
+    <div className="flex items-baseline justify-between border-b border-white/10 pb-3">
+      <h2 className="font-sans text-xs uppercase tracking-[0.2em] font-medium text-white">
         {title}
       </h2>
-      <span
-        className={`font-mono text-[9px] uppercase tracking-[0.14em] ${
-          tone === 'critical' ? 'text-critical' : 'text-ink-3'
-        }`}
-        aria-live="polite"
-      >
-        {meta}
-      </span>
-    </div>
-  );
-}
-
-function Paper({ children }: { children: ReactNode }) {
-  return (
-    <div className="rounded-[14px] border border-rule-strong bg-canvas px-5 py-4">
-      {children}
+      {meta && (
+        <span
+          className={`font-mono text-xs uppercase tracking-wider ${
+            highlight ? 'text-amber-400' : 'text-zinc-500'
+          }`}
+        >
+          {meta}
+        </span>
+      )}
     </div>
   );
 }
@@ -642,7 +582,6 @@ function DayBoard({
   const pct = (time: number) =>
     Math.min(100, Math.max(0, ((time - fromMs) / span) * 100));
 
-  // Two-hour ticks, aligned to the clock rather than to the window.
   const first = new Date(fromMs);
   first.setMinutes(0, 0, 0);
   if (first.getHours() % 2 !== 0) first.setHours(first.getHours() + 1);
@@ -653,8 +592,6 @@ function DayBoard({
     (a, b) => new Date(a.scheduledFor).getTime() - new Date(b.scheduledFor).getTime()
   );
 
-  // The window crosses midnight once. Mark that edge so "02" can never be read
-  // as two o'clock today.
   const dayBoundary = new Date(fromMs);
   dayBoundary.setHours(24, 0, 0, 0);
   const boundaryMs = dayBoundary.getTime();
@@ -662,22 +599,22 @@ function DayBoard({
 
   return (
     <section
-      aria-label="Next 24 hours"
-      className="mb-6 overflow-hidden rounded-[14px] border border-rule-strong bg-canvas"
+      aria-label="Next 24 hours schedule timeline"
+      className="border-t border-b border-white/10 py-5 my-6"
     >
-      <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-rule px-5 py-3">
-        <h2 className="font-mono text-[9.5px] uppercase tracking-[0.18em] text-ink-2">
-          The day
+      <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-white/10 pb-3">
+        <h2 className="font-sans text-xs uppercase tracking-[0.2em] font-medium text-white">
+          24-Hour Timeline
         </h2>
-        <p className="font-mono text-[8.5px] uppercase tracking-[0.14em] text-ink-3">
-          next 24 hours · {appointments.length} on the board
+        <p className="font-mono text-xs uppercase tracking-wider text-zinc-500">
+          {appointments.length} encounters on ledger
         </p>
       </div>
 
-      <div className="px-5 pb-2 pt-2.5">
-        {/* Hour rule, shared by every row below. */}
+      <div className="pt-3">
+        {/* Hour rule */}
         <div className="flex items-center gap-4">
-          <div className="w-[126px] shrink-0 font-mono text-[8px] uppercase tracking-[0.16em] text-ink-3">
+          <div className="w-[126px] shrink-0 font-sans text-[10px] uppercase tracking-[0.16em] text-zinc-500">
             Patient
           </div>
           <div className="relative h-5 flex-1">
@@ -687,7 +624,7 @@ function DayBoard({
               return (
                 <span
                   key={tick}
-                  className="absolute bottom-0 -translate-x-1/2 font-mono text-[8.5px] tabular-nums text-ink-3"
+                  className="absolute bottom-0 -translate-x-1/2 font-mono text-[10px] tabular-nums text-zinc-500"
                   style={{ left: `${left}%` }}
                 >
                   {new Date(tick).toLocaleTimeString([], {
@@ -699,7 +636,7 @@ function DayBoard({
             })}
             {nowPct >= 1 && nowPct <= 99 && (
               <span
-                className="absolute bottom-0 -translate-x-1/2 translate-y-[-1px] bg-canvas px-1 font-mono text-[8px] uppercase tracking-[0.14em] text-critical"
+                className="absolute bottom-0 -translate-x-1/2 font-mono text-[9px] uppercase tracking-wider text-amber-400 font-semibold"
                 style={{ left: `${nowPct}%` }}
               >
                 now
@@ -708,91 +645,61 @@ function DayBoard({
           </div>
         </div>
 
+        {/* Midnight rule */}
+        {boundaryMs > fromMs && boundaryMs < toMs && (
+          <div className="relative my-2 h-px bg-white/10">
+            <span
+              className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#08090a] px-2 font-mono text-[9px] uppercase tracking-wider text-zinc-500"
+              style={{ left: `${pct(boundaryMs)}%` }}
+            >
+              Midnight
+            </span>
+          </div>
+        )}
+
+        {/* Appointment bars */}
         {sorted.length === 0 ? (
-          <p className="mt-1 border-t border-rule py-6 text-[11.5px] leading-relaxed text-ink-2">
-            No visits in the next 24 hours. A booking made on a patient's phone lands here the
-            moment that phone reaches the server.
+          <p className="py-4 font-sans text-xs text-zinc-500">
+            No visits scheduled in this 24-hour window.
           </p>
         ) : (
-          <div className="relative mt-1">
-            {/* Vertical rules sit behind the rows. */}
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-y-0 left-[142px] right-0"
-            >
-              {ticks.map((tick) => {
-                const left = pct(tick);
-                if (left < 1 || left > 99) return null;
-                return (
-                  <span
-                    key={tick}
-                    className="absolute inset-y-0 w-px bg-paper-2"
-                    style={{ left: `${left}%` }}
-                  />
-                );
-              })}
-              {boundaryMs > fromMs && boundaryMs < toMs && (
-                <span
-                  className="absolute inset-y-0 border-l border-dashed border-rule-strong"
-                  style={{ left: `${pct(boundaryMs)}%` }}
-                />
-              )}
-              {nowPct >= 0 && nowPct <= 100 && (
-                <span
-                  className="absolute inset-y-0 w-px bg-critical"
-                  style={{ left: `${nowPct}%` }}
-                />
-              )}
-            </div>
-
+          <div className="divide-y divide-white/[0.06] pt-1">
             {sorted.map((appointment) => {
               const start = new Date(appointment.scheduledFor).getTime();
+              const duration = (appointment.durationMinutes || 20) * 60 * 1000;
               const left = pct(start);
-              const width = Math.max(
-                (appointment.durationMinutes * 60_000 / span) * 100,
-                0.45
-              );
+              const width = Math.max(pct(start + duration) - left, 1.8);
               const confirmed = appointment.status === 'CONFIRMED';
               const completed = appointment.status === 'COMPLETED';
-              const barClass = confirmed
-                ? 'bg-solid'
-                : completed
-                  ? 'bg-paper-2'
-                  : 'border border-caution-line bg-caution-wash';
+
               return (
                 <div
                   key={appointment.id}
-                  className="group flex items-center gap-4 border-t border-rule first:border-t-0"
+                  className="group flex items-center gap-4 py-2 hover:bg-white/[0.02] transition-colors"
                 >
                   <button
                     type="button"
                     onClick={() => onFocus(appointment.id)}
-                    className="w-[126px] shrink-0 py-2 text-left"
+                    className="w-[126px] shrink-0 truncate text-left font-editorial text-base text-zinc-200 group-hover:text-amber-400/90 transition-colors"
                   >
-                    <span className="block font-mono text-[8.5px] uppercase tracking-[0.12em] tabular-nums text-ink-3">
-                      {formatClock(appointment.scheduledFor)} · {appointment.durationMinutes} min
-                    </span>
-                    <span className="mt-0.5 block truncate font-editorial text-[15px] leading-tight text-ink group-hover:underline group-hover:decoration-ink-3 group-hover:underline-offset-2">
-                      {appointment.patientName}
-                    </span>
+                    {appointment.patientName}
                   </button>
-
-                  <div className="relative h-[46px] flex-1">
+                  <div className="relative h-6 flex-1">
                     <button
                       type="button"
                       onClick={() => onFocus(appointment.id)}
-                      aria-label={`${appointment.patientName}, ${formatClock(
-                        appointment.scheduledFor
-                      )}, ${appointment.status.toLowerCase()}`}
                       className="absolute top-1/2 flex -translate-y-1/2 items-center"
-                      style={{ left: `${left}%`, width: `${width}%`, minWidth: '14px' }}
+                      style={{ left: `${left}%`, width: `${width}%`, minWidth: '16px' }}
                     >
                       <span
-                        className={`h-[7px] w-full rounded-full transition-transform group-hover:scale-y-[1.6] ${barClass}`}
+                        className={`h-2 w-full rounded-full transition-transform group-hover:scale-y-125 ${
+                          completed
+                            ? 'bg-zinc-600'
+                            : confirmed
+                              ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.7)]'
+                              : 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.7)]'
+                        }`}
                       />
-                      {!confirmed && !completed && (
-                        <span className="absolute -left-[7px] h-[7px] w-[7px] rounded-full border border-caution-line bg-canvas" />
-                      )}
                     </button>
                   </div>
                 </div>
@@ -837,90 +744,116 @@ function AppointmentLine({
   return (
     <article
       id={`appt-${appointment.id}`}
-      className={`relative border-b border-rule px-5 py-4 transition-colors last:border-b-0 ${
-        focused ? 'bg-paper-2' : 'bg-transparent'
+      className={`relative py-6 transition-colors ${
+        focused ? 'bg-white/[0.03]' : 'bg-transparent'
       }`}
     >
-      <div className="flex gap-4">
-        <div className="w-[66px] shrink-0 pt-0.5 text-right">
-          <p className="font-mono text-[14px] leading-none tabular-nums text-ink">
+      <div className="flex items-start gap-6">
+        {/* Time column (Mono) */}
+        <div className="w-[70px] shrink-0 pt-0.5 text-left">
+          <p className="font-mono text-sm leading-none tabular-nums text-white">
             {formatClock(appointment.scheduledFor)}
           </p>
-          <p className="mt-1 font-mono text-[8px] uppercase tracking-[0.12em] text-ink-3">
+          <p className="mt-1 font-mono text-[10px] uppercase tracking-wider text-zinc-500">
             {formatDayLabel(appointment.scheduledFor, now)}
           </p>
         </div>
 
+        {/* Main details */}
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <p className="font-editorial text-[22px] leading-none text-ink">
+          <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+            <h3 className="font-editorial text-2xl font-normal leading-tight text-white">
               {appointment.patientName}
-            </p>
+            </h3>
             <StatusMark status={appointment.status} />
             {appointment.needsAttention && (
-              <span className="inline-flex items-center gap-1 font-mono text-[8.5px] uppercase tracking-[0.12em] text-critical">
-                <MessageSquare className="h-2.5 w-2.5" />
-                {appointment.openMessageCount} open
+              <span className="inline-flex items-center gap-1.5 font-mono text-xs text-amber-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.8)]" />
+                {appointment.openMessageCount} open inquiry
               </span>
             )}
           </div>
 
-          <p className="mt-1.5 text-[11.5px] text-ink-2">
+          <p className="mt-1.5 font-sans text-xs text-zinc-400">
             {appointment.durationMinutes} min
             {appointment.reason ? ` · ${appointment.reason}` : ''}
           </p>
 
-          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+          <div className="mt-4 flex flex-wrap items-center gap-2">
             {appointment.status === 'BOOKED' && (
-              <DeskButton
+              <button
+                type="button"
                 onClick={onConfirm}
-                loading={busyKey === `confirm-${appointment.id}`}
+                disabled={busyKey === `confirm-${appointment.id}`}
+                className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 px-3 py-1.5 font-sans text-xs font-semibold uppercase tracking-wider text-black transition-all cursor-pointer shadow-[0_0_12px_rgba(245,158,11,0.2)]"
               >
-                <Check className="h-3 w-3" />
-                Confirm
-              </DeskButton>
+                {busyKey === `confirm-${appointment.id}` ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Check className="h-3 w-3" />
+                )}
+                <span>Confirm</span>
+              </button>
             )}
-            <DeskAction onClick={onToggleMove} busy={false}>
-              Move
-            </DeskAction>
-            <DeskAction onClick={onMessage} busy={false}>
-              <MessageSquare className="h-3 w-3" />
-              Message
-            </DeskAction>
-            <DeskAction
-              onClick={onCancel}
-              busy={busyKey === `cancel-${appointment.id}`}
-              tone="danger"
+            <button
+              type="button"
+              onClick={onToggleMove}
+              className="border border-white/10 bg-transparent hover:border-white/20 hover:text-white px-3 py-1.5 font-sans text-xs text-zinc-400 transition-colors cursor-pointer"
             >
-              Cancel
-            </DeskAction>
+              Move
+            </button>
+            <button
+              type="button"
+              onClick={onMessage}
+              className="flex items-center gap-1.5 border border-white/10 bg-transparent hover:border-white/20 hover:text-white px-3 py-1.5 font-sans text-xs text-zinc-400 transition-colors cursor-pointer"
+            >
+              <MessageSquare className="h-3 w-3" />
+              <span>Message</span>
+            </button>
+            <button
+              type="button"
+              onClick={onCancel}
+              disabled={busyKey === `cancel-${appointment.id}`}
+              className="border border-rose-500/20 bg-transparent hover:border-rose-500/40 hover:text-rose-400 px-3 py-1.5 font-sans text-xs text-rose-400/80 transition-colors cursor-pointer"
+            >
+              {busyKey === `cancel-${appointment.id}` ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                'Cancel'
+              )}
+            </button>
           </div>
 
           {moving && (
-            <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-rule pt-3">
+            <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-white/10 pt-4">
               <label
                 htmlFor={`move-${appointment.id}`}
-                className="font-mono text-[8.5px] uppercase tracking-[0.12em] text-ink-3"
+                className="font-sans text-[10px] uppercase tracking-wider text-zinc-500"
               >
-                New time
+                New Time:
               </label>
               <input
                 id={`move-${appointment.id}`}
                 type="datetime-local"
                 value={moveValue}
                 onChange={(event) => onMoveValue(event.target.value)}
-                className="h-8 rounded-[6px] border border-rule-strong bg-canvas px-2 font-mono text-[11px] text-ink outline-none focus:border-solid"
+                className="border border-white/10 bg-[#0d0e12] px-2.5 py-1 font-mono text-xs text-white outline-none focus:border-amber-400"
               />
-              <DeskButton
+              <button
+                type="button"
                 onClick={onSaveMove}
-                loading={busyKey === `move-${appointment.id}`}
-                disabled={!moveValue}
+                disabled={!moveValue || busyKey === `move-${appointment.id}`}
+                className="bg-amber-500 hover:bg-amber-400 px-3 py-1 font-sans text-xs font-semibold text-black transition-all cursor-pointer"
               >
-                Save time
-              </DeskButton>
-              <DeskAction onClick={onCancelMove} busy={false}>
-                Back
-              </DeskAction>
+                Save
+              </button>
+              <button
+                type="button"
+                onClick={onCancelMove}
+                className="px-2 py-1 font-sans text-xs text-zinc-500 hover:text-white"
+              >
+                Cancel
+              </button>
             </div>
           )}
         </div>
@@ -930,21 +863,34 @@ function AppointmentLine({
 }
 
 function StatusMark({ status }: { status: LiveAppointment['status'] }) {
-  const map: Record<LiveAppointment['status'], [string, string]> = {
-    BOOKED: ['Awaiting confirmation', 'var(--c-caution)'],
-    CONFIRMED: ['Confirmed', 'var(--c-settled)'],
-    COMPLETED: ['Completed', 'var(--c-ink-3)'],
-    CANCELLED: ['Cancelled', 'var(--c-ink-3)'],
-    NO_SHOW: ['No show', 'var(--c-critical)']
-  };
-  const [label, color] = map[status];
+  if (status === 'CONFIRMED') {
+    return (
+      <span className="inline-flex items-center gap-1.5 font-sans text-xs text-zinc-300">
+        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+        Confirmed
+      </span>
+    );
+  }
+  if (status === 'BOOKED') {
+    return (
+      <span className="inline-flex items-center gap-1.5 font-sans text-xs text-zinc-300">
+        <span className="h-1.5 w-1.5 rounded-full bg-amber-400/90 shadow-[0_0_6px_rgba(251,191,36,0.8)]" />
+        Awaiting confirmation
+      </span>
+    );
+  }
+  if (status === 'COMPLETED') {
+    return (
+      <span className="inline-flex items-center gap-1.5 font-sans text-xs text-zinc-500">
+        <span className="h-1.5 w-1.5 rounded-full bg-zinc-600" />
+        Completed
+      </span>
+    );
+  }
   return (
-    <span
-      className="inline-flex items-center gap-1.5 font-mono text-[8.5px] uppercase tracking-[0.12em]"
-      style={{ color }}
-    >
-      <span className="h-1 w-1 rounded-full" style={{ backgroundColor: color }} />
-      {label}
+    <span className="inline-flex items-center gap-1.5 font-sans text-xs text-zinc-500">
+      <span className="h-1.5 w-1.5 rounded-full bg-zinc-700" />
+      {status.toLowerCase()}
     </span>
   );
 }
@@ -964,37 +910,56 @@ function TriageEntry({
   onOpen: () => void;
   onResolve: () => void;
 }) {
-  const style = SEVERITY_STYLE[item.severity];
+  const isCritical = item.severity === 'critical';
+  const isWarning = item.severity === 'warning';
+
   return (
-    <article
-      className={`relative border-b border-rule px-5 py-4 last:border-b-0 ${style.tint}`}
-    >
-      <span className={`absolute inset-y-0 left-0 w-[3px] ${style.bar}`} aria-hidden="true" />
+    <article className="py-6">
       <div className="flex items-baseline justify-between gap-3">
-        <p className={`font-mono text-[8.5px] uppercase tracking-[0.14em] ${style.ink}`}>
-          {String(index + 1).padStart(2, '0')} · {style.label} · {item.title}
-        </p>
-        <span className="shrink-0 font-mono text-[8.5px] tabular-nums text-ink-3">
+        <div className="flex items-center gap-2">
+          <span
+            className={`h-1.5 w-1.5 rounded-full ${
+              isCritical
+                ? 'bg-rose-400 shadow-[0_0_8px_rgba(244,63,94,0.9)]'
+                : isWarning
+                  ? 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.9)]'
+                  : 'bg-zinc-500'
+            }`}
+          />
+          <span className="font-mono text-xs uppercase tracking-wider text-zinc-400">
+            {String(index + 1).padStart(2, '0')} · {item.severity.toUpperCase()} · {item.title}
+          </span>
+        </div>
+        <span className="shrink-0 font-mono text-xs tabular-nums text-zinc-500">
           {formatAgo(item.createdAt, now)}
         </span>
       </div>
 
-      <p className="mt-1.5 font-editorial text-[21px] leading-tight text-ink">
+      <h3 className="mt-2 font-editorial text-2xl font-normal leading-tight text-white">
         {item.patientName}
-      </p>
-      <p className="mt-1 line-clamp-3 text-[11.5px] leading-relaxed text-ink-2">
+      </h3>
+      <p className="mt-1 line-clamp-3 font-sans text-xs leading-relaxed text-zinc-400">
         {item.body}
       </p>
 
-      <div className="mt-3 flex flex-wrap gap-1.5">
-        <DeskButton onClick={onOpen}>
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={onOpen}
+          className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 px-3 py-1.5 font-sans text-xs font-semibold uppercase tracking-wider text-black transition-all cursor-pointer shadow-[0_0_12px_rgba(245,158,11,0.2)]"
+        >
           <MessageSquare className="h-3 w-3" />
-          Open &amp; reply
-        </DeskButton>
-        <DeskAction onClick={onResolve} busy={busy}>
-          <Check className="h-3 w-3" />
-          Mark handled
-        </DeskAction>
+          <span>Open &amp; Reply</span>
+        </button>
+        <button
+          type="button"
+          onClick={onResolve}
+          disabled={busy}
+          className="flex items-center gap-1.5 border border-white/10 bg-transparent hover:border-white/20 hover:text-white px-3 py-1.5 font-sans text-xs text-zinc-400 transition-colors cursor-pointer"
+        >
+          {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+          <span>Mark handled</span>
+        </button>
       </div>
     </article>
   );
@@ -1013,23 +978,23 @@ function ThreadLine({
     <button
       type="button"
       onClick={onOpen}
-      className="flex w-full items-baseline gap-3 border-b border-rule px-5 py-3 text-left transition-colors last:border-b-0 hover:bg-paper/60"
+      className="group flex w-full items-baseline gap-4 py-4 text-left transition-colors hover:bg-white/[0.02] cursor-pointer"
     >
-      <span className="w-[62px] shrink-0 font-mono text-[8.5px] uppercase tracking-[0.1em] text-ink-3">
+      <span className="w-[66px] shrink-0 font-mono text-xs text-zinc-500">
         {formatAgo(thread.lastMessageAt, now)}
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-baseline justify-between gap-2">
-          <span className="truncate font-editorial text-[16px] leading-tight text-ink">
+          <span className="truncate font-editorial text-lg text-white group-hover:text-amber-400 transition-colors">
             {thread.patientName}
           </span>
           {thread.openCount > 0 && (
-            <span className="shrink-0 font-mono text-[8.5px] text-critical">
+            <span className="shrink-0 font-mono text-xs text-amber-400">
               {thread.openCount} open
             </span>
           )}
         </span>
-        <span className="mt-0.5 block truncate text-[11px] leading-relaxed text-ink-2">
+        <span className="mt-0.5 block truncate font-sans text-xs text-zinc-400">
           {thread.lastMessage}
         </span>
       </span>
@@ -1074,10 +1039,10 @@ function ConversationSheet({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex justify-end bg-solid/25"
+      className="fixed inset-0 z-50 flex justify-end bg-black/80 backdrop-blur-xs"
       role="dialog"
       aria-modal="true"
-      aria-label="Conversation"
+      aria-label="Conversation Sheet"
     >
       <button
         type="button"
@@ -1086,85 +1051,79 @@ function ConversationSheet({
         onClick={onClose}
       />
 
-      <div className="relative flex h-full w-full max-w-[470px] flex-col border-l border-rule-strong bg-canvas">
-        <header className="border-b border-rule-strong px-5 py-4">
+      <div className="relative flex h-full w-full max-w-[480px] flex-col border-l border-white/10 bg-[#0d0e12] text-white shadow-2xl">
+        <header className="border-b border-white/10 px-6 py-5">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="font-mono text-[8.5px] uppercase tracking-[0.18em] text-ink-3">
-                Chart thread · {thread?.openCount ?? 0} open
+              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-500">
+                Chart Thread · {thread?.openCount ?? 0} open
               </p>
-              <p className="mt-1.5 truncate font-editorial text-[27px] leading-none text-ink">
+              <h2 className="mt-1.5 truncate font-editorial text-3xl font-light text-white">
                 {thread?.patientName ?? 'Conversation'}
-              </p>
+              </h2>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="-mr-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px] text-ink-2 transition-colors hover:bg-paper-2 hover:text-ink"
+              className="text-zinc-500 hover:text-white cursor-pointer"
               aria-label="Close"
             >
-              <X className="h-3.5 w-3.5" />
+              <X className="h-4 w-4" />
             </button>
           </div>
-          <p className="mt-2 font-mono text-[8.5px] uppercase tracking-[0.12em] text-ink-3">
-            Every entry is a row in the clinic database
-          </p>
         </header>
 
-        {/* The patient's own paperwork, above the conversation: a report they
-            attached is context for the reply a clinician is about to write. */}
-        {documents.length > 0 && (          <section className="border-b border-rule-strong bg-paper-2 px-5 py-3">
-            <p className="font-mono text-[8.5px] uppercase tracking-[0.18em] text-ink-3">
-              Patient files · {documents.length}
+        {/* Patient Attached Files */}
+        {documents.length > 0 && (
+          <section className="border-b border-white/10 px-6 py-4">
+            <p className="font-sans text-[10px] uppercase tracking-wider text-zinc-500">
+              Attached Documents ({documents.length})
             </p>
-            <ul className="mt-2 space-y-1">
-              {documents.map((document) => (
-                <li key={document.id}>
+            <ul className="mt-2 space-y-2">
+              {documents.map((doc) => (
+                <li key={doc.id}>
                   <button
                     type="button"
                     onClick={() => {
-                      void careLoopApi.openDocument(document).catch((err: unknown) => {
+                      void careLoopApi.openDocument(doc).catch((err: unknown) => {
                         setOpenError(err instanceof Error ? err.message : 'The file could not be opened.');
                       });
                     }}
-                    className="group flex w-full items-baseline gap-2 border-b border-rule py-1.5 text-left last:border-b-0"
+                    className="flex w-full items-baseline gap-2 text-left font-sans text-xs text-zinc-300 hover:text-white"
                   >
-                    <FileText className="mt-0.5 h-3 w-3 shrink-0 text-ink-3" />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[11.5px] leading-tight text-ink group-hover:underline">
-                        {document.title}
-                      </span>
-                      <span className="mt-0.5 block font-mono text-[8.5px] uppercase tracking-[0.1em] text-ink-3">
-                        {documentCategoryLabel(document.category)} · {formatBytes(document.byteSize)} ·{' '}
-                        {formatAgo(document.uploadedAt)}
-                      </span>
+                    <FileText className="mt-0.5 h-3.5 w-3.5 shrink-0 text-zinc-500" />
+                    <span className="truncate">{doc.title}</span>
+                    <span className="font-mono text-[10px] text-zinc-500">
+                      ({formatBytes(doc.byteSize)})
                     </span>
                   </button>
                 </li>
               ))}
             </ul>
             {openError && (
-              <p className="mt-2 text-[10.5px] leading-snug text-caution">{openError}</p>
+              <p className="mt-2 font-sans text-xs text-rose-400">{openError}</p>
             )}
           </section>
         )}
 
+        {/* Prescriptions Panel */}
         <PrescriptionPanel
           patientId={thread?.patientId || null}
           items={prescriptions}
           onPrescribed={onPrescribed}
         />
 
-        <div className="flex-1 overflow-y-auto px-5">
+        {/* Message History */}
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
           {!thread && (
-            <p className="py-6 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-3">
-              Reading the thread…
+            <p className="font-mono text-xs uppercase tracking-wider text-zinc-500">
+              Reading thread…
             </p>
           )}
 
           {thread && thread.messages.length === 0 && (
-            <p className="py-6 text-[11.5px] leading-relaxed text-ink-2">
-              No messages yet. A check-in or a reply will appear here.
+            <p className="font-sans text-xs text-zinc-500">
+              No messages yet in this consultation thread.
             </p>
           )}
 
@@ -1173,24 +1132,24 @@ function ConversationSheet({
             return (
               <div
                 key={message.id}
-                className={`border-b border-rule py-4 pl-3 ${
-                  clinic ? 'border-l-2 border-l-solid' : 'border-l-2 border-l-transparent'
+                className={`border-b border-white/10 pb-4 ${
+                  clinic ? 'border-l-2 border-l-amber-500 pl-3' : 'pl-2'
                 }`}
               >
                 <div className="flex items-baseline justify-between gap-3">
                   <span
-                    className={`font-mono text-[8.5px] uppercase tracking-[0.14em] ${
-                      clinic ? 'text-ink' : 'text-ink-3'
+                    className={`font-mono text-[10px] uppercase tracking-wider ${
+                      clinic ? 'text-amber-400' : 'text-zinc-500'
                     }`}
                   >
                     {clinic ? message.authorName || 'Clinic' : 'Patient'}
                   </span>
-                  <span className="font-mono text-[8.5px] tabular-nums text-ink-3">
+                  <span className="font-mono text-[10px] tabular-nums text-zinc-500">
                     {formatClock(message.createdAt)}
                     {message.resolvedAt ? ' · handled' : ''}
                   </span>
                 </div>
-                <p className="mt-1.5 whitespace-pre-wrap text-[12px] leading-relaxed text-ink">
+                <p className="mt-1.5 whitespace-pre-wrap font-sans text-xs leading-relaxed text-zinc-200">
                   {message.body}
                 </p>
               </div>
@@ -1198,12 +1157,13 @@ function ConversationSheet({
           })}
         </div>
 
-        <footer className="border-t border-rule-strong px-5 py-4">
+        {/* Composer */}
+        <footer className="border-t border-white/10 px-6 py-5">
           <label
             htmlFor="chart-reply"
-            className="font-mono text-[8.5px] uppercase tracking-[0.14em] text-ink-3"
+            className="font-sans text-[10px] uppercase tracking-wider text-zinc-500"
           >
-            Reply on the record
+            Reply on EHR Record
           </label>
           <textarea
             id="chart-reply"
@@ -1217,48 +1177,34 @@ function ConversationSheet({
             }}
             rows={3}
             maxLength={4000}
-            placeholder={`Reply to ${thread?.patientName ?? 'the patient'}…`}
-            className="mt-1.5 w-full resize-none rounded-[8px] border border-rule-strong bg-paper-2 px-3 py-2.5 text-[12px] leading-relaxed text-ink outline-none placeholder:text-ink-3 focus:border-solid"
+            placeholder={`Type clinical response to ${thread?.patientName ?? 'patient'}…`}
+            className="mt-2 w-full resize-none border border-white/10 bg-white/[0.02] p-3 font-sans text-xs text-white placeholder:text-zinc-600 outline-none focus:border-amber-400"
           />
-          <div className="mt-2.5 flex items-center justify-between gap-2">
-            <DeskAction
+          <div className="mt-3 flex items-center justify-between gap-2">
+            <button
+              type="button"
               onClick={onResolve}
-              busy={resolving}
-              disabled={!thread?.openCount}
+              disabled={resolving || !thread?.openCount}
+              className="border border-white/10 px-3 py-1.5 font-sans text-xs text-zinc-400 hover:text-white disabled:opacity-40 transition-colors"
             >
-              <Check className="h-3 w-3" />
               Mark handled
-            </DeskAction>
-            <DeskButton
+            </button>
+            <button
+              type="button"
               onClick={onSend}
-              loading={sending}
-              disabled={!draft.trim()}
+              disabled={sending || !draft.trim()}
+              className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 px-4 py-1.5 font-sans text-xs font-semibold uppercase tracking-wider text-black transition-all disabled:opacity-40 shadow-[0_0_12px_rgba(245,158,11,0.2)]"
             >
-              <Send className="h-3 w-3" />
-              Send reply
-            </DeskButton>
+              {sending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+              <span>Send reply</span>
+            </button>
           </div>
-          <p className="mt-2 text-[10px] leading-relaxed text-ink-3">
-            The patient sees this in their app's “From your clinic” inbox, usually within 15
-            seconds.
-          </p>
         </footer>
       </div>
     </div>
   );
 }
 
-/**
- * Prescribing from the clinic sheet.
- *
- * Deliberately a small form and not a protocol builder: the pilot needs one
- * medicine to reach one phone, and every extra field is a field nobody fills
- * in at the end of a clinic day.
- *
- * The signature is the physician's. The panel says out loud that the
- * deterministic interaction check did not run, because a screen that implies a
- * safety check would be worse than one that admits it skipped.
- */
 function PrescriptionPanel({
   patientId,
   items,
@@ -1314,113 +1260,78 @@ function PrescriptionPanel({
   };
 
   return (
-    <section className="border-b border-rule-strong bg-canvas px-5 py-3">
-      <div className="flex items-baseline justify-between gap-3">
-        <p className="font-mono text-[8.5px] uppercase tracking-[0.18em] text-ink-3">
-          Prescriptions · {items.length}
+    <section className="border-b border-white/10 px-6 py-4">
+      <div className="flex items-baseline justify-between">
+        <p className="font-sans text-[10px] uppercase tracking-wider text-zinc-500">
+          Active Prescriptions ({items.length})
         </p>
         <button
           type="button"
-          onClick={() => {
-            setOpen((value) => !value);
-            setError(null);
-          }}
-          className="font-mono text-[8.5px] uppercase tracking-[0.14em] text-ink-2 underline decoration-ink-3 underline-offset-2 hover:text-ink"
+          onClick={() => setOpen((prev) => !prev)}
+          className="font-mono text-xs text-amber-400 hover:underline cursor-pointer"
         >
-          {open ? 'Cancel' : 'Prescribe'}
+          {open ? 'Close' : '+ Sign prescription'}
         </button>
       </div>
 
-      {items.length > 0 && (
-        <ul className="mt-2 space-y-2">
+      {items.length > 0 && !open && (
+        <ul className="mt-2 space-y-1.5 font-sans text-xs">
           {items.map((item) => (
-            <li key={item.record.id} className="border-b border-rule pb-2 last:border-b-0 last:pb-0">
-              <p className="text-[11.5px] leading-tight text-ink">
-                {item.record.title}
-              </p>
-              <p className="mt-0.5 font-mono text-[8.5px] uppercase tracking-[0.1em] text-ink-3">
-                {item.record.displayDate} · {item.detail.doctorName}
-              </p>
-              <ul className="mt-1 space-y-0.5">
-                {item.detail.medications.map((med) => (
-                  <li key={`${item.record.id}-${med.name}`} className="text-[11px] leading-snug text-ink">
-                    {med.name} {med.dose} · {med.frequency} · {med.duration}
-                  </li>
-                ))}
-              </ul>
-              {!item.safety.checked && (
-                <p className="mt-1 text-[9.5px] leading-snug text-caution">
-                  Interaction check not run for this signature.
-                </p>
-              )}
+            <li key={item.record.id} className="flex justify-between text-zinc-300">
+              <span className="font-medium text-white">{item.record.title}</span>
+              <span className="font-mono text-zinc-500">{item.record.summary}</span>
             </li>
           ))}
         </ul>
       )}
 
       {open && (
-        <div className="mt-3 space-y-2 rounded-[8px] border border-rule bg-accent-wash p-3">
+        <div className="mt-3 space-y-3 font-sans text-xs">
           <div className="grid grid-cols-2 gap-2">
-            <label className="block">
-              <span className="font-mono text-[8px] uppercase tracking-[0.14em] text-ink-3">Medicine</span>
-              <input
-                value={medication}
-                onChange={(event) => setMedication(event.target.value)}
-                placeholder="Metformin"
-                className="mt-1 w-full rounded-[5px] border border-rule bg-paper px-2 py-1.5 text-[11.5px] text-ink outline-none focus:border-rule-strong"
-              />
-            </label>
-            <label className="block">
-              <span className="font-mono text-[8px] uppercase tracking-[0.14em] text-ink-3">Dose</span>
-              <input
-                value={dose}
-                onChange={(event) => setDose(event.target.value)}
-                placeholder="500 mg"
-                className="mt-1 w-full rounded-[5px] border border-rule bg-paper px-2 py-1.5 text-[11.5px] text-ink outline-none focus:border-rule-strong"
-              />
-            </label>
-            <label className="block">
-              <span className="font-mono text-[8px] uppercase tracking-[0.14em] text-ink-3">Frequency</span>
-              <input
-                value={frequency}
-                onChange={(event) => setFrequency(event.target.value)}
-                className="mt-1 w-full rounded-[5px] border border-rule bg-paper px-2 py-1.5 text-[11.5px] text-ink outline-none focus:border-rule-strong"
-              />
-            </label>
-            <label className="block">
-              <span className="font-mono text-[8px] uppercase tracking-[0.14em] text-ink-3">Days</span>
-              <input
-                value={days}
-                onChange={(event) => setDays(event.target.value)}
-                inputMode="numeric"
-                className="mt-1 w-full rounded-[5px] border border-rule bg-paper px-2 py-1.5 text-[11.5px] text-ink outline-none focus:border-rule-strong"
-              />
-            </label>
-          </div>
-
-          <label className="block">
-            <span className="font-mono text-[8px] uppercase tracking-[0.14em] text-ink-3">Reason</span>
             <input
-              value={reason}
-              onChange={(event) => setReason(event.target.value)}
-              placeholder="Type 2 diabetes review"
-              className="mt-1 w-full rounded-[5px] border border-rule bg-paper px-2 py-1.5 text-[11.5px] text-ink outline-none focus:border-rule-strong"
+              value={medication}
+              onChange={(e) => setMedication(e.target.value)}
+              placeholder="Medication name"
+              className="border border-white/10 bg-white/[0.02] px-2.5 py-1.5 text-white placeholder:text-zinc-600 outline-none focus:border-amber-400"
             />
-          </label>
+            <input
+              value={dose}
+              onChange={(e) => setDose(e.target.value)}
+              placeholder="Dose (e.g. 500mg)"
+              className="border border-white/10 bg-white/[0.02] px-2.5 py-1.5 text-white placeholder:text-zinc-600 outline-none focus:border-amber-400"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <input
+              value={frequency}
+              onChange={(e) => setFrequency(e.target.value)}
+              placeholder="Frequency"
+              className="border border-white/10 bg-white/[0.02] px-2.5 py-1.5 text-white placeholder:text-zinc-600 outline-none focus:border-amber-400"
+            />
+            <input
+              value={days}
+              onChange={(e) => setDays(e.target.value)}
+              placeholder="Days (e.g. 30)"
+              className="border border-white/10 bg-white/[0.02] px-2.5 py-1.5 text-white placeholder:text-zinc-600 outline-none focus:border-amber-400 font-mono"
+            />
+          </div>
+          <input
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Clinical indication"
+            className="w-full border border-white/10 bg-white/[0.02] px-2.5 py-1.5 text-white placeholder:text-zinc-600 outline-none focus:border-amber-400"
+          />
 
-          {error && <p className="text-[10.5px] leading-snug text-caution">{error}</p>}
+          {error && <p className="font-sans text-xs text-rose-400">{error}</p>}
 
-          <div className="flex items-center justify-between gap-2 pt-1">
-            <p className="max-w-[62%] text-[9px] leading-snug text-ink-3">
-              Signing sends this to the patient's phone. The interaction check is not run here.
-            </p>
+          <div className="flex items-center justify-end gap-2 pt-1">
             <button
               type="button"
-              onClick={() => void sign()}
+              onClick={sign}
               disabled={busy}
-              className="rounded-[6px] bg-solid px-3 py-1.5 font-mono text-[8.5px] uppercase tracking-[0.14em] text-on-solid transition-opacity disabled:opacity-50"
+              className="bg-amber-500 hover:bg-amber-400 px-4 py-1.5 font-sans text-xs font-semibold uppercase tracking-wider text-black transition-all disabled:opacity-40 shadow-[0_0_12px_rgba(245,158,11,0.2)]"
             >
-              {busy ? 'Signing…' : 'Sign & send'}
+              {busy ? 'Signing…' : 'Sign & transmit'}
             </button>
           </div>
         </div>
@@ -1431,14 +1342,12 @@ function PrescriptionPanel({
 
 function SetupNotice() {
   return (
-    <div className="mb-5 border-l-2 border-caution-line bg-caution-wash px-4 py-3">
-      <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-caution">
-        The live loop needs PostgreSQL
+    <div className="my-6 border-l-2 border-amber-400 bg-amber-400/10 px-4 py-3">
+      <p className="font-mono text-xs uppercase tracking-wider text-amber-300">
+        Database connection required
       </p>
-      <p className="mt-1 text-[11.5px] leading-relaxed text-caution">
-        Start the database, set <code className="font-mono">DATABASE_URL</code> in{' '}
-        <code className="font-mono">apps/api/.env</code>, then restart the API. The patient sync
-        endpoints use the same database, so both halves come online together.
+      <p className="mt-1 font-sans text-xs leading-relaxed text-zinc-300">
+        Start Postgres and configure DATABASE_URL in apps/api/.env to synchronize live phone telemetry.
       </p>
     </div>
   );
@@ -1446,76 +1355,17 @@ function SetupNotice() {
 
 function BoardSkeleton({ rows }: { rows: number }) {
   return (
-    <div
-      className="overflow-hidden rounded-[14px] border border-rule-strong bg-canvas"
-      aria-hidden="true"
-    >
-      {Array.from({ length: rows }).map((_, index) => (
-        <div
-          key={index}
-          className={`animate-pulse px-5 py-5 ${index > 0 ? 'border-t border-rule' : ''}`}
-        >
-          <div className="h-2.5 w-24 rounded-full bg-paper-2" />
-          <div className="mt-3 h-2 w-40 rounded-full bg-paper-2" />
+    <div className="divide-y divide-white/10 border-b border-white/10" aria-hidden="true">
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} className="py-6 animate-pulse space-y-2">
+          <div className="h-4 w-40 bg-white/10" />
+          <div className="h-3 w-64 bg-white/5" />
         </div>
       ))}
     </div>
   );
 }
 
-function DeskButton({
-  children,
-  onClick,
-  loading = false,
-  disabled = false
-}: {
-  children: ReactNode;
-  onClick?: () => void;
-  loading?: boolean;
-  disabled?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled || loading}
-      className="inline-flex h-7 items-center gap-1.5 rounded-[6px] border border-solid bg-solid px-2.5 font-mono text-[9px] uppercase tracking-[0.12em] text-on-solid transition-colors hover:bg-solid disabled:cursor-not-allowed disabled:opacity-40"
-    >
-      {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : children}
-    </button>
-  );
-}
-
-function DeskAction({
-  children,
-  onClick,
-  busy = false,
-  disabled = false,
-  tone = 'neutral'
-}: {
-  children: ReactNode;
-  onClick: () => void;
-  busy?: boolean;
-  disabled?: boolean;
-  tone?: 'neutral' | 'danger';
-}) {
-  const toneClass =
-    tone === 'danger'
-      ? 'border-critical-line text-critical hover:bg-critical-wash'
-      : 'border-rule-strong text-ink-2 hover:bg-paper/70 hover:text-ink';
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled || busy}
-      className={`inline-flex h-7 items-center gap-1.5 rounded-[6px] border bg-transparent px-2.5 font-mono text-[9px] uppercase tracking-[0.12em] transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${toneClass}`}
-    >
-      {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : children}
-    </button>
-  );
-}
-
-/** `2026-10-26T16:40:00.000Z` -> the value a datetime-local input expects. */
 function toLocalInput(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return '';
