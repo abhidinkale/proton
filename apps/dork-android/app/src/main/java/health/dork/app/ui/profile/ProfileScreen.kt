@@ -146,54 +146,17 @@ fun ProfileScreen(
       .padding(horizontal = 20.dp, vertical = 24.dp)
   ) {
     // Top Title & Badges
-    Row(
-      modifier = Modifier.fillMaxWidth(),
-      horizontalArrangement = Arrangement.SpaceBetween,
-      verticalAlignment = Alignment.CenterVertically
-    ) {
-      Column {
-        Text(
-          text = "Profile & Account",
-          style = MaterialTheme.typography.headlineMedium,
-          fontWeight = FontWeight.Bold,
-          color = DorkTheme.colors.textPrimary
-        )
-        Text(
-          text = "Your identity, clinical records & device security",
-          style = MaterialTheme.typography.bodySmall,
-          color = DorkTheme.colors.textSecondary
-        )
-      }
-
-      Surface(
-        shape = RoundedCornerShape(14.dp),
-        color = if (isDark) Color(0x3338BDF8) else Color(0x200284C7),
-        border = BorderStroke(1.dp, if (isDark) Color(0x4038BDF8) else Color(0x30CBD5E1))
-      ) {
-        Row(
-          modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-          verticalAlignment = Alignment.CenterVertically,
-          horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-          Icon(
-            imageVector = Icons.Rounded.Shield,
-            contentDescription = null,
-            tint = if (isDark) Color(0xFF38BDF8) else Color(0xFF0284C7),
-            modifier = Modifier.size(12.dp)
-          )
-          Text(
-            text = "Encrypted",
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.SemiBold,
-            color = if (isDark) Color(0xFFBAE6FD) else Color(0xFF0369A1)
-          )
-        }
-      }
-    }
+    // ── Header Title ─────────────────────────────────────────────────────────
+    Text(
+      text = "Profile & Account",
+      style = MaterialTheme.typography.headlineMedium,
+      fontWeight = FontWeight.Bold,
+      color = DorkTheme.colors.textPrimary
+    )
 
     Spacer(modifier = Modifier.height(18.dp))
 
-    // ── 1. Hero Identity Glass Card (Crazy Cool Looking) ───────────────────
+    // ── 1. Hero Identity Glass Card ───────────────────────────────────────
     HeroProfileCard(
       profile = profile,
       isDark = isDark,
@@ -201,106 +164,9 @@ fun ProfileScreen(
       onProfileClick = onNavigateToHealthProfile
     )
 
-    Spacer(modifier = Modifier.height(16.dp))
-
-    // ── 2. Vital Stats HUD (Heads-Up Display) ─────────────────────────────
-    Row(
-      modifier = Modifier.fillMaxWidth(),
-      horizontalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-      // BMI Card
-      StatHudCard(
-        label = "Body Mass Index",
-        value = profile.bmi?.let { "%.1f".format(it) } ?: "21.3",
-        unit = "BMI",
-        subtext = profile.bmiCategory,
-        accentColor = if (isDark) Color(0xFF34D399) else Color(0xFF059669),
-        onClick = onNavigateToHealthProfile,
-        modifier = Modifier.weight(1f)
-      )
-
-      // Active Meds Card
-      StatHudCard(
-        label = "Active Meds",
-        value = profile.currentMedications.size.coerceAtLeast(2).toString(),
-        unit = "plans",
-        subtext = "Schedules active",
-        accentColor = if (isDark) Color(0xFFFF9E80) else Color(0xFFE65100),
-        onClick = onNavigateToMedications,
-        modifier = Modifier.weight(1f)
-      )
-
-      // Emergency Medical ID Card
-      StatHudCard(
-        label = "Blood Type",
-        value = profile.bloodGroup.display,
-        unit = "O+",
-        subtext = "${profile.allergies.size} alerts noted",
-        accentColor = if (isDark) Color(0xFFF472B6) else Color(0xFFD8127D),
-        onClick = onNavigateToMedicalId,
-        modifier = Modifier.weight(1f)
-      )
-    }
-
-    Spacer(modifier = Modifier.height(20.dp))
-
-    // ── 3. Emergency Medical ID Banner ────────────────────────────────────
-    DorkCard(
-      contentPadding = 16.dp,
-      backgroundColor = DorkTheme.colors.criticalContainer,
-      borderColor = DorkTheme.colors.critical,
-      onClick = onNavigateToMedicalId
-    ) {
-      Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-      ) {
-        Row(
-          verticalAlignment = Alignment.CenterVertically,
-          modifier = Modifier.weight(1f)
-        ) {
-          Box(
-            modifier = Modifier
-              .size(38.dp)
-              .clip(CircleShape)
-              .background(DorkTheme.colors.critical.copy(alpha = 0.15f)),
-            contentAlignment = Alignment.Center
-          ) {
-            Icon(
-              imageVector = Icons.Rounded.Emergency,
-              contentDescription = null,
-              tint = DorkTheme.colors.critical,
-              modifier = Modifier.size(24.dp)
-            )
-          }
-          Spacer(modifier = Modifier.width(12.dp))
-          Column {
-            Text(
-              text = "Emergency Medical ID",
-              style = MaterialTheme.typography.titleMedium,
-              fontWeight = FontWeight.Bold,
-              color = DorkTheme.colors.critical
-            )
-            Text(
-              text = "Instant medical profile for first responders",
-              style = MaterialTheme.typography.bodySmall,
-              color = DorkTheme.colors.textPrimary
-            )
-          }
-        }
-
-        Icon(
-          imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-          contentDescription = null,
-          tint = DorkTheme.colors.critical
-        )
-      }
-    }
-
     Spacer(modifier = Modifier.height(24.dp))
 
-    // ── 4. Health & Records Section ───────────────────────────────────────
+    // ── 2. Health & Records Section ───────────────────────────────────────
     Text(
       text = "Health & Clinical Records",
       style = MaterialTheme.typography.titleMedium,
@@ -568,7 +434,7 @@ fun ProfileScreen(
       )
     }
 
-    Spacer(modifier = Modifier.height(32.dp))
+    Spacer(modifier = Modifier.height(108.dp))
   }
 
   // ── 8. Profile Picture Customizer Bottom Sheet ──────────────────────────
@@ -869,38 +735,20 @@ private fun HeroProfileCard(
 
         Spacer(modifier = Modifier.width(16.dp))
 
-        // Name, Status & ID
+        // Name & Age / Sex
         Column(modifier = Modifier.weight(1f)) {
-          Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-          ) {
-            Text(
-              text = profile.fullName,
-              style = MaterialTheme.typography.titleLarge,
-              fontWeight = FontWeight.Bold,
-              color = DorkTheme.colors.textPrimary
-            )
-            Icon(
-              imageVector = Icons.Rounded.CheckCircle,
-              contentDescription = "Verified",
-              tint = if (isDark) Color(0xFF38BDF8) else Color(0xFF0284C7),
-              modifier = Modifier.size(17.dp)
-            )
-          }
-
           Text(
-            text = "Member ID #9842 · Verified Patient",
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Medium,
-            color = if (isDark) Color(0xFF7DD3FC) else Color(0xFF0284C7)
+            text = profile.fullName,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = DorkTheme.colors.textPrimary
           )
 
           Spacer(modifier = Modifier.height(4.dp))
 
           Text(
-            text = "DOB: ${profile.formattedBirthDate} (${profile.calculatedAge} yrs) · ${profile.sex.name.lowercase().replaceFirstChar { it.uppercase() }}",
-            style = MaterialTheme.typography.bodySmall,
+            text = "${profile.calculatedAge} yrs · ${profile.sex.name.lowercase().replaceFirstChar { it.uppercase() }}",
+            style = MaterialTheme.typography.bodyMedium,
             color = DorkTheme.colors.textSecondary
           )
         }
@@ -909,49 +757,6 @@ private fun HeroProfileCard(
           imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
           contentDescription = null,
           tint = DorkTheme.colors.textTertiary
-        )
-      }
-
-      Spacer(modifier = Modifier.height(16.dp))
-
-      // Profile completion progress bar
-      Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-      ) {
-        Text(
-          text = "Health Profile Completion",
-          style = MaterialTheme.typography.labelSmall,
-          fontWeight = FontWeight.Medium,
-          color = DorkTheme.colors.textSecondary
-        )
-        Text(
-          text = "${profile.completionPercentage}% verified",
-          style = MaterialTheme.typography.labelSmall,
-          fontWeight = FontWeight.Bold,
-          color = if (isDark) Color(0xFF38BDF8) else Color(0xFF0284C7)
-        )
-      }
-
-      Spacer(modifier = Modifier.height(6.dp))
-
-      Box(
-        modifier = Modifier
-          .fillMaxWidth()
-          .height(6.dp)
-          .clip(RoundedCornerShape(3.dp))
-          .background(if (isDark) Color(0x33FFFFFF) else Color(0x20CBD5E1))
-      ) {
-        Box(
-          modifier = Modifier
-            .fillMaxWidth(profile.completionPercentage / 100f)
-            .height(6.dp)
-            .background(
-              Brush.horizontalGradient(
-                listOf(Color(0xFF38BDF8), Color(0xFF818CF8), Color(0xFF34D399))
-              )
-            )
         )
       }
     }
