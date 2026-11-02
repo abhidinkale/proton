@@ -20,7 +20,9 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Alignment
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -288,23 +290,12 @@ private fun AuthenticatedMainShell(
     activeSubScreen = null
   }
 
-  Scaffold(
-    bottomBar = {
-      if (activeSubScreen == null) {
-        DorkBottomNavigation(
-          currentDestination = currentTab,
-          onNavigate = { currentTab = it }
-        )
-      }
-    }
-  ) { paddingValues ->
-    Box(
-      modifier = Modifier
-        .fillMaxSize()
-        .padding(paddingValues)
-        .background(MaterialTheme.colorScheme.background)
-    ) {
-      AnimatedContent(
+  Box(
+    modifier = Modifier
+      .fillMaxSize()
+      .background(MaterialTheme.colorScheme.background)
+  ) {
+    AnimatedContent(
         targetState = activeSubScreen,
         transitionSpec = {
           if (targetState != null) {
@@ -589,6 +580,18 @@ private fun AuthenticatedMainShell(
             }
           }
         }
+      }
+
+    if (activeSubScreen == null) {
+      Box(
+        modifier = Modifier
+          .fillMaxWidth()
+          .align(Alignment.BottomCenter)
+      ) {
+        DorkBottomNavigation(
+          currentDestination = currentTab,
+          onNavigate = { currentTab = it }
+        )
       }
     }
   }
