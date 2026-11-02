@@ -1,9 +1,12 @@
 package health.dork.app.ui.home
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.ui.draw.shadow
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -464,16 +467,9 @@ fun HomeContent(
         Column(modifier = Modifier.fillMaxWidth()) {
           Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically
           ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-              DorkTag(text = "Next up", tone = DorkTagTone.Lime)
-              DorkTag(
-                text = if (nextAppointment.consultationType == ConsultationType.VIDEO) "Video" else "In clinic",
-                tone = DorkTagTone.Sky
-              )
-            }
             ChevronCircle()
           }
 
@@ -543,14 +539,26 @@ fun HomeContent(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
           ) {
-            Text(
-              text = nextAppointment.reasonForVisit,
-              style = MaterialTheme.typography.bodySmall,
-              color = DorkTheme.colors.textSecondary,
-              maxLines = 1,
-              overflow = TextOverflow.Ellipsis,
-              modifier = Modifier.weight(1f)
-            )
+            val formattedReason = nextAppointment.reasonForVisit.trim()
+            if (formattedReason.isNotEmpty() && !formattedReason.equals("eat", ignoreCase = true)) {
+              Text(
+                text = formattedReason,
+                style = MaterialTheme.typography.bodySmall,
+                color = DorkTheme.colors.textSecondary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
+              )
+            } else {
+              Text(
+                text = "Clinical Consultation & Review",
+                style = MaterialTheme.typography.bodySmall,
+                color = DorkTheme.colors.textSecondary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
+              )
+            }
             Spacer(modifier = Modifier.width(12.dp))
             SmallPillButton(
               text = "Details",
@@ -744,7 +752,11 @@ fun HomeContent(
     Spacer(modifier = Modifier.height(24.dp))
 
     // ── Health snapshot ──────────────────────────────────────────────────
-    SectionHeader(title = "Health snapshot", action = "Profile")
+    SectionHeader(
+      title = "Health snapshot",
+      action = "Profile",
+      onAction = onProfileClick
+    )
     Spacer(modifier = Modifier.height(10.dp))
 
     Row(
@@ -759,6 +771,7 @@ fun HomeContent(
         caption = uiState.patient?.let { patient ->
           patient.bmi?.let { bmi -> "BMI ${formatWeight(bmi)} · ${patient.bmiCategory}" }
         } ?: "Not recorded",
+        gradientColors = listOf(Color(0xFF0284C7), Color(0xFF0D9488)),
         modifier = Modifier.weight(1f)
       )
       SnapshotCard(
@@ -767,53 +780,13 @@ fun HomeContent(
         value = adherence.toString(),
         unit = "%",
         caption = "${uiState.takenDoseCount} of ${uiState.todayDoseCount} taken today",
+        gradientColors = listOf(Color(0xFFE11D48), Color(0xFFF59E0B)),
         modifier = Modifier.weight(1f)
       )
     }
 
-    Spacer(modifier = Modifier.height(24.dp))
-
-    // ── Clinic Messenger ──────────────────────────────────────────────────
-    SectionHeader(
-      title = "Care team messenger",
-      action = "Open chat",
-      onAction = onNavigateToChat
-    )
-    Spacer(modifier = Modifier.height(10.dp))
-
-    ClinicMessengerCard(
-      doctorName = uiState.clinicDoctorName,
-      specialty = uiState.clinicSpecialty,
-      latestMessage = uiState.latestClinicMessage,
-      timestamp = uiState.latestClinicMessageTime,
-      unreadCount = uiState.clinicMessageUnreadCount,
-      onClick = onNavigateToChat
-    )
-
-    Spacer(modifier = Modifier.height(20.dp))
-
-    Row(
-      modifier = Modifier.fillMaxWidth(),
-      horizontalArrangement = Arrangement.Center,
-      verticalAlignment = Alignment.CenterVertically
-    ) {
-      DorkTag(
-        text = if (uiState.isDemoMode) "Synthetic" else "On-device",
-        tone = DorkTagTone.Lime
-      )
-      Spacer(modifier = Modifier.width(8.dp))
-      Text(
-        text = if (uiState.isDemoMode) {
-          "Fictional record for evaluation."
-        } else {
-          "Your data stays on this device."
-        },
-        style = MaterialTheme.typography.labelSmall,
-        color = DorkTheme.colors.textTertiary
-      )
-    }
-
-    Spacer(modifier = Modifier.height(8.dp))
+    // Floating 3D dock spacer so bottom content is never blocked
+    Spacer(modifier = Modifier.height(108.dp))
   }
 
   if (showReminders) {
@@ -840,6 +813,7 @@ private fun RemindersSheet(
   onNavigateToCare: () -> Unit,
   onNavigateToMedications: () -> Unit
 ) {
+  val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
   val dueDoses = uiState.todayDoses.filter {
     it.state == MedicationDoseState.Due || it.state == MedicationDoseState.Upcoming
   }
@@ -847,7 +821,12 @@ private fun RemindersSheet(
     dueDoses.isNotEmpty() ||
     uiState.recentRecords.isNotEmpty()
 
-  ModalBottomSheet(onDismissRequest = onDismiss) {
+  ModalBottomSheet(
+    onDismissRequest = onDismiss,
+    sheetState = sheetState,
+    containerColor = DorkTheme.colors.card,
+    scrimColor = Color.Black.copy(alpha = 0.45f)
+  ) {
     Column(
       modifier = Modifier
         .fillMaxWidth()
@@ -1323,26 +1302,39 @@ private fun SnapshotCard(
   value: String,
   unit: String,
   caption: String,
+  gradientColors: List<Color>,
   modifier: Modifier = Modifier
 ) {
-  DorkCard(
-    modifier = modifier,
+  Surface(
     shape = DorkShapes.extraLarge,
-    contentPadding = 16.dp
+    color = Color.Transparent,
+    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.25f)),
+    modifier = modifier
+      .shadow(
+        elevation = 10.dp,
+        shape = DorkShapes.extraLarge,
+        spotColor = gradientColors.first().copy(alpha = 0.40f),
+        ambientColor = Color.Black.copy(alpha = 0.15f)
+      )
+      .background(
+        brush = Brush.linearGradient(gradientColors),
+        shape = DorkShapes.extraLarge
+      )
   ) {
-    Column {
+    Column(modifier = Modifier.padding(16.dp)) {
       Row(verticalAlignment = Alignment.CenterVertically) {
         Icon(
           imageVector = icon,
           contentDescription = null,
-          tint = DorkTheme.colors.textTertiary,
+          tint = Color.White.copy(alpha = 0.85f),
           modifier = Modifier.size(13.dp)
         )
         Spacer(modifier = Modifier.width(5.dp))
         Text(
-          text = label,
+          text = label.uppercase(),
           style = DorkType.eyebrow,
-          color = DorkTheme.colors.textTertiary
+          color = Color.White.copy(alpha = 0.85f),
+          fontWeight = FontWeight.Bold
         )
       }
 
@@ -1353,13 +1345,13 @@ private fun SnapshotCard(
           value = value,
           pitch = 3.2.dp,
           dotRadius = 0.95.dp,
-          color = DorkTheme.colors.textPrimary
+          color = Color.White
         )
         Spacer(modifier = Modifier.width(5.dp))
         Text(
           text = unit,
           style = DorkType.mono,
-          color = DorkTheme.colors.textTertiary,
+          color = Color.White.copy(alpha = 0.75f),
           modifier = Modifier.padding(bottom = 2.dp)
         )
       }
@@ -1368,7 +1360,7 @@ private fun SnapshotCard(
       Text(
         text = caption,
         style = MaterialTheme.typography.labelSmall,
-        color = DorkTheme.colors.textTertiary,
+        color = Color.White.copy(alpha = 0.85f),
         maxLines = 1,
         overflow = TextOverflow.Ellipsis
       )
