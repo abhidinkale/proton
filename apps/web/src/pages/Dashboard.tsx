@@ -39,12 +39,7 @@ const STATUS_LABEL: Record<string, { label: string; tone: Tone }> = {
   CANCELLED: { label: 'Cancelled', tone: 'muted' }
 };
 
-const TONE_CLASS: Record<Tone, string> = {
-  critical: 'text-critical',
-  caution: 'text-caution',
-  accent: 'text-accent',
-  muted: 'text-ink-3'
-};
+
 
 function greeting(now: Date): string {
   const hour = now.getHours();
@@ -340,8 +335,15 @@ function AppointmentRow({
   onOpen: () => void;
 }) {
   const status = STATUS_LABEL[appointment.queueCategory] ?? STATUS_LABEL.WAITING;
-  const urgent = appointment.priority === 'urgent' || appointment.priority === 'critical';
-  const tone: Tone = urgent && status.tone === 'muted' ? 'critical' : status.tone;
+
+  const dotColor =
+    appointment.queueCategory === 'IN_CONSULTATION'
+      ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]'
+      : appointment.queueCategory === 'READY_FOR_REVIEW'
+        ? 'bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.8)]'
+        : appointment.queueCategory === 'WAITING'
+          ? 'bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.8)]'
+          : 'bg-zinc-600';
 
   const meta = [
     appointment.roomOrVirtual,
@@ -350,39 +352,42 @@ function AppointmentRow({
   ].filter(Boolean);
 
   return (
-    <li className="border-b border-rule">
+    <li className="border-b border-white/10 list-none">
       <button
         type="button"
         onClick={onOpen}
-        className="group grid w-full grid-cols-[58px_1fr_auto] items-baseline gap-x-4 py-3.5 text-left transition-colors hover:bg-paper"
+        className="group grid w-full grid-cols-[68px_1fr_auto] items-baseline gap-x-6 py-6 text-left transition-colors hover:bg-white/[0.02] cursor-pointer"
       >
-        <span className="font-mono text-[11.5px] tabular-nums text-ink-3">{appointment.time}</span>
+        <span className="font-mono text-sm tabular-nums text-zinc-400">{appointment.time}</span>
 
         <span className="min-w-0">
-          <span className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+          <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <span
-              className={`font-editorial text-ink ${emphasis ? 'text-[21px]' : 'text-[18px]'} leading-tight`}
+              className={`font-editorial text-white ${emphasis ? 'text-2xl sm:text-[26px]' : 'text-xl sm:text-2xl'} font-normal leading-tight group-hover:text-amber-400/90 transition-colors`}
             >
               {appointment.patientName}
             </span>
-            <span className={`text-[11px] ${TONE_CLASS[tone]}`}>{status.label}</span>
+            <span className="inline-flex items-center gap-1.5 font-sans text-xs text-zinc-400">
+              <span className={`h-1.5 w-1.5 rounded-full ${dotColor}`} />
+              {status.label}
+            </span>
             {appointment.criticalAllergies && appointment.criticalAllergies.length > 0 && (
-              <span className="text-[11px] font-medium text-critical">
+              <span className="font-mono text-xs text-rose-400">
                 Allergy: {appointment.criticalAllergies.join(', ')}
               </span>
             )}
           </span>
 
           {appointment.chiefComplaint && (
-            <span className="mt-0.5 block truncate text-[12.5px] text-ink-2">
+            <span className="mt-1 block truncate font-sans text-xs text-zinc-400">
               {appointment.chiefComplaint}
             </span>
           )}
 
-          <span className="mt-1 block text-[11px] text-ink-3">{meta.join(' · ')}</span>
+          <span className="mt-1 block font-mono text-[11px] text-zinc-500">{meta.join(' · ')}</span>
         </span>
 
-        <span className="text-[11.5px] text-ink-3 transition-colors group-hover:text-ink">Open</span>
+        <span className="font-mono text-xs uppercase tracking-wider text-zinc-500 transition-colors group-hover:text-white">Open →</span>
       </button>
     </li>
   );
