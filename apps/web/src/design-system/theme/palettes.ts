@@ -70,7 +70,7 @@ export const PALETTES: Palette[] = [
 const STORAGE_KEY = 'proton.palette';
 const LAST_LIGHT_KEY = 'proton.palette.lastLight';
 const LAST_DARK_KEY = 'proton.palette.lastDark';
-const DEFAULT_PALETTE: PaletteId = 'dawn';
+const DEFAULT_PALETTE: PaletteId = 'ink';
 
 const listeners = new Set<() => void>();
 let current: PaletteId | null = null;
@@ -86,12 +86,6 @@ function readStored(): PaletteId {
     if (isPaletteId(stored)) return stored;
   } catch {
     // Private mode, quota, or no window.
-  }
-  // Honour a returning visitor's OS preference once, then let them choose.
-  try {
-    if (window.matchMedia?.('(prefers-color-scheme: dark)').matches) return 'midnight';
-  } catch {
-    // matchMedia unavailable.
   }
   return DEFAULT_PALETTE;
 }
