@@ -6,11 +6,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -67,28 +69,36 @@ fun CareScreen(
   val specialtyScrollState = rememberScrollState()
   val context = LocalContext.current
 
-  val upcomingAppointments = uiState.appointments
-    .filter { it.status != AppointmentStatus.Cancelled }
-    .filter {
-      runCatching { LocalDateTime.parse(it.dateIso) }.getOrNull()
-        ?.isAfter(LocalDateTime.now()) == true
-    }
-    .sortedBy { it.dateIso }
-    .take(3)
+  val upcomingAppointments = androidx.compose.runtime.remember(uiState.appointments) {
+    uiState.appointments
+      .filter { it.status != AppointmentStatus.Cancelled }
+      .filter {
+        runCatching { LocalDateTime.parse(it.dateIso) }.getOrNull()
+          ?.isAfter(LocalDateTime.now()) == true
+      }
+      .sortedBy { it.dateIso }
+      .take(3)
+  }
 
-  val recentVisits = uiState.appointments
-    .filter { it.status == AppointmentStatus.Fulfilled }
-    .filter {
-      runCatching { LocalDateTime.parse(it.dateIso) }.getOrNull()
-        ?.isBefore(LocalDateTime.now()) == true
-    }
-    .sortedByDescending { it.dateIso }
-    .take(2)
+  val recentVisits = androidx.compose.runtime.remember(uiState.appointments) {
+    uiState.appointments
+      .filter { it.status == AppointmentStatus.Fulfilled }
+      .filter {
+        runCatching { LocalDateTime.parse(it.dateIso) }.getOrNull()
+          ?.isBefore(LocalDateTime.now()) == true
+      }
+      .sortedByDescending { it.dateIso }
+      .take(2)
+  }
 
   Column(
     modifier = modifier
       .fillMaxSize()
       .background(MaterialTheme.colorScheme.background)
+      .statusBarsPadding()
+      .displayCutoutPadding()
+      .verticalScroll(scrollState)
+      .padding(bottom = 120.dp)
   ) {
     // Header
     Column(
@@ -249,8 +259,7 @@ fun CareScreen(
     // Doctor List
     Column(
       modifier = Modifier
-        .fillMaxSize()
-        .verticalScroll(scrollState)
+        .fillMaxWidth()
         .padding(horizontal = DorkSpacing.screenHorizontalPadding, vertical = DorkSpacing.s),
       verticalArrangement = Arrangement.spacedBy(DorkSpacing.m)
     ) {

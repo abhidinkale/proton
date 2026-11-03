@@ -7,10 +7,14 @@ import health.dork.app.core.data.model.CaseStatus
 import health.dork.app.core.data.model.CaseTreatment
 import health.dork.app.core.data.model.CaseVitals
 import health.dork.app.core.data.model.ClinicalCase
+import health.dork.app.core.data.model.DocumentCategory
+import health.dork.app.core.data.model.HealthDocument
 import health.dork.app.core.data.model.HealthRecordItem
 import health.dork.app.core.data.model.HealthRecordType
 import health.dork.app.core.data.model.PrescriptionMedicineItem
 import health.dork.app.core.data.repository.CaseRepository
+import health.dork.app.core.data.repository.RecordRepository
+import health.dork.app.core.data.seed.DorkSeedData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -31,8 +35,12 @@ data class CasesUiState(
 )
 
 class CasesViewModel(
-  private val caseRepository: CaseRepository
+  private val caseRepository: CaseRepository,
+  private val recordRepository: RecordRepository? = null
 ) : ViewModel() {
+
+  val documents: StateFlow<List<HealthDocument>> =
+    recordRepository?.documents ?: MutableStateFlow(DorkSeedData.documents)
 
   private val _searchQuery = MutableStateFlow("")
   val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
@@ -182,6 +190,28 @@ class CasesViewModel(
       caseRepository.addCase(newCase)
       _isCreatingCase.value = false
       _selectedCase.value = newCase
+    }
+  }
+
+  fun uploadDocument(
+    title: String,
+    category: DocumentCategory = DocumentCategory.LAB_REPORT,
+    fileUri: String,
+    fileSizeText: String,
+    bytes: ByteArray? = null,
+    mimeType: String = "application/pdf",
+    fileName: String = title
+  ) {
+    viewModelScope.launch {
+      recordRepository?.uploadDocument(
+        title = title,
+        category = category,
+        fileUri = fileUri,
+        fileSizeText = fileSizeText,
+        bytes = bytes,
+        mimeType = mimeType,
+        fileName = fileName
+      )
     }
   }
 }

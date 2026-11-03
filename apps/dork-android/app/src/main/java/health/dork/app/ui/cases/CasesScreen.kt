@@ -1,8 +1,26 @@
 package health.dork.app.ui.cases
 
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -16,6 +34,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -29,15 +48,19 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.LocalPharmacy
 import androidx.compose.material.icons.rounded.MedicalInformation
 import androidx.compose.material.icons.rounded.MonitorHeart
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.UploadFile
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -66,7 +89,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Density
@@ -76,10 +101,17 @@ import androidx.compose.ui.unit.sp
 import health.dork.app.core.data.model.CaseBannerTheme
 import health.dork.app.core.data.model.CaseStatus
 import health.dork.app.core.data.model.ClinicalCase
+import health.dork.app.core.data.model.HealthDocument
 import health.dork.app.core.data.model.HealthRecordItem
 import health.dork.app.core.data.model.PrescriptionMedicineItem
 import health.dork.app.core.designsystem.DorkTheme
 import health.dork.app.core.designsystem.components.DorkTextField
+import health.dork.app.core.designsystem.components.UploadHealthRecordsTile
+import health.dork.app.ui.records.readFileMetadata
+
+enum class CasesDisplayTab {
+  CASES, RECORDS
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -88,186 +120,699 @@ fun CasesScreen(
   darkTheme: Boolean = isSystemInDarkTheme(),
   modifier: Modifier = Modifier
 ) {
+  val context = LocalContext.current
   val uiState by viewModel.uiState.collectAsState()
+  val documents by viewModel.documents.collectAsState()
+
+  var currentTab by remember { mutableStateOf(CasesDisplayTab.CASES) }
   var showNewCaseSheet by remember { mutableStateOf(false) }
+  var showExistingRecordsSheet by remember { mutableStateOf(false) }
+  var showFilterSheet by remember { mutableStateOf(false) }
+  var isSearching by remember { mutableStateOf(false) }
+  var showPendingBanner by remember { mutableStateOf(true) }
+
+  val filePickerLauncher = rememberLauncherForActivityResult(
+    contract = ActivityResultContracts.OpenDocument()
+  ) { uri: Uri? ->
+    if (uri != null) {
+      runCatching {
+        context.contentResolver.takePersistableUriPermission(
+          uri,
+          Intent.FLAG_GRANT_READ_URI_PERMISSION
+        )
+      }
+      val (name, size) = readFileMetadata(context, uri)
+      val mimeType = context.contentResolver.getType(uri) ?: "application/pdf"
+      val bytes = runCatching {
+        context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+      }.getOrNull()
+      val cleanTitle = name.substringBeforeLast('.').replace('_', ' ').replace('-', ' ').trim()
+      viewModel.uploadDocument(
+        title = cleanTitle,
+        fileUri = uri.toString(),
+        fileSizeText = size,
+        bytes = bytes,
+        mimeType = mimeType,
+        fileName = name
+      )
+      Toast.makeText(context, "Added \"$name\" to records", Toast.LENGTH_SHORT).show()
+    }
+  }
 
   DorkTheme(darkTheme = darkTheme) {
-    // Unified light background with contrasting dark file cards
     val textPrimary = Color(0xFF0F172A)
     val textSecondary = Color(0xFF64748B)
     val textTertiary = Color(0xFF94A3B8)
     val screenBg = Color(0xFFF7F7F8)
-    val searchBg = Color.White
-    val searchBorder = Color(0xFFE2E8F0)
-    val addBtnBg = Color(0xFF0F172A)
-    val addBtnTint = Color.White
+    val actionBtnBg = Color.White
+    val actionBtnBorder = Color(0xFFE2E8F0)
 
     Box(
       modifier = modifier
         .fillMaxSize()
         .background(screenBg)
     ) {
-
       Column(
         modifier = Modifier
           .fillMaxSize()
           .statusBarsPadding()
+          .displayCutoutPadding()
       ) {
-        // ── Top App Bar ──────────────────────────────────────────────
+        // ── 1. Top Brand & Utility Icons Row (Safe Notch Breathing Room) ──
         Row(
           modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 22.dp, vertical = 14.dp),
+            .padding(start = 24.dp, end = 24.dp, top = 18.dp, bottom = 6.dp),
           horizontalArrangement = Arrangement.SpaceBetween,
           verticalAlignment = Alignment.CenterVertically
         ) {
-          Column {
-            Text(
-              text = "Cases",
-              style = MaterialTheme.typography.headlineLarge.copy(
-                fontWeight = FontWeight.Bold,
-                fontSize = 32.sp,
-                letterSpacing = (-0.6).sp
-              ),
-              color = textPrimary
-            )
-            Text(
-              text = "Visits, diagnoses, reports & treatment timeline",
-              style = MaterialTheme.typography.bodySmall,
-              color = textSecondary
-            )
-          }
+          // Brand wordmark inspired by reference
+          Text(
+            text = "dork",
+            style = MaterialTheme.typography.titleLarge.copy(
+              fontWeight = FontWeight.Bold,
+              fontSize = 22.sp,
+              letterSpacing = (-0.5).sp
+            ),
+            color = textPrimary
+          )
 
-          // New Case / Log Visit Action Button
-          Box(
-            modifier = Modifier
-              .size(44.dp)
-              .clip(CircleShape)
-              .background(addBtnBg)
-              .clickable { showNewCaseSheet = true },
-            contentAlignment = Alignment.Center
+          // Circular utility buttons (New Case encounter + Upload File)
+          Row(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
           ) {
-            Icon(
-              imageVector = Icons.Rounded.Add,
-              contentDescription = "Log New Case",
-              tint = addBtnTint,
-              modifier = Modifier.size(24.dp)
-            )
+            // New Case / Encounter Button (+)
+            Box(
+              modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(actionBtnBg)
+                .border(1.dp, actionBtnBorder, CircleShape)
+                .clickable { showNewCaseSheet = true },
+              contentAlignment = Alignment.Center
+            ) {
+              Icon(
+                imageVector = Icons.Rounded.Add,
+                contentDescription = "Log New Case",
+                tint = textPrimary,
+                modifier = Modifier.size(20.dp)
+              )
+            }
+
+            // Quick Upload / Record Button
+            Box(
+              modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(actionBtnBg)
+                .border(1.dp, actionBtnBorder, CircleShape)
+                .clickable {
+                  filePickerLauncher.launch(
+                    arrayOf("*/*", "application/pdf", "image/*", "text/*")
+                  )
+                },
+              contentAlignment = Alignment.Center
+            ) {
+              Icon(
+                imageVector = Icons.Rounded.UploadFile,
+                contentDescription = "Upload Document",
+                tint = textPrimary,
+                modifier = Modifier.size(19.dp)
+              )
+            }
           }
         }
 
-        // ── Search & Filter Controls ─────────────────────────────────
-        OutlinedTextField(
-          value = uiState.searchQuery,
-          onValueChange = viewModel::onSearchQueryChange,
-          placeholder = {
-            Text(
-              text = "Search diagnosis, doctor, or medication...",
-              style = MaterialTheme.typography.bodyMedium,
-              color = textTertiary
-            )
-          },
-          leadingIcon = {
-            Icon(
-              imageVector = Icons.Rounded.Search,
-              contentDescription = null,
-              tint = textSecondary,
-              modifier = Modifier.size(20.dp)
-            )
-          },
-          trailingIcon = {
-            if (uiState.searchQuery.isNotEmpty()) {
-              Icon(
-                imageVector = Icons.Rounded.Close,
-                contentDescription = "Clear",
-                tint = textSecondary,
-                modifier = Modifier
-                  .size(18.dp)
-                  .clickable { viewModel.onSearchQueryChange("") }
-              )
-            }
-          },
-          singleLine = true,
-          shape = RoundedCornerShape(16.dp),
-          colors = OutlinedTextFieldDefaults.colors(
-            focusedContainerColor = searchBg,
-            unfocusedContainerColor = searchBg,
-            focusedTextColor = textPrimary,
-            unfocusedTextColor = textPrimary,
-            focusedBorderColor = textPrimary,
-            unfocusedBorderColor = searchBorder
-          ),
-          modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 22.dp, vertical = 6.dp)
+        // ── 2. Editorial Tab Switcher (Data / Cases vs Records with Smooth Color Transition) ──
+        val casesColor by animateColorAsState(
+          targetValue = if (currentTab == CasesDisplayTab.CASES) textPrimary else textTertiary,
+          animationSpec = tween(220, easing = FastOutSlowInEasing),
+          label = "cases_tab_color"
+        )
+        val recordsColor by animateColorAsState(
+          targetValue = if (currentTab == CasesDisplayTab.RECORDS) textPrimary else textTertiary,
+          animationSpec = tween(220, easing = FastOutSlowInEasing),
+          label = "records_tab_color"
         )
 
-        // Filter Pills Row
-        LazyRow(
-          contentPadding = PaddingValues(horizontal = 22.dp, vertical = 10.dp),
-          horizontalArrangement = Arrangement.spacedBy(8.dp)
+        Row(
+          modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 8.dp),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.Start
         ) {
-          items(viewModel.filters) { filter ->
-            val selected = filter == uiState.selectedFilter
-            val chipBg = if (selected) Color(0xFF0F172A) else Color.White
-            val chipBorder = if (selected) null else BorderStroke(1.dp, Color(0xFFE2E8F0))
-            val chipText = if (selected) Color.White else Color(0xFF475569)
+          Text(
+            text = "Cases",
+            style = MaterialTheme.typography.headlineLarge.copy(
+              fontWeight = if (currentTab == CasesDisplayTab.CASES) FontWeight.Bold else FontWeight.Medium,
+              fontSize = 32.sp,
+              letterSpacing = (-0.8).sp
+            ),
+            color = casesColor,
+            modifier = Modifier
+              .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+              ) { currentTab = CasesDisplayTab.CASES }
+          )
 
-            Surface(
-              shape = RoundedCornerShape(percent = 50),
-              color = chipBg,
-              border = chipBorder,
-              modifier = Modifier.clickable { viewModel.onFilterSelect(filter) }
-            ) {
-              Text(
-                text = filter,
-                style = MaterialTheme.typography.labelMedium.copy(
-                  fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
-                ),
-                color = chipText,
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
-              )
-            }
-          }
+          Spacer(modifier = Modifier.width(20.dp))
+
+          Text(
+            text = "Records",
+            style = MaterialTheme.typography.headlineLarge.copy(
+              fontWeight = if (currentTab == CasesDisplayTab.RECORDS) FontWeight.Bold else FontWeight.Medium,
+              fontSize = 32.sp,
+              letterSpacing = (-0.8).sp
+            ),
+            color = recordsColor,
+            modifier = Modifier
+              .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+              ) { currentTab = CasesDisplayTab.RECORDS }
+          )
         }
 
-        // ── Chronological Case Folder Timeline Feed ───────────────────
-        LazyColumn(
-          modifier = Modifier.fillMaxSize(),
-          contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 108.dp),
-          verticalArrangement = Arrangement.spacedBy(22.dp)
+        // ── 3. Pill Scope & Search Bar with Fluid Size Morphing ──────
+        Surface(
+          shape = RoundedCornerShape(percent = 50),
+          color = Color.White,
+          border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+          shadowElevation = 2.dp,
+          modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 6.dp)
+            .height(48.dp)
+            .animateContentSize(
+              animationSpec = spring(
+                dampingRatio = Spring.DampingRatioNoBouncy,
+                stiffness = Spring.StiffnessMediumLow
+              )
+            )
         ) {
-          if (uiState.cases.isEmpty()) {
-            item {
+          Row(
+            modifier = Modifier
+              .fillMaxSize()
+              .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+          ) {
+            if (isSearching) {
+              Icon(
+                imageVector = Icons.Rounded.Search,
+                contentDescription = null,
+                tint = Color(0xFF0F172A),
+                modifier = Modifier.size(19.dp)
+              )
+              Spacer(modifier = Modifier.width(10.dp))
+              BasicTextField(
+                value = uiState.searchQuery,
+                onValueChange = viewModel::onSearchQueryChange,
+                singleLine = true,
+                textStyle = MaterialTheme.typography.bodyMedium.copy(
+                  color = textPrimary,
+                  fontWeight = FontWeight.Medium,
+                  fontSize = 14.5.sp
+                ),
+                cursorBrush = SolidColor(textPrimary),
+                modifier = Modifier.weight(1f),
+                decorationBox = { innerTextField ->
+                  if (uiState.searchQuery.isEmpty()) {
+                    Text(
+                      text = "Search diagnosis, doctor, medicine...",
+                      style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
+                      color = textTertiary
+                    )
+                  }
+                  innerTextField()
+                }
+              )
               Box(
                 modifier = Modifier
-                  .fillMaxWidth()
-                  .padding(top = 40.dp),
+                  .size(28.dp)
+                  .clip(CircleShape)
+                  .background(Color(0xFFF1F5F9))
+                  .clickable {
+                    viewModel.onSearchQueryChange("")
+                    isSearching = false
+                  },
                 contentAlignment = Alignment.Center
               ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(
+                  imageVector = Icons.Rounded.Close,
+                  contentDescription = "Close search",
+                  tint = Color(0xFF64748B),
+                  modifier = Modifier.size(16.dp)
+                )
+              }
+            } else {
+              // Standard Pill Filter Display matching reference [ 📁 All Data  ✕ ]
+              Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                  .weight(1f)
+                  .clickable { showFilterSheet = true }
+              ) {
+                Icon(
+                  imageVector = Icons.Rounded.Folder,
+                  contentDescription = null,
+                  tint = Color(0xFF0F172A),
+                  modifier = Modifier.size(19.dp)
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                  text = if (uiState.searchQuery.isNotBlank()) "Search: \"${uiState.searchQuery}\"" else uiState.selectedFilter,
+                  style = MaterialTheme.typography.bodyMedium.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.5.sp
+                  ),
+                  color = Color(0xFF0F172A),
+                  maxLines = 1
+                )
+              }
+
+              if (uiState.selectedFilter != "All Cases" || uiState.searchQuery.isNotBlank()) {
+                Box(
+                  modifier = Modifier
+                    .size(28.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFF1F5F9))
+                    .clickable {
+                      viewModel.onFilterSelect("All Cases")
+                      viewModel.onSearchQueryChange("")
+                    },
+                  contentAlignment = Alignment.Center
+                ) {
                   Icon(
-                    imageVector = Icons.Rounded.MedicalInformation,
-                    contentDescription = null,
-                    tint = textTertiary,
-                    modifier = Modifier.size(48.dp)
+                    imageVector = Icons.Rounded.Close,
+                    contentDescription = "Reset filter",
+                    tint = Color(0xFF64748B),
+                    modifier = Modifier.size(16.dp)
                   )
-                  Spacer(modifier = Modifier.height(12.dp))
-                  Text(
-                    text = "No cases matching this criteria",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = textSecondary
+                }
+              } else {
+                Box(
+                  modifier = Modifier
+                    .size(28.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFF8FAFC))
+                    .clickable { isSearching = true },
+                  contentAlignment = Alignment.Center
+                ) {
+                  Icon(
+                    imageVector = Icons.Rounded.Search,
+                    contentDescription = "Search",
+                    tint = Color(0xFF64748B),
+                    modifier = Modifier.size(16.dp)
                   )
                 }
               }
             }
-          } else {
-            items(uiState.cases, key = { it.id }) { clinicalCase ->
-              CaseFolderCard(
-                clinicalCase = clinicalCase,
-                darkTheme = darkTheme,
-                onClick = { viewModel.selectCase(clinicalCase) }
-              )
+          }
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        // ── 4. Main Body: Switch between Cases & Records with Fluid Slide & Fade ──
+        AnimatedContent(
+          targetState = currentTab,
+          transitionSpec = {
+            if (targetState == CasesDisplayTab.RECORDS) {
+              (slideInHorizontally(
+                animationSpec = spring(
+                  dampingRatio = Spring.DampingRatioNoBouncy,
+                  stiffness = Spring.StiffnessMediumLow
+                )
+              ) { it / 4 } + fadeIn(tween(220, easing = FastOutSlowInEasing))) togetherWith
+              (slideOutHorizontally(
+                animationSpec = spring(
+                  dampingRatio = Spring.DampingRatioNoBouncy,
+                  stiffness = Spring.StiffnessMediumLow
+                )
+              ) { -it / 4 } + fadeOut(tween(160, easing = FastOutLinearInEasing)))
+            } else {
+              (slideInHorizontally(
+                animationSpec = spring(
+                  dampingRatio = Spring.DampingRatioNoBouncy,
+                  stiffness = Spring.StiffnessMediumLow
+                )
+              ) { -it / 4 } + fadeIn(tween(220, easing = FastOutSlowInEasing))) togetherWith
+              (slideOutHorizontally(
+                animationSpec = spring(
+                  dampingRatio = Spring.DampingRatioNoBouncy,
+                  stiffness = Spring.StiffnessMediumLow
+                )
+              ) { it / 4 } + fadeOut(tween(160, easing = FastOutLinearInEasing)))
+            }
+          },
+          label = "cases_tab_body_transition",
+          modifier = Modifier.weight(1f)
+        ) { displayTab ->
+          when (displayTab) {
+            CasesDisplayTab.CASES -> {
+              LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(start = 22.dp, end = 22.dp, top = 8.dp, bottom = 120.dp),
+                verticalArrangement = Arrangement.spacedBy(18.dp)
+              ) {
+                // ── Vibrant Pending Lab / Active Status Banner ─────────
+                item(key = "pending_results_banner") {
+                  AnimatedVisibility(
+                    visible = showPendingBanner,
+                    enter = fadeIn(tween(240)) + expandVertically(spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)),
+                    exit = fadeOut(tween(180)) + shrinkVertically(spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow))
+                  ) {
+                    Box(
+                      modifier = Modifier
+                        .fillMaxWidth()
+                        .shadow(
+                          elevation = 8.dp,
+                          shape = RoundedCornerShape(28.dp),
+                          spotColor = Color(0x33F59E0B)
+                        )
+                        .clip(RoundedCornerShape(28.dp))
+                        .background(
+                          Brush.linearGradient(
+                            colors = listOf(
+                              Color(0xFFE9D5FF), // Soft Lilac Lavender
+                              Color(0xFFFDE047), // Warm Golden Amber
+                              Color(0xFFFDBA74)  // Warm Peach Coral
+                            )
+                          )
+                        )
+                        .padding(horizontal = 20.dp, vertical = 18.dp)
+                    ) {
+                      Column {
+                        Row(
+                          modifier = Modifier.fillMaxWidth(),
+                          horizontalArrangement = Arrangement.SpaceBetween,
+                          verticalAlignment = Alignment.CenterVertically
+                        ) {
+                          Text(
+                            text = "Your results are pending",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                              fontWeight = FontWeight.Bold,
+                              fontSize = 16.sp
+                            ),
+                            color = Color(0xFF1E293B)
+                          )
+                          Box(
+                            modifier = Modifier
+                              .size(26.dp)
+                              .clip(CircleShape)
+                              .background(Color.White.copy(alpha = 0.55f))
+                              .clickable { showPendingBanner = false },
+                            contentAlignment = Alignment.Center
+                          ) {
+                            Icon(
+                              imageVector = Icons.Rounded.Close,
+                              contentDescription = "Dismiss",
+                              tint = Color(0xFF334155),
+                              modifier = Modifier.size(15.dp)
+                            )
+                          }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Row(
+                          modifier = Modifier.fillMaxWidth(),
+                          horizontalArrangement = Arrangement.SpaceBetween,
+                          verticalAlignment = Alignment.CenterVertically
+                        ) {
+                          Column(modifier = Modifier.weight(1f)) {
+                            Row(verticalAlignment = Alignment.Bottom) {
+                              Text(
+                                text = "7-10",
+                                style = MaterialTheme.typography.headlineLarge.copy(
+                                  fontWeight = FontWeight.ExtraBold,
+                                  fontSize = 28.sp,
+                                  letterSpacing = (-0.5).sp
+                                ),
+                                color = Color(0xFF0F172A)
+                              )
+                              Spacer(modifier = Modifier.width(6.dp))
+                              Text(
+                                text = "Days",
+                                style = MaterialTheme.typography.labelMedium.copy(
+                                  fontWeight = FontWeight.SemiBold,
+                                  fontSize = 13.sp
+                                ),
+                                color = Color(0xFF334155),
+                                modifier = Modifier.padding(bottom = 3.dp)
+                              )
+                            }
+
+                            Spacer(modifier = Modifier.height(6.dp))
+
+                            // Progress timeline slider dots
+                            Row(
+                              verticalAlignment = Alignment.CenterVertically,
+                              horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                              Box(
+                                modifier = Modifier
+                                  .size(8.dp)
+                                  .clip(CircleShape)
+                                  .background(Color(0xFF0F172A))
+                              )
+                              Box(
+                                modifier = Modifier
+                                  .width(24.dp)
+                                  .height(2.5.dp)
+                                  .background(Color(0xFF0F172A).copy(alpha = 0.6f))
+                              )
+                              Box(
+                                modifier = Modifier
+                                  .size(6.dp)
+                                  .clip(CircleShape)
+                                  .background(Color(0xFF0F172A).copy(alpha = 0.4f))
+                              )
+                              Box(
+                                modifier = Modifier
+                                  .width(24.dp)
+                                  .height(2.5.dp)
+                                  .background(Color(0xFF0F172A).copy(alpha = 0.3f))
+                              )
+                              Box(
+                                modifier = Modifier
+                                  .size(6.dp)
+                                  .clip(CircleShape)
+                                  .background(Color(0xFF0F172A).copy(alpha = 0.3f))
+                              )
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Text(
+                              text = "Until then your lab draw data is processed.",
+                              style = MaterialTheme.typography.bodySmall.copy(
+                                fontSize = 11.5.sp,
+                                lineHeight = 15.sp
+                              ),
+                              color = Color(0xFF334155)
+                            )
+                          }
+
+                          // Lab specimen vial cutout capsule
+                          Surface(
+                            shape = RoundedCornerShape(22.dp),
+                            color = Color.White.copy(alpha = 0.92f),
+                            border = BorderStroke(1.dp, Color.White),
+                            modifier = Modifier.size(width = 68.dp, height = 76.dp)
+                          ) {
+                            Box(contentAlignment = Alignment.Center) {
+                              Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Box(
+                                  modifier = Modifier
+                                    .width(18.dp)
+                                    .height(8.dp)
+                                    .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
+                                    .background(Color(0xFFF97316))
+                                )
+                                Box(
+                                  modifier = Modifier
+                                    .width(14.dp)
+                                    .height(34.dp)
+                                    .clip(RoundedCornerShape(bottomStart = 7.dp, bottomEnd = 7.dp))
+                                    .background(
+                                      Brush.verticalGradient(
+                                        colors = listOf(
+                                          Color(0xFFE2E8F0),
+                                          Color(0xFFEF4444).copy(alpha = 0.75f)
+                                        )
+                                      )
+                                    )
+                                )
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+
+                if (uiState.cases.isEmpty()) {
+                  item {
+                    Box(
+                      modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 40.dp),
+                      contentAlignment = Alignment.Center
+                    ) {
+                      Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                          imageVector = Icons.Rounded.MedicalInformation,
+                          contentDescription = null,
+                          tint = textTertiary,
+                          modifier = Modifier.size(48.dp)
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                          text = "No cases matching this criteria",
+                          style = MaterialTheme.typography.bodyLarge,
+                          color = textSecondary
+                        )
+                      }
+                    }
+                  }
+                } else {
+                  items(uiState.cases, key = { it.id }) { clinicalCase ->
+                    CaseFolderCard(
+                      clinicalCase = clinicalCase,
+                      darkTheme = darkTheme,
+                      onClick = { viewModel.selectCase(clinicalCase) }
+                    )
+                  }
+                }
+              }
+            }
+
+            CasesDisplayTab.RECORDS -> {
+              LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(start = 22.dp, end = 22.dp, top = 8.dp, bottom = 120.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+              ) {
+                item(key = "upload_health_records_tile") {
+                  UploadHealthRecordsTile(
+                    existingFilesCount = documents.size,
+                    onAddFileClick = {
+                      filePickerLauncher.launch(
+                        arrayOf(
+                          "*/*",
+                          "application/pdf",
+                          "image/*",
+                          "text/*"
+                        )
+                      )
+                    },
+                    onViewRecordsClick = {
+                      showExistingRecordsSheet = true
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                  )
+                }
+
+                if (documents.isEmpty()) {
+                  item {
+                    Box(
+                      modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 40.dp),
+                      contentAlignment = Alignment.Center
+                    ) {
+                      Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                          imageVector = Icons.Rounded.Description,
+                          contentDescription = null,
+                          tint = textTertiary,
+                          modifier = Modifier.size(48.dp)
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                          text = "No medical records or lab files uploaded yet",
+                          style = MaterialTheme.typography.bodyLarge,
+                          color = textSecondary
+                        )
+                      }
+                    }
+                  }
+                } else {
+                  items(documents, key = { it.id }) { doc ->
+                    Surface(
+                      shape = RoundedCornerShape(20.dp),
+                      color = Color.White,
+                      border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                      shadowElevation = 2.dp,
+                      modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showExistingRecordsSheet = true }
+                    ) {
+                      Row(
+                        modifier = Modifier
+                          .fillMaxWidth()
+                          .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(14.dp)
+                      ) {
+                        Box(
+                          modifier = Modifier
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0xFFF1F5F9)),
+                          contentAlignment = Alignment.Center
+                        ) {
+                          Icon(
+                            imageVector = Icons.Rounded.Description,
+                            contentDescription = null,
+                            tint = Color(0xFF0F172A),
+                            modifier = Modifier.size(24.dp)
+                          )
+                        }
+
+                        Column(modifier = Modifier.weight(1f)) {
+                          Text(
+                            text = doc.title,
+                            style = MaterialTheme.typography.titleMedium.copy(
+                              fontWeight = FontWeight.Bold,
+                              fontSize = 15.sp
+                            ),
+                            color = Color(0xFF0F172A),
+                            maxLines = 1
+                          )
+                          Spacer(modifier = Modifier.height(2.dp))
+                          Text(
+                            text = "${doc.fileSizeText} • ${doc.uploadDate}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFF64748B)
+                          )
+                        }
+
+                        Surface(
+                          shape = RoundedCornerShape(percent = 50),
+                          color = Color(0xFFF1F5F9),
+                          border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+                        ) {
+                          Text(
+                            text = doc.category.label,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                              fontWeight = FontWeight.SemiBold,
+                              fontSize = 11.sp
+                            ),
+                            color = Color(0xFF475569),
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                          )
+                        }
+                      }
+                    }
+                  }
+                }
+              }
             }
           }
         }
@@ -283,6 +828,16 @@ fun CasesScreen(
         )
       }
 
+      // ── Filter Selection Bottom Sheet ──────────────────────────────
+      if (showFilterSheet) {
+        CaseFilterBottomSheet(
+          currentFilter = uiState.selectedFilter,
+          filters = viewModel.filters,
+          onSelectFilter = { viewModel.onFilterSelect(it) },
+          onDismiss = { showFilterSheet = false }
+        )
+      }
+
       // ── Log New Case Sheet ─────────────────────────────────────────
       if (showNewCaseSheet) {
         LogNewCaseBottomSheet(
@@ -292,6 +847,288 @@ fun CasesScreen(
             viewModel.logEncounter(diag, doc, clinic, treat, medName, medDose)
             showNewCaseSheet = false
           }
+        )
+      }
+
+      // ── Existing Records Bottom Sheet ──────────────────────────────
+      if (showExistingRecordsSheet) {
+        ExistingRecordsBottomSheet(
+          documents = documents,
+          onDismiss = { showExistingRecordsSheet = false },
+          onUploadAnother = {
+            showExistingRecordsSheet = false
+            filePickerLauncher.launch(
+              arrayOf(
+                "*/*",
+                "application/pdf",
+                "image/*",
+                "text/*"
+              )
+            )
+          }
+        )
+      }
+    }
+  }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CaseFilterBottomSheet(
+  currentFilter: String,
+  filters: List<String>,
+  onSelectFilter: (String) -> Unit,
+  onDismiss: () -> Unit
+) {
+  val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+  ModalBottomSheet(
+    onDismissRequest = onDismiss,
+    sheetState = sheetState,
+    containerColor = Color.White,
+    shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+  ) {
+    Column(
+      modifier = Modifier
+        .fillMaxWidth()
+        .navigationBarsPadding()
+        .padding(horizontal = 24.dp, vertical = 12.dp)
+    ) {
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        Text(
+          text = "Filter Cases",
+          style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+          color = Color(0xFF0F172A)
+        )
+        Box(
+          modifier = Modifier
+            .size(32.dp)
+            .clip(CircleShape)
+            .background(Color(0xFFF1F5F9))
+            .clickable(onClick = onDismiss),
+          contentAlignment = Alignment.Center
+        ) {
+          Icon(
+            imageVector = Icons.Rounded.Close,
+            contentDescription = "Close",
+            tint = Color(0xFF475569),
+            modifier = Modifier.size(18.dp)
+          )
+        }
+      }
+
+      Spacer(modifier = Modifier.height(18.dp))
+
+      Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        filters.forEach { filter ->
+          val isSelected = filter == currentFilter
+          Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = if (isSelected) Color(0xFF0F172A) else Color(0xFFF8FAFC),
+            border = BorderStroke(1.dp, if (isSelected) Color(0xFF0F172A) else Color(0xFFE2E8F0)),
+            modifier = Modifier
+              .fillMaxWidth()
+              .clickable {
+                onSelectFilter(filter)
+                onDismiss()
+              }
+          ) {
+            Row(
+              modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 18.dp, vertical = 14.dp),
+              horizontalArrangement = Arrangement.SpaceBetween,
+              verticalAlignment = Alignment.CenterVertically
+            ) {
+              Text(
+                text = filter,
+                style = MaterialTheme.typography.bodyLarge.copy(
+                  fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                ),
+                color = if (isSelected) Color.White else Color(0xFF1E293B)
+              )
+              if (isSelected) {
+                Icon(
+                  imageVector = Icons.Rounded.Check,
+                  contentDescription = null,
+                  tint = Color.White,
+                  modifier = Modifier.size(20.dp)
+                )
+              }
+            }
+          }
+        }
+      }
+
+      Spacer(modifier = Modifier.height(24.dp))
+    }
+  }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ExistingRecordsBottomSheet(
+  documents: List<HealthDocument>,
+  onDismiss: () -> Unit,
+  onUploadAnother: () -> Unit
+) {
+  val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+  ModalBottomSheet(
+    onDismissRequest = onDismiss,
+    sheetState = sheetState,
+    containerColor = Color.White,
+    scrimColor = Color.Black.copy(alpha = 0.45f),
+    shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+  ) {
+    Column(
+      modifier = Modifier
+        .fillMaxWidth()
+        .padding(horizontal = 22.dp)
+        .padding(bottom = 36.dp)
+    ) {
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        Column {
+          Text(
+            text = "Existing Records",
+            style = MaterialTheme.typography.headlineSmall.copy(
+              fontWeight = FontWeight.Bold,
+              fontSize = 22.sp
+            ),
+            color = Color(0xFF0F172A)
+          )
+          Text(
+            text = "${documents.size} ${if (documents.size == 1) "file" else "files"} stored on this device",
+            style = MaterialTheme.typography.bodySmall,
+            color = Color(0xFF64748B)
+          )
+        }
+
+        Box(
+          modifier = Modifier
+            .size(36.dp)
+            .clip(CircleShape)
+            .background(Color(0xFFF1F5F9))
+            .clickable(onClick = onDismiss),
+          contentAlignment = Alignment.Center
+        ) {
+          Icon(
+            imageVector = Icons.Rounded.Close,
+            contentDescription = "Close",
+            tint = Color(0xFF475569),
+            modifier = Modifier.size(18.dp)
+          )
+        }
+      }
+
+      Spacer(modifier = Modifier.height(16.dp))
+
+      LazyColumn(
+        modifier = Modifier
+          .fillMaxWidth()
+          .height(300.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+      ) {
+        items(documents) { doc ->
+          Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = Color(0xFFF8FAFC),
+            border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+            modifier = Modifier.fillMaxWidth()
+          ) {
+            Row(
+              modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+              Box(
+                modifier = Modifier
+                  .size(42.dp)
+                  .clip(RoundedCornerShape(10.dp))
+                  .background(Color(0xFFEEF2F6)),
+                contentAlignment = Alignment.Center
+              ) {
+                Icon(
+                  imageVector = Icons.Rounded.Description,
+                  contentDescription = null,
+                  tint = Color(0xFF0F172A),
+                  modifier = Modifier.size(22.dp)
+                )
+              }
+
+              Column(modifier = Modifier.weight(1f)) {
+                Text(
+                  text = doc.title,
+                  style = MaterialTheme.typography.titleSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.5.sp
+                  ),
+                  color = Color(0xFF0F172A),
+                  maxLines = 1
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                  text = "${doc.fileSizeText} • ${doc.uploadDate}",
+                  style = MaterialTheme.typography.bodySmall.copy(
+                    fontSize = 11.5.sp
+                  ),
+                  color = Color(0xFF64748B)
+                )
+              }
+
+              Surface(
+                shape = RoundedCornerShape(percent = 50),
+                color = Color(0xFFEEF2F6),
+                border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+              ) {
+                Text(
+                  text = doc.category.label,
+                  style = MaterialTheme.typography.labelSmall.copy(
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.SemiBold
+                  ),
+                  color = Color(0xFF475569),
+                  modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                )
+              }
+            }
+          }
+        }
+      }
+
+      Spacer(modifier = Modifier.height(18.dp))
+
+      Button(
+        onClick = onUploadAnother,
+        shape = RoundedCornerShape(percent = 50),
+        colors = ButtonDefaults.buttonColors(
+          containerColor = Color(0xFF0F172A),
+          contentColor = Color.White
+        ),
+        modifier = Modifier
+          .fillMaxWidth()
+          .height(50.dp)
+      ) {
+        Icon(
+          imageVector = Icons.Rounded.UploadFile,
+          contentDescription = null,
+          modifier = Modifier.size(18.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+          text = "Upload another file",
+          fontWeight = FontWeight.SemiBold,
+          fontSize = 15.sp
         )
       }
     }
@@ -523,25 +1360,50 @@ fun CaseFolderCard(
           modifier = Modifier.fillMaxSize(),
           verticalArrangement = Arrangement.SpaceBetween
         ) {
-          // Top Left Folder Tab Content (Title & Subtitle)
+          // Top Left Folder Tab Content (Icon Badge + Title & Subtitle)
           Column(modifier = Modifier.fillMaxWidth(0.52f)) {
-            Text(
-              text = clinicalCase.diagnosisTitle,
-              style = MaterialTheme.typography.titleMedium.copy(
-                fontWeight = FontWeight.Bold,
-                fontSize = 17.sp,
-                letterSpacing = (-0.3).sp,
-                lineHeight = 22.sp
-              ),
-              color = titleColor,
-              maxLines = 1
-            )
-            Spacer(modifier = Modifier.height(2.dp))
+            val caseIcon = when (clinicalCase.bannerTheme) {
+              CaseBannerTheme.EMBER_GLOW -> Icons.Rounded.LocalPharmacy
+              CaseBannerTheme.CYAN_PULSE -> Icons.Rounded.MonitorHeart
+              CaseBannerTheme.VIOLET_MYSTIC -> Icons.Rounded.MedicalInformation
+              CaseBannerTheme.EMERALD_VITAL -> Icons.Rounded.CheckCircle
+            }
+            Row(
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+              Box(
+                modifier = Modifier
+                  .size(20.dp)
+                  .clip(CircleShape)
+                  .background(Color.White.copy(alpha = 0.16f)),
+                contentAlignment = Alignment.Center
+              ) {
+                Icon(
+                  imageVector = caseIcon,
+                  contentDescription = null,
+                  tint = Color.White,
+                  modifier = Modifier.size(12.dp)
+                )
+              }
+              Text(
+                text = clinicalCase.diagnosisTitle,
+                style = MaterialTheme.typography.titleMedium.copy(
+                  fontWeight = FontWeight.Bold,
+                  fontSize = 16.sp,
+                  letterSpacing = (-0.3).sp,
+                  lineHeight = 20.sp
+                ),
+                color = titleColor,
+                maxLines = 1
+              )
+            }
+            Spacer(modifier = Modifier.height(3.dp))
             Text(
               text = clinicalCase.subtitle,
               style = MaterialTheme.typography.bodySmall.copy(
-                fontSize = 12.sp,
-                lineHeight = 16.sp
+                fontSize = 11.5.sp,
+                lineHeight = 15.sp
               ),
               color = subtitleColor,
               maxLines = 1
