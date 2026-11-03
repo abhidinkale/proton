@@ -9,7 +9,10 @@
     "build:web": "npm --prefix apps/web run build",
     "dev:web": "npm --prefix apps/web run dev",
     "dev:api": "npm --prefix apps/api dev",
-    "check:claims": "node scripts/check-claims.js"
+    "dev:macos": "./apps/proton-macos/Scripts/build_and_run.sh",
+    "build:macos": "./apps/proton-macos/Scripts/build_and_run.sh",
+    "check:claims": "node scripts/check-claims.js",
+    "dev:desktop": "npm --prefix apps/proton-desktop start"
   },
   "keywords": [
     "clinical-ai",
@@ -19,5 +22,6 @@
     "proton"
   ],
   "author": "abhijeetdinkale-arch",
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "main": "apps/proton-desktop/src/main.cjs"
 }

@@ -1,0 +1,13 @@
+{
+  "name": "proton-desktop",
+  "version": "1.0.0",
+  "description": "Proton Clinical AI Desktop Application (Electron + Medplum FHIR)",
+  "main": "src/main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "test": "node tests/medplum_electron_integration.test.cjs"
+  },
+  "dependencies": {
+    "electron": "^34.2.0"
+  }
+}
