@@ -47,6 +47,81 @@ data class LabTestItem(
 )
 
 @Serializable
+data class BiomarkerTrendPoint(
+  val labId: String,
+  val testName: String,
+  val numericValue: Double,
+  val unit: String,
+  val dateIso: String,
+  val displayDate: String,
+  val referenceRangeLow: Double,
+  val referenceRangeHigh: Double,
+  val status: LabStatus
+)
+
+@Serializable
+data class BiomarkerTrendSeries(
+  val testName: String,
+  val unit: String,
+  val points: List<BiomarkerTrendPoint>,
+  val referenceRangeLow: Double,
+  val referenceRangeHigh: Double,
+  val latestPoint: BiomarkerTrendPoint?,
+  val changePercentage: Double? = null
+)
+
+fun parseBiomarkerValue(raw: String): Double? {
+  val cleaned = raw.replace("<", "").replace(">", "").replace(",", "").trim()
+  return cleaned.toDoubleOrNull()
+}
+
+fun List<LabTestItem>.buildBiomarkerTrends(): List<BiomarkerTrendSeries> {
+  val grouped = this.groupBy { it.testName.trim() }
+
+  return grouped.mapNotNull { (testName, items) ->
+    val points = items.mapNotNull { item ->
+      val num = parseBiomarkerValue(item.value) ?: return@mapNotNull null
+      val dateIso = when {
+        item.dateString.matches(Regex("\\d{4}-\\d{2}-\\d{2}.*")) -> item.dateString.take(10)
+        else -> item.dateString
+      }
+      BiomarkerTrendPoint(
+        labId = item.id,
+        testName = item.testName,
+        numericValue = num,
+        unit = item.unit,
+        dateIso = dateIso,
+        displayDate = item.dateString,
+        referenceRangeLow = item.referenceRangeLow,
+        referenceRangeHigh = item.referenceRangeHigh,
+        status = item.status
+      )
+    }.sortedBy { it.dateIso }
+
+    if (points.isEmpty()) return@mapNotNull null
+
+    val latest = points.last()
+    val changePct: Double? = if (points.size >= 2) {
+      val prev = points[points.size - 2].numericValue
+      if (prev != 0.0) {
+        val pct = ((latest.numericValue - prev) / prev) * 100.0
+        Math.round(pct * 100.0) / 100.0
+      } else null
+    } else null
+
+    BiomarkerTrendSeries(
+      testName = testName,
+      unit = latest.unit,
+      points = points,
+      referenceRangeLow = latest.referenceRangeLow,
+      referenceRangeHigh = latest.referenceRangeHigh,
+      latestPoint = latest,
+      changePercentage = changePct
+    )
+  }
+}
+
+@Serializable
 data class PrescriptionMedicineItem(
   val name: String,
   val dose: String,

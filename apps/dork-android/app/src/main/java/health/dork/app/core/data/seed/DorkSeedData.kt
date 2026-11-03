@@ -382,8 +382,33 @@ object DorkSeedData {
     )
   )
 
-  // 5 Realistic Lab Results
+  // Realistic Lab Results with Longitudinal History
   val labResults = listOf(
+    // Hemoglobin History
+    LabTestItem(
+      id = "lab-hb-1",
+      testName = "Hemoglobin",
+      value = "12.4",
+      unit = "g/dL",
+      referenceRangeLow = 12.0,
+      referenceRangeHigh = 16.0,
+      status = LabStatus.WITHIN_RANGE,
+      dateString = "2026-05-12",
+      laboratoryName = "Quest Diagnostics",
+      notes = "Baseline near lower threshold."
+    ),
+    LabTestItem(
+      id = "lab-hb-2",
+      testName = "Hemoglobin",
+      value = "13.1",
+      unit = "g/dL",
+      referenceRangeLow = 12.0,
+      referenceRangeHigh = 16.0,
+      status = LabStatus.WITHIN_RANGE,
+      dateString = "2026-08-18",
+      laboratoryName = "Quest Diagnostics",
+      notes = "Positive recovery response."
+    ),
     LabTestItem(
       id = "lab-1",
       testName = "Hemoglobin",
@@ -392,21 +417,35 @@ object DorkSeedData {
       referenceRangeLow = 12.0,
       referenceRangeHigh = 16.0,
       status = LabStatus.WITHIN_RANGE,
-      dateString = "15 Oct 2026",
+      dateString = "2026-10-15",
       laboratoryName = "Quest Diagnostics",
       notes = "Normal oxygen-carrying capacity."
     ),
+
+    // Fasting Blood Glucose History
     LabTestItem(
-      id = "lab-2",
-      testName = "White Blood Cell Count (WBC)",
-      value = "6.4",
-      unit = "10^3/µL",
-      referenceRangeLow = 4.5,
-      referenceRangeHigh = 11.0,
-      status = LabStatus.WITHIN_RANGE,
-      dateString = "15 Oct 2026",
+      id = "lab-glu-1",
+      testName = "Fasting Blood Glucose",
+      value = "104",
+      unit = "mg/dL",
+      referenceRangeLow = 70.0,
+      referenceRangeHigh = 99.0,
+      status = LabStatus.ABOVE_RANGE,
+      dateString = "2026-05-12",
       laboratoryName = "Quest Diagnostics",
-      notes = "No leukocytosis or infection markers."
+      notes = "Mild fasting elevation."
+    ),
+    LabTestItem(
+      id = "lab-glu-2",
+      testName = "Fasting Blood Glucose",
+      value = "95",
+      unit = "mg/dL",
+      referenceRangeLow = 70.0,
+      referenceRangeHigh = 99.0,
+      status = LabStatus.WITHIN_RANGE,
+      dateString = "2026-08-18",
+      laboratoryName = "Quest Diagnostics",
+      notes = "Normalized with dietary interventions."
     ),
     LabTestItem(
       id = "lab-3",
@@ -416,9 +455,35 @@ object DorkSeedData {
       referenceRangeLow = 70.0,
       referenceRangeHigh = 99.0,
       status = LabStatus.WITHIN_RANGE,
-      dateString = "15 Oct 2026",
+      dateString = "2026-10-15",
       laboratoryName = "Quest Diagnostics",
       notes = "Euglycemic fasting levels."
+    ),
+
+    // Total Cholesterol History
+    LabTestItem(
+      id = "lab-chol-1",
+      testName = "Total Cholesterol",
+      value = "215",
+      unit = "mg/dL",
+      referenceRangeLow = 125.0,
+      referenceRangeHigh = 200.0,
+      status = LabStatus.ABOVE_RANGE,
+      dateString = "2026-05-12",
+      laboratoryName = "Quest Diagnostics",
+      notes = "Borderline hypercholesterolemia."
+    ),
+    LabTestItem(
+      id = "lab-chol-2",
+      testName = "Total Cholesterol",
+      value = "196",
+      unit = "mg/dL",
+      referenceRangeLow = 125.0,
+      referenceRangeHigh = 200.0,
+      status = LabStatus.WITHIN_RANGE,
+      dateString = "2026-08-18",
+      laboratoryName = "Quest Diagnostics",
+      notes = "Sub-200 target achieved."
     ),
     LabTestItem(
       id = "lab-4",
@@ -428,9 +493,23 @@ object DorkSeedData {
       referenceRangeLow = 125.0,
       referenceRangeHigh = 200.0,
       status = LabStatus.WITHIN_RANGE,
-      dateString = "15 Oct 2026",
+      dateString = "2026-10-15",
       laboratoryName = "Quest Diagnostics",
       notes = "Desirable lipid tier."
+    ),
+
+    // Single-point biomarkers
+    LabTestItem(
+      id = "lab-2",
+      testName = "White Blood Cell Count (WBC)",
+      value = "6.4",
+      unit = "10^3/µL",
+      referenceRangeLow = 4.5,
+      referenceRangeHigh = 11.0,
+      status = LabStatus.WITHIN_RANGE,
+      dateString = "2026-10-15",
+      laboratoryName = "Quest Diagnostics",
+      notes = "No leukocytosis or infection markers."
     ),
     LabTestItem(
       id = "lab-5",
@@ -440,7 +519,7 @@ object DorkSeedData {
       referenceRangeLow = 30.0,
       referenceRangeHigh = 100.0,
       status = LabStatus.WITHIN_RANGE,
-      dateString = "15 Oct 2026",
+      dateString = "2026-10-15",
       laboratoryName = "Quest Diagnostics",
       notes = "Optimal vitamin D levels maintained with daily supplementation."
     )

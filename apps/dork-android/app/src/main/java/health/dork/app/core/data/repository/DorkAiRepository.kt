@@ -1,8 +1,13 @@
 package health.dork.app.core.data.repository
 
 import health.dork.app.core.data.local.DorkStore
+import health.dork.app.core.data.model.AiBookingCardData
+import health.dork.app.core.data.model.AiBookingStatus
+import health.dork.app.core.data.model.AiSlotOption
 import health.dork.app.core.data.model.AppointmentItem
 import health.dork.app.core.data.model.ChatMessage
+import health.dork.app.core.data.model.ConsultationType
+import health.dork.app.core.data.model.Doctor
 import health.dork.app.core.data.model.HealthRecordItem
 import health.dork.app.core.data.model.HealthRecordType
 import health.dork.app.core.data.model.LabTestItem
@@ -10,6 +15,7 @@ import health.dork.app.core.data.model.MedicationPlan
 import health.dork.app.core.data.model.MessageSender
 import health.dork.app.core.data.model.PatientProfile
 import health.dork.app.core.data.seed.DorkSeedData
+import health.dork.app.core.designsystem.components.AppointmentStatus
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,11 +23,16 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.builtins.ListSerializer
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 interface DorkAiRepository {
   val aiMessages: StateFlow<List<ChatMessage>>
   val isThinking: StateFlow<Boolean>
   suspend fun askDorkAi(query: String)
+  suspend fun selectBookingSlot(messageId: String, slotIso: String) {}
+  suspend fun confirmBooking(messageId: String): Result<AppointmentItem> =
+    Result.failure(UnsupportedOperationException("Booking not supported"))
   fun clearMessages() {}
 }
 
@@ -39,6 +50,7 @@ class DefaultDorkAiRepository(
   private val labsProvider: () -> List<LabTestItem> = { DorkSeedData.labResults },
   private val medicationPlansProvider: () -> List<MedicationPlan> = { DorkSeedData.medicationPlans },
   private val appointmentsProvider: () -> List<AppointmentItem> = { DorkSeedData.appointments },
+  private val careRepositoryProvider: (() -> CareRepository)? = null,
   private val now: () -> LocalDateTime = { LocalDateTime.now() }
 ) : DorkAiRepository {
 
@@ -74,7 +86,8 @@ class DefaultDorkAiRepository(
       text = answer.text,
       timestamp = "Just now",
       isClinicalCitation = answer.source != null,
-      sourceReference = answer.source
+      sourceReference = answer.source,
+      bookingCard = answer.bookingCard
     )
 
     _aiMessages.value = _aiMessages.value + aiResponse
@@ -82,12 +95,97 @@ class DefaultDorkAiRepository(
     _isThinking.value = false
   }
 
+  override suspend fun selectBookingSlot(messageId: String, slotIso: String) {
+    val currentList = _aiMessages.value
+    val updated = currentList.map { msg ->
+      if (msg.id == messageId && msg.bookingCard != null) {
+        msg.copy(bookingCard = msg.bookingCard.copy(selectedSlotIso = slotIso))
+      } else {
+        msg
+      }
+    }
+    _aiMessages.value = updated
+    store.write(KEY_MESSAGES, serializer, updated)
+  }
+
+  override suspend fun confirmBooking(messageId: String): Result<AppointmentItem> {
+    val msg = _aiMessages.value.find { it.id == messageId }
+      ?: return Result.failure(Exception("Message not found"))
+    val card = msg.bookingCard
+      ?: return Result.failure(Exception("No booking card associated with this message"))
+    val slotIso = card.selectedSlotIso
+      ?: card.availableSlots.firstOrNull()?.startIso
+      ?: return Result.failure(Exception("Please select a time slot first."))
+
+    val careRepo = careRepositoryProvider?.invoke()
+    val result = if (careRepo != null) {
+      careRepo.bookAppointment(
+        doctorId = card.doctorId,
+        startIso = slotIso,
+        consultationType = ConsultationType.IN_PERSON,
+        reason = card.reason
+      )
+    } else {
+      val appt = AppointmentItem(
+        id = "appt-${System.currentTimeMillis()}",
+        doctorId = card.doctorId,
+        doctorName = card.doctorName,
+        specialty = card.specialty,
+        dateTimeString = "Scheduled via Dork AI",
+        dateIso = slotIso,
+        clinicLocation = card.clinicName,
+        consultationType = ConsultationType.IN_PERSON,
+        status = AppointmentStatus.Confirmed,
+        reasonForVisit = card.reason
+      )
+      Result.success(appt)
+    }
+
+    result.onSuccess { appt ->
+      val selectedSlot = card.availableSlots.find { it.startIso == slotIso }
+      val displayTime = selectedSlot?.let { "${it.dateLabel} · ${it.timeLabel}" } ?: appt.displayDateTime
+
+      val updatedMessages = _aiMessages.value.map { m ->
+        if (m.id == messageId) {
+          m.copy(
+            bookingCard = card.copy(
+              status = AiBookingStatus.CONFIRMED,
+              confirmedAppointmentId = appt.id,
+              confirmedDateTime = displayTime
+            )
+          )
+        } else {
+          m
+        }
+      }
+
+      val confirmationMsg = ChatMessage(
+        id = "ai-${System.currentTimeMillis()}",
+        sender = MessageSender.DORK_AI,
+        text = "🎉 Done! Your appointment is officially confirmed with **${card.doctorName}** for **$displayTime** at ${card.clinicName}.\n\nI've updated your Home upcoming care card and synchronized your clinic records.",
+        timestamp = "Just now",
+        isClinicalCitation = true,
+        sourceReference = "Confirmed · ${card.clinicName} Outbox Synced"
+      )
+
+      val finalList = updatedMessages + confirmationMsg
+      _aiMessages.value = finalList
+      store.write(KEY_MESSAGES, serializer, finalList)
+    }
+
+    return result
+  }
+
   override fun clearMessages() {
     _aiMessages.value = emptyList()
     store.write(KEY_MESSAGES, serializer, emptyList())
   }
 
-  private data class Answer(val text: String, val source: String?)
+  private data class Answer(
+    val text: String,
+    val source: String?,
+    val bookingCard: AiBookingCardData? = null
+  )
 
   private fun buildAnswer(query: String): Answer {
     val lower = query.lowercase()
@@ -127,6 +225,24 @@ class DefaultDorkAiRepository(
       lower.contains("amoxicillin")
     ) {
       return medicationAnswer()
+    }
+
+    val isBookingIntent = lower.contains("book") ||
+      lower.contains("schedul") ||
+      lower.contains("appoint") ||
+      lower.contains("appoit") ||
+      lower.contains("resched") ||
+      (lower.contains("see") && (lower.contains("doctor") || lower.contains("dr"))) ||
+      (lower.contains("visit") && (lower.contains("doctor") || lower.contains("dr")))
+
+    val isQueryExisting = lower.contains("when") ||
+      lower.contains("do i have") ||
+      lower.contains("upcoming") ||
+      lower.contains("my appointment") ||
+      lower.contains("what appointment")
+
+    if (isBookingIntent && !isQueryExisting) {
+      return bookingAnswer(query)
     }
 
     if (lower.contains("appointment") || lower.contains("doctor") ||
@@ -232,6 +348,100 @@ class DefaultDorkAiRepository(
     return Answer(
       text = "According to the medication schedules saved on this device:\n\n$body\n\nDose times: ${plans.flatMap { it.dailyTimes }.distinct().joinToString(", ")}. This is a copy of your plan, not new medical advice.",
       source = doctor?.let { "Source: Medication schedule · $it" }
+    )
+  }
+
+  private fun bookingAnswer(query: String): Answer {
+    val lower = query.lowercase()
+    val doctors = careRepositoryProvider?.invoke()?.doctors?.value ?: DorkSeedData.doctors
+
+    val isLin = lower.contains("lin")
+    val matchedDoctor = when {
+      lower.contains("vance") || lower.contains("marcus") || lower.contains("cardio") ->
+        doctors.find { it.name.contains("Vance", ignoreCase = true) }
+      lower.contains("patel") || lower.contains("priya") || lower.contains("skin") || lower.contains("derma") ->
+        doctors.find { it.name.contains("Patel", ignoreCase = true) }
+      lower.contains("ray") ->
+        doctors.find { it.name.contains("Ray", ignoreCase = true) }
+      lower.contains("chen") || lower.contains("sarah") ->
+        doctors.find { it.name.contains("Chen", ignoreCase = true) }
+      else -> doctors.firstOrNull() ?: DorkSeedData.doctors.first()
+    } ?: doctors.first()
+
+    val careRepo = careRepositoryProvider?.invoke()
+    val today = now().toLocalDate()
+    val dayFormatter = DateTimeFormatter.ofPattern("EEE, d MMM", Locale.US)
+
+    val slots: List<AiSlotOption> = if (careRepo != null) {
+      val openDays = careRepo.openDays(matchedDoctor.id).take(2)
+      val found = openDays.flatMap { day ->
+        careRepo.slotsFor(matchedDoctor.id, day).take(3)
+      }.take(5).map { slot ->
+        val dayLabel = when (slot.date) {
+          today -> "Today"
+          today.plusDays(1) -> "Tomorrow"
+          else -> slot.date.format(dayFormatter)
+        }
+        AiSlotOption(
+          startIso = slot.startIso,
+          timeLabel = slot.timeLabel,
+          dateLabel = dayLabel
+        )
+      }
+      found.ifEmpty { defaultSlotsFor(matchedDoctor, today) }
+    } else {
+      defaultSlotsFor(matchedDoctor, today)
+    }
+
+    val introText = if (isLin) {
+      "Dr. Lin is not registered at Beacon Hill Health, so I matched you with our lead primary care clinician **${matchedDoctor.name}** (${matchedDoctor.specialty}).\n\nHere are upcoming open slots. Select your preferred time and tap Confirm:"
+    } else {
+      "I can book that for you! Here are open times for **${matchedDoctor.name}** (${matchedDoctor.specialty} · ${matchedDoctor.clinicName}).\n\nChoose your preferred time below and tap Confirm:"
+    }
+
+    val bookingCard = AiBookingCardData(
+      doctorId = matchedDoctor.id,
+      doctorName = matchedDoctor.name,
+      specialty = matchedDoctor.specialty,
+      clinicName = matchedDoctor.clinicName,
+      availableSlots = slots,
+      selectedSlotIso = slots.firstOrNull()?.startIso,
+      status = AiBookingStatus.PENDING,
+      reason = "Consultation · Dork AI Assist"
+    )
+
+    return Answer(
+      text = introText,
+      source = "Source: ${matchedDoctor.clinicName} Scheduling System",
+      bookingCard = bookingCard
+    )
+  }
+
+  private fun defaultSlotsFor(doctor: Doctor, today: LocalDate): List<AiSlotOption> {
+    val tomorrow = today.plusDays(1)
+    val dayAfter = today.plusDays(2)
+    val dayFormatter = DateTimeFormatter.ofPattern("EEE, d MMM", Locale.US)
+    return listOf(
+      AiSlotOption(
+        startIso = "${tomorrow}T10:00:00",
+        timeLabel = "10:00 AM",
+        dateLabel = "Tomorrow"
+      ),
+      AiSlotOption(
+        startIso = "${tomorrow}T14:30:00",
+        timeLabel = "2:30 PM",
+        dateLabel = "Tomorrow"
+      ),
+      AiSlotOption(
+        startIso = "${dayAfter}T11:15:00",
+        timeLabel = "11:15 AM",
+        dateLabel = dayAfter.format(dayFormatter)
+      ),
+      AiSlotOption(
+        startIso = "${dayAfter}T15:00:00",
+        timeLabel = "3:00 PM",
+        dateLabel = dayAfter.format(dayFormatter)
+      )
     )
   }
 

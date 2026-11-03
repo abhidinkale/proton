@@ -17,6 +17,34 @@ enum class DeliveryStatus {
 }
 
 @Serializable
+data class AiSlotOption(
+  val startIso: String,
+  val timeLabel: String,
+  val dateLabel: String
+)
+
+@Serializable
+enum class AiBookingStatus {
+  PENDING,
+  CONFIRMED,
+  CANCELLED
+}
+
+@Serializable
+data class AiBookingCardData(
+  val doctorId: String,
+  val doctorName: String,
+  val specialty: String,
+  val clinicName: String,
+  val availableSlots: List<AiSlotOption> = emptyList(),
+  val selectedSlotIso: String? = null,
+  val status: AiBookingStatus = AiBookingStatus.PENDING,
+  val confirmedAppointmentId: String? = null,
+  val confirmedDateTime: String? = null,
+  val reason: String = "Consultation"
+)
+
+@Serializable
 data class ChatMessage(
   val id: String,
   val sender: MessageSender,
@@ -24,7 +52,8 @@ data class ChatMessage(
   val timestamp: String,
   val deliveryStatus: DeliveryStatus = DeliveryStatus.READ,
   val isClinicalCitation: Boolean = false,
-  val sourceReference: String? = null
+  val sourceReference: String? = null,
+  val bookingCard: AiBookingCardData? = null
 )
 
 @Serializable

@@ -41,7 +41,10 @@ interface RecordRepository {
     fileSizeText: String,
     bytes: ByteArray? = null,
     mimeType: String = "application/pdf",
-    fileName: String = "document.pdf"
+    fileName: String = "document.pdf",
+    isOcrProcessed: Boolean = false,
+    extractedText: String? = null,
+    structuredEntities: List<String> = emptyList()
   ): Result<HealthDocument>
 
   /**
@@ -67,13 +70,16 @@ class DorkRecordRepository(
 
   private val recordSerializer = ListSerializer(HealthRecordItem.serializer())
   private val documentSerializer = ListSerializer(HealthDocument.serializer())
+  private val labSerializer = ListSerializer(LabTestItem.serializer())
 
   private val _timelineRecords = MutableStateFlow(
     store.read(KEY_RECORDS, recordSerializer) ?: emptyList()
   )
   override val timelineRecords: StateFlow<List<HealthRecordItem>> = _timelineRecords.asStateFlow()
 
-  private val _labResults = MutableStateFlow<List<LabTestItem>>(emptyList())
+  private val _labResults = MutableStateFlow(
+    store.read(KEY_LABS, labSerializer) ?: DorkSeedData.labResults
+  )
   override val labResults: StateFlow<List<LabTestItem>> = _labResults.asStateFlow()
 
   private val _documents = MutableStateFlow(
@@ -94,7 +100,10 @@ class DorkRecordRepository(
     fileSizeText: String,
     bytes: ByteArray?,
     mimeType: String,
-    fileName: String
+    fileName: String,
+    isOcrProcessed: Boolean,
+    extractedText: String?,
+    structuredEntities: List<String>
   ): Result<HealthDocument> {
     if (fileUri.isBlank()) {
       return Result.failure(IllegalArgumentException("Choose a file to store first."))
@@ -115,11 +124,9 @@ class DorkRecordRepository(
       uploadDate = displayDate,
       fileSizeText = fileSizeText,
       originalUri = fileUri,
-      // No OCR engine is bundled with this build. Storing the original
-      // document is real; claiming extracted text would not be.
-      isOcrProcessed = false,
-      extractedText = null,
-      structuredEntities = emptyList()
+      isOcrProcessed = isOcrProcessed,
+      extractedText = extractedText,
+      structuredEntities = structuredEntities
     )
 
     _documents.value = listOf(newDoc) + _documents.value
@@ -278,5 +285,6 @@ class DorkRecordRepository(
     const val KEY_RECORDS = "records:timeline"
     const val KEY_DOCUMENTS = "records:documents"
     const val KEY_ACTIVE_PRESCRIPTION = "records:active_prescription"
+    const val KEY_LABS = "records:lab_results"
   }
 }
