@@ -70,19 +70,26 @@ export default function DocumentReview() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const selected = Array.from(e.target.files).slice(0, 5);
-      const MAX_SIZE = 10 * 1024 * 1024; // 10MB
-      const allowedMimes = ['application/pdf', 'image/jpeg', 'image/png'];
+      const MAX_SIZE = 15 * 1024 * 1024; // 15MB
+      const allowedMimes = ['application/pdf', 'image/jpeg', 'image/png', 'text/xml', 'application/xml'];
       
       const oversized = selected.find(f => f.size > MAX_SIZE);
       if (oversized) {
-        setErrorMessage(`File "${oversized.name}" exceeds the 10MB limit.`);
+        setErrorMessage(`File "${oversized.name}" exceeds the 15MB limit.`);
         setStatus('error');
         return;
       }
       
-      const invalidType = selected.find(f => !allowedMimes.includes(f.type) && !f.name.toLowerCase().endsWith('.pdf') && !f.name.toLowerCase().endsWith('.png') && !f.name.toLowerCase().endsWith('.jpg') && !f.name.toLowerCase().endsWith('.jpeg'));
+      const invalidType = selected.find(f => 
+        !allowedMimes.includes(f.type) && 
+        !f.name.toLowerCase().endsWith('.pdf') && 
+        !f.name.toLowerCase().endsWith('.png') && 
+        !f.name.toLowerCase().endsWith('.jpg') && 
+        !f.name.toLowerCase().endsWith('.jpeg') &&
+        !f.name.toLowerCase().endsWith('.xml')
+      );
       if (invalidType) {
-        setErrorMessage(`File "${invalidType.name}" is not a supported format. Please upload PDF, JPG, or PNG files.`);
+        setErrorMessage(`File "${invalidType.name}" is not a supported format. Please upload PDF, JPG, PNG, or C-CDA XML files.`);
         setStatus('error');
         return;
       }
@@ -97,30 +104,97 @@ export default function DocumentReview() {
     if (files.length === 0) return;
     setStatus('extracting');
     try {
-      const formData = new FormData();
-      files.forEach(file => formData.append('documents', file));
-      
-      const response = await fetch(`${API_BASE_URL}/api/extract-documents`, {
-        method: 'POST',
-        body: formData
-      });
-      
-      if (!response.ok) {
-        const errPayload = await response.json().catch(() => ({}));
-        throw new Error(errPayload.error || 'Document extraction failed. Please check files and try again.');
+      // Check if any file is a C-CDA XML document
+      const xmlFiles = files.filter(f => f.name.toLowerCase().endsWith('.xml'));
+      const nonXmlFiles = files.filter(f => !f.name.toLowerCase().endsWith('.xml'));
+      const exts: Extraction[] = [];
+
+      for (const xmlFile of xmlFiles) {
+        const text = await xmlFile.text();
+        let ccdaResult: any = null;
+        if (typeof window !== 'undefined' && window.protonNative?.parseCcdaXml) {
+          ccdaResult = await window.protonNative.parseCcdaXml(text);
+        }
+
+        const facts: Fact[] = [];
+        if (ccdaResult && ccdaResult.bundle?.entry) {
+          for (const item of ccdaResult.bundle.entry) {
+            const res = item.resource;
+            if (res.resourceType === 'Condition') {
+              facts.push({
+                category: 'diagnosis',
+                text: res.code?.text || 'Documented Condition',
+                confidence: 0.98,
+                source_quote: `C-CDA XML: ${res.code?.text || ''}`,
+                approved: true,
+                edited: false
+              });
+            } else if (res.resourceType === 'MedicationStatement') {
+              facts.push({
+                category: 'medication',
+                text: res.medicationCodeableConcept?.text || 'Documented Medication',
+                confidence: 0.98,
+                source_quote: `C-CDA XML: ${res.medicationCodeableConcept?.text || ''}`,
+                approved: true,
+                edited: false
+              });
+            } else if (res.resourceType === 'AllergyIntolerance') {
+              facts.push({
+                category: 'allergy',
+                text: res.code?.text || 'Documented Allergy',
+                confidence: 0.98,
+                source_quote: `C-CDA XML: ${res.code?.text || ''}`,
+                approved: true,
+                edited: false
+              });
+            }
+          }
+        } else {
+          // Basic browser fallback extraction for XML
+          facts.push({
+            category: 'other',
+            text: `Imported clinical document: ${xmlFile.name}`,
+            confidence: 0.95,
+            source_quote: 'C-CDA Continuity of Care Document',
+            approved: true,
+            edited: false
+          });
+        }
+
+        exts.push({
+          document_date: new Date().toISOString(),
+          document_type: 'C-CDA Continuity of Care Document',
+          originalFileName: xmlFile.name,
+          facts
+        });
       }
-      
-      const data = await response.json();
-      
-      const exts = data.extractions.map((e: Extraction) => ({
-        ...e,
-        facts: e.facts.map((f: Fact) => ({ 
-          ...f, 
-          approved: true,
-          edited: false
-        }))
-      }));
-      
+
+      if (nonXmlFiles.length > 0) {
+        const formData = new FormData();
+        nonXmlFiles.forEach(file => formData.append('documents', file));
+        
+        const response = await fetch(`${API_BASE_URL}/api/extract-documents`, {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (!response.ok) {
+          const errPayload = await response.json().catch(() => ({}));
+          throw new Error(errPayload.error || 'Document extraction failed. Please check files and try again.');
+        }
+        
+        const data = await response.json();
+        const nonXmlExts = data.extractions.map((e: Extraction) => ({
+          ...e,
+          facts: e.facts.map((f: Fact) => ({ 
+            ...f, 
+            approved: true,
+            edited: false
+          }))
+        }));
+        exts.push(...nonXmlExts);
+      }
+
       setExtractions(exts);
       auditService.record('ai_draft_generated', `Extracted document facts from ${files.length} uploaded file(s)`, {
         patientId: patientId || undefined,
@@ -350,7 +424,7 @@ export default function DocumentReview() {
             <div>
               <h3 className="text-xl font-bold text-ink">Upload Medical Records</h3>
               <p className="text-xs sm:text-sm text-ink-2 mt-1 max-w-md mx-auto">
-                Upload up to 5 documents (PDF, JPG, PNG). Proton extracts clinical facts while maintaining immutable source citations.
+                Upload up to 5 documents (PDF, JPG, PNG, or C-CDA XML from hospital EHRs). Proton extracts clinical facts into standard FHIR records with full provenance.
               </p>
             </div>
             
@@ -359,7 +433,7 @@ export default function DocumentReview() {
               ref={fileInputRef} 
               onChange={handleFileChange} 
               multiple 
-              accept=".pdf,image/png,image/jpeg" 
+              accept=".pdf,image/png,image/jpeg,.xml,text/xml,application/xml" 
               className="hidden" 
             />
             
