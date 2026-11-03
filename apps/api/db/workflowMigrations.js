@@ -83,7 +83,7 @@ const WORKFLOW_MIGRATIONS = [
         state TEXT NOT NULL
           CHECK (state IN (
             'BOOKED', 'CHECKED_IN', 'INTAKE', 'READY', 'CAPTURING', 'DRAFTED',
-            'PENDING_REVIEW', 'SIGNED', 'REPORTED', 'FOLLOW_UP_DUE', 'CLOSED',
+            'PENDING_REVIEW', 'SIGNED', 'COMMITTED_TO_FHIR', 'REPORTED', 'FOLLOW_UP_DUE', 'CLOSED',
             'ESCALATED', 'CANCELLED'
           )),
         version INTEGER NOT NULL DEFAULT 1 CHECK (version > 0),
@@ -501,6 +501,28 @@ const WORKFLOW_MIGRATIONS = [
         ALTER TABLE attestation_anchors
           ADD CONSTRAINT attestation_anchors_anchor_type_check
           CHECK (anchor_type IN ('RFC3161_TSA', 'RFC3161_CHAIN_ANCHOR', 'MERKLE_CHECKPOINT'));
+      END $$;
+    `
+  },
+  {
+    version: 14,
+    name: 'encounter_committed_to_fhir_state',
+    sql: `
+      DO $$
+      BEGIN
+        IF EXISTS (
+          SELECT 1 FROM pg_constraint
+          WHERE conname = 'encounters_state_check'
+            AND conrelid = 'encounters'::regclass
+        ) THEN
+          ALTER TABLE encounters DROP CONSTRAINT encounters_state_check;
+          ALTER TABLE encounters ADD CONSTRAINT encounters_state_check
+            CHECK (state IN (
+              'BOOKED', 'CHECKED_IN', 'INTAKE', 'READY', 'CAPTURING', 'DRAFTED',
+              'PENDING_REVIEW', 'SIGNED', 'COMMITTED_TO_FHIR', 'REPORTED', 'FOLLOW_UP_DUE', 'CLOSED',
+              'ESCALATED', 'CANCELLED'
+            ));
+        END IF;
       END $$;
     `
   }

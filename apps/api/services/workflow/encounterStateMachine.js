@@ -33,6 +33,7 @@ const ENCOUNTER_STATES = Object.freeze([
   'DRAFTED',
   'PENDING_REVIEW',
   'SIGNED',
+  'COMMITTED_TO_FHIR',
   'REPORTED',
   'FOLLOW_UP_DUE',
   'CLOSED',
@@ -113,15 +114,23 @@ const TRANSITIONS = Object.freeze([
     requiresAttestation: true
   },
   {
-    action: 'publish_report',
+    // Asynchronous or synchronous commit to authoritative FHIR datastore (Medplum)
+    action: 'commit_to_fhir',
     from: ['SIGNED'],
+    to: 'COMMITTED_TO_FHIR',
+    roles: ['physician', 'system', 'admin'],
+    label: 'Commit signed encounter to FHIR store'
+  },
+  {
+    action: 'publish_report',
+    from: ['SIGNED', 'COMMITTED_TO_FHIR'],
     to: 'REPORTED',
     roles: ['physician', 'system'],
     label: 'Publish patient report'
   },
   {
     action: 'schedule_follow_up',
-    from: ['REPORTED', 'SIGNED'],
+    from: ['REPORTED', 'SIGNED', 'COMMITTED_TO_FHIR'],
     to: 'FOLLOW_UP_DUE',
     roles: ['physician', 'nurse', 'operations_staff', 'system'],
     label: 'Schedule follow-up'
@@ -135,7 +144,7 @@ const TRANSITIONS = Object.freeze([
   },
   {
     action: 'close',
-    from: ['REPORTED', 'FOLLOW_UP_DUE', 'SIGNED'],
+    from: ['REPORTED', 'FOLLOW_UP_DUE', 'SIGNED', 'COMMITTED_TO_FHIR'],
     to: 'CLOSED',
     roles: ['physician', 'operations_staff', 'admin'],
     label: 'Close encounter',
@@ -163,6 +172,7 @@ const TRANSITIONS = Object.freeze([
       'DRAFTED',
       'PENDING_REVIEW',
       'SIGNED',
+      'COMMITTED_TO_FHIR',
       'REPORTED',
       'FOLLOW_UP_DUE'
     ],
