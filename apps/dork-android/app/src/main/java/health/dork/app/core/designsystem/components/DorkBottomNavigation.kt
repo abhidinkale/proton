@@ -76,17 +76,17 @@ fun DorkBottomNavigation(
     // 3D Glassmorphism Specular Border Brush
     val glassBorder = Brush.verticalGradient(
       listOf(
-        Color.White.copy(alpha = 0.38f),
-        Color.White.copy(alpha = 0.12f),
-        Color(0x18FFFFFF)
+        Color.White.copy(alpha = 0.45f),
+        Color.White.copy(alpha = 0.18f),
+        Color(0x24FFFFFF)
       )
     )
 
-    // Frosted Glass Dark Fill
+    // Frosted Glass Grayish Semi-Transparent Fill
     val glassBackground = Brush.verticalGradient(
       listOf(
-        Color(0xCC161B26),
-        Color(0xDD0D111A)
+        Color(0x994B5565), // Translucent cool gray (~60% opacity)
+        Color(0xA6374151)  // Translucent slate gray (~65% opacity)
       )
     )
 
@@ -96,16 +96,16 @@ fun DorkBottomNavigation(
       border = BorderStroke(1.2.dp, glassBorder),
       modifier = Modifier
         .shadow(
-          elevation = 22.dp,
+          elevation = 12.dp,
           shape = CircleShape,
-          spotColor = Color.Black.copy(alpha = 0.50f),
-          ambientColor = Color.Black.copy(alpha = 0.35f)
+          spotColor = Color.Black.copy(alpha = 0.25f),
+          ambientColor = Color.Black.copy(alpha = 0.15f)
         )
         .background(brush = glassBackground, shape = CircleShape)
     ) {
       Row(
-        modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically
       ) {
         DorkNavDestination.entries.forEach { destination ->
@@ -113,34 +113,23 @@ fun DorkBottomNavigation(
 
           val animActiveBg by animateColorAsState(
             targetValue = if (selected) Color(0x38FFFFFF) else Color.Transparent,
-            animationSpec = spring(
-              dampingRatio = Spring.DampingRatioLowBouncy,
-              stiffness = Spring.StiffnessMedium
-            ),
+            animationSpec = tween(durationMillis = 140, easing = FastOutSlowInEasing),
             label = "dock_tab_bg"
           )
 
           val animIconTint by animateColorAsState(
-            targetValue = if (selected) Color.White else Color.White.copy(alpha = 0.55f),
-            animationSpec = tween(durationMillis = 160, easing = FastOutSlowInEasing),
+            targetValue = if (selected) Color.White else Color.White.copy(alpha = 0.65f),
+            animationSpec = tween(durationMillis = 140, easing = FastOutSlowInEasing),
             label = "dock_icon_tint"
-          )
-
-          val animActiveBorder by animateColorAsState(
-            targetValue = if (selected) Color.White.copy(alpha = 0.25f) else Color.Transparent,
-            animationSpec = tween(durationMillis = 160),
-            label = "dock_border"
           )
 
           Box(
             modifier = Modifier
-              .height(44.dp)
-              .width(if (selected) 58.dp else 46.dp)
-              .clip(RoundedCornerShape(22.dp))
+              .height(48.dp)
+              .width(if (selected) 62.dp else 50.dp)
+              .clip(RoundedCornerShape(24.dp))
               .background(animActiveBg)
               .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
                 onClick = { onNavigate(destination) }
               ),
             contentAlignment = Alignment.Center
@@ -149,7 +138,7 @@ fun DorkBottomNavigation(
               imageVector = destination.icon,
               contentDescription = destination.label,
               tint = animIconTint,
-              modifier = Modifier.size(if (selected) 21.dp else 19.dp)
+              modifier = Modifier.size(if (selected) 22.dp else 20.dp)
             )
           }
         }
