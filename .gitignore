@@ -56,6 +56,10 @@ dist/
 */dist/
 dist-ssr/
 build/
+.build/
+*.app/
+apps/proton-macos/.build/
+apps/proton-macos/Proton.app/
 *.tsbuildinfo
 
 # 6. Local Database, Cache & Tool State

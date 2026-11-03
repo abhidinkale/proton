@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Proton</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Ambient Sunset Glassmorphism Light Backdrop -->
+  <div class="ambient-backdrop">
+    <div class="ambient-sunset-art"></div>
+    <div class="sunset-glow-orb"></div>
+    <div class="sunset-horizon-fog"></div>
+    <canvas id="ember-canvas"></canvas>
+  </div>
+
+  <!-- Main Window Container -->
+  <main class="app-container">
+    
+    <!-- 1. AUTH VIEW (Sign up / Log in) -->
+    <div id="auth-card" class="auth-card">
+      <section class="form-pane">
+        <header class="brand-header">
+          <div class="brand-logo">
+            <svg class="proton-glyph" width="28" height="28" viewBox="0 0 32 32" fill="none">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M16 4C9.373 4 4 9.373 4 16c0 6.627 5.373 12 12 12 3.1 0 5.92-1.173 8.04-3.11l.03-.028A11.956 11.956 0 0 0 28 16c0-6.627-5.373-12-12-12zm-3.5 6a3.5 3.5 0 0 0-3.5 3.5v9a2 2 0 1 0 4 0v-2.1c.95.68 2.12 1.1 3.4 1.1 3.59 0 6.5-2.91 6.5-6.5S19.49 10 15.9 10h-3.4zm3.4 7.5h-3.4v-4h3.4a2 2 0 1 1 0 4z" fill="#FFFFFF"/>
+            </svg>
+            <span class="brand-name">Proton</span>
+          </div>
+          <button id="btn-demo-doctor" class="demo-doctor-badge" title="Fill demo doctor credentials">
+            Demo Doctor
+          </button>
+        </header>
+
+        <div class="heading-group">
+          <h1 id="auth-title">Sign up</h1>
+          <p id="auth-subtitle">
+            Your personal health companion.<br />
+            Track, understand and improve your health.
+          </p>
+        </div>
+
+        <form id="auth-form" onsubmit="event.preventDefault(); handleAuthSubmit();">
+          <div class="input-field-group">
+            <svg class="field-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <rect width="20" height="16" x="2" y="4" rx="2"></rect>
+              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+            </svg>
+            <input type="email" id="input-email" placeholder="Enter Email" autocomplete="email" required />
+          </div>
+
+          <div class="input-field-group">
+            <svg class="field-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <input type="password" id="input-password" placeholder="Create Password" autocomplete="current-password" required />
+            <button type="button" id="btn-toggle-password" class="field-action-btn">
+              <svg id="icon-eye" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              <svg id="icon-eye-off" class="hidden" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"></path>
+                <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"></path>
+                <path d="M17.479 17.499A10.75 10.75 0 0 1 2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.417-5.148"></path>
+                <line x1="2" x2="22" y1="2" y2="22"></line>
+              </svg>
+            </button>
+          </div>
+
+          <div id="error-banner" class="error-banner hidden">
+            <span id="error-text">Please check your credentials.</span>
+          </div>
+
+          <div class="checkbox-row">
+            <label class="custom-checkbox-container">
+              <input type="checkbox" id="check-terms" checked />
+              <span class="checkmark">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </span>
+              <span class="checkbox-label">I agree to the Terms & Privacy Policy</span>
+            </label>
+          </div>
+
+          <button type="submit" id="btn-submit" class="btn-primary-pill">
+            <span id="btn-submit-text">Create Account</span>
+            <svg class="arrow-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+            <div id="btn-spinner" class="spinner hidden"></div>
+          </button>
+        </form>
+
+        <div class="social-divider">
+          <span class="line"></span>
+          <span id="divider-text" class="divider-text">or sign up with</span>
+          <span class="line"></span>
+        </div>
+
+        <div class="social-auth-group">
+          <button class="social-pill-btn" onclick="quickLoginWithSocial('Google')">
+            <svg width="18" height="18" viewBox="0 0 24 24">
+              <path fill="#FFFFFF" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#FFFFFF" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FFFFFF" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+              <path fill="#FFFFFF" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+            </svg>
+          </button>
+          <button class="social-pill-btn" onclick="quickLoginWithSocial('Apple')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="#FFFFFF">
+              <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.84c.67-.82 1.13-1.96.99-3.11-1.01.04-2.22.68-2.92 1.5-.61.71-1.15 1.87-.99 2.99 1.12.09 2.26-.59 2.92-1.38z"/>
+            </svg>
+          </button>
+          <button class="social-pill-btn" onclick="quickLoginWithSocial('Phone')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="#FFFFFF">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+            </svg>
+          </button>
+        </div>
+
+        <footer class="auth-footer">
+          <span id="footer-text">Already have an account?</span>
+          <button type="button" id="btn-toggle-auth-mode" class="link-btn">Log in</button>
+        </footer>
+      </section>
+
+      <section class="hero-pane">
+        <div class="hero-art-wrapper">
+          <img src="hero_anatomy.jpg" alt="Proton Anatomy & Flourishing Vitality" class="hero-img" />
+          <div class="hero-blend-gradient"></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- 2. DOCTOR ONBOARDING & 8-DIGIT PAIRING CODE VIEW -->
+    <div id="onboarding-card" class="auth-card onboarding-card hidden">
+      <section class="onboarding-form-pane">
+        <header class="brand-header">
+          <div class="brand-logo">
+            <svg class="proton-glyph" width="24" height="24" viewBox="0 0 32 32" fill="none">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M16 4C9.373 4 4 9.373 4 16c0 6.627 5.373 12 12 12 3.1 0 5.92-1.173 8.04-3.11l.03-.028A11.956 11.956 0 0 0 28 16c0-6.627-5.373-12-12-12zm-3.5 6a3.5 3.5 0 0 0-3.5 3.5v9a2 2 0 1 0 4 0v-2.1c.95.68 2.12 1.1 3.4 1.1 3.59 0 6.5-2.91 6.5-6.5S19.49 10 15.9 10h-3.4zm3.4 7.5h-3.4v-4h3.4a2 2 0 1 1 0 4z" fill="#FFFFFF"/>
+            </svg>
+            <span class="brand-name">Proton</span>
+          </div>
+          <div class="onboarding-steps">
+            <span id="step-pill-1" class="step-pill active">1. Profile</span>
+            <span class="step-arrow">→</span>
+            <span id="step-pill-2" class="step-pill">2. Practice</span>
+            <span class="step-arrow">→</span>
+            <span id="step-pill-3" class="step-pill">3. Code</span>
+          </div>
+        </header>
+
+        <!-- STEP 1: Clinical Profile Questions -->
+        <div id="onboarding-step-1" class="onboarding-step-content">
+          <div class="step-header">
+            <h2>Clinical Credentials</h2>
+            <p>Tell us your medical background so Proton AI copilot adapts its clinical synthesis to your discipline.</p>
+          </div>
+
+          <div class="onboarding-fields">
+            <div class="form-row">
+              <label>Full Name & Medical Title</label>
+              <div class="input-field-group">
+                <input type="text" id="doc-fullname" value="Dr. Sarah Mitchell, MD" placeholder="e.g. Dr. Sarah Mitchell, MD" />
+              </div>
+            </div>
+
+            <div class="form-row-grid">
+              <div class="form-row">
+                <label>Primary Specialty</label>
+                <div class="select-field-group">
+                  <select id="doc-specialty" onchange="updateLivePreview()">
+                    <option value="Cardiology">Cardiology</option>
+                    <option value="Internal Medicine">Internal Medicine</option>
+                    <option value="Family Medicine">Family Medicine</option>
+                    <option value="Pediatrics">Pediatrics</option>
+                    <option value="Neurology">Neurology</option>
+                    <option value="Oncology">Oncology</option>
+                    <option value="General Surgery">General Surgery</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <label>NPI / Medical License ID</label>
+                <div class="input-field-group">
+                  <input type="text" id="doc-npi" value="1948273019" placeholder="10-digit NPI" maxlength="10" />
+                </div>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <label>Years of Clinical Practice</label>
+              <div class="radio-chip-group">
+                <label class="chip-option">
+                  <input type="radio" name="doc-exp" value="1-3 years" />
+                  <span>1–3 yrs</span>
+                </label>
+                <label class="chip-option">
+                  <input type="radio" name="doc-exp" value="4-10 years" checked />
+                  <span>4–10 yrs</span>
+                </label>
+                <label class="chip-option">
+                  <input type="radio" name="doc-exp" value="10+ years" />
+                  <span>10+ yrs</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <button type="button" class="btn-primary-pill" onclick="goToOnboardingStep(2)">
+            <span>Continue to Practice Setup</span>
+            <svg class="arrow-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </button>
+        </div>
+
+        <!-- STEP 2: Practice & Copilot Setup Questions -->
+        <div id="onboarding-step-2" class="onboarding-step-content hidden">
+          <div class="step-header">
+            <h2>Practice & Copilot Preferences</h2>
+            <p>Configure your facility details and how Proton handles real-time ambient consultations.</p>
+          </div>
+
+          <div class="onboarding-fields">
+            <div class="form-row">
+              <label>Clinic or Hospital Facility Name</label>
+              <div class="input-field-group">
+                <input type="text" id="doc-clinic-name" value="Metropolitan Heart & Medical Center" placeholder="e.g. St. Jude Clinic" oninput="updateLivePreview()" />
+              </div>
+            </div>
+
+            <div class="form-row-grid">
+              <div class="form-row">
+                <label>Practice Setting</label>
+                <div class="select-field-group">
+                  <select id="doc-setting">
+                    <option value="Outpatient Clinic">Outpatient Clinic</option>
+                    <option value="Hospital Inpatient">Hospital Inpatient</option>
+                    <option value="Private Practice">Private Practice</option>
+                    <option value="Telemedicine">Telemedicine</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <label>Consultation Language</label>
+                <div class="select-field-group">
+                  <select id="doc-language">
+                    <option value="English (US)">English (US)</option>
+                    <option value="Spanish / English">Spanish / English</option>
+                    <option value="Hindi / English">Hindi / English</option>
+                    <option value="French">French</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <label>Preferred SOAP / EHR Synthesis Style</label>
+              <div class="radio-chip-group">
+                <label class="chip-option">
+                  <input type="radio" name="doc-note-style" value="Detailed SOAP" checked />
+                  <span>Detailed SOAP</span>
+                </label>
+                <label class="chip-option">
+                  <input type="radio" name="doc-note-style" value="Concise Problem-Oriented" />
+                  <span>Problem-Oriented</span>
+                </label>
+                <label class="chip-option">
+                  <input type="radio" name="doc-note-style" value="Narrative H&P" />
+                  <span>Narrative H&P</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="btn-dual-row">
+            <button type="button" class="btn-secondary-pill" onclick="goToOnboardingStep(1)">
+              Back
+            </button>
+            <button type="button" class="btn-primary-pill" onclick="generateDoctorCodeAndProceed()">
+              <span>Generate 8-Digit Pairing Code</span>
+              <svg class="arrow-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- STEP 3: 8-Digit Code Issued! -->
+        <div id="onboarding-step-3" class="onboarding-step-content hidden">
+          <div class="step-header">
+            <div class="success-badge-row">
+              <span class="pulse-check">✓</span>
+              <h2>Profile Verified & Pairing Code Issued</h2>
+            </div>
+            <p>Your physician profile is verified in Proton CareLoop. Below is your official 8-digit connection code.</p>
+          </div>
+
+          <div class="eight-digit-card">
+            <div class="code-label">OFFICIAL 8-DIGIT DOCTOR PAIRING CODE</div>
+            <div class="code-digits-display">
+              <span id="digit-chunk-1" class="digit-chunk">8492</span>
+              <span class="code-dash">-</span>
+              <span id="digit-chunk-2" class="digit-chunk">3105</span>
+            </div>
+            <div class="code-action-row">
+              <button type="button" class="btn-copy-code" onclick="copyDoctorCode()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                  <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+                </svg>
+                <span id="copy-btn-text">Copy 8-Digit Code</span>
+              </button>
+              <div class="code-status-active">● Active on CareLoop</div>
+            </div>
+            <p class="code-helper-text">
+              Share this 8-digit code with patients or clinic desk staff. When entered in the Proton Mobile app, patients link directly into your queue.
+            </p>
+          </div>
+
+          <button type="button" class="btn-primary-pill full-glow" onclick="finishOnboardingAndLaunch()">
+            <span>Launch Today's Session</span>
+            <svg class="arrow-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </button>
+        </div>
+      </section>
+
+      <!-- Right: Live Doctor Digital Credential Card Preview -->
+      <section class="onboarding-preview-pane">
+        <div class="doctor-badge-showcase">
+          <div class="badge-card-container">
+            <div class="physician-smart-card">
+              <div class="card-brand">
+                <svg class="proton-glyph" width="20" height="20" viewBox="0 0 32 32" fill="none">
+                  <circle cx="16" cy="16" r="14" fill="#FFFFFF"/>
+                  <circle cx="19" cy="13" r="5.5" fill="#141314"/>
+                  <rect x="8" y="16" width="6" height="11" rx="3" fill="#FFFFFF"/>
+                </svg>
+                <span>Proton Medical Staff</span>
+              </div>
+
+              <div class="physician-avatar-big">SM</div>
+              <h3 id="preview-doc-name">Dr. Sarah Mitchell, MD</h3>
+              <div id="preview-doc-specialty" class="specialty-pill">Cardiology</div>
+
+              <div class="smart-card-divider"></div>
+
+              <div class="card-info-grid">
+                <div class="info-block">
+                  <span class="label">FACILITY</span>
+                  <span id="preview-clinic-name" class="val">Metropolitan Heart</span>
+                </div>
+                <div class="info-block">
+                  <span class="label">NPI ID</span>
+                  <span id="preview-npi" class="val">1948273019</span>
+                </div>
+              </div>
+
+              <div class="pairing-code-stamp">
+                <span class="stamp-label">CLINIC LINK CODE</span>
+                <span id="preview-code-stamp" class="stamp-digits">8492 - 3105</span>
+              </div>
+
+              <div class="card-security-footer">
+                <span class="chip-icon"></span>
+                <span>FHIR R4 • Ambient Verified</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- 3. TODAY's SESSION HOMESCREEN (Imported from Web App Today.tsx) -->
+    <div id="today-session-screen" class="today-session-container hidden">
+      
+      <!-- Top Station Navigation -->
+      <nav class="today-nav">
+        <div class="today-nav-left">
+          <div class="brand-logo small">
+            <svg class="proton-glyph" width="20" height="20" viewBox="0 0 32 32" fill="none">
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M16 4C9.373 4 4 9.373 4 16c0 6.627 5.373 12 12 12 3.1 0 5.92-1.173 8.04-3.11l.03-.028A11.956 11.956 0 0 0 28 16c0-6.627-5.373-12-12-12zm-3.5 6a3.5 3.5 0 0 0-3.5 3.5v9a2 2 0 1 0 4 0v-2.1c.95.68 2.12 1.1 3.4 1.1 3.59 0 6.5-2.91 6.5-6.5S19.49 10 15.9 10h-3.4zm3.4 7.5h-3.4v-4h3.4a2 2 0 1 1 0 4z" fill="#FFFFFF"/>
+            </svg>
+            <span class="brand-name">Proton</span>
+          </div>
+          <span class="dot-separator">•</span>
+          <span id="today-facility-name" class="facility-label">Metropolitan Heart & Medical Center</span>
+        </div>
+
+        <div class="today-nav-right">
+          <!-- 8-Digit Pairing Code Pill -->
+          <div class="code-badge-pill" title="Doctor Pairing Code (Click to Copy)" onclick="copyDoctorCode()">
+            <span class="code-tag">CODE:</span>
+            <span id="today-code-display" class="code-num">8492-3105</span>
+          </div>
+
+          <div class="status-indicator-pill">
+            <span class="pulsing-green-dot"></span>
+            <span>FHIR CareLoop Live</span>
+          </div>
+
+          <!-- Doctor Profile Pill -->
+          <div class="doctor-profile-badge" onclick="reopenOnboarding()" title="Click to view/edit doctor profile">
+            <div id="today-avatar" class="doctor-avatar">SM</div>
+            <div class="doctor-meta">
+              <div id="today-doc-name" class="doctor-name">Dr. Mitchell</div>
+              <div id="today-doc-email" class="doctor-email">dr.sarah.mitchell@protoncare.ai</div>
+            </div>
+          </div>
+
+          <button class="btn-sign-out" onclick="handleSignOut()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            <span>Sign Out</span>
+          </button>
+        </div>
+      </nav>
+
+      <!-- Scrollable Today Body -->
+      <div class="today-scroll-wrapper">
+        
+        <!-- ── THE SUNSET RADIAL HERO CARD (Imported from Today.tsx) ───────── -->
+        <section class="today-hero-radial studio-rise">
+          <!-- Top Line: Proton Tracking + Live Clock -->
+          <div class="hero-top-line">
+            <span class="proton-mono-tag">PROTON · CLINICAL WORKSTATION</span>
+            <div class="hero-clock-group">
+              <div id="live-clock-date" class="clock-date">MON 03 NOV</div>
+              <div id="live-clock-time" class="clock-time">08:00</div>
+            </div>
+          </div>
+
+          <!-- Greeting & Large Display Surname -->
+          <div class="hero-greeting-zone">
+            <p id="hero-greeting" class="hero-greeting-tag">GOOD MORNING</p>
+            <h1 id="hero-doctor-display" class="hero-surname-title">Dr. Mitchell</h1>
+
+            <!-- Next Patient & Quick Metrics Bar -->
+            <div class="hero-bottom-grid">
+              <!-- Next Patient Action Door -->
+              <div class="next-patient-slot">
+                <button type="button" class="next-patient-btn" onclick="openConsultModal('enc-1')">
+                  <span id="next-patient-name" class="next-name">Sarah Jenkins</span>
+                  <span id="next-patient-time" class="next-time">08:00 AM</span>
+                  <svg class="arrow-up-right" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="7" y1="17" x2="17" y2="7"></line>
+                    <polyline points="7 7 17 7 17 17"></polyline>
+                  </svg>
+                </button>
+                <p id="next-patient-complaint" class="next-complaint-text">
+                  Annual preventive wellness review & routine lipid surveillance; patient feels well.
+                </p>
+              </div>
+
+              <!-- Stat Counters: Visits, Waiting, Next -->
+              <div class="hero-stat-counters">
+                <div class="stat-unit">
+                  <div id="stat-visits-count" class="stat-val">08</div>
+                  <div class="stat-label">VISITS</div>
+                </div>
+                <div class="stat-unit">
+                  <div id="stat-waiting-count" class="stat-val">02</div>
+                  <div class="stat-label">WAITING</div>
+                </div>
+                <div class="stat-unit">
+                  <div id="stat-next-time" class="stat-val">08:00</div>
+                  <div class="stat-label">NEXT</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── THE "AHEAD" SCHEDULE LIST (Imported from Today.tsx) ─────────── -->
+        <section class="ahead-section">
+          <div class="ahead-header">
+            <h2 class="ahead-title">AHEAD</h2>
+            <div class="ahead-sync-status">
+              <span class="sync-pulse"></span>
+              <span>LIVE POSTGRES QUEUE</span>
+            </div>
+          </div>
+
+          <!-- Appointment Rows -->
+          <div class="ahead-list-container" id="ahead-appointments-list">
+            <!-- Dynamically rendered via app.js -->
+          </div>
+
+          <!-- Bottom Operational Actions Bar -->
+          <footer class="ahead-footer-bar">
+            <p class="server-note">THIS CLINIC ONLY · BOOKINGS STAY ON THIS LOCAL SERVER</p>
+            <div class="footer-actions-group">
+              <button class="footer-btn" onclick="copyDoctorCode()">PAIR PATIENT (CODE: <span id="footer-code-label">8492-3105</span>)</button>
+              <button class="footer-btn" onclick="openStaffModal()">STAFF QR</button>
+              <button class="footer-btn" onclick="openCareLoopModal()">CARE LOOP</button>
+            </div>
+          </footer>
+        </section>
+
+      </div>
+    </div>
+
+    <!-- 4. PATIENT CONSULT ROOM / AMBIENT ENCOUNTER MODAL -->
+    <div id="consult-modal" class="consult-modal-backdrop hidden" onclick="closeConsultModal(event)">
+      <div class="consult-modal-card" onclick="event.stopPropagation()">
+        <!-- Header -->
+        <header class="consult-modal-header">
+          <div class="consult-patient-meta">
+            <div id="consult-avatar" class="patient-avatar-lg">SJ</div>
+            <div>
+              <div class="consult-patient-title-row">
+                <h2 id="consult-modal-name">Sarah Jenkins</h2>
+                <span id="consult-modal-demographics" class="patient-demographics-tag">48F • DOB 06/14/1978 • MRN SJ-10294</span>
+              </div>
+              <p id="consult-modal-reason" class="consult-complaint">Annual preventive wellness review & routine lipid surveillance</p>
+            </div>
+          </div>
+          <button class="btn-close-modal" onclick="closeConsultModal()">✕</button>
+        </header>
+
+        <!-- Ambient Copilot Recorder Bar -->
+        <div class="consult-recorder-bar" id="consult-recorder-bar">
+          <div class="recorder-left">
+            <span id="consult-rec-dot" class="rec-dot-pulse hidden">● REC</span>
+            <div class="recorder-title-group">
+              <h4 id="consult-mic-title">Ambient Consultation Listener Ready</h4>
+              <p id="consult-mic-sub">Whisper medical entity recognition active &bull; Speaker diarization (Doctor / Patient)</p>
+            </div>
+          </div>
+          <button type="button" id="btn-consult-mic" class="btn-primary-pill mic-pill" onclick="toggleConsultMic()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+              <line x1="12" x2="12" y1="19" y2="22"></line>
+            </svg>
+            <span id="consult-mic-btn-text">Start Ambient Consultation</span>
+          </button>
+        </div>
+
+        <!-- Clinical Synthesis Split -->
+        <div class="consult-body-grid">
+          <!-- Left: Vitals & History -->
+          <div class="consult-col-left">
+            <h4 class="col-title">ROOMING VITALS</h4>
+            <div class="vitals-matrix">
+              <div class="vital-item"><span class="k">BP</span><span class="v">120/78 mmHg</span></div>
+              <div class="vital-item"><span class="k">HR</span><span class="v">68 bpm</span></div>
+              <div class="vital-item"><span class="k">SpO2</span><span class="v">99%</span></div>
+              <div class="vital-item"><span class="k">BMI</span><span class="v">24.2</span></div>
+            </div>
+
+            <h4 class="col-title mt-4">ACTIVE MEDICATIONS</h4>
+            <div class="tag-chip-list">
+              <span class="med-chip">Multivitamin Daily</span>
+              <span class="med-chip">Atorvastatin 10mg (surveillance)</span>
+            </div>
+
+            <h4 class="col-title mt-4">ALLERGIES</h4>
+            <span class="allergy-chip">No Known Drug Allergies (NKDA)</span>
+          </div>
+
+          <!-- Right: Real-time SOAP Draft Generated by Proton -->
+          <div class="consult-col-right">
+            <div class="soap-header-row">
+              <h4 class="col-title">REAL-TIME SOAP SYNTHESIS</h4>
+              <span class="ai-badge">Proton Clinical Brain v5.2</span>
+            </div>
+            
+            <div class="soap-note-container">
+              <div class="soap-block">
+                <span class="soap-letter">S</span>
+                <p id="soap-s">Patient presents for routine annual health exam. Reports feeling energetic, sleeps 7h/night. Mild dietary concerns regarding borderline cholesterol from last routine labs.</p>
+              </div>
+              <div class="soap-block">
+                <span class="soap-letter">O</span>
+                <p id="soap-o">Physical exam reveals regular rate and rhythm, clear breath sounds bilaterally. No peripheral edema. Lipid Panel: Total Cholesterol 210 mg/dL, HDL 58 mg/dL, LDL 128 mg/dL.</p>
+              </div>
+              <div class="soap-block">
+                <span class="soap-letter">A</span>
+                <p id="soap-a">1. Mild Hyperlipidemia (E78.5) — diet-controlled.<br>2. Routine Preventive Health Maintenance (Z00.00).</p>
+              </div>
+              <div class="soap-block">
+                <span class="soap-letter">P</span>
+                <p id="soap-p">1. Continue Mediterranean dietary counseling and aerobic exercise 150m/week.<br>2. Repeat lipid profile in 6 months.<br>3. Patient education packet shared via Proton CareLoop app.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="consult-modal-footer">
+          <button type="button" class="btn-secondary-pill" onclick="closeConsultModal()">
+            Save Draft & Close
+          </button>
+          <button type="button" class="btn-primary-pill full-glow" onclick="signAndCompleteEncounter()">
+            <span>Sign & Complete Encounter (FHIR R4 Sync)</span>
+            <svg class="arrow-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </button>
+        </footer>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
