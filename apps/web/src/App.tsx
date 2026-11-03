@@ -79,7 +79,7 @@ export default function App() {
       <Route path="/qr-login" element={<QrLogin />} />
       <Route path="/capture" element={<MobileCapturePage />} />
       <Route path="/launch" element={<SmartLaunch />} />
-      <Route path="/" element={<ProtectedRoute><Today /></ProtectedRoute>} />
+      <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/today" element={<ProtectedRoute><Today /></ProtectedRoute>} />
       <Route path="/consult/:appointmentId" element={<ProtectedRoute><ConsultRoom /></ProtectedRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

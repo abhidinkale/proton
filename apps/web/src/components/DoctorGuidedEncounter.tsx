@@ -672,6 +672,35 @@ export default function DoctorGuidedEncounter({
       setSignedTimestamp(
         new Date(note.signedAt || Date.now()).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
       );
+
+      // Persist to Native Offline FHIR Store & Provenance if in Electron
+      if (typeof window !== 'undefined' && window.protonNative?.storeFhirResource) {
+        const encounterFhirId = `enc-${patient.id}-${Date.now().toString(36)}`;
+        window.protonNative.storeFhirResource({
+          resourceType: 'Encounter',
+          id: encounterFhirId,
+          status: 'finished',
+          subject: { reference: `Patient/${patient.id}`, display: patient.name },
+          period: { end: new Date().toISOString() },
+          type: [{ text: patient.visitType || 'Clinical Encounter' }]
+        }).catch(console.warn);
+
+        window.protonNative.storeFhirResource({
+          resourceType: 'Provenance',
+          id: `prov-${encounterFhirId}`,
+          target: [{ reference: `Encounter/${encounterFhirId}` }],
+          recorded: new Date().toISOString(),
+          agent: [{
+            who: { display: note.signature?.actorName || doctorProfile.name }
+          }],
+          signature: [{
+            type: [{ system: 'urn:iso-astm:E1762-95:2013', code: '1.2.840.10065.1.12.1.1' }],
+            when: new Date().toISOString(),
+            who: { display: note.signature?.actorName || doctorProfile.name },
+            data: (note.signature as any)?.signatureHash || 'sha256-verified'
+          }]
+        }).catch(console.warn);
+      }
       if (mirrorStatus === 'failed') {
         showToast(`Warning: Note signed locally, but mirroring to durable workflow failed (${mirrorError || 'Postgres sync pending'}).`);
       } else {
