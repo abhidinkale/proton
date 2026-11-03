@@ -19,8 +19,7 @@ enum class DorkAiMode(
 ) {
   SYNTHESIS("Clinical Synthesis", "Local patient health records", "Records Mode"),
   GUIDELINES("Clinical Guidelines", "ACC/AHA & ADA Evidence Base", "Guidelines Mode"),
-  DEEP_LAB("Deep Biomarkers", "Microscopic cellular & lab analysis", "Deep Lab Mode"),
-  OPTICAL_SCAN("Optical Scanner", "Prescription & document OCR", "OCR Scan Mode")
+  DEEP_LAB("Deep Biomarkers", "Microscopic cellular & lab analysis", "Deep Lab Mode")
 }
 
 data class DorkAiUiState(
@@ -114,6 +113,18 @@ class DorkAiViewModel(
     _input.value = ""
   }
 
+  fun selectBookingSlot(messageId: String, slotIso: String) {
+    viewModelScope.launch {
+      aiRepository.selectBookingSlot(messageId, slotIso)
+    }
+  }
+
+  fun confirmAiBooking(messageId: String) {
+    viewModelScope.launch {
+      aiRepository.confirmBooking(messageId)
+    }
+  }
+
   fun sendQuery(queryText: String? = null) {
     val rawText = queryText ?: _input.value.trim()
     if (rawText.isBlank() && _activeAttachment.value == null) return
@@ -128,7 +139,6 @@ class DorkAiViewModel(
       when (currentMode) {
         DorkAiMode.GUIDELINES -> if (!rawText.contains("guideline", ignoreCase = true)) append("[Clinical Guidelines] ")
         DorkAiMode.DEEP_LAB -> if (!rawText.contains("biomarker", ignoreCase = true) && !rawText.contains("deep", ignoreCase = true)) append("[Deep Biomarker Analysis] ")
-        DorkAiMode.OPTICAL_SCAN -> if (!rawText.contains("scan", ignoreCase = true) && !rawText.contains("ocr", ignoreCase = true)) append("[Optical Scan] ")
         DorkAiMode.SYNTHESIS -> { /* default */ }
       }
       append(if (rawText.isNotBlank()) rawText else "Analyze the attached medical record.")

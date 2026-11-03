@@ -186,7 +186,8 @@ class DefaultAppContainer(
       recordsProvider = { recordRepository.timelineRecords.value },
       labsProvider = { recordRepository.labResults.value },
       medicationPlansProvider = { medicationRepository.medicationPlans.value },
-      appointmentsProvider = { careRepository.appointments.value }
+      appointmentsProvider = { careRepository.appointments.value },
+      careRepositoryProvider = { careRepository }
     )
   }
 

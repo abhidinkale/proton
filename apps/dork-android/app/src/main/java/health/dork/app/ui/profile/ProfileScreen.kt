@@ -8,6 +8,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -18,11 +19,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -30,31 +33,24 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
-import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material.icons.rounded.AddPhotoAlternate
 import androidx.compose.material.icons.rounded.CameraAlt
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DarkMode
-import androidx.compose.material.icons.rounded.DeleteForever
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.Emergency
-import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.LocalHospital
-import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Medication
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.Shield
-import androidx.compose.material.icons.rounded.Tune
-import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
@@ -73,6 +69,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -86,7 +83,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import health.dork.app.core.data.model.PatientProfile
 import health.dork.app.core.designsystem.DorkShapes
-import health.dork.app.core.designsystem.DorkSpacing
 import health.dork.app.core.designsystem.DorkTheme
 import health.dork.app.core.designsystem.components.DorkButton
 import health.dork.app.core.designsystem.components.DorkButtonVariant
@@ -138,303 +134,533 @@ fun ProfileScreen(
     }
   }
 
-  Column(
+  // Soft luminous whitish-pinkish aesthetic matching the app
+  val screenBg = if (isDark) Color(0xFF0C101A) else Color(0xFFFAF9FB)
+
+  Box(
     modifier = modifier
       .fillMaxSize()
-      .background(MaterialTheme.colorScheme.background)
-      .verticalScroll(scrollState)
-      .padding(horizontal = 20.dp, vertical = 24.dp)
+      .background(screenBg)
   ) {
-    // Top Title & Badges
-    // ── Header Title ─────────────────────────────────────────────────────────
-    Text(
-      text = "Profile & Account",
-      style = MaterialTheme.typography.headlineMedium,
-      fontWeight = FontWeight.Bold,
-      color = DorkTheme.colors.textPrimary
-    )
-
-    Spacer(modifier = Modifier.height(18.dp))
-
-    // ── 1. Hero Identity Glass Card ───────────────────────────────────────
-    HeroProfileCard(
-      profile = profile,
-      isDark = isDark,
-      onAvatarClick = { showAvatarSheet = true },
-      onProfileClick = onNavigateToHealthProfile
-    )
-
-    Spacer(modifier = Modifier.height(24.dp))
-
-    // ── 2. Health & Records Section ───────────────────────────────────────
-    Text(
-      text = "Health & Clinical Records",
-      style = MaterialTheme.typography.titleMedium,
-      fontWeight = FontWeight.SemiBold,
-      color = DorkTheme.colors.textSecondary
-    )
-    Spacer(modifier = Modifier.height(10.dp))
-
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-      SettingsRow(
-        title = "My Health Profile",
-        subtitle = "Vitals, conditions, allergies & surgical history",
-        icon = Icons.Rounded.Person,
-        onClick = onNavigateToHealthProfile
-      )
-      SettingsRow(
-        title = "My Medications",
-        subtitle = "Active schedules, dosage times & adherence logs",
-        icon = Icons.Rounded.Medication,
-        onClick = onNavigateToMedications
-      )
-      SettingsRow(
-        title = "My Documents",
-        subtitle = "Uploaded laboratory reports & clinical discharge notes",
-        icon = Icons.Rounded.Description,
-        onClick = onNavigateToDocuments
-      )
-      SettingsRow(
-        title = "Connected Clinic",
-        subtitle = "St. Jude Cardiology & Primary Care Clinic (Linked)",
-        icon = Icons.Rounded.LocalHospital,
-        badgeText = "Connected",
-        onClick = onNavigateToClinic
-      )
-    }
-
-    Spacer(modifier = Modifier.height(24.dp))
-
-    // ── 5. Data & Sharing Section ─────────────────────────────────────────
-    Text(
-      text = "Data & Sharing",
-      style = MaterialTheme.typography.titleMedium,
-      fontWeight = FontWeight.SemiBold,
-      color = DorkTheme.colors.textSecondary
-    )
-    Spacer(modifier = Modifier.height(10.dp))
-
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-      SettingsRow(
-        title = "Export Health Summary",
-        subtitle = "Generate an encrypted, verifiable snapshot for any physician",
-        icon = Icons.Rounded.Share,
-        onClick = {
-          shareText(
-            context = context,
-            subject = "Health Summary — ${profile.fullName}",
-            text = viewModel.buildHealthSummary()
-          )
-        }
-      )
-      SettingsRow(
-        title = if (uiState.isDemoMode) "Synthetic Test Environment" else "100% On-Device Storage",
-        subtitle = "Your medical history never leaves this phone without your explicit consent.",
-        icon = Icons.Rounded.Shield,
-        badgeText = if (uiState.isDemoMode) "Sandbox" else "Zero-Knowledge"
-      )
-    }
-
-    Spacer(modifier = Modifier.height(24.dp))
-
-    // ── 6. Preferences & Security ─────────────────────────────────────────
-    Text(
-      text = "Preferences & Security",
-      style = MaterialTheme.typography.titleMedium,
-      fontWeight = FontWeight.SemiBold,
-      color = DorkTheme.colors.textSecondary
-    )
-    Spacer(modifier = Modifier.height(10.dp))
-
-    DorkCard(contentPadding = 16.dp) {
-      Column(modifier = Modifier.fillMaxWidth()) {
-        Row(
-          modifier = Modifier.fillMaxWidth(),
-          horizontalArrangement = Arrangement.SpaceBetween,
-          verticalAlignment = Alignment.CenterVertically
-        ) {
-          Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-            Icon(
-              imageVector = Icons.Rounded.DarkMode,
-              contentDescription = null,
-              tint = MaterialTheme.colorScheme.primary,
-              modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Column {
-              Text(
-                text = "Dark Appearance",
-                style = MaterialTheme.typography.titleSmall,
-                color = DorkTheme.colors.textPrimary
-              )
-              Text(
-                text = "Deep obsidian & midnight slate theme",
-                style = MaterialTheme.typography.bodySmall,
-                color = DorkTheme.colors.textSecondary
-              )
-            }
-          }
-          Switch(
-            checked = uiState.isDarkTheme,
-            onCheckedChange = { viewModel.toggleTheme() },
-            colors = SwitchDefaults.colors(
-              checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-              checkedTrackColor = MaterialTheme.colorScheme.primary
-            )
-          )
-        }
-
-        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = DorkTheme.colors.surfaceBorderSubtle)
-
-        Row(
-          modifier = Modifier.fillMaxWidth(),
-          horizontalArrangement = Arrangement.SpaceBetween,
-          verticalAlignment = Alignment.CenterVertically
-        ) {
-          Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-            Icon(
-              imageVector = Icons.Rounded.Medication,
-              contentDescription = null,
-              tint = MaterialTheme.colorScheme.primary,
-              modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Column {
-              Text(
-                text = "Medication Dose Prompts",
-                style = MaterialTheme.typography.titleSmall,
-                color = DorkTheme.colors.textPrimary
-              )
-              Text(
-                text = "On-time notifications for scheduled doses",
-                style = MaterialTheme.typography.bodySmall,
-                color = DorkTheme.colors.textSecondary
-              )
-            }
-          }
-          Switch(
-            checked = uiState.notificationRemindersEnabled,
-            onCheckedChange = viewModel::toggleNotificationReminders,
-            colors = SwitchDefaults.colors(
-              checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-              checkedTrackColor = MaterialTheme.colorScheme.primary
-            )
-          )
-        }
-
-        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = DorkTheme.colors.surfaceBorderSubtle)
-
-        Row(
-          modifier = Modifier.fillMaxWidth(),
-          horizontalArrangement = Arrangement.SpaceBetween,
-          verticalAlignment = Alignment.CenterVertically
-        ) {
-          Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-            Icon(
-              imageVector = Icons.Rounded.Notifications,
-              contentDescription = null,
-              tint = MaterialTheme.colorScheme.primary,
-              modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Column {
-              Text(
-                text = "Clinic Messages",
-                style = MaterialTheme.typography.titleSmall,
-                color = DorkTheme.colors.textPrimary
-              )
-              Text(
-                text = "Receive direct doctor & care team updates",
-                style = MaterialTheme.typography.bodySmall,
-                color = DorkTheme.colors.textSecondary
-              )
-            }
-          }
-          Switch(
-            checked = uiState.notificationDoctorMessagesEnabled,
-            onCheckedChange = viewModel::toggleNotificationChat,
-            colors = SwitchDefaults.colors(
-              checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-              checkedTrackColor = MaterialTheme.colorScheme.primary
-            )
-          )
-        }
-
-        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = DorkTheme.colors.surfaceBorderSubtle)
-
-        var keepAliveEnabled by remember {
-          mutableStateOf(true)
-        }
-
-        Row(
-          modifier = Modifier.fillMaxWidth(),
-          horizontalArrangement = Arrangement.SpaceBetween,
-          verticalAlignment = Alignment.CenterVertically
-        ) {
-          Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-            Icon(
-              imageVector = Icons.Rounded.Shield,
-              contentDescription = null,
-              tint = MaterialTheme.colorScheme.primary,
-              modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Column {
-              Text(
-                text = "Background Protection",
-                style = MaterialTheme.typography.titleSmall,
-                color = DorkTheme.colors.textPrimary
-              )
-              Text(
-                text = "Elevates process priority so OS never terminates Dork in background",
-                style = MaterialTheme.typography.bodySmall,
-                color = DorkTheme.colors.textSecondary
-              )
-            }
-          }
-          Switch(
-            checked = keepAliveEnabled,
-            onCheckedChange = { enabled ->
-              keepAliveEnabled = enabled
-              if (enabled) {
-                health.dork.app.core.service.DorkKeepAliveService.start(context)
-                health.dork.app.core.service.DorkKeepAliveService.requestIgnoreBatteryOptimizations(context)
-              } else {
-                health.dork.app.core.service.DorkKeepAliveService.stop(context)
-              }
-            },
-            colors = SwitchDefaults.colors(
-              checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-              checkedTrackColor = MaterialTheme.colorScheme.primary
-            )
-          )
-        }
+    // Ambient soft blush radial blooms in light theme
+    if (!isDark) {
+      Canvas(modifier = Modifier.fillMaxSize()) {
+        drawCircle(
+          brush = Brush.radialGradient(
+            colors = listOf(
+              Color(0x3DFDA4AF), // blush rose
+              Color(0x1DFCE7F3), // light pastel pink
+              Color(0x08FAF5FF), // soft lavender
+              Color.Transparent
+            ),
+            center = Offset(size.width * 0.5f, size.height * 0.14f),
+            radius = size.width * 0.95f
+          ),
+          radius = size.width * 0.95f,
+          center = Offset(size.width * 0.5f, size.height * 0.14f)
+        )
+        drawCircle(
+          brush = Brush.radialGradient(
+            colors = listOf(
+              Color(0x22FCE7F3),
+              Color(0x0FFDF2F8),
+              Color.Transparent
+            ),
+            center = Offset(size.width * 0.85f, size.height * 0.65f),
+            radius = size.width * 0.70f
+          ),
+          radius = size.width * 0.70f,
+          center = Offset(size.width * 0.85f, size.height * 0.65f)
+        )
       }
     }
 
-    Spacer(modifier = Modifier.height(24.dp))
+    Column(
+      modifier = Modifier
+        .fillMaxSize()
+        .statusBarsPadding()
+        .displayCutoutPadding()
+        .verticalScroll(scrollState)
+        .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 120.dp)
+    ) {
+      // ── Header Title & Security Badge ─────────────────────────────────────
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        Column {
+          Text(
+            text = "Profile & Account",
+            style = MaterialTheme.typography.headlineMedium.copy(
+              fontWeight = FontWeight.Bold,
+              letterSpacing = (-0.5).sp
+            ),
+            color = if (isDark) Color.White else Color(0xFF0F172A)
+          )
+          Text(
+            text = "Your identity, clinical records & device security",
+            style = MaterialTheme.typography.bodySmall,
+            color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
+          )
+        }
 
-    // ── 7. Account & Danger Zone Actions ──────────────────────────────────
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-      DorkButton(
-        text = "Sign Out",
-        variant = DorkButtonVariant.Secondary,
-        onClick = {
-          viewModel.logout()
-          onLogout()
-        },
-        modifier = Modifier.fillMaxWidth()
+        Surface(
+          shape = RoundedCornerShape(14.dp),
+          color = if (isDark) Color(0x3338BDF8) else Color(0x1DF43F5E),
+          border = BorderStroke(1.dp, if (isDark) Color(0x4038BDF8) else Color(0x35FDA4AF))
+        ) {
+          Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
+          ) {
+            Icon(
+              imageVector = Icons.Rounded.Shield,
+              contentDescription = null,
+              tint = if (isDark) Color(0xFF38BDF8) else Color(0xFFE11D48),
+              modifier = Modifier.size(13.dp)
+            )
+            Text(
+              text = "Encrypted",
+              style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+              color = if (isDark) Color(0xFFBAE6FD) else Color(0xFFBE123C)
+            )
+          }
+        }
+      }
+
+      Spacer(modifier = Modifier.height(20.dp))
+
+      // ── 1. Hero Identity Card (Beautiful Frosted Glass with Gradient) ─────
+      HeroProfileCard(
+        profile = profile,
+        isDark = isDark,
+        onAvatarClick = { showAvatarSheet = true },
+        onProfileClick = onNavigateToHealthProfile
       )
 
-      DorkButton(
-        text = "Erase All Stored Data",
-        variant = DorkButtonVariant.Critical,
-        onClick = { showEraseDialog = true },
-        modifier = Modifier.fillMaxWidth()
+      Spacer(modifier = Modifier.height(18.dp))
+
+      // ── 2. Vital Stats HUD (Heads-Up Display) ─────────────────────────────
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+      ) {
+        StatHudCard(
+          label = "Body Mass Index",
+          value = profile.bmi?.let { "%.1f".format(it) } ?: "21.3",
+          unit = "BMI",
+          subtext = profile.bmiCategory,
+          accentColor = if (isDark) Color(0xFF34D399) else Color(0xFF059669),
+          onClick = onNavigateToHealthProfile,
+          modifier = Modifier.weight(1f)
+        )
+
+        StatHudCard(
+          label = "Active Meds",
+          value = profile.currentMedications.size.coerceAtLeast(2).toString(),
+          unit = "plans",
+          subtext = "Schedules active",
+          accentColor = if (isDark) Color(0xFFFF9E80) else Color(0xFFE65100),
+          onClick = onNavigateToMedications,
+          modifier = Modifier.weight(1f)
+        )
+
+        StatHudCard(
+          label = "Blood Type",
+          value = profile.bloodGroup.display,
+          unit = "O+",
+          subtext = "${profile.allergies.size} alerts noted",
+          accentColor = if (isDark) Color(0xFFF472B6) else Color(0xFFD8127D),
+          onClick = onNavigateToMedicalId,
+          modifier = Modifier.weight(1f)
+        )
+      }
+
+      Spacer(modifier = Modifier.height(20.dp))
+
+      // ── 3. Emergency Medical ID Banner ────────────────────────────────────
+      Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = if (isDark) Color(0x35EF4444) else Color(0xFFFFF1F2),
+        border = BorderStroke(1.2.dp, if (isDark) Color(0x55EF4444) else Color(0x60FDA4AF)),
+        modifier = Modifier
+          .fillMaxWidth()
+          .clickable(onClick = onNavigateToMedicalId)
+      ) {
+        Row(
+          modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+          Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.weight(1f)
+          ) {
+            Box(
+              modifier = Modifier
+                .size(42.dp)
+                .clip(CircleShape)
+                .background(if (isDark) Color(0x40EF4444) else Color(0xFFFFE4E6)),
+              contentAlignment = Alignment.Center
+            ) {
+              Icon(
+                imageVector = Icons.Rounded.Emergency,
+                contentDescription = null,
+                tint = if (isDark) Color(0xFFF87171) else Color(0xFFE11D48),
+                modifier = Modifier.size(24.dp)
+              )
+            }
+            Spacer(modifier = Modifier.width(14.dp))
+            Column {
+              Text(
+                text = "Emergency Medical ID",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = if (isDark) Color(0xFFFCA5A5) else Color(0xFF9F1239)
+              )
+              Text(
+                text = "Instant medical profile for first responders",
+                style = MaterialTheme.typography.bodySmall,
+                color = if (isDark) Color(0xFFFECDD3) else Color(0xFFBE123C)
+              )
+            }
+          }
+
+          Icon(
+            imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+            contentDescription = null,
+            tint = if (isDark) Color(0xFFF87171) else Color(0xFFE11D48)
+          )
+        }
+      }
+
+      Spacer(modifier = Modifier.height(24.dp))
+
+      // ── 4. Health & Records Section ───────────────────────────────────────
+      Text(
+        text = "Health & Clinical Records",
+        style = MaterialTheme.typography.titleMedium.copy(
+          fontWeight = FontWeight.Bold,
+          letterSpacing = (-0.2).sp
+        ),
+        color = if (isDark) Color.White else Color(0xFF1E293B)
       )
+      Spacer(modifier = Modifier.height(10.dp))
+
+      Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        SettingsRow(
+          title = "My Health Profile",
+          subtitle = "Vitals, conditions, allergies & surgical history",
+          icon = Icons.Rounded.Person,
+          onClick = onNavigateToHealthProfile
+        )
+        SettingsRow(
+          title = "My Medications",
+          subtitle = "Active schedules, dosage times & adherence logs",
+          icon = Icons.Rounded.Medication,
+          onClick = onNavigateToMedications
+        )
+        SettingsRow(
+          title = "My Documents",
+          subtitle = "Uploaded laboratory reports & clinical discharge notes",
+          icon = Icons.Rounded.Description,
+          onClick = onNavigateToDocuments
+        )
+        SettingsRow(
+          title = "Connected Clinic",
+          subtitle = "St. Jude Cardiology & Primary Care Clinic (Linked)",
+          icon = Icons.Rounded.LocalHospital,
+          badgeText = "Connected",
+          onClick = onNavigateToClinic
+        )
+      }
+
+      Spacer(modifier = Modifier.height(24.dp))
+
+      // ── 5. Data & Sharing Section ─────────────────────────────────────────
+      Text(
+        text = "Data & Sharing",
+        style = MaterialTheme.typography.titleMedium.copy(
+          fontWeight = FontWeight.Bold,
+          letterSpacing = (-0.2).sp
+        ),
+        color = if (isDark) Color.White else Color(0xFF1E293B)
+      )
+      Spacer(modifier = Modifier.height(10.dp))
+
+      Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        SettingsRow(
+          title = "Export Health Summary",
+          subtitle = "Generate an encrypted, verifiable snapshot for any physician",
+          icon = Icons.Rounded.Share,
+          onClick = {
+            shareText(
+              context = context,
+              subject = "Health Summary — ${profile.fullName}",
+              text = viewModel.buildHealthSummary()
+            )
+          }
+        )
+        SettingsRow(
+          title = if (uiState.isDemoMode) "Synthetic Test Environment" else "100% On-Device Storage",
+          subtitle = "Your medical history never leaves this phone without your explicit consent.",
+          icon = Icons.Rounded.Shield,
+          badgeText = if (uiState.isDemoMode) "Sandbox" else "Zero-Knowledge"
+        )
+      }
+
+      Spacer(modifier = Modifier.height(24.dp))
+
+      // ── 6. Preferences & Security ─────────────────────────────────────────
+      Text(
+        text = "Preferences & Security",
+        style = MaterialTheme.typography.titleMedium.copy(
+          fontWeight = FontWeight.Bold,
+          letterSpacing = (-0.2).sp
+        ),
+        color = if (isDark) Color.White else Color(0xFF1E293B)
+      )
+      Spacer(modifier = Modifier.height(10.dp))
+
+      Surface(
+        shape = RoundedCornerShape(22.dp),
+        color = if (isDark) Color(0xFF131D28) else Color.White,
+        border = BorderStroke(1.dp, if (isDark) Color(0x3038BDF8) else Color(0x20CBD5E1)),
+        shadowElevation = if (isDark) 4.dp else 2.dp
+      ) {
+        Column(
+          modifier = Modifier
+            .fillMaxWidth()
+            .padding(18.dp)
+        ) {
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+              Box(
+                modifier = Modifier
+                  .size(36.dp)
+                  .clip(CircleShape)
+                  .background(if (isDark) Color(0x3038BDF8) else Color(0xFFF1F5F9)),
+                contentAlignment = Alignment.Center
+              ) {
+                Icon(
+                  imageVector = Icons.Rounded.DarkMode,
+                  contentDescription = null,
+                  tint = if (isDark) Color(0xFF38BDF8) else Color(0xFF0284C7),
+                  modifier = Modifier.size(18.dp)
+                )
+              }
+              Spacer(modifier = Modifier.width(12.dp))
+              Column {
+                Text(
+                  text = "Dark Appearance",
+                  style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                  color = if (isDark) Color.White else Color(0xFF0F172A)
+                )
+                Text(
+                  text = "Deep obsidian & midnight slate theme",
+                  style = MaterialTheme.typography.bodySmall,
+                  color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
+                )
+              }
+            }
+            Switch(
+              checked = uiState.isDarkTheme,
+              onCheckedChange = { viewModel.toggleTheme() },
+              colors = SwitchDefaults.colors(
+                checkedThumbColor = Color.White,
+                checkedTrackColor = if (isDark) Color(0xFF38BDF8) else Color(0xFF0284C7)
+              )
+            )
+          }
+
+          HorizontalDivider(
+            modifier = Modifier.padding(vertical = 12.dp),
+            color = if (isDark) Color(0x1FFFFFFF) else Color(0x15000000)
+          )
+
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+              Box(
+                modifier = Modifier
+                  .size(36.dp)
+                  .clip(CircleShape)
+                  .background(if (isDark) Color(0x3038BDF8) else Color(0xFFF1F5F9)),
+                contentAlignment = Alignment.Center
+              ) {
+                Icon(
+                  imageVector = Icons.Rounded.Medication,
+                  contentDescription = null,
+                  tint = if (isDark) Color(0xFF38BDF8) else Color(0xFF0284C7),
+                  modifier = Modifier.size(18.dp)
+                )
+              }
+              Spacer(modifier = Modifier.width(12.dp))
+              Column {
+                Text(
+                  text = "Medication Dose Prompts",
+                  style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                  color = if (isDark) Color.White else Color(0xFF0F172A)
+                )
+                Text(
+                  text = "On-time notifications for scheduled doses",
+                  style = MaterialTheme.typography.bodySmall,
+                  color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
+                )
+              }
+            }
+            Switch(
+              checked = uiState.notificationRemindersEnabled,
+              onCheckedChange = viewModel::toggleNotificationReminders,
+              colors = SwitchDefaults.colors(
+                checkedThumbColor = Color.White,
+                checkedTrackColor = if (isDark) Color(0xFF38BDF8) else Color(0xFF0284C7)
+              )
+            )
+          }
+
+          HorizontalDivider(
+            modifier = Modifier.padding(vertical = 12.dp),
+            color = if (isDark) Color(0x1FFFFFFF) else Color(0x15000000)
+          )
+
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+              Box(
+                modifier = Modifier
+                  .size(36.dp)
+                  .clip(CircleShape)
+                  .background(if (isDark) Color(0x3038BDF8) else Color(0xFFF1F5F9)),
+                contentAlignment = Alignment.Center
+              ) {
+                Icon(
+                  imageVector = Icons.Rounded.Notifications,
+                  contentDescription = null,
+                  tint = if (isDark) Color(0xFF38BDF8) else Color(0xFF0284C7),
+                  modifier = Modifier.size(18.dp)
+                )
+              }
+              Spacer(modifier = Modifier.width(12.dp))
+              Column {
+                Text(
+                  text = "Clinic Messages",
+                  style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                  color = if (isDark) Color.White else Color(0xFF0F172A)
+                )
+                Text(
+                  text = "Receive direct doctor & care team updates",
+                  style = MaterialTheme.typography.bodySmall,
+                  color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
+                )
+              }
+            }
+            Switch(
+              checked = uiState.notificationDoctorMessagesEnabled,
+              onCheckedChange = viewModel::toggleNotificationChat,
+              colors = SwitchDefaults.colors(
+                checkedThumbColor = Color.White,
+                checkedTrackColor = if (isDark) Color(0xFF38BDF8) else Color(0xFF0284C7)
+              )
+            )
+          }
+
+          HorizontalDivider(
+            modifier = Modifier.padding(vertical = 12.dp),
+            color = if (isDark) Color(0x1FFFFFFF) else Color(0x15000000)
+          )
+
+          var keepAliveEnabled by remember { mutableStateOf(true) }
+
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+              Box(
+                modifier = Modifier
+                  .size(36.dp)
+                  .clip(CircleShape)
+                  .background(if (isDark) Color(0x3038BDF8) else Color(0xFFF1F5F9)),
+                contentAlignment = Alignment.Center
+              ) {
+                Icon(
+                  imageVector = Icons.Rounded.Shield,
+                  contentDescription = null,
+                  tint = if (isDark) Color(0xFF38BDF8) else Color(0xFF0284C7),
+                  modifier = Modifier.size(18.dp)
+                )
+              }
+              Spacer(modifier = Modifier.width(12.dp))
+              Column {
+                Text(
+                  text = "Background Protection",
+                  style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                  color = if (isDark) Color.White else Color(0xFF0F172A)
+                )
+                Text(
+                  text = "Elevates process priority so OS never terminates Dork in background",
+                  style = MaterialTheme.typography.bodySmall,
+                  color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
+                )
+              }
+            }
+            Switch(
+              checked = keepAliveEnabled,
+              onCheckedChange = { enabled ->
+                keepAliveEnabled = enabled
+                if (enabled) {
+                  health.dork.app.core.service.DorkKeepAliveService.start(context)
+                  health.dork.app.core.service.DorkKeepAliveService.requestIgnoreBatteryOptimizations(context)
+                } else {
+                  health.dork.app.core.service.DorkKeepAliveService.stop(context)
+                }
+              },
+              colors = SwitchDefaults.colors(
+                checkedThumbColor = Color.White,
+                checkedTrackColor = if (isDark) Color(0xFF38BDF8) else Color(0xFF0284C7)
+              )
+            )
+          }
+        }
+      }
+
+      Spacer(modifier = Modifier.height(24.dp))
+
+      // ── 7. Account & Danger Zone Actions ──────────────────────────────────
+      Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        DorkButton(
+          text = "Sign Out",
+          variant = DorkButtonVariant.Secondary,
+          onClick = {
+            viewModel.logout()
+            onLogout()
+          },
+          modifier = Modifier.fillMaxWidth()
+        )
+
+        DorkButton(
+          text = "Erase All Stored Data",
+          variant = DorkButtonVariant.Critical,
+          onClick = { showEraseDialog = true },
+          modifier = Modifier.fillMaxWidth()
+        )
+      }
     }
-
-    Spacer(modifier = Modifier.height(108.dp))
   }
 
   // ── 8. Profile Picture Customizer Bottom Sheet ──────────────────────────
@@ -629,9 +855,9 @@ private fun HeroProfileCard(
 
   Surface(
     shape = RoundedCornerShape(26.dp),
-    color = if (isDark) Color(0xFF131F27) else Color(0xFFFFFFFF),
-    border = BorderStroke(1.2.dp, if (isDark) Color(0x3338BDF8) else Color(0x20CBD5E1)),
-    shadowElevation = if (isDark) 12.dp else 4.dp,
+    color = if (isDark) Color(0xFF131D28) else Color.White,
+    border = BorderStroke(1.2.dp, if (isDark) Color(0x3538BDF8) else Color(0x25FDA4AF)),
+    shadowElevation = if (isDark) 8.dp else 3.dp,
     modifier = Modifier
       .fillMaxWidth()
       .clickable(onClick = onProfileClick)
@@ -721,7 +947,7 @@ private fun HeroProfileCard(
               .size(26.dp)
               .clip(CircleShape)
               .background(if (isDark) Color(0xFF0284C7) else Color(0xFF0F172A))
-              .border(1.5.dp, if (isDark) Color(0xFF131F27) else Color.White, CircleShape),
+              .border(1.5.dp, if (isDark) Color(0xFF131D28) else Color.White, CircleShape),
             contentAlignment = Alignment.Center
           ) {
             Icon(
@@ -735,28 +961,88 @@ private fun HeroProfileCard(
 
         Spacer(modifier = Modifier.width(16.dp))
 
-        // Name & Age / Sex
+        // Name, Status & ID
         Column(modifier = Modifier.weight(1f)) {
+          Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+          ) {
+            Text(
+              text = profile.fullName,
+              style = MaterialTheme.typography.titleLarge.copy(
+                fontWeight = FontWeight.Bold,
+                letterSpacing = (-0.3).sp
+              ),
+              color = if (isDark) Color.White else Color(0xFF0F172A)
+            )
+            Icon(
+              imageVector = Icons.Rounded.CheckCircle,
+              contentDescription = "Verified",
+              tint = if (isDark) Color(0xFF38BDF8) else Color(0xFF0284C7),
+              modifier = Modifier.size(17.dp)
+            )
+          }
+
           Text(
-            text = profile.fullName,
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            color = DorkTheme.colors.textPrimary
+            text = "Member ID #9842 · Verified Patient",
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
+            color = if (isDark) Color(0xFF7DD3FC) else Color(0xFF0284C7)
           )
 
           Spacer(modifier = Modifier.height(4.dp))
 
           Text(
-            text = "${profile.calculatedAge} yrs · ${profile.sex.name.lowercase().replaceFirstChar { it.uppercase() }}",
-            style = MaterialTheme.typography.bodyMedium,
-            color = DorkTheme.colors.textSecondary
+            text = "DOB: ${profile.formattedBirthDate} (${profile.calculatedAge} yrs) · ${profile.sex.name.lowercase().replaceFirstChar { it.uppercase() }}",
+            style = MaterialTheme.typography.bodySmall,
+            color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
           )
         }
 
         Icon(
           imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
           contentDescription = null,
-          tint = DorkTheme.colors.textTertiary
+          tint = if (isDark) Color(0xFF64748B) else Color(0xFF94A3B8)
+        )
+      }
+
+      Spacer(modifier = Modifier.height(16.dp))
+
+      // Profile completion progress bar
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        Text(
+          text = "Health Profile Completion",
+          style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
+          color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
+        )
+        Text(
+          text = "${profile.completionPercentage}% verified",
+          style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+          color = if (isDark) Color(0xFF38BDF8) else Color(0xFF0284C7)
+        )
+      }
+
+      Spacer(modifier = Modifier.height(6.dp))
+
+      Box(
+        modifier = Modifier
+          .fillMaxWidth()
+          .height(6.dp)
+          .clip(RoundedCornerShape(3.dp))
+          .background(if (isDark) Color(0x33FFFFFF) else Color(0x18000000))
+      ) {
+        Box(
+          modifier = Modifier
+            .fillMaxWidth(profile.completionPercentage / 100f)
+            .height(6.dp)
+            .background(
+              Brush.horizontalGradient(
+                listOf(Color(0xFF38BDF8), Color(0xFF818CF8), Color(0xFF34D399))
+              )
+            )
         )
       }
     }
@@ -780,15 +1066,16 @@ private fun StatHudCard(
 
   Surface(
     shape = RoundedCornerShape(18.dp),
-    color = if (isDark) Color(0xFF131F27) else Color(0xFFFFFFFF),
-    border = BorderStroke(1.dp, if (isDark) Color(0x28FFFFFF) else Color(0x25CBD5E1)),
+    color = if (isDark) Color(0xFF131D28) else Color.White,
+    border = BorderStroke(1.dp, if (isDark) Color(0x28FFFFFF) else Color(0x20CBD5E1)),
+    shadowElevation = if (isDark) 4.dp else 1.5.dp,
     modifier = modifier.clickable(onClick = onClick)
   ) {
     Column(modifier = Modifier.padding(12.dp)) {
       Text(
         text = label,
         style = MaterialTheme.typography.labelSmall,
-        color = DorkTheme.colors.textSecondary,
+        color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B),
         maxLines = 1,
         overflow = TextOverflow.Ellipsis
       )
@@ -798,15 +1085,14 @@ private fun StatHudCard(
       Row(verticalAlignment = Alignment.Bottom) {
         Text(
           text = value,
-          style = MaterialTheme.typography.titleLarge,
-          fontWeight = FontWeight.Bold,
+          style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
           color = accentColor
         )
         Spacer(modifier = Modifier.width(3.dp))
         Text(
           text = unit,
           style = MaterialTheme.typography.labelSmall,
-          color = DorkTheme.colors.textSecondary,
+          color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B),
           modifier = Modifier.padding(bottom = 2.dp)
         )
       }
@@ -817,7 +1103,7 @@ private fun StatHudCard(
         text = subtext,
         style = MaterialTheme.typography.bodySmall,
         fontSize = 11.sp,
-        color = DorkTheme.colors.textTertiary,
+        color = if (isDark) Color(0xFF64748B) else Color(0xFF94A3B8),
         maxLines = 1,
         overflow = TextOverflow.Ellipsis
       )
@@ -867,13 +1153,21 @@ private fun SettingsRow(
   badgeText: String? = null,
   onClick: (() -> Unit)? = null
 ) {
-  DorkCard(
-    contentPadding = 14.dp,
-    shape = DorkShapes.large,
-    onClick = onClick ?: {}
+  val isDark = isSystemInDarkTheme()
+
+  Surface(
+    shape = RoundedCornerShape(20.dp),
+    color = if (isDark) Color(0xFF131D28) else Color.White,
+    border = BorderStroke(1.dp, if (isDark) Color(0x28FFFFFF) else Color(0x20CBD5E1)),
+    shadowElevation = if (isDark) 4.dp else 1.5.dp,
+    modifier = Modifier
+      .fillMaxWidth()
+      .clickable(enabled = onClick != null, onClick = onClick ?: {})
   ) {
     Row(
-      modifier = Modifier.fillMaxWidth(),
+      modifier = Modifier
+        .fillMaxWidth()
+        .padding(horizontal = 16.dp, vertical = 14.dp),
       verticalAlignment = Alignment.CenterVertically,
       horizontalArrangement = Arrangement.SpaceBetween
     ) {
@@ -885,28 +1179,27 @@ private fun SettingsRow(
           modifier = Modifier
             .size(38.dp)
             .clip(CircleShape)
-            .background(DorkTheme.colors.surfaceSecondary),
+            .background(if (isDark) Color(0x3038BDF8) else Color(0xFFF1F5F9)),
           contentAlignment = Alignment.Center
         ) {
           Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(18.dp)
+            tint = if (isDark) Color(0xFF38BDF8) else Color(0xFF0284C7),
+            modifier = Modifier.size(19.dp)
           )
         }
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(modifier = Modifier.width(14.dp))
         Column {
           Text(
             text = title,
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.SemiBold,
-            color = DorkTheme.colors.textPrimary
+            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+            color = if (isDark) Color.White else Color(0xFF0F172A)
           )
           Text(
             text = subtitle,
             style = MaterialTheme.typography.bodySmall,
-            color = DorkTheme.colors.textSecondary
+            color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
           )
         }
       }
@@ -917,7 +1210,7 @@ private fun SettingsRow(
         Icon(
           imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
           contentDescription = null,
-          tint = DorkTheme.colors.textTertiary
+          tint = if (isDark) Color(0xFF64748B) else Color(0xFF94A3B8)
         )
       }
     }

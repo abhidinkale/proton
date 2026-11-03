@@ -62,6 +62,19 @@ class MainActivity : ComponentActivity() {
       navigationBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
     )
 
+    // Unlock maximum panel refresh rate (90Hz / 120Hz / 144Hz) for ultra-smooth scrolling
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+      runCatching {
+        val modes = display?.supportedModes
+        val maxMode = modes?.maxByOrNull { it.refreshRate }
+        if (maxMode != null) {
+          window.attributes = window.attributes.apply {
+            preferredDisplayModeId = maxMode.modeId
+          }
+        }
+      }
+    }
+
     setContent {
       val darkTheme by container.settingsRepository.darkTheme.collectAsState()
 

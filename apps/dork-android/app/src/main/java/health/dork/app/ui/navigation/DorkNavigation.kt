@@ -171,7 +171,12 @@ fun DorkAppNavigation(container: AppContainer) {
     )
   }
   val recordsViewModel = remember { RecordsViewModel(container.recordRepository, container.medicationRepository) }
-  val casesViewModel = remember { CasesViewModel(container.caseRepository) }
+  val casesViewModel = remember {
+    CasesViewModel(
+      caseRepository = container.caseRepository,
+      recordRepository = container.recordRepository
+    )
+  }
   val medicationsViewModel = remember { MedicationsViewModel(container.medicationRepository) }
   val chatViewModel = remember { ChatViewModel(container.chatRepository) }
   val aiViewModel = remember { DorkAiViewModel(container.aiRepository) }
@@ -475,42 +480,8 @@ private fun AuthenticatedMainShell(
           AnimatedContent(
             targetState = currentTab,
             transitionSpec = {
-              val forward = targetState.ordinal > initialState.ordinal
-              if (forward) {
-                (slideInHorizontally(
-                  animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioNoBouncy,
-                    stiffness = Spring.StiffnessMediumLow
-                  )
-                ) { width -> width / 4 } +
-                 fadeIn(animationSpec = tween(220, easing = FastOutSlowInEasing))
-                ) togetherWith (
-                 slideOutHorizontally(
-                   animationSpec = spring(
-                     dampingRatio = Spring.DampingRatioNoBouncy,
-                     stiffness = Spring.StiffnessMediumLow
-                   )
-                 ) { width -> -width / 4 } +
-                 fadeOut(animationSpec = tween(180, easing = FastOutLinearInEasing))
-                )
-              } else {
-                (slideInHorizontally(
-                  animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioNoBouncy,
-                    stiffness = Spring.StiffnessMediumLow
-                  )
-                ) { width -> -width / 4 } +
-                 fadeIn(animationSpec = tween(220, easing = FastOutSlowInEasing))
-                ) togetherWith (
-                 slideOutHorizontally(
-                   animationSpec = spring(
-                     dampingRatio = Spring.DampingRatioNoBouncy,
-                     stiffness = Spring.StiffnessMediumLow
-                   )
-                 ) { width -> width / 4 } +
-                 fadeOut(animationSpec = tween(180, easing = FastOutLinearInEasing))
-                )
-              }
+              fadeIn(animationSpec = tween(140, easing = FastOutSlowInEasing)) togetherWith
+              fadeOut(animationSpec = tween(90, easing = FastOutLinearInEasing))
             },
             label = "tab_crossfade"
           ) { tab ->

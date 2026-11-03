@@ -103,6 +103,9 @@ class RecordsViewModel(
     bytes: ByteArray? = null,
     mimeType: String = "application/pdf",
     fileName: String = "document.pdf",
+    isOcrProcessed: Boolean = false,
+    extractedText: String? = null,
+    structuredEntities: List<String> = emptyList(),
     onComplete: (Result<HealthDocument>) -> Unit = {}
   ) {
     viewModelScope.launch {
@@ -114,7 +117,10 @@ class RecordsViewModel(
         fileSizeText = fileSizeText,
         bytes = bytes,
         mimeType = mimeType,
-        fileName = fileName
+        fileName = fileName,
+        isOcrProcessed = isOcrProcessed,
+        extractedText = extractedText,
+        structuredEntities = structuredEntities
       )
       _uiState.value = _uiState.value.copy(
         isUploading = false,

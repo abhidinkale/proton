@@ -423,7 +423,7 @@ private fun StoredDocumentView(
   }
 }
 
-private fun readFileMetadata(context: android.content.Context, uri: Uri): Pair<String, String> {
+internal fun readFileMetadata(context: android.content.Context, uri: Uri): Pair<String, String> {
   var name = uri.lastPathSegment?.substringAfterLast('/') ?: "Medical document"
   var sizeBytes: Long? = null
 

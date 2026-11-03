@@ -40,6 +40,7 @@ import health.dork.app.core.designsystem.components.DorkButtonVariant
 import health.dork.app.core.designsystem.components.DorkChip
 import health.dork.app.core.designsystem.components.DorkStatusType
 import health.dork.app.core.designsystem.components.DorkTimelineItem
+import health.dork.app.core.designsystem.components.UploadHealthRecordsTile
 
 @Composable
 fun RecordsScreen(
@@ -120,6 +121,17 @@ fun RecordsScreen(
         .verticalScroll(scrollState)
         .padding(vertical = DorkSpacing.m)
     ) {
+      UploadHealthRecordsTile(
+        existingFilesCount = uiState.documents.size,
+        onAddFileClick = onUploadClick,
+        onViewRecordsClick = onUploadClick,
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(horizontal = DorkSpacing.screenHorizontalPadding)
+      )
+
+      Spacer(modifier = Modifier.height(DorkSpacing.m))
+
       val records = uiState.filteredTimeline
       records.forEachIndexed { index, record ->
         val icon = getIconForRecordType(record.type)

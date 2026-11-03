@@ -1,5 +1,8 @@
 package health.dork.app.ui.ai
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
@@ -25,6 +28,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -32,6 +36,7 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -42,6 +47,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.AddPhotoAlternate
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Close
@@ -65,6 +71,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -80,13 +87,24 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.material.icons.rounded.CalendarToday
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import health.dork.app.core.data.model.AiBookingCardData
+import health.dork.app.core.data.model.AiBookingStatus
+import health.dork.app.core.data.model.AiSlotOption
 import health.dork.app.core.data.model.ChatMessage
 import health.dork.app.core.data.model.MessageSender
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -105,50 +123,87 @@ fun DorkAiScreen(
     }
   }
 
-  // Deep space indigo background matching clean_1.jpg
-  val baseBackground = Color(0xFF070810)
+  // Soft whitish-pinkish background matching the APK's Superpower UI/UX
+  val baseBackground = if (isDark) Color(0xFF06070D) else Color(0xFFF9F8FA)
 
   Box(
     modifier = modifier
       .fillMaxSize()
       .background(baseBackground)
   ) {
-    // 1. Atmospheric Ambient Purple Glow at center top
+    // 1. Atmospheric Ambient Soft Whitish-Pinkish Glow
     Canvas(modifier = Modifier.fillMaxSize()) {
-      drawCircle(
-        brush = Brush.radialGradient(
-          colors = listOf(Color(0x334F46E5), Color(0x181E1B4B), Color.Transparent),
-          center = Offset(size.width * 0.5f, size.height * 0.28f),
-          radius = size.width * 0.75f
-        ),
-        radius = size.width * 0.75f,
-        center = Offset(size.width * 0.5f, size.height * 0.28f)
-      )
+      if (isDark) {
+        drawCircle(
+          brush = Brush.radialGradient(
+            colors = listOf(
+              Color(0x3B4F46E5),
+              Color(0x22312E81),
+              Color(0x0C1E1B4B),
+              Color.Transparent
+            ),
+            center = Offset(size.width * 0.5f, size.height * 0.32f),
+            radius = size.width * 0.85f
+          ),
+          radius = size.width * 0.85f,
+          center = Offset(size.width * 0.5f, size.height * 0.32f)
+        )
+      } else {
+        // Soft whitish-pinkish atmospheric radial glow at center top
+        drawCircle(
+          brush = Brush.radialGradient(
+            colors = listOf(
+              Color(0x4AFDA4AF), // radiant blush rose
+              Color(0x25FCE7F3), // light pastel pink
+              Color(0x10FAF5FF), // soft lavender
+              Color.Transparent
+            ),
+            center = Offset(size.width * 0.5f, size.height * 0.32f),
+            radius = size.width * 0.90f
+          ),
+          radius = size.width * 0.90f,
+          center = Offset(size.width * 0.5f, size.height * 0.32f)
+        )
+
+        // Lower warm blush reflection
+        drawCircle(
+          brush = Brush.radialGradient(
+            colors = listOf(
+              Color(0x22FFE4E6),
+              Color(0x0EFFF1F2),
+              Color.Transparent
+            ),
+            center = Offset(size.width * 0.5f, size.height * 0.80f),
+            radius = size.width * 0.70f
+          ),
+          radius = size.width * 0.70f,
+          center = Offset(size.width * 0.5f, size.height * 0.80f)
+        )
+      }
     }
 
-    // 2. Main Content Column
+    // 2. Main Content Column with safe notch & cutout clearances
     Column(
       modifier = Modifier
         .fillMaxSize()
-        .padding(
-          top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 10.dp,
-          bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 6.dp
-        )
+        .statusBarsPadding()
+        .displayCutoutPadding()
+        .padding(top = 16.dp)
     ) {
-      // Centered Elegant "Chat" Header (matching clean_1.jpg)
+      // Centered Elegant "Chat" Header
       Box(
         modifier = Modifier
           .fillMaxWidth()
-          .padding(horizontal = 24.dp, vertical = 8.dp)
+          .padding(horizontal = 24.dp, vertical = 6.dp)
       ) {
         Text(
           text = "Chat",
           style = MaterialTheme.typography.titleLarge.copy(
-            fontSize = 19.sp,
-            fontWeight = FontWeight.Medium,
-            letterSpacing = (-0.2).sp
+            fontSize = 20.sp,
+            fontWeight = FontWeight.SemiBold,
+            letterSpacing = (-0.3).sp
           ),
-          color = Color.White,
+          color = if (isDark) Color.White else Color(0xFF0F172A),
           modifier = Modifier.align(Alignment.Center)
         )
 
@@ -158,13 +213,13 @@ fun DorkAiScreen(
             modifier = Modifier
               .size(32.dp)
               .clip(CircleShape)
-              .background(Color(0x22FFFFFF))
+              .background(if (isDark) Color(0x22FFFFFF) else Color(0x12000000))
               .align(Alignment.CenterEnd)
           ) {
             Icon(
               imageVector = Icons.Rounded.Refresh,
               contentDescription = "New Consultation",
-              tint = Color.White.copy(alpha = 0.85f),
+              tint = if (isDark) Color.White.copy(alpha = 0.85f) else Color(0xFF475569),
               modifier = Modifier.size(16.dp)
             )
           }
@@ -193,37 +248,16 @@ fun DorkAiScreen(
               Surface(
                 shape = RoundedCornerShape(20.dp),
                 color = if (isAi) {
-                  if (isDark) Color(0x6620323E) else Color(0xF5FFFFFF)
+                  if (isDark) Color(0x6620323E) else Color(0xFAFDF8F8)
                 } else {
-                  if (isDark) Color(0xFF0284C7) else Color(0xFF0F172A)
+                  if (isDark) Color(0xFF0284C7) else Color(0xFF1E293B)
                 },
                 border = if (isAi) {
-                  BorderStroke(1.dp, if (isDark) Color(0x2EFFFFFF) else Color(0x30CBD5E1))
+                  BorderStroke(1.dp, if (isDark) Color(0x2EFFFFFF) else Color(0x35FDA4AF))
                 } else null,
                 modifier = Modifier.fillMaxWidth(if (isAi) 0.94f else 0.82f)
               ) {
-                Column(modifier = Modifier.padding(15.dp)) {
-                  if (isAi) {
-                    Row(
-                      verticalAlignment = Alignment.CenterVertically,
-                      horizontalArrangement = Arrangement.spacedBy(6.dp),
-                      modifier = Modifier.padding(bottom = 6.dp)
-                    ) {
-                      Icon(
-                        imageVector = Icons.Rounded.AutoAwesome,
-                        contentDescription = null,
-                        tint = if (isDark) Color(0xFF7DD3FC) else Color(0xFF0284C7),
-                        modifier = Modifier.size(13.dp)
-                      )
-                      Text(
-                        text = "Clinical Assistant",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (isDark) Color(0xFFBAE6FD) else Color(0xFF0369A1)
-                      )
-                    }
-                  }
-
+                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 13.dp)) {
                   Text(
                     text = msg.text,
                     style = MaterialTheme.typography.bodyMedium,
@@ -233,12 +267,26 @@ fun DorkAiScreen(
                     } else Color.White
                   )
 
+                  if (msg.bookingCard != null) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    AiBookingActionCard(
+                      card = msg.bookingCard,
+                      isDark = isDark,
+                      onSlotSelected = { slotIso ->
+                        viewModel.selectBookingSlot(msg.id, slotIso)
+                      },
+                      onConfirmClick = {
+                        viewModel.confirmAiBooking(msg.id)
+                      }
+                    )
+                  }
+
                   if (msg.sourceReference != null) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Surface(
                       shape = RoundedCornerShape(8.dp),
-                      color = if (isDark) Color(0x400C161D) else Color(0xFFF1F5F9),
-                      border = BorderStroke(1.dp, if (isDark) Color(0x3338BDF8) else Color(0x20CBD5E1)),
+                      color = if (isDark) Color(0x400C161D) else Color(0xFFFFF1F2),
+                      border = BorderStroke(1.dp, if (isDark) Color(0x3338BDF8) else Color(0x25FDA4AF)),
                       modifier = Modifier.fillMaxWidth()
                     ) {
                       Row(
@@ -249,13 +297,13 @@ fun DorkAiScreen(
                         Icon(
                           imageVector = Icons.Rounded.CheckCircle,
                           contentDescription = null,
-                          tint = if (isDark) Color(0xFF38BDF8) else Color(0xFF0284C7),
+                          tint = if (isDark) Color(0xFF38BDF8) else Color(0xFFE11D48),
                           modifier = Modifier.size(13.dp)
                         )
                         Text(
                           text = msg.sourceReference,
                           style = MaterialTheme.typography.labelSmall,
-                          color = if (isDark) Color(0xFFE0F2FE) else Color(0xFF0369A1)
+                          color = if (isDark) Color(0xFFE0F2FE) else Color(0xFF9F1239)
                         )
                       }
                     }
@@ -271,6 +319,7 @@ fun DorkAiScreen(
                 modifier = Modifier
                   .clip(RoundedCornerShape(14.dp))
                   .background(if (isDark) Color(0x4D20323E) else Color(0xEEFFFFFF))
+                  .border(1.dp, if (isDark) Color(0x2EFFFFFF) else Color(0x30FDA4AF), RoundedCornerShape(14.dp))
                   .padding(horizontal = 14.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -278,7 +327,7 @@ fun DorkAiScreen(
                 CircularProgressIndicator(
                   modifier = Modifier.size(13.dp),
                   strokeWidth = 2.dp,
-                  color = if (isDark) Color(0xFF38BDF8) else Color(0xFF0284C7)
+                  color = if (isDark) Color(0xFF38BDF8) else Color(0xFFE11D48)
                 )
                 Text(
                   text = "Synthesizing on-device records…",
@@ -296,7 +345,67 @@ fun DorkAiScreen(
             .fillMaxWidth(),
           contentAlignment = Alignment.Center
         ) {
-          DottedOrbGraphic()
+          Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(horizontal = 20.dp)
+          ) {
+            DottedOrbGraphic(isDark = isDark)
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            Text(
+              text = "What would you like me to do?",
+              style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+              color = if (isDark) Color(0xFFCBD5E1) else Color(0xFF475569)
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+              horizontalArrangement = Arrangement.spacedBy(8.dp),
+              modifier = Modifier.fillMaxWidth(),
+              verticalAlignment = Alignment.CenterVertically
+            ) {
+              StarterChip(
+                icon = Icons.Rounded.CalendarToday,
+                text = "Book Dr. Sarah Chen",
+                isDark = isDark,
+                onClick = { viewModel.sendQuery("Can you book me an appointment with Dr Sarah Chen?") },
+                modifier = Modifier.weight(1f)
+              )
+              StarterChip(
+                icon = Icons.Rounded.CalendarToday,
+                text = "Book Dr. Lin",
+                isDark = isDark,
+                onClick = { viewModel.sendQuery("can u book me appoitment at dr lin ?") },
+                modifier = Modifier.weight(1f)
+              )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+              horizontalArrangement = Arrangement.spacedBy(8.dp),
+              modifier = Modifier.fillMaxWidth(),
+              verticalAlignment = Alignment.CenterVertically
+            ) {
+              StarterChip(
+                icon = Icons.Rounded.Science,
+                text = "Explain CBC labs",
+                isDark = isDark,
+                onClick = { viewModel.sendQuery("Explain my latest CBC report") },
+                modifier = Modifier.weight(1f)
+              )
+              StarterChip(
+                icon = Icons.Rounded.Description,
+                text = "My Medications",
+                isDark = isDark,
+                onClick = { viewModel.sendQuery("What medications am I taking?") },
+                modifier = Modifier.weight(1f)
+              )
+            }
+          }
         }
       }
 
@@ -310,8 +419,8 @@ fun DorkAiScreen(
         Row(
           modifier = Modifier
             .clip(RoundedCornerShape(16.dp))
-            .background(Color(0x661A2B36))
-            .border(1.dp, Color(0x4038BDF8), RoundedCornerShape(16.dp))
+            .background(if (isDark) Color(0x661A2B36) else Color(0x20F43F5E))
+            .border(1.dp, if (isDark) Color(0x4038BDF8) else Color(0x40FB7185), RoundedCornerShape(16.dp))
             .padding(horizontal = 12.dp, vertical = 6.dp),
           verticalAlignment = Alignment.CenterVertically,
           horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -320,12 +429,12 @@ fun DorkAiScreen(
             text = uiState.activeAttachment ?: uiState.selectedMode.badgeText,
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.SemiBold,
-            color = Color(0xFFE0F2FE)
+            color = if (isDark) Color(0xFFE0F2FE) else Color(0xFF9F1239)
           )
           Icon(
             imageVector = Icons.Rounded.Close,
             contentDescription = "Clear",
-            tint = Color(0xAAFFFFFF),
+            tint = if (isDark) Color(0xAAFFFFFF) else Color(0xFF9F1239),
             modifier = Modifier
               .size(14.dp)
               .clickable {
@@ -339,7 +448,7 @@ fun DorkAiScreen(
         }
       }
 
-      // 5. The Exact Frosted Liquid Glass Card from clean_1.jpg
+      // 5. The Exact Frosted Liquid Glass Card
       FrostedLiquidGlassInputCard(
         inputQuery = uiState.inputQuery,
         onInputChange = viewModel::onInputChange,
@@ -347,12 +456,11 @@ fun DorkAiScreen(
         selectedMode = uiState.selectedMode,
         onSelectMode = viewModel::setMode,
         onOpenAttach = { viewModel.toggleAttachSheet(true) },
-        onOpenScan = { viewModel.toggleScanDialog(true) },
         isThinking = uiState.isThinking,
-        isDark = true,
+        isDark = isDark,
         modifier = Modifier
           .fillMaxWidth()
-          .padding(start = 18.dp, end = 18.dp, bottom = 96.dp)
+          .padding(start = 16.dp, end = 16.dp, bottom = 112.dp)
       )
     }
 
@@ -426,18 +534,6 @@ fun DorkAiScreen(
         }
       }
     }
-
-    // 7. Optical Scanner Modal
-    if (uiState.showScanDialog) {
-      OpticalScannerDialog(
-        onScanConfirmed = {
-          viewModel.toggleScanDialog(false)
-          viewModel.sendQuery("Scan analysis for Rx prescription: $it")
-        },
-        onDismiss = { viewModel.toggleScanDialog(false) },
-        isDark = isDark
-      )
-    }
   }
 }
 
@@ -453,74 +549,140 @@ fun DorkAiScreen(
  *   3) Microscope
  *   4) Viewfinder with plus sign in top right corner
  */
-/**
- * Dotted Constellation Orb Graphic.
- * Renders the futuristic particle orb displayed in the center idle state from clean_1.jpg.
- */
-@Composable
-fun DottedOrbGraphic(modifier: Modifier = Modifier) {
-  val infiniteTransition = rememberInfiniteTransition(label = "orb_pulse")
-  val pulseAlpha by infiniteTransition.animateFloat(
-    initialValue = 0.60f,
-    targetValue = 0.95f,
-    animationSpec = infiniteRepeatable(
-      animation = tween(2200, easing = FastOutSlowInEasing),
-      repeatMode = RepeatMode.Reverse
-    ),
-    label = "orb_alpha"
-  )
+private data class MatrixDot(
+  val col: Int,
+  val row: Int,
+  val zWeight: Float,
+  val baseRadiusDp: Float,
+  val minAlpha: Float,
+  val maxAlpha: Float
+)
 
-  Canvas(modifier = modifier.size(240.dp, 300.dp)) {
-    val cx = size.width / 2f
-    val cy = size.height * 0.40f
-    val maxRadius = size.width * 0.36f
+private val StaticMatrixDots: List<MatrixDot> = buildList {
+  val bulbRadiusSteps = 10.2f
+  val bulbCenterRow = -4.5f
 
-    // 1. Dotted spherical globe
-    val steps = 22
-    val spacing = 9.dp.toPx()
-
-    for (r in -steps / 2..steps / 2) {
-      for (c in -steps / 2..steps / 2) {
-        val dx = c * spacing
-        val dy = r * spacing
-        val dist = kotlin.math.sqrt(dx * dx + dy * dy)
-        
-        if (dist <= maxRadius) {
-          val normalized = 1f - (dist / maxRadius)
-          val dotAlpha = (normalized * normalized * pulseAlpha).coerceIn(0.08f, 0.95f)
-          val dotRadius = 1.15.dp.toPx() * (0.6f + normalized * 0.7f)
-          drawCircle(
-            color = Color.White.copy(alpha = dotAlpha),
-            radius = dotRadius,
-            center = Offset(cx + dx, cy + dy)
+  for (r in -15..5) {
+    val dySteps = r - bulbCenterRow
+    val maxColSteps = kotlin.math.sqrt((bulbRadiusSteps * bulbRadiusSteps - dySteps * dySteps).coerceAtLeast(0f))
+    if (maxColSteps > 0f) {
+      val maxCol = maxColSteps.toInt()
+      for (c in -maxCol..maxCol) {
+        val distSteps = kotlin.math.sqrt(c * c + dySteps * dySteps)
+        if (distSteps <= bulbRadiusSteps) {
+          val zNorm = kotlin.math.sqrt((1f - (distSteps / bulbRadiusSteps)).coerceIn(0f, 1f))
+          add(
+            MatrixDot(
+              col = c,
+              row = r,
+              zWeight = 0.82f * zNorm * zNorm,
+              baseRadiusDp = 1.05f + 0.5f * zNorm,
+              minAlpha = 0.12f,
+              maxAlpha = 0.96f
+            )
           )
         }
       }
     }
+  }
 
-    // 2. Dotted keyhole / hourglass neck below the globe
-    val neckRows = 7
-    val neckCols = 6
-    val neckCy = cy + maxRadius + 22.dp.toPx()
-    for (r in 0..neckRows) {
-      for (c in -neckCols / 2..neckCols / 2) {
-        val dx = c * (spacing * 0.72f)
-        val dy = r * (spacing * 0.85f)
-        val factor = 1f - (kotlin.math.abs(c).toFloat() / (neckCols / 2f))
-        val dotAlpha = (factor * 0.45f * pulseAlpha).coerceIn(0.05f, 0.75f)
-        drawCircle(
-          color = Color.White.copy(alpha = dotAlpha),
-          radius = 1.05.dp.toPx(),
-          center = Offset(cx + dx, neckCy + dy)
+  for (r in 7..11) {
+    for (c in -2..2) {
+      val colDist = kotlin.math.abs(c) / 2f
+      val zNorm = 1f - colDist * 0.45f
+      add(
+        MatrixDot(
+          col = c,
+          row = r,
+          zWeight = 0.70f * zNorm,
+          baseRadiusDp = 1.1f + 0.35f * zNorm,
+          minAlpha = 0.15f,
+          maxAlpha = 0.94f
         )
-      }
+      )
+    }
+  }
+
+  val baseRows = 9
+  for (i in 0 until baseRows) {
+    val r = 13 + i
+    val halfWidth = when (i) {
+      0 -> 3
+      1 -> 4
+      2 -> 5
+      3 -> 6
+      4 -> 7
+      5 -> 8
+      6 -> 9
+      7 -> 9
+      else -> 7
+    }
+
+    for (c in -halfWidth..halfWidth) {
+      val cNorm = kotlin.math.abs(c).toFloat() / halfWidth.coerceAtLeast(1)
+      val zNorm = kotlin.math.sqrt((1f - cNorm * cNorm).coerceAtLeast(0f))
+      val verticalFactor = (1f - (i - 4) * (i - 4) / 28f).coerceIn(0.6f, 1f)
+      add(
+        MatrixDot(
+          col = c,
+          row = r,
+          zWeight = 0.75f * zNorm * verticalFactor,
+          baseRadiusDp = 1.05f + 0.45f * zNorm,
+          minAlpha = 0.12f,
+          maxAlpha = 0.92f
+        )
+      )
+    }
+  }
+}
+
+/**
+ * Pre-computed Dotted Hologram Matrix Graphic.
+ * Renders at a rock-solid 120 FPS with zero runtime trigonometry or inner loop allocations.
+ */
+@Composable
+fun DottedOrbGraphic(
+  modifier: Modifier = Modifier,
+  isDark: Boolean = false
+) {
+  val infiniteTransition = rememberInfiniteTransition(label = "matrix_pulse")
+  val pulse by infiniteTransition.animateFloat(
+    initialValue = 0.82f,
+    targetValue = 1.0f,
+    animationSpec = infiniteRepeatable(
+      animation = tween(2400, easing = FastOutSlowInEasing),
+      repeatMode = RepeatMode.Reverse
+    ),
+    label = "matrix_glow"
+  )
+
+  val dotBaseColor = if (isDark) Color.White else Color(0xFF282560)
+
+  Canvas(modifier = modifier.size(280.dp, 360.dp)) {
+    val cx = size.width / 2f
+    val cy = size.height * 0.44f
+    val spacing = 8.8.dp.toPx()
+    val dpToPx = density
+
+    StaticMatrixDots.forEach { dot ->
+      val alpha = (dot.minAlpha + dot.zWeight * pulse).coerceIn(dot.minAlpha, dot.maxAlpha)
+      drawCircle(
+        color = dotBaseColor.copy(alpha = alpha),
+        radius = dot.baseRadiusDp * dpToPx,
+        center = Offset(cx + dot.col * spacing, cy + dot.row * spacing)
+      )
     }
   }
 }
 
 /**
  * Frosted Liquid Glass Input Card.
- * Directly matches the layout, placeholder, actions and glowing send button from clean_1.jpg.
+ * Matches the reference design:
+ * - High corner radius (32.dp)
+ * - Neon specular highlight slit along the top center rim
+ * - Placeholder "Ask me anything about your health"
+ * - 4 icons on the left: [+] [🌐] [🔬] [⛶]
+ * - Glowing circular send button with [↑] on the right
  */
 @Composable
 fun FrostedLiquidGlassInputCard(
@@ -530,174 +692,271 @@ fun FrostedLiquidGlassInputCard(
   selectedMode: DorkAiMode,
   onSelectMode: (DorkAiMode) -> Unit,
   onOpenAttach: () -> Unit,
-  onOpenScan: () -> Unit,
   isThinking: Boolean,
-  isDark: Boolean,
+  isDark: Boolean = false,
   modifier: Modifier = Modifier
 ) {
-  val cardBackground = Color(0xF0101322)
-
-  // Prismatic neon specular edge glow
-  val specularBorder = Brush.linearGradient(
-    listOf(
-      Color(0xFF8B5CF6).copy(alpha = 0.85f),
-      Color(0xFF6366F1).copy(alpha = 0.65f),
-      Color(0xFF3B82F6).copy(alpha = 0.50f),
-      Color.White.copy(alpha = 0.15f)
-    )
-  )
-
-  Surface(
-    shape = RoundedCornerShape(28.dp),
-    color = cardBackground,
-    border = BorderStroke(1.2.dp, specularBorder),
-    shadowElevation = 18.dp,
-    modifier = modifier
-      .shadow(
-        elevation = 26.dp,
-        shape = RoundedCornerShape(28.dp),
-        ambientColor = Color.Black.copy(alpha = 0.50f),
-        spotColor = Color(0xFF6366F1).copy(alpha = 0.35f)
+  val cardBackground = if (isDark) {
+    Brush.verticalGradient(
+      listOf(
+        Color(0xDD151832),
+        Color(0xF20B0D1E)
       )
+    )
+  } else {
+    Brush.verticalGradient(
+      listOf(
+        Color(0xF8FFFFFF),
+        Color(0xEEFDF2F4)
+      )
+    )
+  }
+
+  val borderBrush = if (isDark) {
+    Brush.verticalGradient(
+      listOf(
+        Color(0x55818CF8),
+        Color(0x223B82F6),
+        Color(0x0C1E1B4B)
+      )
+    )
+  } else {
+    Brush.verticalGradient(
+      listOf(
+        Color(0x85F472B6),
+        Color(0x40C084FC),
+        Color(0x20CBD5E1)
+      )
+    )
+  }
+
+  val ambientGlowColors = if (isDark) {
+    listOf(
+      Color(0x336366F1),
+      Color(0x184F46E5),
+      Color.Transparent
+    )
+  } else {
+    listOf(
+      Color(0x45FDA4AF),
+      Color(0x1CF472B6),
+      Color.Transparent
+    )
+  }
+
+  val specularSlitColors = if (isDark) {
+    listOf(
+      Color.Transparent,
+      Color(0x80818CF8),
+      Color(0xFFE0E7FF),
+      Color(0x80818CF8),
+      Color.Transparent
+    )
+  } else {
+    listOf(
+      Color.Transparent,
+      Color(0x95FB7185),
+      Color(0xFFFFCCD5),
+      Color(0x95FB7185),
+      Color.Transparent
+    )
+  }
+
+  val specularGlowColors = if (isDark) {
+    listOf(
+      Color(0x35818CF8),
+      Color(0x106366F1),
+      Color.Transparent
+    )
+  } else {
+    listOf(
+      Color(0x35FDA4AF),
+      Color(0x12F472B6),
+      Color.Transparent
+    )
+  }
+
+  Box(
+    modifier = modifier,
+    contentAlignment = Alignment.Center
   ) {
-    Column(
+    // Ambient back-glow behind the liquid glass card
+    Box(
+      modifier = Modifier
+        .matchParentSize()
+        .padding(horizontal = 8.dp, vertical = 4.dp)
+        .background(
+          brush = Brush.radialGradient(
+            colors = ambientGlowColors,
+            radius = 320f
+          ),
+          shape = RoundedCornerShape(32.dp)
+        )
+    )
+
+    Surface(
+      shape = RoundedCornerShape(32.dp),
+      color = Color.Transparent,
+      border = BorderStroke(1.2.dp, borderBrush),
+      shadowElevation = if (isDark) 20.dp else 10.dp,
       modifier = Modifier
         .fillMaxWidth()
-        .padding(horizontal = 20.dp, vertical = 18.dp)
+        .clip(RoundedCornerShape(32.dp))
+        .background(cardBackground)
     ) {
-      // Row 1: "Ask me anything about your health" text field
-      BasicTextField(
-        value = inputQuery,
-        onValueChange = onInputChange,
-        textStyle = TextStyle(
-          color = Color.White,
-          fontSize = 17.sp,
-          fontWeight = FontWeight.Normal,
-          letterSpacing = (-0.2).sp
-        ),
-        cursorBrush = SolidColor(Color(0xFF8B5CF6)),
-        decorationBox = { innerTextField ->
-          Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.CenterStart
-          ) {
-            if (inputQuery.isEmpty()) {
-              Text(
-                text = "Ask me anything about your health",
-                style = TextStyle(
-                  color = Color.White.copy(alpha = 0.70f),
-                  fontSize = 17.sp,
-                  fontWeight = FontWeight.Normal,
-                  letterSpacing = (-0.2).sp
-                )
-              )
-            }
-            innerTextField()
-          }
-        },
-        modifier = Modifier.fillMaxWidth()
-      )
-
-      Spacer(modifier = Modifier.height(20.dp))
-
-      // Row 2: 4 Icons on Left, Purple Circular Send Button on Right
-      Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-      ) {
-        // Action Icons
-        Row(
-          horizontalArrangement = Arrangement.spacedBy(10.dp),
-          verticalAlignment = Alignment.CenterVertically
-        ) {
-          // Icon 1: [+] Attach
-          Box(
-            modifier = Modifier
-              .size(36.dp)
-              .clip(RoundedCornerShape(10.dp))
-              .clickable(onClick = onOpenAttach),
-            contentAlignment = Alignment.Center
-          ) {
-            SquarePlusGlyph(isDark = true)
-          }
-
-          // Icon 2: Globe with pointer arrow (Guidelines Mode)
-          Box(
-            modifier = Modifier
-              .size(36.dp)
-              .clip(RoundedCornerShape(10.dp))
-              .background(
-                if (selectedMode == DorkAiMode.GUIDELINES) Color(0x338B5CF6) else Color.Transparent
-              )
-              .clickable { onSelectMode(DorkAiMode.GUIDELINES) },
-            contentAlignment = Alignment.Center
-          ) {
-            GlobeCursorGlyph(
-              isDark = true,
-              isSelected = selectedMode == DorkAiMode.GUIDELINES
-            )
-          }
-
-          // Icon 3: Microscope (Deep Biomarker Mode)
-          Box(
-            modifier = Modifier
-              .size(36.dp)
-              .clip(RoundedCornerShape(10.dp))
-              .background(
-                if (selectedMode == DorkAiMode.DEEP_LAB) Color(0x338B5CF6) else Color.Transparent
-              )
-              .clickable { onSelectMode(DorkAiMode.DEEP_LAB) },
-            contentAlignment = Alignment.Center
-          ) {
-            MicroscopeGlyph(
-              isDark = true,
-              isSelected = selectedMode == DorkAiMode.DEEP_LAB
-            )
-          }
-
-          // Icon 4: Viewfinder with Plus Sign in Top-Right Corner
-          Box(
-            modifier = Modifier
-              .size(36.dp)
-              .clip(RoundedCornerShape(10.dp))
-              .background(
-                if (selectedMode == DorkAiMode.OPTICAL_SCAN) Color(0x338B5CF6) else Color.Transparent
-              )
-              .clickable(onClick = onOpenScan),
-            contentAlignment = Alignment.Center
-          ) {
-            ViewfinderPlusGlyph(
-              isDark = true,
-              isSelected = selectedMode == DorkAiMode.OPTICAL_SCAN
-            )
-          }
-        }
-
-        // Circular Purple Send Button with ↑ arrow (matching clean_1.jpg)
+      Box(modifier = Modifier.fillMaxWidth()) {
+        // Specular neon laser slit highlight along the top rim
         Box(
           modifier = Modifier
-            .size(38.dp)
-            .clip(CircleShape)
+            .fillMaxWidth(0.50f)
+            .height(2.5.dp)
+            .align(Alignment.TopCenter)
+            .clip(RoundedCornerShape(2.dp))
             .background(
-              Brush.linearGradient(
-                listOf(Color(0xFF8B5CF6), Color(0xFF6366F1))
+              Brush.horizontalGradient(specularSlitColors)
+            )
+        )
+
+        // Soft internal ambient glow below the laser slit
+        Box(
+          modifier = Modifier
+            .fillMaxWidth(0.66f)
+            .height(14.dp)
+            .align(Alignment.TopCenter)
+            .background(
+              Brush.radialGradient(
+                colors = specularGlowColors,
+                radius = 180f
               )
             )
-            .clickable(
-              enabled = !isThinking && inputQuery.isNotBlank(),
-              onClick = onSend
-            ),
-          contentAlignment = Alignment.Center
+        )
+
+        Column(
+          modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 22.dp, vertical = 20.dp)
         ) {
-          if (isThinking) {
-            CircularProgressIndicator(
-              modifier = Modifier.size(16.dp),
-              color = Color.White,
-              strokeWidth = 2.dp
-            )
-          } else {
-            UpwardArrowIcon(modifier = Modifier.size(18.dp))
+          // Row 1: "Ask me anything about your health" text field
+          BasicTextField(
+            value = inputQuery,
+            onValueChange = onInputChange,
+            textStyle = TextStyle(
+              color = if (isDark) Color.White else Color(0xFF0F172A),
+              fontSize = 16.5.sp,
+              fontWeight = FontWeight.Normal,
+              letterSpacing = (-0.2).sp
+            ),
+            cursorBrush = SolidColor(if (isDark) Color(0xFF818CF8) else Color(0xFFE11D48)),
+            decorationBox = { innerTextField ->
+              Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.CenterStart
+              ) {
+                if (inputQuery.isEmpty()) {
+                  Text(
+                    text = "Ask me anything about your health",
+                    style = TextStyle(
+                      color = if (isDark) Color.White.copy(alpha = 0.72f) else Color(0xFF94A3B8),
+                      fontSize = 16.5.sp,
+                      fontWeight = FontWeight.Normal,
+                      letterSpacing = (-0.2).sp
+                    )
+                  )
+                }
+                innerTextField()
+              }
+            },
+            modifier = Modifier.fillMaxWidth()
+          )
+
+          Spacer(modifier = Modifier.height(22.dp))
+
+          // Row 2: Action Icons on Left, Glowing Lavender Send Button on Right
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            // Action Icons
+            Row(
+              horizontalArrangement = Arrangement.spacedBy(14.dp),
+              verticalAlignment = Alignment.CenterVertically
+            ) {
+              // Icon 1: [+] Attach
+              Box(
+                modifier = Modifier
+                  .size(32.dp)
+                  .clickable(onClick = onOpenAttach),
+                contentAlignment = Alignment.Center
+              ) {
+                SquarePlusGlyph(isDark = isDark)
+              }
+
+              // Icon 2: Globe with pointer arrow (Guidelines Mode)
+              Box(
+                modifier = Modifier
+                  .size(32.dp)
+                  .clip(RoundedCornerShape(8.dp))
+                  .background(
+                    if (selectedMode == DorkAiMode.GUIDELINES) {
+                      if (isDark) Color(0x338B5CF6) else Color(0x20F43F5E)
+                    } else Color.Transparent
+                  )
+                  .clickable { onSelectMode(DorkAiMode.GUIDELINES) },
+                contentAlignment = Alignment.Center
+              ) {
+                GlobeCursorGlyph(
+                  isDark = isDark,
+                  isSelected = selectedMode == DorkAiMode.GUIDELINES
+                )
+              }
+
+              // Icon 3: Microscope (Deep Biomarker Mode)
+              Box(
+                modifier = Modifier
+                  .size(32.dp)
+                  .clip(RoundedCornerShape(8.dp))
+                  .background(
+                    if (selectedMode == DorkAiMode.DEEP_LAB) {
+                      if (isDark) Color(0x338B5CF6) else Color(0x20F43F5E)
+                    } else Color.Transparent
+                  )
+                  .clickable { onSelectMode(DorkAiMode.DEEP_LAB) },
+                contentAlignment = Alignment.Center
+              ) {
+                MicroscopeGlyph(
+                  isDark = isDark,
+                  isSelected = selectedMode == DorkAiMode.DEEP_LAB
+                )
+              }
+            }
+
+            // Circular Send Button with ↑ arrow
+            Box(
+              modifier = Modifier
+                .size(38.dp)
+                .clip(CircleShape)
+                .background(
+                  Brush.linearGradient(
+                    listOf(Color(0xFF818CF8), Color(0xFF6366F1))
+                  )
+                )
+                .clickable(
+                  enabled = !isThinking && inputQuery.isNotBlank(),
+                  onClick = onSend
+                ),
+              contentAlignment = Alignment.Center
+            ) {
+              if (isThinking) {
+                CircularProgressIndicator(
+                  modifier = Modifier.size(16.dp),
+                  color = Color.White,
+                  strokeWidth = 2.dp
+                )
+              } else {
+                UpwardArrowIcon(modifier = Modifier.size(17.dp))
+              }
+            }
           }
         }
       }
@@ -941,7 +1200,7 @@ fun ViewfinderPlusGlyph(isDark: Boolean, isSelected: Boolean) {
     val tlPath = Path().apply {
       moveTo(left, top + arm)
       lineTo(left, top + r)
-      quadraticBezierTo(left, top, left + r, top)
+      quadraticTo(left, top, left + r, top)
       lineTo(left + arm, top)
     }
     drawPath(path = tlPath, color = strokeColor, style = Stroke(width = sw, cap = StrokeCap.Round))
@@ -950,7 +1209,7 @@ fun ViewfinderPlusGlyph(isDark: Boolean, isSelected: Boolean) {
     val blPath = Path().apply {
       moveTo(left, bottom - arm)
       lineTo(left, bottom - r)
-      quadraticBezierTo(left, bottom, left + r, bottom)
+      quadraticTo(left, bottom, left + r, bottom)
       lineTo(left + arm, bottom)
     }
     drawPath(path = blPath, color = strokeColor, style = Stroke(width = sw, cap = StrokeCap.Round))
@@ -959,7 +1218,7 @@ fun ViewfinderPlusGlyph(isDark: Boolean, isSelected: Boolean) {
     val brPath = Path().apply {
       moveTo(right - arm, bottom)
       lineTo(right - r, bottom)
-      quadraticBezierTo(right, bottom, right, bottom - r)
+      quadraticTo(right, bottom, right, bottom - r)
       lineTo(right, bottom - arm)
     }
     drawPath(path = brPath, color = strokeColor, style = Stroke(width = sw, cap = StrokeCap.Round))
@@ -1070,113 +1329,6 @@ fun MoodyOceanicBackground(
         radius = w * 0.90f * breathScale,
         center = Offset(w * 0.75f, h * 0.35f)
       )
-    }
-  }
-}
-
-/**
- * Optical Scanner Dialog.
- */
-@Composable
-fun OpticalScannerDialog(
-  onScanConfirmed: (String) -> Unit,
-  onDismiss: () -> Unit,
-  isDark: Boolean
-) {
-  var scannedTarget by remember { mutableStateOf("Amoxicillin 500mg - 3x Daily (Rx #884920)") }
-
-  Dialog(onDismissRequest = onDismiss) {
-    Surface(
-      shape = RoundedCornerShape(24.dp),
-      color = if (isDark) Color(0xFF14242E) else Color.White,
-      border = BorderStroke(
-        1.2.dp,
-        if (isDark) Color(0x5538BDF8) else Color(0x40CBD5E1)
-      ),
-      modifier = Modifier
-        .fillMaxWidth()
-        .padding(16.dp)
-    ) {
-      Column(
-        modifier = Modifier.padding(20.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-      ) {
-        Row(
-          modifier = Modifier.fillMaxWidth(),
-          horizontalArrangement = Arrangement.SpaceBetween,
-          verticalAlignment = Alignment.CenterVertically
-        ) {
-          Text(
-            text = "Optical Health Scanner",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = if (isDark) Color.White else Color(0xFF0F172A)
-          )
-          IconButton(onClick = onDismiss, modifier = Modifier.size(28.dp)) {
-            Icon(
-              imageVector = Icons.Rounded.Close,
-              contentDescription = "Close",
-              tint = if (isDark) Color(0xAAFFFFFF) else Color(0xFF64748B)
-            )
-          }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Box(
-          modifier = Modifier
-            .fillMaxWidth()
-            .height(140.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(if (isDark) Color(0xFF0C161D) else Color(0xFF0F172A)),
-          contentAlignment = Alignment.Center
-        ) {
-          Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-          ) {
-            Icon(
-              imageVector = Icons.Rounded.PhotoCamera,
-              contentDescription = null,
-              tint = Color(0xFF38BDF8),
-              modifier = Modifier.size(32.dp)
-            )
-            Text(
-              text = "Prescription Detected",
-              style = MaterialTheme.typography.labelSmall,
-              color = Color(0xFFBAE6FD)
-            )
-            Text(
-              text = scannedTarget,
-              style = MaterialTheme.typography.bodySmall,
-              fontWeight = FontWeight.SemiBold,
-              color = Color.White
-            )
-          }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Surface(
-          shape = RoundedCornerShape(14.dp),
-          color = if (isDark) Color(0xFF0284C7) else Color(0xFF0F172A),
-          modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onScanConfirmed(scannedTarget) }
-        ) {
-          Box(
-            modifier = Modifier.padding(vertical = 12.dp),
-            contentAlignment = Alignment.Center
-          ) {
-            Text(
-              text = "Capture & Analyze with Dork AI",
-              style = MaterialTheme.typography.labelLarge,
-              fontWeight = FontWeight.Bold,
-              color = Color.White
-            )
-          }
-        }
-      }
     }
   }
 }

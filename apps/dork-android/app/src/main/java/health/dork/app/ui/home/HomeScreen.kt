@@ -14,11 +14,13 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -168,59 +170,67 @@ fun HomeContent(
     else -> "GOOD EVENING"
   }
 
-  val timelineEvents = buildList {
-    uiState.todayDoses.forEach { dose ->
-      DateCalculators.parseClinicTime(dose.scheduledTime)?.let { time ->
-        add(
-          TimelineEvent(
-            fraction = time.toSecondOfDay() / 86_400f,
-            color = when (dose.state) {
-              MedicationDoseState.Taken, MedicationDoseState.Completed -> DorkColors.SageInk
-              MedicationDoseState.Skipped -> DorkColors.TextTertiaryLight
-              MedicationDoseState.Due -> DorkColors.PeachInk
-              MedicationDoseState.Upcoming -> DorkColors.AccentInk
-            }
+  val timelineEvents = remember(uiState.todayDoses, uiState.todayAppointments) {
+    buildList {
+      uiState.todayDoses.forEach { dose ->
+        DateCalculators.parseClinicTime(dose.scheduledTime)?.let { time ->
+          add(
+            TimelineEvent(
+              fraction = time.toSecondOfDay() / 86_400f,
+              color = when (dose.state) {
+                MedicationDoseState.Taken, MedicationDoseState.Completed -> DorkColors.SageInk
+                MedicationDoseState.Skipped -> DorkColors.TextTertiaryLight
+                MedicationDoseState.Due -> DorkColors.PeachInk
+                MedicationDoseState.Upcoming -> DorkColors.AccentInk
+              }
+            )
           )
-        )
+        }
       }
-    }
-    uiState.todayAppointments.forEach { appointment ->
-      runCatching { LocalDateTime.parse(appointment.dateIso).toLocalTime() }.getOrNull()?.let { time ->
-        add(TimelineEvent(time.toSecondOfDay() / 86_400f, DorkColors.PinkInk))
+      uiState.todayAppointments.forEach { appointment ->
+        runCatching { LocalDateTime.parse(appointment.dateIso).toLocalTime() }.getOrNull()?.let { time ->
+          add(TimelineEvent(time.toSecondOfDay() / 86_400f, DorkColors.PinkInk))
+        }
       }
-    }
-  }.sortedBy { it.fraction }
+    }.sortedBy { it.fraction }
+  }
 
-  val doseSeries = doseSeries(uiState.todayDoses)
-  val adherenceSeries = adherenceSeries(uiState.todayDoses)
+  val doseSeries = remember(uiState.todayDoses) { doseSeries(uiState.todayDoses) }
+  val adherenceSeries = remember(uiState.todayDoses) { adherenceSeries(uiState.todayDoses) }
 
-  val dayTimes = buildList {
-    uiState.todayDoses.forEach { dose ->
-      DateCalculators.parseClinicTime(dose.scheduledTime)?.let(::add)
-    }
-    uiState.todayAppointments.forEach { appointment ->
-      runCatching { LocalDateTime.parse(appointment.dateIso).toLocalTime() }
-        .getOrNull()?.let(::add)
-    }
-  }.sorted()
+  val dayTimes = remember(uiState.todayDoses, uiState.todayAppointments) {
+    buildList {
+      uiState.todayDoses.forEach { dose ->
+        DateCalculators.parseClinicTime(dose.scheduledTime)?.let(::add)
+      }
+      uiState.todayAppointments.forEach { appointment ->
+        runCatching { LocalDateTime.parse(appointment.dateIso).toLocalTime() }
+          .getOrNull()?.let(::add)
+      }
+    }.sorted()
+  }
 
-  val axisTimes = if (dayTimes.isEmpty()) {
-    listOf(LocalTime.of(8, 0), LocalTime.of(13, 0), LocalTime.of(20, 0))
-  } else {
-    listOf(
-      dayTimes.first(),
-      dayTimes[dayTimes.size / 2],
-      dayTimes.last()
-    ).distinct()
+  val axisTimes = remember(dayTimes) {
+    if (dayTimes.isEmpty()) {
+      listOf(LocalTime.of(8, 0), LocalTime.of(13, 0), LocalTime.of(20, 0))
+    } else {
+      listOf(
+        dayTimes.first(),
+        dayTimes[dayTimes.size / 2],
+        dayTimes.last()
+      ).distinct()
+    }
   }
 
   Column(
     modifier = modifier
       .fillMaxSize()
       .background(DorkTheme.colors.canvas)
+      .statusBarsPadding()
+      .displayCutoutPadding()
       .verticalScroll(scrollState)
       .padding(horizontal = DorkSpacing.screenHorizontalPadding)
-      .padding(top = 4.dp, bottom = 20.dp)
+      .padding(top = 16.dp, bottom = 120.dp)
   ) {
     // ── Brand row ───────────────────────────────────────────────────────
     Row(

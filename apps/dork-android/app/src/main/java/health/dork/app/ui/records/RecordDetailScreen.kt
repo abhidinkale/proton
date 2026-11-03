@@ -1,5 +1,8 @@
 package health.dork.app.ui.records
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
@@ -7,6 +10,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,13 +22,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Biotech
 import androidx.compose.material.icons.rounded.CalendarToday
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.DocumentScanner
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -31,6 +40,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,14 +51,17 @@ import health.dork.app.core.data.model.HealthRecordItem
 import health.dork.app.core.data.model.HealthRecordType
 import health.dork.app.core.data.model.LabStatus
 import health.dork.app.core.data.model.LabTestItem
+import health.dork.app.core.data.model.buildBiomarkerTrends
 import health.dork.app.core.designsystem.DorkSpacing
 import health.dork.app.core.designsystem.DorkTheme
+import health.dork.app.core.designsystem.components.BiomarkerTrendChart
 import health.dork.app.core.designsystem.components.DorkButton
 import health.dork.app.core.designsystem.components.DorkCard
 import health.dork.app.core.designsystem.components.DorkStatusBadge
 import health.dork.app.core.designsystem.components.DorkStatusType
 import health.dork.app.core.designsystem.components.DorkTopBar
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun RecordDetailScreen(
   record: HealthRecordItem,
@@ -124,10 +137,44 @@ fun RecordDetailScreen(
 
       Spacer(modifier = Modifier.height(DorkSpacing.l))
 
-      // If Lab Result, render detailed tests breakdown
+      // If Lab Result, render longitudinal biomarker trends and test panels
       if (record.type == HealthRecordType.LAB_RESULT) {
+        val biomarkerTrends = remember(uiState.labResults) {
+          uiState.labResults.buildBiomarkerTrends()
+        }
+
+        if (biomarkerTrends.isNotEmpty()) {
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Column {
+              Text(
+                text = "Biomarker Trends",
+                style = MaterialTheme.typography.titleMedium,
+                color = DorkTheme.colors.textPrimary
+              )
+              Text(
+                text = "Longitudinal trajectory with target reference corridors",
+                style = MaterialTheme.typography.bodySmall,
+                color = DorkTheme.colors.textSecondary
+              )
+            }
+          }
+
+          Spacer(modifier = Modifier.height(DorkSpacing.s))
+
+          biomarkerTrends.forEach { trend ->
+            BiomarkerTrendChart(trend = trend)
+            Spacer(modifier = Modifier.height(DorkSpacing.m))
+          }
+
+          Spacer(modifier = Modifier.height(DorkSpacing.s))
+        }
+
         Text(
-          text = "Laboratory Test Results",
+          text = "Detailed Test Panel",
           style = MaterialTheme.typography.titleMedium,
           color = DorkTheme.colors.textPrimary
         )
@@ -220,10 +267,110 @@ fun RecordDetailScreen(
             } else {
               Spacer(modifier = Modifier.height(DorkSpacing.xs))
               Text(
-                text = "This entry describes a document from your history. Dork never claimed to extract its contents.",
+                text = "This entry describes a document from your history.",
                 style = MaterialTheme.typography.bodySmall,
                 color = DorkTheme.colors.textTertiary
               )
+            }
+          }
+        }
+
+        if (document?.isOcrProcessed == true && !document.extractedText.isNullOrBlank()) {
+          Spacer(modifier = Modifier.height(DorkSpacing.l))
+
+          if (document.structuredEntities.isNotEmpty()) {
+            DorkCard(
+              contentPadding = DorkSpacing.m,
+              backgroundColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+            ) {
+              Column(modifier = Modifier.fillMaxWidth()) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                  Icon(
+                    imageVector = Icons.Rounded.AutoAwesome,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(16.dp)
+                  )
+                  Spacer(modifier = Modifier.width(6.dp))
+                  Text(
+                    text = "Identified Clinical Markers",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = DorkTheme.colors.textPrimary
+                  )
+                }
+                Spacer(modifier = Modifier.height(DorkSpacing.xs))
+                FlowRow(
+                  horizontalArrangement = Arrangement.spacedBy(6.dp),
+                  verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                  document.structuredEntities.forEach { entity ->
+                    Box(
+                      modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(MaterialTheme.colorScheme.surface)
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                      Text(
+                        text = entity,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary
+                      )
+                    }
+                  }
+                }
+              }
+            }
+            Spacer(modifier = Modifier.height(DorkSpacing.s))
+          }
+
+          DorkCard(contentPadding = DorkSpacing.m) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+              Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+              ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                  Icon(
+                    imageVector = Icons.Rounded.DocumentScanner,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(16.dp)
+                  )
+                  Spacer(modifier = Modifier.width(6.dp))
+                  Text(
+                    text = "Extracted Text",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = DorkTheme.colors.textPrimary
+                  )
+                }
+
+                DorkButton(
+                  text = "Copy text",
+                  onClick = {
+                    val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    cm.setPrimaryClip(ClipData.newPlainText("Document Text", document.extractedText))
+                    Toast.makeText(context, "Document text copied", Toast.LENGTH_SHORT).show()
+                  },
+                  variant = health.dork.app.core.designsystem.components.DorkButtonVariant.Secondary
+                )
+              }
+
+              Spacer(modifier = Modifier.height(DorkSpacing.s))
+
+              Box(
+                modifier = Modifier
+                  .fillMaxWidth()
+                  .clip(RoundedCornerShape(8.dp))
+                  .background(DorkTheme.colors.surfaceSecondary)
+                  .padding(DorkSpacing.m)
+              ) {
+                Text(
+                  text = document.extractedText,
+                  style = MaterialTheme.typography.bodySmall,
+                  color = DorkTheme.colors.textPrimary
+                )
+              }
             }
           }
         }
