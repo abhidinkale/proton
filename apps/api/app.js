@@ -144,7 +144,7 @@ app.use(cors({
 // Rate limiters run after CORS so that 429 responses still carry CORS headers
 // and a browser sees the real error instead of an opaque network failure.
 app.use(generalLimiter);
-app.use(['/api/transcribe', '/api/generate-note', '/api/chat', '/api/extract-documents'], aiLimiter);
+app.use(['/api/transcribe', '/api/generate-note', '/api/chat', '/api/extract-documents', '/api/ehr-copilot'], aiLimiter);
 app.use(['/api/auth/login', '/auth/login', '/api/auth/exchange', '/api/auth/qr-exchange'], loginLimiter);
 
 const { telemetryMiddleware } = require('./middleware/telemetry');
@@ -188,6 +188,7 @@ app.use([
   '/api/transcribe',
   '/api/generate-note',
   '/api/chat',
+  '/api/ehr-copilot',
   '/api/extract-documents',
   // Surfaces that previously had no actor resolution at all.
   '/api/voice',
@@ -226,6 +227,9 @@ app.use('/api/organizations', require('./routes/organizations'));
 
 // Patient ↔ clinic sync. Every route inside requires a patient session.
 app.use('/api/patient/sync', require('./routes/patientSync'));
+
+// Patient EHR Import & SMART on FHIR directory
+app.use('/api/patient/ehr', require('./routes/ehrSync'));
 
 // Durable clinical workflow (encounter state machine, booking, outbox, audit).
 app.use('/api/workflow', require('./api/workflow'));
@@ -835,6 +839,95 @@ app.post('/api/chat', async (req, res) => {
     }
     const status = error.status === 429 ? 429 : error.status === 503 ? 503 : 502;
     res.status(status).json({ error: status === 503 ? error.message : 'Clinical chat is unavailable. Please try again.' });
+  }
+});
+
+// --- 2b. EHR CONVERSATIONAL COPILOT COMMAND CENTER ---
+const ehrCopilot = require('./services/ehrCopilotService');
+
+app.post('/api/ehr-copilot/chat', async (req, res) => {
+  const { message, history } = req.body || {};
+  if (!message || typeof message !== 'string' || !message.trim()) {
+    return res.status(400).json({ error: 'A message or command prompt is required.' });
+  }
+
+  const clinician = {
+    actorId: req.actor?.actorId || 'clinician-dr-lin',
+    actorName: req.actor?.actorName || 'Dr. Evelyn Lin, MD',
+    tenantId: req.actor?.tenantId || 'org-default'
+  };
+
+  try {
+    const result = await ehrCopilot.processClinicianTurn({
+      message: message.trim(),
+      history: Array.isArray(history) ? history : [],
+      clinician
+    });
+    return res.json(result);
+  } catch (error) {
+    console.error('[EHR Copilot API] Turn failed:', error);
+    return res.status(500).json({
+      error: error.message || 'EHR Copilot encountered an error processing your command.',
+      details: error.toString()
+    });
+  }
+});
+
+// --- 2c. HOSPITAL & CLINIC ONBOARDING APPLIANCE SETUP ---
+const clinicRepo = require('./storage/clinicRepository');
+
+app.get('/api/clinic/setup/status', async (req, res) => {
+  try {
+    const metaStr = clinicRepo.getMeta('clinic_setup');
+    const isConfigured = !!metaStr;
+    const clinic = metaStr ? JSON.parse(metaStr) : null;
+    return res.json({
+      isConfigured,
+      clinic: clinic || {
+        clinicName: 'Proton Demonstration Clinic',
+        department: 'Outpatient Internal Medicine',
+        doctorName: 'Dr. Evelyn Lin, MD',
+        npi: 'NPI-1948203810',
+        dbMode: 'embedded',
+        aiModel: 'gemini-3.5-flash-lite'
+      }
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/clinic/setup', async (req, res) => {
+  try {
+    const { clinicName, department, doctorName, npi, dbMode, databaseUrl, geminiApiKey } = req.body || {};
+    
+    if (!clinicName || !doctorName) {
+      return res.status(400).json({ error: 'Clinic name and attending doctor name are required.' });
+    }
+
+    const setupPayload = {
+      clinicName: clinicName.trim(),
+      department: (department || 'Outpatient Care').trim(),
+      doctorName: doctorName.trim(),
+      npi: (npi || 'N/A').trim(),
+      dbMode: dbMode || 'embedded',
+      databaseUrl: databaseUrl ? databaseUrl.trim() : null,
+      configuredAt: new Date().toISOString()
+    };
+
+    clinicRepo.setMeta('clinic_setup', JSON.stringify(setupPayload));
+
+    if (geminiApiKey && typeof geminiApiKey === 'string' && geminiApiKey.trim()) {
+      process.env.GEMINI_API_KEY = geminiApiKey.trim();
+    }
+
+    return res.json({
+      success: true,
+      message: 'Clinic appliance successfully initialized.',
+      clinic: setupPayload
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
   }
 });
 
