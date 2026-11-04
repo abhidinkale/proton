@@ -1709,5 +1709,7 @@ module.exports = {
   getEducationProgress,
   updateEducationProgress,
   listInvoices,
-  updateInvoiceStatus
+  updateInvoiceStatus,
+  getMeta,
+  setMeta
 };
