@@ -110,9 +110,10 @@ repomix-output.*.xml
 *.repomix.xml
 
 # 10. Signed Build Deliverables & Local Agent Tool State
-# APKs are release artefacts rebuilt from apps/dork-android, not source.
+# APKs and DMGs are release artefacts rebuilt from source, not checked into git.
 *.apk
 *.aab
+*.dmg
 *.keystore
 *.jks
 # Screenshots and state written by local agent tooling.
