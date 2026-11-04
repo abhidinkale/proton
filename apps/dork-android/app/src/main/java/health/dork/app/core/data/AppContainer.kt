@@ -75,6 +75,7 @@ interface AppContainer {
   val syncEngine: SyncEngine
   val syncScheduler: SyncScheduler?
   val syncCoordinator: SyncCoordinator?
+  val ehrSyncClient: health.dork.app.core.sync.EhrSyncClient
 
   /** Deletes every account, record, message and preference stored locally. */
   fun eraseAllDeviceData()
@@ -110,6 +111,9 @@ class DefaultAppContainer(
 
   override val authClient: AuthClient by lazy { OkHttpAuthClient() }
   override val syncClient: SyncClient by lazy { OkHttpSyncClient() }
+  override val ehrSyncClient: health.dork.app.core.sync.EhrSyncClient by lazy {
+    health.dork.app.core.sync.EhrSyncClient(syncSettings)
+  }
 
   override val syncScheduler: SyncScheduler? by lazy {
     appContext?.let { SyncScheduler(it) }
