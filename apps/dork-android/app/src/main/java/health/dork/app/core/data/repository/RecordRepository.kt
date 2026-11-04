@@ -61,6 +61,12 @@ interface RecordRepository {
    * the server does not mention keeps its own state — absence is not deletion.
    */
   fun mergeServerDocuments(remote: List<RemoteDocument>): Int
+
+  /**
+   * Imports standardized EHR clinical records (from Epic, Cerner, Athena, etc.)
+   * directly onto the patient's longitudinal timeline.
+   */
+  fun importEhrRecords(records: List<HealthRecordItem>): Int
 }
 
 class DorkRecordRepository(
@@ -276,6 +282,27 @@ class DorkRecordRepository(
         _activePrescription.value = newest
         store.write(KEY_ACTIVE_PRESCRIPTION, PrescriptionDetail.serializer(), newest)
       }
+    }
+
+    return applied
+  }
+
+  override fun importEhrRecords(records: List<HealthRecordItem>): Int {
+    if (records.isEmpty()) return 0
+    val current = _timelineRecords.value.toMutableList()
+    var applied = 0
+
+    records.forEach { record ->
+      // Avoid duplicates by ID or title + date
+      if (current.none { it.id == record.id || (it.title == record.title && it.displayDate == record.displayDate) }) {
+        current.add(0, record)
+        applied++
+      }
+    }
+
+    if (applied > 0) {
+      _timelineRecords.value = current
+      store.write(KEY_RECORDS, recordSerializer, current)
     }
 
     return applied

@@ -75,4 +75,44 @@ class RecordRepositoryTest {
     val reopened = DorkRecordRepository(store)
     assertTrue(reopened.documents.first().any { it.title == "Blood panel" })
   }
+
+  @Test
+  fun importEhrRecordsAddsRecordsToTimelineWithoutDuplicates() = runTest {
+    val store = DorkStore()
+    val repo = DorkRecordRepository(store)
+
+    val ehrRecords = listOf(
+      health.dork.app.core.data.model.HealthRecordItem(
+        id = "ehr-test-1",
+        type = HealthRecordType.LAB_RESULT,
+        title = "Hemoglobin A1c (HbA1c)",
+        subtitle = "7.2% · Elevated",
+        dateIso = "2026-10-14",
+        displayDate = "Oct 14, 2026",
+        doctorOrLab = "Epic Systems Lab",
+        summary = "Imported from Epic MyChart via SMART on FHIR"
+      ),
+      health.dork.app.core.data.model.HealthRecordItem(
+        id = "ehr-test-2",
+        type = HealthRecordType.PRESCRIPTION,
+        title = "Metformin 500mg",
+        subtitle = "1 tablet twice daily",
+        dateIso = "2026-10-14",
+        displayDate = "Oct 14, 2026",
+        doctorOrLab = "Epic Systems Clinic",
+        summary = "Active prescription"
+      )
+    )
+
+    val importedCount = repo.importEhrRecords(ehrRecords)
+    assertEquals(2, importedCount)
+
+    val timeline = repo.timelineRecords.first()
+    assertTrue(timeline.any { it.title == "Hemoglobin A1c (HbA1c)" })
+    assertTrue(timeline.any { it.title == "Metformin 500mg" })
+
+    // Second import with identical records must be deduplicated
+    val secondImport = repo.importEhrRecords(ehrRecords)
+    assertEquals(0, secondImport)
+  }
 }
