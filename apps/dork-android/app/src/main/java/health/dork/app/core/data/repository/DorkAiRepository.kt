@@ -231,6 +231,8 @@ class DefaultDorkAiRepository(
       lower.contains("schedul") ||
       lower.contains("appoint") ||
       lower.contains("appoit") ||
+      lower.contains("apoint") ||
+      lower.contains("apoit") ||
       lower.contains("resched") ||
       (lower.contains("see") && (lower.contains("doctor") || lower.contains("dr"))) ||
       (lower.contains("visit") && (lower.contains("doctor") || lower.contains("dr")))

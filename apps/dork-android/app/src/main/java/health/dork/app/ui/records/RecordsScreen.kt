@@ -40,7 +40,11 @@ import health.dork.app.core.designsystem.components.DorkButtonVariant
 import health.dork.app.core.designsystem.components.DorkChip
 import health.dork.app.core.designsystem.components.DorkStatusType
 import health.dork.app.core.designsystem.components.DorkTimelineItem
+import health.dork.app.core.designsystem.components.EhrConnectTile
+import health.dork.app.core.designsystem.components.EhrProviderPickerDialog
 import health.dork.app.core.designsystem.components.UploadHealthRecordsTile
+import health.dork.app.core.sync.EhrSyncClient
+import health.dork.app.core.sync.SyncSettings
 
 @Composable
 fun RecordsScreen(
@@ -121,6 +125,17 @@ fun RecordsScreen(
         .verticalScroll(scrollState)
         .padding(vertical = DorkSpacing.m)
     ) {
+      EhrConnectTile(
+        isSyncing = uiState.isEhrSyncing,
+        lastStatus = uiState.ehrImportStatus,
+        onConnectClick = { viewModel.openEhrPicker() },
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(horizontal = DorkSpacing.screenHorizontalPadding)
+      )
+
+      Spacer(modifier = Modifier.height(DorkSpacing.s))
+
       UploadHealthRecordsTile(
         existingFilesCount = uiState.documents.size,
         onAddFileClick = onUploadClick,
@@ -174,6 +189,16 @@ fun RecordsScreen(
 
     Spacer(modifier = Modifier.height(DorkSpacing.giant))
     }
+  }
+
+  if (uiState.showEhrPicker) {
+    EhrProviderPickerDialog(
+      providers = EhrSyncClient(SyncSettings()).defaultProviders,
+      onSelectProvider = { providerId ->
+        viewModel.importFromEhr(providerId)
+      },
+      onDismiss = { viewModel.dismissEhrPicker() }
+    )
   }
 }
 

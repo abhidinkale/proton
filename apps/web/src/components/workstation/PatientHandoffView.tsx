@@ -30,7 +30,7 @@ MRN: ${patient.mrn}
 
 YOUR CARE PLAN:
 1. MEDICATIONS:
-${plan.medications.map(m => `• ${m.name} — ${m.dose}, ${m.frequency} (${m.duration})\n  Take as directed with water.`).join('\n\n') || 'None prescribed.'}
+${plan.medications.map(m => `• ${m.name}: ${m.dose}, ${m.frequency} (${m.duration})\n  Take as directed with water.`).join('\n\n') || 'None prescribed.'}
 
 2. ORDERED TESTS & LABS:
 ${plan.investigations.map(i => `• ${i.testName} (${i.category})`).join('\n') || 'No additional tests ordered today.'}

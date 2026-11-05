@@ -54,7 +54,7 @@ function buildSoapNote(patient: DoctorDeskPatient) {
   return {
     subjective: `${patient.name}, a ${patient.age}-year-old ${String(patient.gender).toLowerCase()}, presents for ${(patient.visitType || 'clinical evaluation').toLowerCase()}. Chief complaint: "${patient.chiefComplaint}". Documented allergies: ${allergyLine}.`,
     objective: `Vital signs: BP ${patient.vitals?.bp || 'not recorded'}, HR ${patient.vitals?.hr || 'not recorded'}, SpO₂ ${patient.vitals?.spo2 || 'not recorded'}, Temp ${patient.vitals?.temp || 'not recorded'}, BMI ${patient.vitals?.bmi || 'not recorded'}.\nRecent labs: ${labLine}.`,
-    assessment: `1. ${patient.chiefComplaint} — clinical evaluation in progress.\n2. Documented conditions:\n${conditionLine}\n3. Allergy safety guard: ${allergyLine}.`,
+    assessment: `1. ${patient.chiefComplaint}: clinical evaluation in progress.\n2. Documented conditions:\n${conditionLine}\n3. Allergy safety guard: ${allergyLine}.`,
     plan: '1. Complete focused history and examination.\n2. Order guideline-directed diagnostics as indicated.\n3. Review medication safety against documented allergies.\n4. Schedule follow-up and provide return precautions.'
   };
 }
@@ -650,7 +650,7 @@ export default function DoctorGuidedEncounter({
       const { note, mirrorStatus, mirrorError } = await clinicApi.signNote({
         patientId: patient.id,
         patientName: patient.name,
-        title: `${patient.visitType || 'Clinical encounter'} — ${new Date().toLocaleDateString('en-US')}`,
+        title: `${patient.visitType || 'Clinical encounter'} (${new Date().toLocaleDateString('en-US')})`,
         note: soapNote,
         diagnoses: specialistAssessments
           .map((assessment) => assessment.primaryDiagnosis || assessment.diagnosis || assessment.title)

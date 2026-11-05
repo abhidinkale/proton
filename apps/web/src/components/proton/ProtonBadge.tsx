@@ -6,7 +6,6 @@ import {
   Info, 
   Sparkles, 
   Clock, 
-  FileCheck,
   ShieldCheck
 } from 'lucide-react';
 
@@ -76,7 +75,7 @@ const variantConfig: Record<ProtonBadgeVariant, { bg: string; text: string; bord
     bg: 'bg-paper-2',
     text: 'text-ink-2',
     border: 'border-rule',
-    defaultIcon: <FileCheck className="w-3.5 h-3.5" />
+    defaultIcon: null
   }
 };
 

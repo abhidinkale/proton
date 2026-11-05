@@ -105,11 +105,11 @@ export default function ClinicAdmin() {
           <ClinicMasthead
             eyebrow={<>Clinic desk / unbound workspace</>}
             title="This workspace has no clinic."
-            lede="Your session is not bound to an organization yet. A clinic is created once, then claimed by its first clinician — after that this desk manages it."
+            lede="Your session is not bound to an organization yet. A clinic is created once, then claimed by its first clinician. After that this desk manages it."
           />
           <div className={`rounded-[12px] border ${RULE} bg-paper p-4`}>
             <p className={`text-[12.5px] leading-relaxed ${MUTED}`}>
-              If a clinic already exists, open the claim link you were sent. If not, open one now — it
+              If a clinic already exists, open the claim link you were sent. If not, open one now: it
               takes a name and an email, and needs no card.
             </p>
           </div>
@@ -433,7 +433,7 @@ function TeamSection({
         {issued && (
           <div className="mt-3">
             <SecretReveal
-              label="Claim link — shown once"
+              label="Claim link (shown once)"
               value={issued.url}
               hint={`For ${issued.email}. Expires ${new Date(issued.expiresAt).toLocaleString()}. There is no second copy.`}
             />
@@ -519,7 +519,7 @@ function EnrolmentSection({
       {fresh && (
         <div className="mb-4">
           <SecretReveal
-            label="New clinic code — shown once"
+            label="New clinic code (shown once)"
             value={fresh}
             large
             hint="Stored only as a digest. Read it to the patient now; if it is lost, issue another and revoke this one."
@@ -528,7 +528,7 @@ function EnrolmentSection({
       )}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_110px_110px]">
-        <Field label="Label" htmlFor="code-label" hint="Optional — who it is for.">
+        <Field label="Label" htmlFor="code-label" hint="Optional: who it is for.">
           <input
             id="code-label"
             className={inputClass}
@@ -631,7 +631,7 @@ function EnrolmentSection({
       <p className={`mt-4 flex items-start gap-2 text-[11px] leading-relaxed ${MUTED}`}>
         <ShieldCheck className="mt-0.5 h-3 w-3 shrink-0 text-settled" />
         A code only proves the patient was given it. Their identity still comes from the one-time code sent
-        to their own email — the clinic code alone cannot open anyone’s record.
+        to their own email; the clinic code alone cannot open anyone’s record.
       </p>
     </SectionCard>
   );

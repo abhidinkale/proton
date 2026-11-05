@@ -363,7 +363,7 @@ export default function PatientIntelligenceSection({
                         {item.title}
                       </p>
                       <p className="text-xs text-caution mt-0.5">
-                        {item.statement} {item.detail && <span className="text-caution/80 font-normal">— {item.detail}</span>}
+                        {item.statement} {item.detail && <span className="text-caution/80 font-normal">: {item.detail}</span>}
                       </p>
                     </div>
                     {item.evidence && (

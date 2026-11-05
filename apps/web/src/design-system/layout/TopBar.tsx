@@ -1,7 +1,4 @@
-import { Search, Menu, Bell, Settings, Sparkles, Plus } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import ProtonStatusChip from '../../components/proton/ProtonStatusChip';
-import PaletteSwitcher from '../theme/PaletteSwitcher';
+import { Menu, Bell, Settings, Bot, Palette } from 'lucide-react';
 
 export interface TopBarProps {
   doctorName?: string;
@@ -11,6 +8,8 @@ export interface TopBarProps {
   onOpenCommandPalette: () => void;
   onOpenNotifications: () => void;
   onToggleCopilot: () => void;
+  onOpenThemeCustomizer?: () => void;
+  onOpenProfile?: () => void;
   onNavigateSettings: () => void;
   searchScope?: 'Patients' | 'Education' | 'Prescriptions' | 'Test results';
   onSelectSearchScope?: (scope: 'Patients' | 'Education' | 'Prescriptions' | 'Test results') => void;
@@ -28,87 +27,72 @@ function initials(name: string): string {
 }
 
 export function TopBar({
-  doctorName = 'Dr. Sarah Lin',
+  doctorName = 'Dr. Sarah Lin, MD',
   unreadNotifications = 0,
   criticalNotifications = 0,
   onOpenMobileMenu,
-  onOpenCommandPalette,
   onOpenNotifications,
   onToggleCopilot,
+  onOpenThemeCustomizer,
+  onOpenProfile,
   onNavigateSettings,
-  searchScope = 'Patients',
   className = ''
 }: TopBarProps) {
-  const navigate = useNavigate();
-
   return (
-    <header className={`flex h-[64px] shrink-0 items-center justify-between gap-4 border-b border-rule-strong px-4 sm:px-7 z-20 ${className}`}>
+    <header className={`app-drag-region flex h-[50px] shrink-0 items-center justify-between gap-4 border-b border-rule bg-paper/90 backdrop-blur-md px-5 sm:px-6 z-20 select-none ${className}`}>
 
-      {/* Search */}
+      {/* Left: Mobile Trigger */}
       <div className="flex min-w-0 flex-1 items-center gap-2.5">
         <button
           type="button"
           onClick={onOpenMobileMenu}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[6px] border border-rule-strong text-ink transition-colors hover:bg-paper-2 lg:hidden"
+          className="app-no-drag flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-rule text-ink-2 hover:text-ink hover:bg-paper-2 lg:hidden cursor-pointer"
           aria-label="Open navigation menu"
         >
-          <Menu size={15} />
-        </button>
-
-        <button
-          type="button"
-          onClick={onOpenCommandPalette}
-          className="proton-search-trigger group flex h-9 w-full max-w-[330px] items-center gap-2.5 rounded-[10px] border border-rule-strong bg-canvas/70 px-3 text-left transition-colors hover:border-rule-strong hover:bg-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-solid/10"
-          aria-label="Open global search"
-        >
-          <Search size={13} className="shrink-0 text-ink-3 transition-colors group-hover:text-ink-2" />
-          <span className="flex-1 truncate text-[11.5px] text-ink-3">
-            Search patients, notes, orders
-          </span>
-          <span className="hidden rounded-[4px] border border-rule-strong px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-[0.1em] text-ink-3 sm:inline">
-            {searchScope === 'Patients' ? '⌘K' : searchScope}
-          </span>
+          <Menu size={15} strokeWidth={1.25} aria-hidden="true" />
         </button>
       </div>
 
-      {/* Controls */}
-      <div className="flex shrink-0 items-center gap-1.5">
-        <ProtonStatusChip className="mr-1 hidden md:inline-flex" />
+      {/* Right Controls & Quick Actions Strip (Arc Viewport Toolbar) */}
+      <div className="flex shrink-0 items-center gap-2">
+        {/* Arc Theme & Color Customizer Trigger */}
+        {onOpenThemeCustomizer && (
+          <button
+            type="button"
+            onClick={onOpenThemeCustomizer}
+            className="app-no-drag flex h-8 items-center gap-1.5 rounded-xl border border-rule bg-paper-2/60 hover:bg-paper-2 hover:border-rule-strong px-2.5 text-xs text-ink transition-all cursor-pointer shadow-2xs"
+            title="Arc Theme & Color Customizer"
+            aria-label="Arc Theme & Color Customizer"
+          >
+            <Palette size={13} strokeWidth={1.25} className="text-accent" />
+            <span className="hidden sm:inline font-semibold text-xs">Colors</span>
+          </button>
+        )}
 
-        <button
-          type="button"
-          onClick={() => navigate('/consultation?action=new-patient')}
-          className="flex h-8 w-8 items-center justify-center rounded-[6px] bg-solid text-on-solid transition-colors hover:bg-solid cursor-pointer"
-          title="Start new patient consultation"
-          aria-label="Start new patient consultation"
-        >
-          <Plus size={14} strokeWidth={2.2} />
-        </button>
-
-        <PaletteSwitcher />
-
+        {/* Clinical EHR Copilot Toggle Button */}
         <button
           type="button"
           onClick={onToggleCopilot}
-          className="hidden h-8 w-8 items-center justify-center rounded-[6px] border border-rule-strong text-ink-2 transition-colors hover:bg-paper-2 hover:text-ink xl:flex cursor-pointer"
-          title="Toggle Proton Copilot (⌥A)"
-          aria-label="Toggle Proton Copilot"
+          className="app-no-drag flex h-8 w-8 items-center justify-center rounded-xl border border-rule bg-paper-2/60 hover:bg-paper-2 hover:border-rule-strong text-ink-2 hover:text-ink transition-all cursor-pointer shadow-2xs"
+          title="Toggle Clinical Copilot (⌥A)"
+          aria-label="Toggle Clinical Copilot"
         >
-          <Sparkles size={13} />
+          <Bot size={14} strokeWidth={1.25} aria-hidden="true" />
         </button>
 
+        {/* Clinical Notifications Bell */}
         <button
           type="button"
           onClick={onOpenNotifications}
-          className="relative flex h-8 w-8 items-center justify-center rounded-[6px] border border-rule-strong text-ink-2 transition-colors hover:bg-paper-2 hover:text-ink cursor-pointer"
-          title={unreadNotifications > 0 ? `${unreadNotifications} unread clinical notifications` : 'Clinical notifications'}
-          aria-label={unreadNotifications > 0 ? `${unreadNotifications} unread clinical notifications` : 'Clinical notifications'}
+          className="app-no-drag relative flex h-8 w-8 items-center justify-center rounded-xl border border-rule bg-paper-2/60 hover:bg-paper-2 hover:border-rule-strong text-ink-2 hover:text-ink transition-all cursor-pointer shadow-2xs"
+          title={unreadNotifications > 0 ? `${unreadNotifications} notifications` : 'Notifications'}
+          aria-label={unreadNotifications > 0 ? `${unreadNotifications} notifications` : 'Notifications'}
         >
-          <Bell size={13} />
+          <Bell size={13} strokeWidth={1.25} aria-hidden="true" />
           {unreadNotifications > 0 && (
             <span
-              className={`absolute -right-1 -top-1 flex h-[14px] min-w-[14px] items-center justify-center rounded-full px-1 font-mono text-[8px] font-semibold leading-none text-canvas ring-2 ring-rule ${
-                criticalNotifications > 0 ? 'bg-critical' : 'bg-solid'
+              className={`absolute -right-1 -top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full px-0.5 font-mono text-[8px] font-bold leading-none text-white ring-2 ring-paper ${
+                criticalNotifications > 0 ? 'bg-rose-500 animate-pulse' : 'bg-amber-500'
               }`}
             >
               {unreadNotifications > 9 ? '9+' : unreadNotifications}
@@ -116,24 +100,31 @@ export function TopBar({
           )}
         </button>
 
+        {/* Settings Gear */}
         <button
           type="button"
           onClick={onNavigateSettings}
-          className="hidden h-8 w-8 items-center justify-center rounded-[6px] border border-rule-strong text-ink-2 transition-colors hover:bg-paper-2 hover:text-ink sm:flex cursor-pointer"
+          className="app-no-drag flex h-8 w-8 items-center justify-center rounded-xl border border-rule bg-paper-2/60 hover:bg-paper-2 hover:border-rule-strong text-ink-2 hover:text-ink transition-all cursor-pointer shadow-2xs"
           title="Settings"
           aria-label="Settings"
         >
-          <Settings size={13} />
+          <Settings size={13} strokeWidth={1.25} aria-hidden="true" />
         </button>
 
+        {/* Physician Profile Pill */}
         <button
           type="button"
-          onClick={onNavigateSettings}
-          className="ml-0.5 flex h-8 w-8 items-center justify-center rounded-[6px] bg-solid font-mono text-[9.5px] font-medium tracking-[0.02em] text-on-solid transition-colors hover:bg-solid cursor-pointer"
+          onClick={onOpenProfile || onNavigateSettings}
+          className="app-no-drag ml-0.5 flex h-8 items-center gap-2 rounded-xl border border-rule bg-paper-2/60 hover:bg-paper-2 px-2.5 text-xs text-ink transition-all cursor-pointer shadow-2xs"
           title={`Physician: ${doctorName}`}
           aria-label={`Physician profile: ${doctorName}`}
         >
-          {initials(doctorName)}
+          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-accent-wash text-accent-ink border border-accent-line font-mono text-[9px] font-bold">
+            {initials(doctorName)}
+          </div>
+          <span className="hidden sm:inline font-medium text-ink">
+            {doctorName}
+          </span>
         </button>
       </div>
     </header>

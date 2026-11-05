@@ -223,7 +223,7 @@ export default function Today() {
               <div className="py-14">
                 <p className="font-display text-2xl text-white/60">Nothing ahead.</p>
                 <p className="mt-2 max-w-sm text-sm leading-relaxed text-white/30">
-                  When a patient books on their phone it lands here within seconds — no refresh, no portal.
+                  When a patient books on their phone it lands here within seconds, without refresh or portal.
                 </p>
               </div>
             )}

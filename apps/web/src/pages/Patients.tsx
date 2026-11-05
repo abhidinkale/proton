@@ -170,7 +170,7 @@ export default function Patients() {
       showToast(`Created ${result.patient.name}${result.appointment ? ` · booked ${result.appointment.time}` : ''}`);
 
       if (result.conflict) {
-        setModalConflict(`${result.conflict.message} The patient record was saved — reschedule from the chart.`);
+        setModalConflict(`${result.conflict.message} The patient record was saved; please reschedule from the chart.`);
       }
 
       setForm((current) => ({

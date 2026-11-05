@@ -214,7 +214,7 @@ export default function Billing() {
               Billing & invoices
             </h1>
             <p className="text-xs sm:text-sm text-ink-2 mt-0.5">
-              Every invoice is derived from a signed encounter — no invented claims.
+              Every invoice is derived from a signed encounter, with verified clinical documentation.
             </p>
           </div>
 

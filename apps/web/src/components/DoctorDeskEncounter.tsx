@@ -183,7 +183,7 @@ export default function DoctorDeskEncounter({ patient, onCloseMeeting, onBackToD
       return {
         subjective: "58-year-old male presents with 2-week history of exertional sub-sternal chest tightness triggered by stair climbing, relieved within 5 minutes of rest. Denies radiation, syncope, or rest dyspnea. Family history of premature CAD (father MI at 65). Allergy: Sulfa drugs.",
         objective: `Vitals: BP ${patient.vitals.bp}, HR ${patient.vitals.hr}, SpO2 ${patient.vitals.spo2}, BMI ${patient.vitals.bmi}.\nExam: Well-nourished male in no acute distress. Heart: S1/S2 normal, no murmurs or gallops. Lungs clear.\nRecent Labs: Total Cholesterol 224 mg/dL, LDL 142 mg/dL, Creatinine 1.4 mg/dL (borderline elevated), hs-Troponin I normal.`,
-        assessment: "1. Exertional Angina Pectoris — High clinical suspicion for obstructive coronary artery disease given symptoms and risk profile.\n2. Essential Hypertension — Suboptimal BP control (142/90).\n3. Hyperlipidemia — Elevated LDL.\n4. Borderline Renal Function (Creatinine 1.4 mg/dL).",
+        assessment: "1. Exertional Angina Pectoris: High clinical suspicion for obstructive coronary artery disease given symptoms and risk profile.\n2. Essential Hypertension: Suboptimal BP control (142/90).\n3. Hyperlipidemia: Elevated LDL.\n4. Borderline Renal Function (Creatinine 1.4 mg/dL).",
         plan: "1. Urgent outpatient stress echocardiogram with myocardial perfusion imaging.\n2. Sublingual Nitroglycerin 0.4 mg PRN chest pain (max 3 doses q5min; call 911 if unresolved).\n3. Increase Atorvastatin to 40 mg PO QD for aggressive ASCVD lipid lowering.\n4. Continue Amlodipine 5 mg PO QD.\n5. Follow-up in 2 weeks or sooner if symptoms escalate."
       };
     }
@@ -199,7 +199,7 @@ export default function DoctorDeskEncounter({ patient, onCloseMeeting, onBackToD
       return {
         subjective: "62-year-old male presents for annual preventive wellness evaluation. Mild right knee stiffness in mornings lasting <15 minutes. Good medication compliance.",
         objective: `Vitals: BP ${patient.vitals.bp}, HR ${patient.vitals.hr}, SpO2 ${patient.vitals.spo2}, BMI ${patient.vitals.bmi}.\nExam: Right knee mild crepitus on passive flexion, no joint effusion or erythema. Gait normal.\nRecent Labs: HbA1c 5.9% (pre-diabetes range), eGFR >90.`,
-        assessment: "1. Annual Wellness Examination.\n2. Primary Osteoarthritis of Right Knee — Stable, functional.\n3. Pre-diabetes Mellitus.",
+        assessment: "1. Annual Wellness Examination.\n2. Primary Osteoarthritis of Right Knee: Stable, functional.\n3. Pre-diabetes Mellitus.",
         plan: "1. Intensive lifestyle guidance and medical nutrition therapy for pre-diabetes.\n2. Continue Meloxicam 7.5 mg PO PRN for knee discomfort.\n3. Physical therapy referral for quadriceps strengthening.\n4. Annual influenza vaccine administered."
       };
     }
@@ -207,7 +207,7 @@ export default function DoctorDeskEncounter({ patient, onCloseMeeting, onBackToD
       return {
         subjective: "48-year-old female presents for annual wellness examination. Reports excellent functional status, regular aerobic exercise, no chest pain, dyspnea, or palpitations.",
         objective: `Vitals: BP ${patient.vitals.bp}, HR ${patient.vitals.hr}, SpO2 ${patient.vitals.spo2}, BMI ${patient.vitals.bmi}.\nPhysical Exam: Well-nourished, well-developed female in no acute distress. Heart: Regular rate and rhythm, normal S1/S2. Lungs: Clear to auscultation bilaterally. Abdomen soft, non-tender.\nRecent Labs: Total Cholesterol 210 mg/dL, HDL 58 mg/dL, LDL 128 mg/dL (borderline).`,
-        assessment: "1. Annual Preventive Wellness Examination (Z00.00).\n2. Borderline Hyperlipidemia — Well managed on diet and lifestyle.",
+        assessment: "1. Annual Preventive Wellness Examination (Z00.00).\n2. Borderline Hyperlipidemia: Well managed on diet and lifestyle.",
         plan: "1. Continue regular aerobic exercise (150 min/week) and Mediterranean dietary pattern.\n2. Repeat fasting lipid profile in 12 months.\n3. Routine preventive health maintenance up to date."
       };
     }
@@ -215,7 +215,7 @@ export default function DoctorDeskEncounter({ patient, onCloseMeeting, onBackToD
       return {
         subjective: "54-year-old male presents with 3-month history of worsening fatigue, cold intolerance, and sluggishness. Complies with morning fasting Levothyroxine 50 mcg regimen.",
         objective: `Vitals: BP ${patient.vitals.bp}, HR ${patient.vitals.hr}, SpO2 ${patient.vitals.spo2}, BMI ${patient.vitals.bmi}.\nPhysical Exam: Heart: Mild bradycardia at 60 bpm, regular rhythm. Thyroid: Diffuse mild enlargement without discrete nodularity. Skin: Mild xerosis.\nRecent Labs: TSH 7.8 mIU/L (elevated), Free T4 0.8 ng/dL (borderline low).`,
-        assessment: "1. Under-replaced Primary Hypothyroidism (E03.9) — Elevated TSH indicates subtherapeutic levothyroxine dosage.\n2. Metabolic Syndrome (E88.81).",
+        assessment: "1. Under-replaced Primary Hypothyroidism (E03.9): Elevated TSH indicates subtherapeutic levothyroxine dosage.\n2. Metabolic Syndrome (E88.81).",
         plan: "1. Titrate Levothyroxine from 50 mcg to 75 mcg PO Once Daily in morning on empty stomach with water.\n2. Recheck TSH and Free T4 in 6 weeks for dosage optimization.\n3. Lifestyle and nutritional counseling for metabolic syndrome."
       };
     }
@@ -223,7 +223,7 @@ export default function DoctorDeskEncounter({ patient, onCloseMeeting, onBackToD
       return {
         subjective: "71-year-old female presents for heart failure follow-up. Reports mild exertional dyspnea when walking uphill; denies orthopnea or PND. Notes historical records stated EF 35% while recent echo showed EF 55%.",
         objective: `Vitals: BP ${patient.vitals.bp}, HR ${patient.vitals.hr}, SpO2 ${patient.vitals.spo2}, BMI ${patient.vitals.bmi}.\nExam: JVP 7 cm H2O. Lungs clear bilaterally. Trace bilateral pedal edema.\nRecent Labs: NT-proBNP 480 pg/mL (mildly elevated), K+ 4.4 mEq/L, Creatinine 1.0 mg/dL.\nEcho Discrepancy: Outside note (2025) diagnosed HFrEF (EF 35%); Recent in-house echo (2026) demonstrates preserved systolic function with EF 55% and Grade II diastolic dysfunction (HFpEF).`,
-        assessment: "1. Heart Failure with Preserved Ejection Fraction (HFpEF, I50.30) — Phenotypic discrepancy noted against outside chart; recent objective echo confirms preserved EF with diastolic impairment.\n2. Essential Hypertension — Controlled.\n3. Type 2 Diabetes Mellitus.",
+        assessment: "1. Heart Failure with Preserved Ejection Fraction (HFpEF, I50.30): Phenotypic discrepancy noted against outside chart; recent objective echo confirms preserved EF with diastolic impairment.\n2. Essential Hypertension: Controlled.\n3. Type 2 Diabetes Mellitus.",
         plan: "1. Maintain Furosemide 20 mg PO QD for volume management.\n2. Continue Lisinopril 10 mg QD and Metoprolol Succinate 25 mg QD.\n3. Order repeat surveillance echocardiogram in 6 months to establish longitudinal stability.\n4. Re-check BMP and renal panel in 3 months."
       };
     }
@@ -231,14 +231,14 @@ export default function DoctorDeskEncounter({ patient, onCloseMeeting, onBackToD
       return {
         subjective: "52-year-old male presents with 10 days of severe facial pressure, purulent yellow-green nasal discharge, and frontal headache unresponsive to OTC analgesics. Confirmed severe Penicillin anaphylaxis history requiring epinephrine.",
         objective: `Vitals: BP ${patient.vitals.bp}, HR ${patient.vitals.hr}, SpO2 ${patient.vitals.spo2}, Temp ${patient.vitals.temp}, BMI ${patient.vitals.bmi}.\nExam: Moderate bilateral maxillary sinus tenderness to percussion. Purulent drainage visible in middle meatus. Oropharynx clear.\nRecent Labs: WBC 11.2 K/uL (mild leukocytosis).`,
-        assessment: "1. Acute Bacterial Maxillary Sinusitis (J01.00) — Clinical criteria met (>10 days of purulent discharge and facial pain).\n2. Documented Severe Penicillin Anaphylaxis — Beta-lactam contraindicated (Hard Stop).",
+        assessment: "1. Acute Bacterial Maxillary Sinusitis (J01.00): Clinical criteria met (>10 days of purulent discharge and facial pain).\n2. Documented Severe Penicillin Anaphylaxis: Beta-lactam contraindicated (Hard Stop).",
         plan: "1. Doxycycline 100 mg PO Twice Daily x 7 days (non-beta-lactam first-line alternative).\n2. Saline nasal irrigation BID.\n3. Fluticasone nasal spray 1 spray each nostril daily.\n4. Avoid all beta-lactam antibiotics; return if high fever or visual changes develop."
       };
     }
     return {
       subjective: "68-year-old female presents for glycemic follow-up. Reports worsening afternoon fatigue and home fasting glucose readings averaging 150-160 mg/dL. Reports good gastrointestinal tolerance of current Metformin 500 mg BID regimen. Confirmed severe Penicillin allergy (anaphylaxis history).",
       objective: `Vitals: BP ${patient.vitals.bp}, HR ${patient.vitals.hr}, SpO2 ${patient.vitals.spo2}, BMI ${patient.vitals.bmi}.\nPhysical Exam: Well-appearing, alert, oriented x4. Regular rate and rhythm. Clear lungs bilaterally. Diabetic foot inspection negative for ulcers or skin breakdown.\nRecent Labs: HbA1c 8.2% (elevated from 7.1%), eGFR 68 mL/min/1.73m², Fasting Glucose 158 mg/dL.`,
-      assessment: "1. Type 2 Diabetes Mellitus — Inadequate glycemic control on submaximal metformin monotherapy with HbA1c escalation to 8.2%.\n2. Essential Hypertension — Stable on Lisinopril 10 mg QD.\n3. Mild Renal Impairment (eGFR 68) — Warranting cardiorenal protective therapy.",
+      assessment: "1. Type 2 Diabetes Mellitus: Inadequate glycemic control on submaximal metformin monotherapy with HbA1c escalation to 8.2%.\n2. Essential Hypertension: Stable on Lisinopril 10 mg QD.\n3. Mild Renal Impairment (eGFR 68): Warranting cardiorenal protective therapy.",
       plan: "1. Titrate Metformin from 500 mg BID to 1000 mg BID with meals.\n2. Initiate Empagliflozin 10 mg PO Once Daily for glycemic optimization and cardiorenal risk reduction.\n3. Continue Lisinopril 10 mg PO Once Daily.\n4. Strict Penicillin avoidance re-verified.\n5. Follow-up: Repeat HbA1c, BMP, and renal function in 3 months."
     };
   };
@@ -1443,7 +1443,7 @@ SIGNED: Dr. Physician, Attending Physician`.trim();
                       <div>
                         <span className="font-semibold text-ink">{lab.name}</span>
                         <span className="text-[11px] text-ink-2 ml-2">({lab.date})</span>
-                        {lab.note && <span className="text-[11px] text-ink-2 ml-2 italic">— {lab.note}</span>}
+                        {lab.note && <span className="text-[11px] text-ink-2 ml-2 italic">: {lab.note}</span>}
                       </div>
                       <div className="flex items-center gap-2">
                         <span className={`font-mono font-bold ${

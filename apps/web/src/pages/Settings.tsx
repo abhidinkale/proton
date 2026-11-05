@@ -147,6 +147,30 @@ export default function Settings() {
           </p>
         </div>
 
+        {/* Hospital & Clinic Appliance Reconfiguration Card */}
+        <div className="proton-card flex flex-wrap items-center justify-between gap-4 p-5 border border-amber-500/30 bg-amber-500/5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/15 text-amber-500">
+              <SlidersHorizontal size={17} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-semibold text-[var(--color-text-primary)]">Hospital Appliance Configuration</h2>
+                <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-amber-500/20 text-amber-500">ON-PREM</span>
+              </div>
+              <p className="mt-0.5 text-xs text-[var(--color-text-tertiary)]">
+                Configure clinic identity, NPI number, embedded vs enterprise database, and Gemini AI credentials.
+              </p>
+            </div>
+          </div>
+          <a
+            href="/setup"
+            className="px-3.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold transition-all shadow-xs"
+          >
+            Run Setup Wizard
+          </a>
+        </div>
+
         <div className="proton-card flex flex-wrap items-center justify-between gap-4 p-5">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--color-surface-sunken)] text-[var(--color-text-secondary)]">
@@ -242,8 +266,8 @@ export default function Settings() {
                   onChange={(event) => updatePreference('defaultNoteTemplate', event.target.value)}
                   className="w-full rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-surface-raised)] px-3 py-2 text-[12px] focus:outline-none"
                 >
-                  <option value="SOAP">SOAP — Subjective, Objective, Assessment, Plan</option>
-                  <option value="HPI">HPI — History of present illness</option>
+                  <option value="SOAP">SOAP: Subjective, Objective, Assessment, Plan</option>
+                  <option value="HPI">HPI: History of present illness</option>
                   <option value="Progress">Progress note</option>
                   <option value="Consult">Consultation note</option>
                 </select>

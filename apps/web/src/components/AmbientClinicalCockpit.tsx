@@ -818,7 +818,7 @@ export default function AmbientClinicalCockpit({
                       type="text"
                       value={customSymptoms}
                       onChange={(event) => setCustomSymptoms(event.target.value)}
-                      placeholder="Describe symptoms — e.g. acute RLQ pain, migraine, dysuria…"
+                      placeholder="Describe symptoms, e.g. acute RLQ pain, migraine, dysuria…"
                       aria-label="Symptoms to evaluate"
                       className="min-w-0 flex-1 rounded-full border border-rule/80 bg-paper/85 px-3.5 py-2 text-[12px] text-ink outline-none transition-colors placeholder:text-ink-3 focus:border-accent/40 focus:ring-2 focus:ring-accent/15"
                     />
@@ -875,7 +875,7 @@ export default function AmbientClinicalCockpit({
                     </div>
                     {cantMissEmergencies.map((emergency, index) => (
                       <p key={index} className="mt-1.5 text-[11.5px] leading-relaxed text-critical">
-                        <strong className="font-semibold">{emergency.condition} ({emergency.icd10})</strong> — {emergency.rationale}
+                        <strong className="font-semibold">{emergency.condition} ({emergency.icd10})</strong>: {emergency.rationale}
                       </p>
                     ))}
                   </div>
@@ -1082,7 +1082,7 @@ export default function AmbientClinicalCockpit({
                   {attestationPayload?.practitionerName || 'Attending physician'} · {attestationPayload?.npi || npiSignature}
                 </div>
                 <div className="mt-0.5 truncate font-mono-clinical text-[9.5px] text-settled">
-                  Record {String(attestationPayload?.signatureRecordId || '—').substring(0, 18)}…
+                  Record {String(attestationPayload?.signatureRecordId || 'N/A').substring(0, 18)}…
                 </div>
                 {attestationModalData && (
                   <button

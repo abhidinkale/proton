@@ -351,7 +351,7 @@ export default function LandingPage() {
                           {provenanceBadge === 'draft' ? (
                             <span className="inline-flex items-center gap-1.5 rounded-full border border-caution-line/70 bg-caution-wash/80 px-2.5 py-1 text-[10.5px] font-semibold text-caution">
                               <AlertTriangle className="h-3.5 w-3.5" />
-                              AI draft — review required
+                              AI draft: review required
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1.5 rounded-full border border-settled-line/70 bg-settled-wash/80 px-2.5 py-1 text-[10.5px] font-semibold text-settled">
@@ -361,7 +361,7 @@ export default function LandingPage() {
                           )}
                           <span className="text-[11px] text-ink-2">
                             {provenanceBadge === 'draft'
-                              ? 'Model synthesis — not part of the record'
+                              ? 'Model synthesis (not part of the record)'
                               : 'Signed by the treating physician'}
                           </span>
                         </div>
@@ -553,7 +553,7 @@ export default function LandingPage() {
               </h2>
               <p className="mt-4 text-[15px] leading-relaxed text-ink-2 sm:text-base">
                 Proton is not another chat window beside the EHR. It is the encounter
-                workflow — brief, capture, draft, safety, signature, report, follow-up.
+                workflow: brief, capture, draft, safety, signature, report, follow-up.
               </p>
             </div>
           </Reveal>
@@ -642,7 +642,7 @@ export default function LandingPage() {
                   </h3>
                   <p className="mt-1.5 text-[12.5px] leading-relaxed text-ink-2">
                     AI drafts, the physician attests. Every transition is versioned,
-                    audited, and replayable — including who signed, and when.
+                    audited, and replayable, including who signed and when.
                   </p>
                 </div>
                 <div className="min-w-[190px] rounded-2xl border border-settled-line/70 bg-settled-wash/60 px-3.5 py-3">
@@ -703,7 +703,7 @@ export default function LandingPage() {
                 </h2>
                 <p className="mx-auto mt-4 max-w-xl text-[14px] leading-relaxed text-ink-2 sm:text-[15px]">
                   Book, capture, draft, sign, report, follow up. No fixture data, no
-                  silent writes — just the loop, working.
+                  silent writes: just the loop, working.
                 </p>
                 <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
                   <button

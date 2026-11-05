@@ -43,7 +43,7 @@ export default function CaptureQRCode({ payload, size = 220 }: CaptureQRCodeProp
 
       <div className="flex items-center gap-1.5 text-xs text-ink-2 font-medium bg-paper-2 px-3 py-1.5 rounded-full">
         <ShieldCheck size={14} className="text-settled" />
-        <span>Opaque Capability — Zero PHI / PII in QR Payload</span>
+        <span>Opaque Capability: Zero PHI / PII in QR Payload</span>
       </div>
 
       <button

@@ -295,7 +295,7 @@ export default function Education() {
   const downloadCertificate = (course: ClinicalCourse) => {
     const issued = new Date();
     const text = [
-      'PROTON CLINICAL LEARNING — CERTIFICATE OF COMPLETION',
+      'PROTON CLINICAL LEARNING: CERTIFICATE OF COMPLETION',
       '',
       `Clinician: ${currentUser?.displayName || 'Attending physician'}`,
       `NPI: ${currentUser?.npi || 'Not recorded'}`,

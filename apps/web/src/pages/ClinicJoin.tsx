@@ -87,7 +87,7 @@ export default function ClinicJoin() {
     } catch (err) {
       if (err instanceof ApiError && (err.code === 'INVITE_EXPIRED' || err.code === 'INVITE_ALREADY_USED')) {
         setError(
-          'This invite can no longer be used — it has expired or was already claimed. Ask the clinic owner for a new one.'
+          'This invite can no longer be used: it has expired or was already claimed. Ask the clinic owner for a new one.'
         );
       } else if (err instanceof ApiError) {
         setError(err.message);
@@ -135,7 +135,7 @@ export default function ClinicJoin() {
         title={signedIn ? 'Claim this clinic.' : 'Sign in, then claim this clinic.'}
         lede={
           signedIn
-            ? 'Your session will be re-issued with this clinic’s tenant claim. Everything you see afterwards — schedule, care loop, patients — belongs to this organization.'
+            ? 'Your session will be re-issued with this clinic’s tenant claim. Everything you see afterwards (schedule, care loop, patients) belongs to this organization.'
             : 'The invite only proves you were invited. Signing in proves who you are; the claim binds the two together.'
         }
         aside={
@@ -163,7 +163,7 @@ export default function ClinicJoin() {
           <>
             <p className={`text-[12.5px] leading-relaxed ${MUTED}`}>
               Signed in as <span className="font-medium text-ink">{authService.getCurrentUser()?.email}</span>.
-              Claiming replaces this session with one bound to the clinic — you will be taken straight to
+              Claiming replaces this session with one bound to the clinic; you will be taken straight to
               its care loop.
             </p>
             <div className="mt-4 flex flex-wrap items-center gap-3">

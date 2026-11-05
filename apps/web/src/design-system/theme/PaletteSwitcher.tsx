@@ -1,13 +1,9 @@
 /**
  * The palette switcher.
  *
- * A doctor sits in front of this for six hours; the light in the room changes,
- * and so does what they need from the screen. Six options, one click, no
- * settings page: the control is where the work is.
- *
- * Deliberately not a dropdown of colour names — each option is shown as the
- * thing it is (canvas, ink, accent) so the choice can be made without applying
- * it first.
+ * Six clinical atmospheres, one click.
+ * Deliberately not a plain dropdown: each option displays its live 3-color swatch
+ * (canvas, ink, accent) so the choice is immediate and visual.
  */
 
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
@@ -19,6 +15,7 @@ import {
   subscribePalette,
   type PaletteId
 } from './palettes';
+import { clinicApi } from '../../lib/clinicApi';
 
 export default function PaletteSwitcher({ compact = false }: { compact?: boolean }) {
   const activeId = useSyncExternalStore(subscribePalette, getPalette, getPalette);
@@ -45,42 +42,68 @@ export default function PaletteSwitcher({ compact = false }: { compact?: boolean
 
   function choose(id: PaletteId) {
     applyPalette(id);
+    const selected = PALETTES.find((p) => p.id === id);
+    if (selected) {
+      // Quietly sync server preference with mode
+      clinicApi.updatePreferences({ appearance: selected.mode }).catch(() => {});
+    }
     setOpen(false);
   }
 
   const active = PALETTES.find((palette) => palette.id === activeId) ?? PALETTES[0];
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className="relative select-none">
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className={`flex h-8 items-center gap-2 rounded-[6px] border border-rule-strong text-ink-2 transition-colors hover:bg-paper-2 hover:text-ink cursor-pointer ${
-          compact ? 'w-8 justify-center' : 'px-2'
+        className={`flex h-8 items-center gap-2 rounded-xl border border-rule bg-paper-2/60 text-ink hover:bg-paper-2 hover:border-rule-strong transition-all cursor-pointer shadow-2xs ${
+          compact ? 'w-8 justify-center' : 'px-2.5'
         }`}
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-label={`Colour palette: ${active.label}`}
-        title={`Colour palette — ${active.label}`}
+        title={`Colour palette: ${active.label}`}
       >
-        <PaletteIcon size={13} />
-        {!compact && <span className="text-[11px] font-medium">{active.label}</span>}
+        <span
+          aria-hidden="true"
+          className="flex h-4 w-4 shrink-0 overflow-hidden rounded-full border border-rule/80"
+        >
+          {active.swatch.map((colour, index) => (
+            <span
+              key={index}
+              className="h-full flex-1"
+              style={{ backgroundColor: colour }}
+            />
+          ))}
+        </span>
+        {!compact && (
+          <span className="text-xs font-semibold text-ink">
+            {active.label}
+          </span>
+        )}
       </button>
 
       {open && (
         <div
           role="dialog"
           aria-label="Choose a colour palette"
-          className="absolute right-0 top-10 z-50 w-[268px] overflow-hidden rounded-[14px] border border-rule bg-paper shadow-[0_24px_60px_-30px_rgba(0,0,0,0.45)]"
+          className="absolute right-0 top-10 z-50 w-[280px] overflow-hidden rounded-2xl border border-rule bg-paper shadow-[0_20px_50px_rgba(0,0,0,0.15)] animate-in fade-in zoom-in-95 duration-150"
         >
-          <div className="border-b border-rule px-3.5 py-2.5">
-            <p className="text-[11.5px] font-medium text-ink">Colour palette</p>
-            <p className="mt-0.5 text-[10.5px] leading-relaxed text-ink-3">
-              Saved on this device. Applies everywhere.
+          <div className="border-b border-rule px-4 py-3 bg-paper-2/40">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-bold text-ink flex items-center gap-1.5">
+                <PaletteIcon size={13} className="text-accent" />
+                <span>Clinical Atmospheres</span>
+              </p>
+              <span className="text-[10px] font-mono text-ink-3 uppercase">6 Themes</span>
+            </div>
+            <p className="mt-0.5 text-[11px] leading-relaxed text-ink-3">
+              Optimized for clinic lighting and shift changes.
             </p>
           </div>
 
-          <ul className="p-1.5">
+          <ul className="p-1.5 space-y-0.5">
             {PALETTES.map((palette) => {
               const isActive = palette.id === activeId;
               return (
@@ -89,13 +112,13 @@ export default function PaletteSwitcher({ compact = false }: { compact?: boolean
                     type="button"
                     onClick={() => choose(palette.id)}
                     aria-pressed={isActive}
-                    className={`flex w-full items-center gap-2.5 rounded-[9px] px-2 py-2 text-left transition-colors cursor-pointer ${
-                      isActive ? 'bg-paper-2' : 'hover:bg-paper-2'
+                    className={`flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-all cursor-pointer ${
+                      isActive ? 'bg-solid text-on-solid shadow-xs' : 'hover:bg-paper-2 text-ink'
                     }`}
                   >
                     <span
                       aria-hidden="true"
-                      className="flex h-7 w-7 shrink-0 overflow-hidden rounded-full border border-rule"
+                      className="flex h-7 w-7 shrink-0 overflow-hidden rounded-full border border-rule shadow-2xs"
                     >
                       {palette.swatch.map((colour, index) => (
                         <span
@@ -108,17 +131,25 @@ export default function PaletteSwitcher({ compact = false }: { compact?: boolean
 
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center gap-1.5">
-                        <span className="text-[12px] font-medium text-ink">{palette.label}</span>
-                        {palette.mode === 'dark' && (
-                          <span className="rounded-full border border-rule px-1.5 py-px font-mono text-[8px] uppercase tracking-[0.1em] text-ink-3">
-                            dark
-                          </span>
-                        )}
+                        <span className={`text-xs font-bold ${isActive ? 'text-on-solid' : 'text-ink'}`}>
+                          {palette.label}
+                        </span>
+                        <span
+                          className={`rounded-full px-1.5 py-px font-mono text-[8px] uppercase tracking-wider ${
+                            isActive
+                              ? 'bg-current opacity-25 text-on-solid'
+                              : 'bg-paper-2 text-ink-3 border border-rule'
+                          }`}
+                        >
+                          {palette.mode}
+                        </span>
                       </span>
-                      <span className="mt-0.5 block truncate text-[10.5px] text-ink-3">{palette.note}</span>
+                      <span className={`mt-0.5 block truncate text-[10.5px] ${isActive ? 'text-on-solid opacity-80' : 'text-ink-3'}`}>
+                        {palette.note}
+                      </span>
                     </span>
 
-                    {isActive && <Check size={13} className="shrink-0 text-accent" />}
+                    {isActive && <Check size={14} className="shrink-0 text-current" />}
                   </button>
                 </li>
               );

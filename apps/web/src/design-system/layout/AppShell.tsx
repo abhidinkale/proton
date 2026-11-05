@@ -16,6 +16,8 @@ import { PageTransition } from '../motion/primitives';
 import { SESSION_EXPIRED_EVENT } from '../../lib/api';
 import { clinicApi, type ClinicNotification } from '../../lib/clinicApi';
 import { applyAppearance } from '../theme/palettes';
+import { ArcThemeCustomizer, applyArcThemeToDOM, readStoredArcTheme } from '../theme/ArcThemeCustomizer';
+import ClinicianProfileModal, { readDoctorProfile } from '../../components/profile/ClinicianProfileModal';
 import { DEFAULT_GENERAL_NAV, DEFAULT_TOOLS_NAV } from './Sidebar';
 
 export interface AppShellProps {
@@ -35,19 +37,113 @@ export function AppShell({
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  // Persist sidebar collapsed mode across page navigation and clicks
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('proton.sidebar_collapsed');
+        if (stored !== null) {
+          return stored === 'true';
+        }
+      } catch {
+        // Fallback if localStorage is restricted
+      }
+    }
+    return false;
+  });
+
+  const handleToggleCollapse = useCallback(() => {
+    setIsCollapsed((prev) => {
+      const next = !prev;
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('proton.sidebar_collapsed', String(next));
+          window.dispatchEvent(new CustomEvent('proton.sidebar_toggle', { detail: { isCollapsed: next } }));
+        } catch {
+          // ignore
+        }
+      }
+      return next;
+    });
+  }, []);
+
+  // Listen for sidebar toggle events to ensure any mounted shell instances stay in perfect sync
+  useEffect(() => {
+    const handleSync = () => {
+      try {
+        const stored = localStorage.getItem('proton.sidebar_collapsed');
+        if (stored !== null) {
+          setIsCollapsed(stored === 'true');
+        }
+      } catch {
+        // ignore
+      }
+    };
+    window.addEventListener('proton.sidebar_toggle', handleSync);
+    window.addEventListener('storage', handleSync);
+    return () => {
+      window.removeEventListener('proton.sidebar_toggle', handleSync);
+      window.removeEventListener('storage', handleSync);
+    };
+  }, []);
+
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isThemeCustomizerOpen, setIsThemeCustomizerOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [activeDocProfile, setActiveDocProfile] = useState(readDoctorProfile);
   const [notifications, setNotifications] = useState<ClinicNotification[]>([]);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [notificationsError, setNotificationsError] = useState<string | null>(null);
-  const [copilotMode, setCopilotMode] = useState<CopilotMode>('minimized');
+
+  useEffect(() => {
+    const handleProfileUpdate = (e: any) => {
+      if (e.detail) {
+        setActiveDocProfile(e.detail);
+      }
+    };
+    window.addEventListener('proton.doctor_profile_updated', handleProfileUpdate);
+    return () => window.removeEventListener('proton.doctor_profile_updated', handleProfileUpdate);
+  }, []);
+
+  // Apply customized Arc theme colors and texture on initial boot
+  useEffect(() => {
+    applyArcThemeToDOM(readStoredArcTheme());
+  }, []);
+
+  // Persist copilot mode across page navigation
+  const [copilotMode, setCopilotMode] = useState<CopilotMode>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('proton.copilot_mode') as CopilotMode | null;
+        if (stored && ['minimized', 'floating', 'docked'].includes(stored)) {
+          return stored;
+        }
+      } catch {
+        // ignore
+      }
+    }
+    return 'minimized';
+  });
+
+  const handleToggleCopilot = useCallback(() => {
+    setCopilotMode((prev) => {
+      const next: CopilotMode = prev === 'minimized' ? 'floating' : prev === 'floating' ? 'docked' : 'minimized';
+      try {
+        localStorage.setItem('proton.copilot_mode', next);
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  }, []);
+
   const [searchScope, setSearchScope] = useState<'Patients' | 'Education' | 'Prescriptions' | 'Test results'>('Patients');
 
   const currentUser = authService.getCurrentUser();
-  const doctorName = currentUser?.displayName || 'Dr. Sarah Lin, MD';
+  const doctorName = activeDocProfile.name || currentUser?.displayName || 'Dr. Sarah Lin, MD';
 
   const refreshNotifications = useCallback(async () => {
     setNotificationsLoading(true);
@@ -69,16 +165,16 @@ export function AppShell({
   }, [refreshNotifications]);
 
   // Apply persisted working preferences on every shell mount so a fast reload
-  // keeps the clinician's theme, density and motion settings.
+  // keeps the clinician's theme, density and motion settings without stomping local palette selection.
   useEffect(() => {
     let active = true;
     clinicApi
       .getPreferences()
       .then(({ preferences }) => {
         if (!active) return;
-        if (preferences.appearance !== 'system') {
+        const storedPalette = localStorage.getItem('proton.palette');
+        if (!storedPalette && preferences.appearance && preferences.appearance !== 'system') {
           localStorage.setItem('proton_appearance', preferences.appearance);
-          // The server stores light/dark; the screen is one of six palettes.
           applyAppearance(preferences.appearance);
         }
         document.documentElement.dataset.density = preferences.density;
@@ -141,7 +237,7 @@ export function AppShell({
     }
   };
 
-  // Global Keyboard Shortcuts (⌘K, ⌘/)
+  // Global Keyboard Shortcuts (⌘K, ⌘/, ⌘B)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const activeTag = document.activeElement?.tagName?.toLowerCase();
@@ -153,11 +249,14 @@ export function AppShell({
       } else if ((e.metaKey || e.ctrlKey) && e.key === '/') {
         e.preventDefault();
         setIsShortcutsOpen(prev => !prev);
+      } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        handleToggleCollapse();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [handleToggleCollapse]);
 
   // Close overlays on route change
   useEffect(() => {
@@ -187,28 +286,25 @@ export function AppShell({
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className={`proton-workspace-root relative min-h-screen w-full bg-canvas text-ink flex flex-col font-sans antialiased selection:bg-accent-wash selection:text-ink ${className}`}>
+      <div className={`proton-workspace-root relative h-screen w-screen overflow-hidden bg-canvas text-ink flex flex-col font-sans antialiased selection:bg-accent-wash selection:text-ink ${className}`}>
 
-      {/* Paper, not chrome: one flat warm ground with a whisper of grain. */}
-      <div className="proton-workspace-ambient" aria-hidden="true">
-        <div className="proton-grain absolute inset-0" />
-      </div>
-
-      {/* Desktop Main Application Frame */}
-      <div className="relative z-10 flex-1 flex overflow-hidden min-h-screen">
+      {/* Desktop Application Frame: 100% Authentic Arc Browser Frame with Signature Texture */}
+      <div className="relative z-10 flex-1 flex overflow-hidden h-full bg-canvas arc-textured-canvas">
         
-        {/* Left Persistent Navigation Rail */}
+        {/* Left Native Arc Sidebar (flush against window edges) */}
         <Sidebar
           isCollapsed={isCollapsed}
-          onToggleCollapse={() => setIsCollapsed(prev => !prev)}
+          onToggleCollapse={handleToggleCollapse}
+          onOpenThemeCustomizer={() => setIsThemeCustomizerOpen(true)}
+          onOpenProfile={() => setIsProfileModalOpen(true)}
           onLogout={handleLogout}
           currentPath={location.pathname}
         />
 
-        {/* Main Workspace Viewport */}
-        <div className={`flex-1 flex flex-col min-w-0 min-h-screen overflow-hidden transition-all duration-300 ${copilotMode === 'docked' ? 'lg:mr-96' : ''}`}>
+        {/* Right Inset Arc Floating Viewport Canvas */}
+        <div className={`flex-1 flex flex-col min-w-0 bg-paper border border-rule/80 rounded-[18px] overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.06)] transition-all duration-300 my-2 mr-2 ${isCollapsed ? 'ml-2' : ''} ${copilotMode === 'docked' ? 'lg:mr-96' : ''}`}>
           
-          {/* TopBar */}
+          {/* TopBar Integrated Seamlessly */}
           <TopBar
             doctorName={doctorName}
             unreadNotifications={unreadCount}
@@ -216,16 +312,18 @@ export function AppShell({
             onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
             onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
             onOpenNotifications={() => setIsNotificationsOpen(true)}
-            onToggleCopilot={() => setCopilotMode(prev => prev === 'minimized' ? 'floating' : prev === 'floating' ? 'docked' : 'minimized')}
+            onToggleCopilot={handleToggleCopilot}
+            onOpenThemeCustomizer={() => setIsThemeCustomizerOpen(true)}
+            onOpenProfile={() => setIsProfileModalOpen(true)}
             onNavigateSettings={() => navigate('/settings')}
             searchScope={searchScope}
             onSelectSearchScope={setSearchScope}
           />
 
           {/* Workspace Body */}
-          <main className={`flex-1 overflow-y-auto px-4 pb-24 sm:px-7 ${fillCanvas ? 'p-0' : fullBleed ? 'p-2' : ''}`}>
-            <div className="max-w-[1560px] mx-auto">
-              <PageTransition routeKey={location.pathname} className="w-full">
+          <main className={`flex-1 overflow-y-auto ${fillCanvas ? 'p-0' : fullBleed ? 'p-2' : 'px-8 py-6 pb-12'}`}>
+            <div className="max-w-[1560px] mx-auto h-full">
+              <PageTransition routeKey={location.pathname} className="w-full h-full">
                 {children}
               </PageTransition>
             </div>
@@ -365,6 +463,20 @@ export function AppShell({
       <ProtonShortcutsModal
         isOpen={isShortcutsOpen}
         onClose={() => setIsShortcutsOpen(false)}
+      />
+
+      {/* Arc Theme & Color Customizer Modal */}
+      <ArcThemeCustomizer
+        isOpen={isThemeCustomizerOpen}
+        onClose={() => setIsThemeCustomizerOpen(false)}
+      />
+
+      {/* Clinician Profile Modal */}
+      <ClinicianProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        onOpenThemeCustomizer={() => setIsThemeCustomizerOpen(true)}
+        onLogout={handleLogout}
       />
       </div>
     </MotionConfig>

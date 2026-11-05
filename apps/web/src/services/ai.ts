@@ -10,6 +10,33 @@ export interface ChatMessage {
   content: string;
 }
 
+export interface EhrCopilotResponse {
+  message: string;
+  actions: Array<{
+    tool: string;
+    args: any;
+    result: any;
+  }>;
+  cards: Array<{
+    type: string;
+    data: any;
+  }>;
+}
+
+export async function sendEhrCopilotCommand(message: string, history?: any[]): Promise<EhrCopilotResponse> {
+  const response = await apiFetch(`${API_BASE_URL}/api/ehr-copilot/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message, history }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || 'EHR Copilot is unavailable. Please try again.');
+  }
+  return data;
+}
+
 export async function sendClinicalChat(messages: ChatMessage[], patientContext?: string): Promise<string> {
   const response = await apiFetch(`${API_BASE_URL}/api/chat`, {
     method: 'POST',

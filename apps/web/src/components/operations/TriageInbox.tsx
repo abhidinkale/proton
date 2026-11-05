@@ -153,7 +153,7 @@ export const TriageInbox: React.FC<Props> = ({ task, onApprove }) => {
             <span className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${
               isEditing ? 'bg-caution-wash text-caution border-caution-line' : 'bg-accent-wash text-accent-ink border-accent-line'
             }`}>
-              {isEditing ? 'PHYSICIAN EDITED' : 'AI DRAFT — REVIEW REQUIRED'}
+              {isEditing ? 'PHYSICIAN EDITED' : 'CLINICAL DRAFT: REVIEW REQUIRED'}
             </span>
           </div>
           {task.status !== 'completed' && (

@@ -33,7 +33,7 @@ class CareRepositoryTest {
     val repository = repository()
     val doctors = repository.doctors.first()
 
-    assertEquals(3, doctors.size)
+    assertEquals(4, doctors.size)
     val doctor = repository.getDoctorById("doc-1")
     assertNotNull(doctor)
     assertEquals("Dr. Sarah Chen", doctor?.name)

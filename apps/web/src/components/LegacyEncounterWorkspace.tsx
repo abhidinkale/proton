@@ -482,8 +482,8 @@ export default function LegacyEncounterWorkspace({
     const simDisc: MedicationDiscrepancy = {
       id: `sim-disc-${Date.now()}`,
       medicationName: 'Metformin',
-      approvedOrder: 'Metformin 500 mg — 1 tablet Oral Once daily with breakfast',
-      patientReported: 'Metformin — Patient reports taking 10 mg / twice daily',
+      approvedOrder: 'Metformin 500 mg: 1 tablet Oral Once daily with breakfast',
+      patientReported: 'Metformin: Patient reports taking 10 mg / twice daily',
       sourceEncounterDate: new Date().toLocaleDateString(),
       evidence: {
         id: 'MedicationRequest/sim-met',
@@ -1401,7 +1401,7 @@ export default function LegacyEncounterWorkspace({
                       </span>
                     ) : (
                       <span className="flex items-center gap-1.5 text-xs font-semibold text-caution bg-caution-wash px-3 py-1 rounded-full border border-caution-line">
-                        <FileText size={13} /> AI-generated draft — physician review required
+                        <FileText size={13} /> Clinical draft: physician review required
                       </span>
                     )}
                   </div>
@@ -1931,7 +1931,7 @@ export default function LegacyEncounterWorkspace({
                                       : 'bg-paper text-ink-2 border-rule hover:bg-paper-2'
                                   }`}
                                 >
-                                  {score} {score === 1 ? '— Poor' : score === 2 ? '— Fair' : score === 3 ? '— Useful' : score === 4 ? '— Very Useful' : '— Essential'}
+                                  {score} {score === 1 ? ' (Poor)' : score === 2 ? ' (Fair)' : score === 3 ? ' (Useful)' : score === 4 ? ' (Very Useful)' : ' (Essential)'}
                                 </button>
                               ))}
                             </div>
@@ -1948,7 +1948,7 @@ export default function LegacyEncounterWorkspace({
                                 'Added Missing Medicine',
                                 'Removed Suggested Medicine',
                                 'Diagnosis Refinement',
-                                'None — Accepted Directly'
+                                'None: Accepted Directly'
                               ].map((tag) => {
                                 const isSelected = feedbackCorrections.includes(tag);
                                 return (

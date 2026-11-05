@@ -263,7 +263,7 @@ function CreatedClinic({ created }: { created: CreatedOrganization }) {
       <ClinicMasthead
         eyebrow={<>Clinic onboarding / step 2 of 3</>}
         title="The clinic exists."
-        lede={`${organization.name} is provisioned. Send the claim link below to its first clinician — they sign in, open it, and the clinic becomes theirs.`}
+        lede={`${organization.name} is provisioned. Send the claim link below to its first clinician: they sign in, open it, and the clinic becomes theirs.`}
         aside={
           <p className={`font-mono text-[9.5px] uppercase tracking-[0.16em] ${FAINT}`}>
             slug / {organization.slug}
@@ -271,7 +271,7 @@ function CreatedClinic({ created }: { created: CreatedOrganization }) {
         }
       />
 
-      <Notice tone="note" title="Send this now — it is shown once">
+      <Notice tone="note" title="Send this now (shown once)">
         The server stores only a digest of this link. It cannot be shown again; if it is lost, issue a
         fresh invite from the clinic desk.
       </Notice>
@@ -289,7 +289,7 @@ function CreatedClinic({ created }: { created: CreatedOrganization }) {
         <ol className={`mt-3 space-y-2 text-[12px] leading-relaxed ${MUTED}`}>
           <li>
             <span className={`font-mono ${INK}`}>1.</span> The clinician signs in with their clinical
-            identity (Medplum) — not a demo password.
+            identity (Medplum), not a demo password.
           </li>
           <li>
             <span className={`font-mono ${INK}`}>2.</span> They open the link and claim the clinic; the

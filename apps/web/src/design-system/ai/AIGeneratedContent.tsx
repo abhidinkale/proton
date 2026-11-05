@@ -28,7 +28,7 @@ export const AIGeneratedContent = forwardRef<HTMLDivElement, AIGeneratedContentP
       <div className="flex items-center justify-between gap-3 pb-2.5 mb-2.5 border-b border-accent-line/80 text-xs">
         <div className="flex items-center gap-1.5 font-bold text-accent-ink">
           <Sparkles size={13} className="shrink-0 text-accent-ink" />
-          <span>AI generated — physician review required</span>
+          <span>Synthesized draft: physician review required</span>
         </div>
 
         <div className="flex items-center gap-2 text-[10px] text-ink-2 font-mono">

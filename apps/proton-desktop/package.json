@@ -5,6 +5,7 @@
   "main": "src/main.cjs",
   "scripts": {
     "start": "electron .",
+    "install:app": "bash scripts/install-app.sh",
     "test": "node tests/medplum_electron_integration.test.cjs"
   },
   "dependencies": {

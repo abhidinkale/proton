@@ -23,6 +23,7 @@ import SmartLaunch from './pages/SmartLaunch';
 import ClinicStart from './pages/ClinicStart';
 import ClinicJoin from './pages/ClinicJoin';
 import ClinicAdmin from './pages/ClinicAdmin';
+import ClinicSetupWizard from './pages/ClinicSetupWizard';
 import { authService } from './services/auth';
 
 // Lazy-load the landing page since it's only for unauthenticated visitors
@@ -79,6 +80,7 @@ export default function App() {
       <Route path="/qr-login" element={<QrLogin />} />
       <Route path="/capture" element={<MobileCapturePage />} />
       <Route path="/launch" element={<SmartLaunch />} />
+      <Route path="/setup" element={<ClinicSetupWizard />} />
       <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/today" element={<ProtectedRoute><Today /></ProtectedRoute>} />
       <Route path="/consult/:appointmentId" element={<ProtectedRoute><ConsultRoom /></ProtectedRoute>} />
@@ -100,6 +102,7 @@ export default function App() {
       <Route path="/documents/review" element={<ProtectedRoute><DocumentReview /></ProtectedRoute>} />
       <Route path="/review" element={<ProtectedRoute><DocumentReview /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+      <Route path="/profile" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

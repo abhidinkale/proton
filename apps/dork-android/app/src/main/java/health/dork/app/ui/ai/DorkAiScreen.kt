@@ -1332,3 +1332,254 @@ fun MoodyOceanicBackground(
     }
   }
 }
+
+@Composable
+fun AiBookingActionCard(
+  card: AiBookingCardData,
+  isDark: Boolean,
+  onSlotSelected: (String) -> Unit,
+  onConfirmClick: () -> Unit,
+  modifier: Modifier = Modifier
+) {
+  val isConfirmed = card.status == AiBookingStatus.CONFIRMED
+
+  Surface(
+    shape = RoundedCornerShape(16.dp),
+    color = if (isDark) Color(0xFF0F172A).copy(alpha = 0.92f) else Color.White,
+    border = BorderStroke(
+      width = 1.dp,
+      color = if (isConfirmed) {
+        Color(0xFF10B981).copy(alpha = 0.6f)
+      } else {
+        if (isDark) Color(0x3338BDF8) else Color(0x25F43F5E)
+      }
+    ),
+    shadowElevation = if (isDark) 0.dp else 4.dp,
+    modifier = modifier.fillMaxWidth()
+  ) {
+    Column(
+      modifier = Modifier.padding(14.dp),
+      verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+      // 1. Doctor Header Row
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        Row(
+          horizontalArrangement = Arrangement.spacedBy(10.dp),
+          verticalAlignment = Alignment.CenterVertically,
+          modifier = Modifier.weight(1f)
+        ) {
+          Box(
+            modifier = Modifier
+              .size(38.dp)
+              .clip(CircleShape)
+              .background(
+                if (isConfirmed) Color(0x2010B981)
+                else if (isDark) Color(0x2538BDF8)
+                else Color(0x18F43F5E)
+              ),
+            contentAlignment = Alignment.Center
+          ) {
+            Icon(
+              imageVector = if (isConfirmed) Icons.Rounded.CheckCircle else Icons.Rounded.CalendarToday,
+              contentDescription = null,
+              tint = if (isConfirmed) Color(0xFF10B981)
+                     else if (isDark) Color(0xFF38BDF8)
+                     else Color(0xFFE11D48),
+              modifier = Modifier.size(18.dp)
+            )
+          }
+
+          Column {
+            Text(
+              text = card.doctorName,
+              style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+              color = if (isDark) Color.White else Color(0xFF0F172A)
+            )
+            Text(
+              text = "${card.specialty} · ${card.clinicName}",
+              style = MaterialTheme.typography.labelSmall,
+              color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B),
+              maxLines = 1,
+              overflow = TextOverflow.Ellipsis
+            )
+          }
+        }
+
+        // Status pill
+        Surface(
+          shape = RoundedCornerShape(12.dp),
+          color = if (isConfirmed) Color(0x2210B981) else (if (isDark) Color(0x2238BDF8) else Color(0x18E11D48)),
+          border = BorderStroke(
+            0.5.dp,
+            if (isConfirmed) Color(0xFF10B981) else (if (isDark) Color(0x6638BDF8) else Color(0x40E11D48))
+          )
+        ) {
+          Text(
+            text = if (isConfirmed) "CONFIRMED" else "OPEN SLOTS",
+            style = MaterialTheme.typography.labelSmall.copy(
+              fontWeight = FontWeight.Bold,
+              fontSize = 9.sp,
+              letterSpacing = 0.5.sp
+            ),
+            color = if (isConfirmed) Color(0xFF10B981) else (if (isDark) Color(0xFF38BDF8) else Color(0xFFE11D48)),
+            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
+          )
+        }
+      }
+
+      if (!isConfirmed) {
+        // 2. Interactive Slot Selection
+        Text(
+          text = "Select preferred appointment time:",
+          style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
+          color = if (isDark) Color(0xFFCBD5E1) else Color(0xFF475569)
+        )
+
+        LazyRow(
+          horizontalArrangement = Arrangement.spacedBy(8.dp),
+          modifier = Modifier.fillMaxWidth()
+        ) {
+          items(card.availableSlots) { slot ->
+            val isSelected = card.selectedSlotIso == slot.startIso
+            Surface(
+              shape = RoundedCornerShape(10.dp),
+              color = if (isSelected) {
+                if (isDark) Color(0xFF0284C7) else Color(0xFF0F172A)
+              } else {
+                if (isDark) Color(0x25334155) else Color(0xFFF1F5F9)
+              },
+              border = BorderStroke(
+                1.dp,
+                if (isSelected) {
+                  if (isDark) Color(0xFF38BDF8) else Color(0xFF0F172A)
+                } else {
+                  if (isDark) Color(0x20FFFFFF) else Color(0x1A000000)
+                }
+              ),
+              modifier = Modifier.clickable { onSlotSelected(slot.startIso) }
+            ) {
+              Column(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+              ) {
+                Text(
+                  text = slot.dateLabel,
+                  style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                  color = if (isSelected) Color(0xCCFFFFFF) else (if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B))
+                )
+                Text(
+                  text = slot.timeLabel,
+                  style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                  color = if (isSelected) Color.White else (if (isDark) Color.White else Color(0xFF0F172A))
+                )
+              }
+            }
+          }
+        }
+
+        // 3. Confirm Action Button
+        Button(
+          onClick = onConfirmClick,
+          enabled = card.selectedSlotIso != null,
+          shape = RoundedCornerShape(10.dp),
+          colors = ButtonDefaults.buttonColors(
+            containerColor = if (isDark) Color(0xFF0284C7) else Color(0xFF0F172A),
+            disabledContainerColor = if (isDark) Color(0x30334155) else Color(0x1F000000),
+            contentColor = Color.White
+          ),
+          modifier = Modifier
+            .fillMaxWidth()
+            .height(42.dp)
+        ) {
+          Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+          ) {
+            Icon(
+              imageVector = Icons.Rounded.CheckCircle,
+              contentDescription = null,
+              modifier = Modifier.size(15.dp)
+            )
+            Text(
+              text = "Confirm Booking with ${card.doctorName.split(" ").lastOrNull() ?: card.doctorName}",
+              style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+            )
+          }
+        }
+      } else {
+        // Confirmed state
+        Surface(
+          shape = RoundedCornerShape(10.dp),
+          color = if (isDark) Color(0x2210B981) else Color(0x1510B981),
+          border = BorderStroke(1.dp, Color(0xFF10B981).copy(alpha = 0.4f)),
+          modifier = Modifier.fillMaxWidth()
+        ) {
+          Row(
+            modifier = Modifier.padding(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+          ) {
+            Icon(
+              imageVector = Icons.Rounded.CheckCircle,
+              contentDescription = null,
+              tint = Color(0xFF10B981),
+              modifier = Modifier.size(18.dp)
+            )
+            Column {
+              Text(
+                text = "Appointment Locked In: ${card.confirmedDateTime ?: "Scheduled"}",
+                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                color = if (isDark) Color(0xFFD1FAE5) else Color(0xFF065F46)
+              )
+              Text(
+                text = "Synced to Care schedule & Home tab",
+                style = MaterialTheme.typography.labelSmall,
+                color = if (isDark) Color(0xFFA7F3D0) else Color(0xFF047857)
+              )
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+@Composable
+private fun StarterChip(
+  icon: ImageVector,
+  text: String,
+  isDark: Boolean,
+  onClick: () -> Unit,
+  modifier: Modifier = Modifier
+) {
+  Surface(
+    shape = RoundedCornerShape(12.dp),
+    color = if (isDark) Color(0x351E293B) else Color(0xFAFDF8F8),
+    border = BorderStroke(1.dp, if (isDark) Color(0x2EFFFFFF) else Color(0x35FDA4AF)),
+    modifier = modifier.clickable(onClick = onClick)
+  ) {
+    Row(
+      modifier = Modifier.padding(horizontal = 10.dp, vertical = 9.dp),
+      verticalAlignment = Alignment.CenterVertically,
+      horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+      Icon(
+        imageVector = icon,
+        contentDescription = null,
+        tint = if (isDark) Color(0xFF38BDF8) else Color(0xFFE11D48),
+        modifier = Modifier.size(14.dp)
+      )
+      Text(
+        text = text,
+        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
+        color = if (isDark) Color(0xFFE2E8F0) else Color(0xFF1E293B),
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis
+      )
+    }
+  }
+}

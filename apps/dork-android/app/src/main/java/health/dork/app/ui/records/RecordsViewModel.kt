@@ -25,12 +25,16 @@ data class RecordsUiState(
   val activePrescription: PrescriptionDetail? = null,
   val selectedRecord: HealthRecordItem? = null,
   val isUploading: Boolean = false,
-  val uploadSuccessDocument: HealthDocument? = null
+  val uploadSuccessDocument: HealthDocument? = null,
+  val isEhrSyncing: Boolean = false,
+  val ehrImportStatus: String? = null,
+  val showEhrPicker: Boolean = false
 )
 
 class RecordsViewModel(
   private val recordRepository: RecordRepository,
-  private val medicationRepository: MedicationRepository
+  private val medicationRepository: MedicationRepository,
+  private val ehrSyncClient: health.dork.app.core.sync.EhrSyncClient? = null
 ) : ViewModel() {
 
   private val _uiState = MutableStateFlow(RecordsUiState())
@@ -132,6 +136,41 @@ class RecordsViewModel(
 
   fun clearUploadResult() {
     _uiState.value = _uiState.value.copy(uploadSuccessDocument = null)
+  }
+
+  fun openEhrPicker() {
+    _uiState.value = _uiState.value.copy(showEhrPicker = true)
+  }
+
+  fun dismissEhrPicker() {
+    _uiState.value = _uiState.value.copy(showEhrPicker = false)
+  }
+
+  fun clearEhrStatus() {
+    _uiState.value = _uiState.value.copy(ehrImportStatus = null)
+  }
+
+  fun importFromEhr(providerId: String = "epic-sandbox", onComplete: () -> Unit = {}) {
+    val client = ehrSyncClient ?: health.dork.app.core.sync.EhrSyncClient(
+      health.dork.app.core.sync.SyncSettings()
+    )
+    viewModelScope.launch {
+      _uiState.value = _uiState.value.copy(isEhrSyncing = true, showEhrPicker = false)
+      try {
+        val result = client.importFromProvider(providerId)
+        val added = recordRepository.importEhrRecords(result.records)
+        _uiState.value = _uiState.value.copy(
+          isEhrSyncing = false,
+          ehrImportStatus = "Imported $added records from ${result.providerName}"
+        )
+      } catch (e: Exception) {
+        _uiState.value = _uiState.value.copy(
+          isEhrSyncing = false,
+          ehrImportStatus = "Import failed: ${e.message}"
+        )
+      }
+      onComplete()
+    }
   }
 
   fun addPrescriptionToMedicationSchedule(prescription: PrescriptionDetail, onDone: () -> Unit) {

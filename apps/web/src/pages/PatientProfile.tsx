@@ -28,11 +28,13 @@ import {
   Clock, 
   FileCheck, 
   AlertTriangle,
-  Upload
+  Upload,
+  Building2
 } from 'lucide-react';
 import Layout from '../components/Layout';
 import type { PrescriptionItem } from '../types/prescription';
 import PrescriptionPDFModal from '../components/PrescriptionPDFModal';
+import { EhrImportModal } from '../components/ehr/EhrImportModal';
 import { operationsService } from '../services/operationsService';
 import type { OperationalTask } from '../types/operations';
 import ProvenanceBadge from '../components/ui/ProvenanceBadge';
@@ -114,6 +116,35 @@ export default function PatientProfile() {
     medications: PrescriptionItem[];
     date?: string;
   }>({ isOpen: false, medications: [] });
+
+  // EHR SMART on FHIR Import Modal State
+  const [isEhrModalOpen, setIsEhrModalOpen] = useState(false);
+  const [ehrNotification, setEhrNotification] = useState<string | null>(null);
+
+  const handleEhrImportComplete = (importedRecords: any[]) => {
+    const newObs: Observation[] = [];
+    const newConds: Condition[] = [];
+    const newMeds: MedicationRequest[] = [];
+
+    importedRecords.forEach((rec) => {
+      if (rec.fhirResource) {
+        if (rec.fhirResource.resourceType === 'Observation') {
+          newObs.push(rec.fhirResource);
+        } else if (rec.fhirResource.resourceType === 'Condition') {
+          newConds.push(rec.fhirResource);
+        } else if (rec.fhirResource.resourceType === 'MedicationRequest') {
+          newMeds.push(rec.fhirResource);
+        }
+      }
+    });
+
+    if (newObs.length > 0) setObservations(prev => [...newObs, ...prev]);
+    if (newConds.length > 0) setConditions(prev => [...newConds, ...prev]);
+    if (newMeds.length > 0) setMedicationRequests(prev => [...newMeds, ...prev]);
+
+    setEhrNotification(`Imported ${importedRecords.length} records from health system via SMART on FHIR.`);
+    setTimeout(() => setEhrNotification(null), 6000);
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -785,6 +816,15 @@ export default function PatientProfile() {
             <div className="flex items-center gap-2 shrink-0">
               <button
                 type="button"
+                onClick={() => setIsEhrModalOpen(true)}
+                className="px-3.5 py-2.5 bg-paper hover:bg-paper-2 text-ink border border-rule rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer"
+                title="Sync external clinical records via SMART on FHIR"
+              >
+                <Building2 size={14} className="text-settled" />
+                <span>Sync EHR</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => navigate(`/consultation?patient=${patient.id}`)}
                 className="px-4 py-2.5 bg-solid hover:bg-solid text-white text-xs font-semibold rounded-xl transition-all shadow-xs flex items-center gap-2 cursor-pointer"
               >
@@ -801,6 +841,15 @@ export default function PatientProfile() {
               </button>
             </div>
           </div>
+
+          {ehrNotification && (
+            <div className="p-3 bg-settled-wash border border-settled-line rounded-xl text-xs font-semibold text-settled flex items-center justify-between animate-in fade-in">
+              <span>{ehrNotification}</span>
+              <button onClick={() => setEhrNotification(null)} className="text-settled hover:underline text-[11px] cursor-pointer">
+                Dismiss
+              </button>
+            </div>
+          )}
         </section>
 
         {/* ── 2. MINIMALIST 3-TAB SWITCHER ── */}
@@ -1198,6 +1247,15 @@ export default function PatientProfile() {
         doctorName="Dr. Aris Thorne, MD"
         medications={pdfModalData.medications}
         date={pdfModalData.date}
+      />
+
+      {/* EHR SMART on FHIR Import Modal */}
+      <EhrImportModal
+        isOpen={isEhrModalOpen}
+        onClose={() => setIsEhrModalOpen(false)}
+        patientId={patient.id || 'default'}
+        patientName={displayName}
+        onImportComplete={handleEhrImportComplete}
       />
     </Layout>
   );

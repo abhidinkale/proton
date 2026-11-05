@@ -109,10 +109,10 @@ function timeAgo(iso: string | null): string {
 function toneFor(appointment: ClinicAppointment) {
   if (appointment.status === 'CANCELLED') return { card: 'bg-paper-2 border-rule text-ink-3', badge: 'neutral' as const };
   if (appointment.priority === 'critical') return { card: 'bg-critical-wash border-critical-line text-accent-ink', badge: 'critical' as const };
-  if (appointment.queueCategory === 'IN_CONSULTATION') return { card: 'bg-caution-wash border-caution-line text-caution', badge: 'attention' as const };
+  if (appointment.queueCategory === 'IN_CONSULTATION') return { card: 'bg-paper-2 border-rule text-ink', badge: 'neutral' as const };
   if (appointment.queueCategory === 'READY_FOR_REVIEW') return { card: 'bg-accent-wash border-accent-line text-accent-ink', badge: 'info' as const };
-  if (appointment.queueCategory === 'COMPLETED') return { card: 'bg-settled-wash border-settled-line text-settled', badge: 'stable' as const };
-  return { card: 'bg-canvas border-rule text-ink', badge: 'stable' as const };
+  if (appointment.queueCategory === 'COMPLETED') return { card: 'bg-paper-2 border-rule text-ink-2', badge: 'neutral' as const };
+  return { card: 'bg-paper border-rule text-ink', badge: 'neutral' as const };
 }
 
 export default function Schedule() {
@@ -553,7 +553,7 @@ export default function Schedule() {
               <div className="rounded-3xl border border-rule bg-paper p-5 shadow-sm">
                 <div className="flex items-center justify-between">
                   <h3 className="text-[12px] font-semibold text-ink">Live availability</h3>
-                  <span className="rounded-full bg-settled-wash px-2 py-0.5 text-[9px] font-semibold text-settled">
+                  <span className="rounded-full bg-paper-2 border border-rule px-2 py-0.5 text-[9px] font-semibold text-ink-2">
                     {freeCount} free
                   </span>
                 </div>
@@ -571,8 +571,8 @@ export default function Schedule() {
                       }}
                       className={`rounded-xl border px-1 py-1.5 text-[10px] font-semibold transition-colors ${
                         slot.available
-                          ? 'border-settled-line bg-settled-wash text-settled hover:bg-settled-wash cursor-pointer'
-                          : 'border-rule bg-paper-2 text-ink-3 cursor-not-allowed'
+                          ? 'border-rule hover:border-rule-strong bg-paper-2 text-ink hover:bg-paper cursor-pointer'
+                          : 'border-rule/50 bg-paper-2/50 text-ink-3 cursor-not-allowed'
                       }`}
                     >
                       {slot.time.replace(' ', '')}
@@ -594,7 +594,7 @@ export default function Schedule() {
                     { label: 'Every visit has a room', done: dayAppointments.every((entry) => Boolean(entry.roomOrVirtual)) }
                   ].map((item) => (
                     <li key={item.label} className="flex items-center gap-2 text-[11px] text-ink-2">
-                      <span className={`flex h-4 w-4 items-center justify-center rounded-full ${item.done ? 'bg-settled-wash text-settled' : 'bg-paper-2 text-ink-3'}`}>
+                      <span className={`flex h-4 w-4 items-center justify-center rounded-full ${item.done ? 'bg-paper-2 text-ink border border-rule' : 'bg-paper-2/60 text-ink-3'}`}>
                         <CheckCircle2 size={10} />
                       </span>
                       {item.label}

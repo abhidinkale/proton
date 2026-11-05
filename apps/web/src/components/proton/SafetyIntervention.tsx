@@ -136,7 +136,7 @@ export default function SafetyIntervention({
                 <div className="flex items-start gap-2">
                   <span className="font-semibold text-ink-3 w-28 shrink-0">Blocked Item:</span>
                   <span className="font-bold text-ink">
-                    {intervention.proposedItem.name} — <span className="font-normal text-ink-2">{intervention.proposedItem.conflictReason}</span>
+                    {intervention.proposedItem.name}: <span className="font-normal text-ink-2">{intervention.proposedItem.conflictReason}</span>
                   </span>
                 </div>
               )}

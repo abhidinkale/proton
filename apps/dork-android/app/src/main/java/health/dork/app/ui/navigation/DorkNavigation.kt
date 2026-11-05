@@ -170,7 +170,13 @@ fun DorkAppNavigation(container: AppContainer) {
       cancelSync = { container.syncScheduler?.cancel() }
     )
   }
-  val recordsViewModel = remember { RecordsViewModel(container.recordRepository, container.medicationRepository) }
+  val recordsViewModel = remember {
+    RecordsViewModel(
+      recordRepository = container.recordRepository,
+      medicationRepository = container.medicationRepository,
+      ehrSyncClient = container.ehrSyncClient
+    )
+  }
   val casesViewModel = remember {
     CasesViewModel(
       caseRepository = container.caseRepository,

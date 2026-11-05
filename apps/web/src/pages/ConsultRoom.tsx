@@ -301,7 +301,7 @@ export default function ConsultRoom() {
           plan: parsed.plan || current.plan
         }));
       } catch {
-        setDraftError('Draft unavailable. Your words are still here — write it yourself.');
+        setDraftError('Draft unavailable. Your words are still here. Please compose manually.');
       } finally {
         setDrafting(false);
       }
@@ -447,7 +447,7 @@ export default function ConsultRoom() {
       setPhase('signed');
       void clinicApi.updateAppointment(appointment.id, { status: 'COMPLETED' }).catch(() => undefined);
     } catch {
-      setSignError('Could not sign. The note is still here — retry.');
+      setSignError('Could not sign. The note is still here. Please retry.');
     } finally {
       setSigning(false);
     }
@@ -559,7 +559,7 @@ export default function ConsultRoom() {
             {lastVisit && (
               <div className="sm:col-span-3">
                 <Fact label={`Last visit · ${new Date(lastVisit.createdAt).toLocaleDateString([], { day: '2-digit', month: 'short' })}`}>
-                  {[lastVisit.note?.assessment, lastVisit.note?.plan].filter(Boolean).join(' — ') || 'Signed encounter on file.'}
+                  {[lastVisit.note?.assessment, lastVisit.note?.plan].filter(Boolean).join(' · ') || 'Signed encounter on file.'}
                 </Fact>
               </div>
             )}

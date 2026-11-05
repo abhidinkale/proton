@@ -704,8 +704,8 @@ export function detectMedicationDiscrepancies(
         discrepancies.push({
           id: `disc-${med.id}`,
           medicationName: medName,
-          approvedOrder: `${medName} — ${currentOrder}`,
-          patientReported: `${medName} — Patient reported taking twice daily`,
+          approvedOrder: `${medName}: ${currentOrder}`,
+          patientReported: `${medName}: Patient reported taking twice daily`,
           sourceEncounterDate: formatDate(new Date().toISOString()),
           evidence: ev
         });
@@ -1330,7 +1330,7 @@ export function detectConsultationChanges(
       summary.newItems.push({
         category: 'medication',
         title: `Newly Prescribed: ${p.name}`,
-        statement: `${p.name} ${p.strength} — ${p.dose} ${p.frequency} for ${p.duration}.`
+        statement: `${p.name} ${p.strength}: ${p.dose} ${p.frequency} for ${p.duration}.`
       });
     } else {
       summary.changedItems.push({

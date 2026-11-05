@@ -321,14 +321,17 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4 bg-solid/40 backdrop-blur-sm animate-in fade-in duration-150">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/55 backdrop-blur-sm select-none animate-in fade-in duration-150"
+    >
       <div 
-        className="bg-paper rounded-2xl shadow-2xl border border-rule/90 w-full max-w-xl overflow-hidden animate-in zoom-in-95 duration-150 flex flex-col max-h-[80vh]"
+        className="w-full max-w-[560px] rounded-[22px] bg-[#1c1c1f]/95 dark:bg-[#18181b]/95 backdrop-blur-2xl border border-white/12 shadow-[0_32px_96px_rgba(0,0,0,0.65)] overflow-hidden animate-in zoom-in-95 duration-150 flex flex-col max-h-[82vh] p-2"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Search Input Bar */}
-        <div className="relative border-b border-rule px-4 py-3.5 flex items-center gap-3">
-          <Search size={18} className="text-ink-3 shrink-0" />
+        {/* Arc Search Input Bar (Matching Arc Floating Palette) */}
+        <div className="relative px-3.5 py-2.5 flex items-center gap-3">
+          <Search size={16} strokeWidth={1.5} className="text-white/45 shrink-0" />
           <input
             ref={inputRef}
             type="text"
@@ -336,38 +339,41 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Search patients, actions, or jump to workspace..."
-            className="flex-1 bg-transparent text-sm text-ink placeholder:text-ink-3 focus:outline-none font-medium"
+            className="flex-1 bg-transparent text-[14px] text-white placeholder:text-white/40 focus:outline-none font-medium antialiased"
           />
           {query && (
             <button
               onClick={() => setQuery('')}
-              className="text-ink-3 hover:text-ink-2 p-0.5 rounded cursor-pointer"
+              className="text-white/40 hover:text-white/80 p-0.5 rounded cursor-pointer transition-colors"
             >
               <X size={14} />
             </button>
           )}
-          <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-on-solid0 bg-paper-2 border border-rule rounded">
+          <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-white/50 bg-white/10 rounded border border-white/10">
             ESC
           </kbd>
         </div>
 
+        {/* Separator */}
+        <div className="h-[1px] bg-white/8 mx-2 mb-1" />
+
         {/* Results List */}
-        <div className="overflow-y-auto divide-y divide-rule flex-1 p-2">
+        <div className="overflow-y-auto flex-1 px-1 py-1 space-y-0.5 no-scrollbar">
           {searchState === 'loading' && (
-            <div className="flex items-center gap-2 px-3.5 py-2 text-[11px] text-on-solid0">
-              <LoaderCircle size={12} className="animate-spin" />
-              Searching the clinic record…
+            <div className="flex items-center gap-2 px-3 py-2.5 text-[12px] text-white/50">
+              <LoaderCircle size={13} className="animate-spin text-white/60" />
+              Searching records…
             </div>
           )}
           {searchState === 'error' && (
-            <div className="flex items-center gap-2 px-3.5 py-2 text-[11px] text-caution">
-              <AlertTriangle size={12} />
-              Search is unavailable. Check that the clinic API is running.
+            <div className="flex items-center gap-2 px-3 py-2.5 text-[12px] text-rose-400">
+              <AlertTriangle size={13} />
+              Search is unavailable. Check clinic service connection.
             </div>
           )}
-          {actions.length === 0 ? (
-            <div className="p-8 text-center text-on-solid0 text-xs">
-              No matching patients or actions found.
+          {actions.length === 0 && searchState !== 'loading' ? (
+            <div className="p-8 text-center text-white/40 text-xs">
+              No matching records or actions found.
             </div>
           ) : (
             actions.map((act, idx) => {
@@ -377,36 +383,44 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
                   key={act.id}
                   onMouseEnter={() => setSelectedIndex(idx)}
                   onClick={act.onSelect}
-                  className={`px-3.5 py-2.5 rounded-xl flex items-center justify-between gap-3 cursor-pointer transition-colors ${
-                    isSelected ? 'bg-brand-50 text-brand-950' : 'hover:bg-paper-2 text-ink'
+                  className={`px-3.5 py-2.5 rounded-xl flex items-center justify-between gap-3 cursor-pointer transition-colors duration-100 ${
+                    isSelected
+                      ? 'bg-[var(--accent,#8b5cf6)] text-white shadow-sm'
+                      : 'hover:bg-white/6 text-white/85'
                   }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className={`p-2 rounded-lg shrink-0 ${isSelected ? 'bg-paper shadow-2xs' : 'bg-paper-2'}`}>
+                    <div className={`p-1.5 rounded-lg shrink-0 ${isSelected ? 'text-white' : 'text-white/60'}`}>
                       {act.icon}
                     </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-sm truncate">{act.title}</span>
-                        {act.category === 'PATIENT' && (
-                          <span className="text-[10px] uppercase font-bold px-1.5 py-0.2 rounded bg-paper-2 text-ink-2">
-                            Patient
-                          </span>
-                        )}
-                      </div>
+                    <div className="min-w-0 flex items-center gap-2">
+                      <span className={`font-medium text-[13px] truncate ${isSelected ? 'text-white' : 'text-white/95'}`}>
+                        {act.title}
+                      </span>
                       {act.subtitle && (
-                        <p className="text-xs text-on-solid0 truncate mt-0.5">{act.subtitle}</p>
+                        <span className={`text-[12px] truncate ${isSelected ? 'text-white/75' : 'text-white/45'}`}>
+                          — {act.subtitle}
+                        </span>
+                      )}
+                      {act.category === 'PATIENT' && (
+                        <span className={`text-[10px] uppercase font-bold px-1.5 py-0.2 rounded shrink-0 ${
+                          isSelected ? 'bg-white/20 text-white' : 'bg-white/10 text-white/60'
+                        }`}>
+                          Patient
+                        </span>
                       )}
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
                     {act.shortcut && (
-                      <kbd className="hidden md:inline-flex text-[10px] font-mono text-ink-3 bg-paper-2 px-1.5 py-0.5 rounded border border-rule">
+                      <kbd className={`hidden md:inline-flex text-[10px] font-mono px-1.5 py-0.5 rounded ${
+                        isSelected ? 'bg-white/20 text-white' : 'text-white/40 bg-white/6'
+                      }`}>
                         {act.shortcut}
                       </kbd>
                     )}
-                    <ChevronRight size={14} className={isSelected ? 'text-brand-600' : 'text-ink-3'} />
+                    <ChevronRight size={13} className={isSelected ? 'text-white' : 'text-white/30'} />
                   </div>
                 </div>
               );
@@ -414,20 +428,14 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
           )}
         </div>
 
-        {/* Footer Shortcut Bar */}
-        <div className="bg-paper-2 px-4 py-2 border-t border-rule flex items-center justify-between text-[11px] text-on-solid0 shrink-0">
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1">
-              <kbd className="px-1 py-0.5 bg-paper border border-rule rounded font-mono text-[10px]">↑↓</kbd> Navigate
-            </span>
-            <span className="flex items-center gap-1">
-              <kbd className="px-1 py-0.5 bg-paper border border-rule rounded font-mono text-[10px]">↵</kbd> Select
-            </span>
-            <span className="flex items-center gap-1">
-              <kbd className="px-1 py-0.5 bg-paper border border-rule rounded font-mono text-[10px]">ESC</kbd> Close
-            </span>
+        {/* Minimal Footer Hint */}
+        <div className="px-3.5 py-2 mt-1 border-t border-white/8 flex items-center justify-between text-[11px] text-white/40 shrink-0">
+          <div className="flex items-center gap-3">
+            <span><kbd className="px-1 py-0.2 bg-white/10 rounded font-mono text-[9px] text-white/70">↑↓</kbd> Navigate</span>
+            <span><kbd className="px-1 py-0.2 bg-white/10 rounded font-mono text-[9px] text-white/70">↵</kbd> Select</span>
+            <span><kbd className="px-1 py-0.2 bg-white/10 rounded font-mono text-[9px] text-white/70">ESC</kbd> Dismiss</span>
           </div>
-          <span className="font-medium text-brand-700">
+          <span className="text-white/30 text-[10px]">
             Proton Command Palette
           </span>
         </div>
