@@ -3,6 +3,11 @@
 > **Controlled Physician Validation Release**  
 > Ambient Intelligence • Structured Clinical Notes • Deterministic Safety Verification • FHIR R4 Persistence
 
+<p align="left">
+  <a href="https://abhijeetdinkale-arch.github.io/proton-trailer/"><img src="https://img.shields.io/badge/🎬%20Watch%20Trailer-Live%20Interactive%20Preview-0ea5e9?style=for-the-badge" alt="Live Trailer" /></a>
+  <a href="https://github.com/abhijeetdinkale-arch/proton-trailer"><img src="https://img.shields.io/badge/Trailer%20Repo-proton--trailer-emerald?style=for-the-badge&logo=github" alt="Trailer Repo" /></a>
+</p>
+
 ---
 
 > [!WARNING]
