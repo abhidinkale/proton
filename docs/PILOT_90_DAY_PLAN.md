@@ -1,6 +1,6 @@
-# 90-Day Pilot Plan — $0 Infrastructure, 1000 Patients, 50 Hospital Design Partners
+# Pilot Plan — 1–3 Community Clinics, 30 Days, Synthetic Data First
 
-**Status:** Working plan. Target window: 26 Oct 2026 → 31 Jan 2027.
+**Status:** Working validation plan. Target: 1–3 clinics, 30-day evaluation, synthetic test cohorts first.
 **Owner:** Founder.
 **Related:** [`docs/trust/`](trust/) for the documents hospitals will request.
 
@@ -88,8 +88,8 @@ See [`docs/trust/`](trust/). Minimum before the first hospital call:
 
 ### E. Demo assets
 
-- Seeded 50-hospital / 1000-patient dataset, resettable in 10 seconds.
-- 3-minute recorded walkthrough. Investors will not log in.
+- Seeded realistic clinic & patient test dataset, resettable in 10 seconds.
+- 3-minute recorded walkthrough.
 - Metrics: activation, booking completion, reminder adherence, refill turnaround.
 
 ---
@@ -168,14 +168,14 @@ Known gaps that are *not* hidden by green tests:
 
 ### Capacity
 
-3000 appointments per quarter across 1000 patients and 50 orgs is a few hundred MB of Postgres — trivial. Roughly 1.5M requests/month is comfortable for one Express process. **Infrastructure is not the constraint. Acquisition is.**
+Focused validation across 1–3 clinics with synthetic patient records is a few tens of MB of Postgres — lightweight and deterministic. Infrastructure is not the constraint. Physician workflow validation and attestation speed are.
 
 ---
 
 ## 6. What breaks first
 
-1. **No $0 path includes a BAA.** Not Cloudflare, Neon, Supabase, or Gemini. The 3-month window must run **synthetic or de-identified data**, with 50 hospitals as *design partners evaluating workflow* — not 50 production deployments. If that line is blurred and a hospital repeats it to their compliance officer, the deal dies.
-2. **"50 hospitals" will realistically be 50 signed pilot agreements**, not 50 live deployments. That is a fine number for a seed round. Claiming more is not.
+1. **No $0 path includes a BAA.** Not Cloudflare, Neon, Supabase, or Gemini. The pilot must run **synthetic or de-identified data**, with 1–3 clinics evaluating workflow on synthetic cohorts — not production deployments with live PHI.
+2. **Keep the pilot strictly scoped.** 1–3 community clinics giving high-fidelity workflow feedback is far more credible than ungrounded claims of dozens of enterprise hospitals. Smaller promises you keep look better than large ones you miss.
 3. **One VM, no HA.** A reboot is a demo outage. Mitigate with a cold standby and DNS failover, or accept it and say so.
 4. **Free tiers change without notice.** Supabase pauses after inactivity; Vercel banned commercial Hobby use. Keep `docker-compose.yml` deployable anywhere in under an hour — that file is the insurance policy.
 5. **Email deliverability.** Without SPF/DKIM/DMARC, every invite goes to spam. This looks like a broken product, not a broken DNS record.

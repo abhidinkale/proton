@@ -11,7 +11,7 @@ Start here:
 | [`VALIDATION.md`](./VALIDATION.md) | **What is actually tested, and what is not.** Read before quoting any test result. |
 | [`DEMO.md`](./DEMO.md) | **The 3-minute phone + laptop demo.** Pre-flight, stage script, failure recovery. |
 | [`MOBILE_APP_AND_PLATFORM_BRIEF.md`](./MOBILE_APP_AND_PLATFORM_BRIEF.md) | **The demo briefing.** Mobile app in detail, the platform, what is real vs. not, Q&A prep. Also as [PDF](./MOBILE_APP_AND_PLATFORM_BRIEF.pdf) and [HTML](./MOBILE_APP_AND_PLATFORM_BRIEF.html). |
-| [`PILOT_90_DAY_PLAN.md`](./PILOT_90_DAY_PLAN.md) | The active 90-day pilot: 1,000 patients, 50 clinics, $0 infrastructure. |
+| [`PILOT_90_DAY_PLAN.md`](./PILOT_90_DAY_PLAN.md) | Pilot plan: 1–3 community clinics, 30-day evaluation, synthetic test cohorts first. |
 | [`adr/`](./adr/) | Architecture Decision Records — decisions that are expensive to reverse. |
 | [`../deploy/README.md`](../deploy/README.md) | **The deployment runbook for the pilot VM**, incl. the restore drill log. |
 | [`DEPLOYMENT.md`](./DEPLOYMENT.md) | Historical Vercel/Render guide. Read it for background only; the pilot rules out that platform (§5 of the pilot plan). |

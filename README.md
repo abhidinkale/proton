@@ -4,8 +4,12 @@
 > Ambient Intelligence • Structured Clinical Notes • Deterministic Safety Verification • FHIR R4 Persistence
 
 <p align="left">
-  <a href="https://abhijeetdinkale-arch.github.io/proton-trailer/"><img src="https://img.shields.io/badge/🎬%20Watch%20Trailer-Live%20Interactive%20Preview-0ea5e9?style=for-the-badge" alt="Live Trailer" /></a>
-  <a href="https://github.com/abhijeetdinkale-arch/proton-trailer"><img src="https://img.shields.io/badge/Trailer%20Repo-proton--trailer-emerald?style=for-the-badge&logo=github" alt="Trailer Repo" /></a>
+  <a href="https://abhidinkale.github.io/proton-trailer/"><img src="https://img.shields.io/badge/🎬%20Watch%20Trailer-Live%20Interactive%20Preview-0ea5e9?style=for-the-badge" alt="Live Trailer" /></a>
+  <a href="https://github.com/abhidinkale/proton-trailer"><img src="https://img.shields.io/badge/Trailer%20Repo-proton--trailer-emerald?style=for-the-badge&logo=github" alt="Trailer Repo" /></a>
+</p>
+
+<p align="center">
+  <img src="docs/screens/onboarding-conditions.png" alt="Proton Workflow" width="550" />
 </p>
 
 ---
@@ -193,7 +197,7 @@ Detailed step-by-step deployment and clinician invitation procedures are documen
 - [`docs/VALIDATION.md`](docs/VALIDATION.md) — **Single source of truth for test coverage.**
 - [`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md) — **Known issues register: trigger conditions and deferred remediation.**
 - [`docs/PILOT_CUT.md`](docs/PILOT_CUT.md) — **The active plan: deploy, prove on devices, then build.** Start here.
-- [`docs/PILOT_90_DAY_PLAN.md`](docs/PILOT_90_DAY_PLAN.md) — **90-day pilot plan: $0 infrastructure, 1000 patients, 50 hospital design partners.**
+- [`docs/PILOT_90_DAY_PLAN.md`](docs/PILOT_90_DAY_PLAN.md) — **Pilot plan: 1–3 community clinics, 30 days, synthetic test cohorts first.**
 - [`docs/trust/`](docs/trust/) — Hospital-facing trust pack: security questionnaire, subprocessor list, DPA template, BAA stance, privacy policy, incident runbook.
 - [`docs/README.md`](docs/README.md) — Documentation index; explains which reports are historical.
 - [`docs/PRIVATE_SYNTHETIC_BETA_DEPLOYMENT.md`](docs/PRIVATE_SYNTHETIC_BETA_DEPLOYMENT.md) — Remote PaaS deployment guide and physician account setup.
